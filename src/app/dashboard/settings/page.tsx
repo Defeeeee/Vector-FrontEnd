@@ -1,0 +1,137 @@
+import { apiFetch } from "@/lib/api";
+import { Aircraft, Profile } from "@/types";
+import { addAircraft } from "@/actions/flight";
+import { Plane, User, Plus, Shield, CreditCard, ChevronRight } from "lucide-react";
+import ProfileForm from "@/components/dashboard/ProfileForm";
+import AircraftCard from "@/components/dashboard/AircraftCard";
+
+async function getSettingsData() {
+  const [profilesRes, aircraftRes] = await Promise.all([
+    apiFetch("/profiles"),
+    apiFetch("/aircraft")
+  ]);
+
+  const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
+  const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
+
+  return { profile: profiles[0] || null, aircraft };
+}
+
+export default async function SettingsPage() {
+  const { profile, aircraft } = await getSettingsData();
+
+  return (
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto pb-20">
+      <div className="space-y-1 px-2">
+        <h2 className="text-4xl font-black tracking-tight text-white leading-none">Configuración</h2>
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">Gestión de Perfil y Aeronaves</p>
+      </div>
+
+      {/* Profile Section */}
+      <section className="space-y-6">
+        <div className="flex items-center space-x-3 px-2">
+          <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+            <User className="w-5 h-5 text-blue-500" />
+          </div>
+          <h3 className="text-xl font-black text-white">Perfil del Piloto</h3>
+        </div>
+        
+        <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03]">
+          <ProfileForm profile={profile} />
+        </div>
+      </section>
+
+      {/* Aircraft Management Section */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+              <Plane className="w-5 h-5 text-emerald-500" />
+            </div>
+            <h3 className="text-xl font-black text-white">Mis Aeronaves</h3>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full">
+            {aircraft.length} registradas
+          </span>
+        </div>
+
+        {/* Existing Aircraft List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {aircraft.length > 0 ? (
+            aircraft.map(ac => (
+              <AircraftCard key={ac.id} aircraft={ac} />
+            ))
+          ) : (
+             <div className="col-span-full glass-card p-10 rounded-[2.5rem] text-center border border-dashed border-white/10">
+               <p className="text-zinc-500 font-bold text-sm">No hay aeronaves registradas aún.</p>
+             </div>
+          )}
+        </div>
+
+        {/* Add New Aircraft Form */}
+        <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03] space-y-8">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+              <Plus className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="text-sm font-black text-white uppercase tracking-[0.1em]">Agregar Nueva Aeronave</h4>
+          </div>
+          
+          <form action={addAircraft} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Matrícula</label>
+                <input 
+                  name="registration" 
+                  placeholder="ej. LV-ABC" 
+                  required 
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Marca y Modelo</label>
+                <input 
+                  name="type" 
+                  placeholder="ej. Cessna 150" 
+                  required 
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Tipo ICAO</label>
+                <input 
+                  name="icao" 
+                  placeholder="ej. C150" 
+                  required 
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Categoría (ANAC)</label>
+                <div className="relative">
+                  <select 
+                    name="aircraft_type_wip"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium appearance-none"
+                  >
+                    <option value="MON-T">MON-T (Monomotor Terrestre)</option>
+                    <option value="MULT-T">MULT-T (Multimotor Terrestre)</option>
+                    <option value="MON-H">MON-H (Monomotor Hidroavión)</option>
+                    <option value="MULT-H">MULT-H (Multimotor Hidroavión)</option>
+                  </select>
+                  <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 rotate-90 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="w-full md:w-auto bg-white text-black hover:bg-zinc-200 font-black text-xs uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all active:scale-[0.98] shadow-xl"
+            >
+              Registrar Aeronave
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+  );
+}

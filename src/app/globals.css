@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-card: #0a0a0a;
+  --color-card-foreground: #ffffff;
+  --color-popover: #0a0a0a;
+  --color-popover-foreground: #ffffff;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #000000;
+  --color-secondary: #141414;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #141414;
+  --color-muted-foreground: #71717a;
+  --color-accent: #ffffff;
+  --color-accent-foreground: #000000;
+  --color-border: #1a1a1a;
+  --color-input: #1a1a1a;
+  --color-ring: #ffffff;
+  
+  --radius-lg: 1.5rem;
+  --radius-md: 1rem;
+  --radius-sm: 0.75rem;
+}
+
+@layer base {
+  body {
+    @apply bg-black text-white antialiased selection:bg-white selection:text-black;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv11";
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-black/40 backdrop-blur-2xl border-b border-white/[0.03];
+  }
+  
+  .glass-card {
+    @apply bg-[#0a0a0a] border border-white/[0.04] shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  }
+
+  .vector-gradient {
+    background: radial-gradient(circle at top center, rgba(255,255,255,0.05) 0%, transparent 70%);
+  }
+
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
