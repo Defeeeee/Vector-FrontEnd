@@ -1,20 +1,30 @@
-"use client";
-
-import { Plane, LayoutDashboard, History, Settings, LogOut, Compass } from "lucide-react";
+import { LogOut, Compass } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/actions/auth";
-import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import DashboardNav from "@/components/dashboard/DashboardNav";
+import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
+import { apiFetch } from "@/lib/api";
+import { Profile } from "@/types";
 
-export default function DashboardLayout({
+async function getProfile() {
+  try {
+    const res = await apiFetch("/profiles");
+    const profiles: Profile[] = res.ok ? await res.json() : [];
+    return profiles[0] || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const profile = await getProfile();
 
   return (
-    <div className="flex flex-col min-h-screen bg-black w-full relative">
+    <div className="flex flex-col min-h-screen bg-black w-full relative text-white antialiased">
       {/* Dynamic Background */}
       <div className="fixed inset-0 vector-gradient pointer-events-none" />
 
@@ -44,32 +54,11 @@ export default function DashboardLayout({
         {children}
       </main>
 
-      {/* Navigation (Floating Minimal) */}
-      <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center px-6 pointer-events-none">
-        <nav className="glass px-2 py-2 rounded-[2rem] flex items-center space-x-1 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/[0.05] pointer-events-auto">
-          <NavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={1.5} />} label="Stats" active={pathname === "/dashboard"} />
-          <NavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={1.5} />} label="Log" active={pathname === "/dashboard/history"} />
-          <NavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={1.5} />} label="Hangar" active={pathname === "/dashboard/settings"} />
-        </nav>
-      </div>
-    </div>
-  );
-}
+      {/* Navigation */}
+      <DashboardNav />
 
-function NavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
-  return (
-    <Link href={href} className="relative px-6 py-3 rounded-[1.5rem] transition-all group overflow-hidden">
-      {active && (
-        <motion.div 
-          layoutId="nav-glow"
-          className="absolute inset-0 bg-white"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-        />
-      )}
-      <div className={`relative z-10 flex items-center space-x-2 ${active ? "text-black" : "text-zinc-500 group-hover:text-white"}`}>
-        {icon}
-        <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-      </div>
-    </Link>
+      {/* Onboarding Logic */}
+      <OnboardingOverlay profile={profile} />
+    </div>
   );
 }

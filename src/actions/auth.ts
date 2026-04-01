@@ -108,12 +108,14 @@ export async function register(formData: FormData) {
       });
     }
 
+    // If we have a token, we could redirect, but let's return success 
+    // to show the "Verify Email" message as requested.
+    return { success: true };
+
   } catch (error) {
     console.error("Registration error:", error);
     return { error: "Ocurrió un error inesperado" };
   }
-
-  redirect("/dashboard");
 }
 
 export async function logout() {

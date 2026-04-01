@@ -9,6 +9,7 @@ import Link from "next/link";
 export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -16,8 +17,35 @@ export default function RegisterPage() {
       const result = await register(formData);
       if (result?.error) {
         setError(result.error);
+      } else if (result?.success) {
+        setIsSuccess(true);
       }
     });
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10 text-center space-y-8">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center shadow-2xl"
+        >
+          <Mail className="w-10 h-10" />
+        </motion.div>
+        
+        <div className="space-y-4">
+          <h1 className="text-4xl font-black uppercase tracking-tighter">Verifica tu Email</h1>
+          <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
+            Hemos enviado un enlace de confirmación a tu correo electrónico. Por favor, verifícalo para activar tu cuenta Vector.
+          </p>
+        </div>
+
+        <Link href="/" className="bg-white text-black font-black text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95">
+          Volver al Inicio
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -65,6 +93,7 @@ export default function RegisterPage() {
                   name="first_name"
                   type="text" 
                   placeholder="NOMBRE" 
+                  defaultValue="New"
                   required
                   className="w-full bg-white/[0.03] border border-white/[0.05] rounded-2xl py-5 pl-14 pr-6 outline-none focus:bg-white/[0.05] focus:border-white/20 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-600 uppercase"
                 />
@@ -75,6 +104,7 @@ export default function RegisterPage() {
                   name="last_name"
                   type="text" 
                   placeholder="APELLIDO" 
+                  defaultValue="Pilot"
                   required
                   className="w-full bg-white/[0.03] border border-white/[0.05] rounded-2xl py-5 pl-14 pr-6 outline-none focus:bg-white/[0.05] focus:border-white/20 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-600 uppercase"
                 />
