@@ -27,6 +27,15 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
   const [landing, setLanding] = useState(initialData?.landing || "");
   const [route, setRoute] = useState(initialData?.route || "");
   const [duration, setDuration] = useState(initialData?.duration || "");
+  
+  // New: Calculate duration from initialData if present but duration is empty
+  useEffect(() => {
+    if (initialData?.takeoff && initialData?.landing && !initialData?.duration) {
+      const calculated = calculateFlightDuration(initialData.takeoff, initialData.landing);
+      setDuration(calculated.toFixed(1));
+    }
+  }, [initialData]);
+
   const [landings, setLandings] = useState(initialData?.landings?.toString() || "1");
   const [aircraftId, setAircraftId] = useState(initialData?.aircraft_id || "");
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
@@ -51,11 +60,12 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
 
   // Calculate total duration from times
   useEffect(() => {
-    if (takeoff && landing && !initialData?.duration) {
+    if (takeoff && landing) {
       const calculated = calculateFlightDuration(takeoff, landing);
+      // Only set duration if it is empty or we just changed times manually
       setDuration(calculated.toFixed(1));
     }
-  }, [takeoff, landing, initialData?.duration]);
+  }, [takeoff, landing]);
 
   // Auto-copy logic
   useEffect(() => {

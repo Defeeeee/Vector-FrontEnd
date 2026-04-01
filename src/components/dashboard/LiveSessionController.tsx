@@ -47,6 +47,7 @@ export default function LiveSessionController({ aircraft, activeSession }: LiveS
             landing: landingTime,
             date: date,
             landings: session.landings || 1,
+            duration: session.flight_time ? session.flight_time.replace("hs", "") : undefined,
           });
           setIsModalOpen(true);
         }
