@@ -110,12 +110,12 @@ export default async function SettingsPage() {
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Categoría (ANAC)</label>
                 <div className="relative">
                   <select 
-                    name="aircraft_type_wip"
+                    name="type_acft"
                     className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium appearance-none"
                   >
-                    <option value="MON-T">MON-T (Monomotor Terrestre)</option>
+                    <option value="MONT-T">MONT-T (Monomotor Terrestre)</option>
                     <option value="MULT-T">MULT-T (Multimotor Terrestre)</option>
-                    <option value="MON-H">MON-H (Monomotor Hidroavión)</option>
+                    <option value="MONT-H">MONT-H (Monomotor Hidroavión)</option>
                     <option value="MULT-H">MULT-H (Multimotor Hidroavión)</option>
                   </select>
                   <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 rotate-90 pointer-events-none" />

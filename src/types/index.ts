@@ -32,7 +32,7 @@ export interface Aircraft {
   registration: string;
   icao: string;
   type: string; // Marca y Modelo
-  type_acft?: string; // MON-T, MULT-T, etc.
+  type_acft?: string; // MONT-T, MULT-T, etc.
 }
 
 export interface Profile {

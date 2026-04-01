@@ -47,7 +47,14 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
               </div>
               <div className="space-y-1">
                 <p className="font-black text-3xl text-white tracking-tighter uppercase">{aircraft.registration}</p>
-                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">{aircraft.type} <span className="mx-2 text-zinc-800">/</span> {aircraft.icao}</p>
+                <div className="flex items-center space-x-2">
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">{aircraft.type} <span className="mx-2 text-zinc-800">/</span> {aircraft.icao}</p>
+                  {aircraft.type_acft && (
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white/5 text-zinc-400 px-2 py-0.5 rounded-full border border-white/5">
+                      {aircraft.type_acft}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -92,6 +99,22 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
 
                 <EditField label="Make & Model">
                   <input name="type" defaultValue={aircraft.type} required className="w-full bg-transparent border-b border-white/10 py-2 text-white outline-none focus:border-white transition-all font-bold uppercase" />
+                </EditField>
+
+                <EditField label="Category (ANAC)">
+                  <div className="relative">
+                    <select 
+                      name="type_acft" 
+                      defaultValue={aircraft.type_acft}
+                      className="w-full bg-transparent border-b border-white/10 py-2 text-white outline-none focus:border-white transition-all font-bold uppercase appearance-none"
+                    >
+                      <option value="MONT-T" className="bg-zinc-900">MONT-T (Monomotor Terrestre)</option>
+                      <option value="MULT-T" className="bg-zinc-900">MULT-T (Multimotor Terrestre)</option>
+                      <option value="MONT-H" className="bg-zinc-900">MONT-H (Monomotor Hidroavión)</option>
+                      <option value="MULT-H" className="bg-zinc-900">MULT-H (Multimotor Hidroavión)</option>
+                    </select>
+                    <ChevronRight className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 rotate-90 pointer-events-none" />
+                  </div>
                 </EditField>
               </div>
 

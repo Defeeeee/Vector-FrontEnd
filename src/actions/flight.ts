@@ -175,7 +175,7 @@ export async function addAircraft(formData: FormData) {
   const registration = formData.get("registration") as string;
   const icao = formData.get("icao") as string;
   const type = formData.get("type") as string;
-  const type_acft = formData.get("aircraft_type_wip") as string;
+  const type_acft = formData.get("type_acft") as string;
 
   const response = await apiFetch("/aircraft", {
     method: "POST",
