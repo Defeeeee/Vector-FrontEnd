@@ -47,14 +47,17 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
               </div>
               <div className="space-y-1">
                 <p className="font-black text-3xl text-white tracking-tighter uppercase">{aircraft.registration}</p>
-                <div className="flex items-center space-x-2">
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">{aircraft.type} <span className="mx-2 text-zinc-800">/</span> {aircraft.icao}</p>
+                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">
+                  {aircraft.type} 
+                  <span className="mx-2 text-zinc-800">/</span> 
+                  {aircraft.icao}
                   {aircraft.type_acft && (
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white/5 text-zinc-400 px-2 py-0.5 rounded-full border border-white/5">
-                      {aircraft.type_acft}
-                    </span>
+                    <>
+                      <span className="mx-2 text-zinc-800">/</span>
+                      <span className="text-zinc-400">{aircraft.type_acft}</span>
+                    </>
                   )}
-                </div>
+                </p>
               </div>
             </div>
             
