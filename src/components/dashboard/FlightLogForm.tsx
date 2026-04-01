@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Aircraft } from "@/types";
 import { logFlight } from "@/actions/flight";
-import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Users, Cloud, AlertCircle } from "lucide-react";
+import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Users, Cloud, AlertCircle, Monitor } from "lucide-react";
 import { calculateFlightDuration, isLocalFlight } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,6 +29,13 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
   const [sicNightLoc, setSicNightLoc] = useState("");
   const [sicNightTra, setSicNightTra] = useState("");
   
+  // Conditions & Training states
+  const [imcPil, setImcPil] = useState("");
+  const [imcCop, setImcCop] = useState("");
+  const [capota, setCapota] = useState("");
+  const [simInst, setSimInst] = useState("");
+  const [simPil, setSimPil] = useState("");
+
   // Calculate total duration from times
   useEffect(() => {
     if (takeoff && landing) {
@@ -183,11 +190,11 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
           <p className="text-[10px] font-black uppercase tracking-[0.3em]">05. Condiciones y Entrenamiento</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <MiniFormField label="IMC Piloto" name="imc_pil" />
-          <MiniFormField label="IMC Copiloto" name="imc_cop" />
-          <MiniFormField label="Capota" name="capota" />
-          <MiniFormField label="Sim. Inst." name="sim_instructor" />
-          <MiniFormField label="Sim. Piloto" name="sim_pil_en_inst" />
+          <MiniFormField label="IMC Piloto" name="imc_pil" value={imcPil} onChange={setImcPil} />
+          <MiniFormField label="IMC Copiloto" name="imc_cop" value={imcCop} onChange={setImcCop} />
+          <MiniFormField label="Capota" name="capota" value={capota} onChange={setCapota} />
+          <MiniFormField label="Sim. Inst." name="sim_instructor" value={simInst} onChange={setSimInst} />
+          <MiniFormField label="Sim. Piloto" name="sim_pil_en_inst" value={simPil} onChange={setSimPil} />
         </div>
       </section>
 
