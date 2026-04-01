@@ -82,8 +82,8 @@ export async function updateFlight(formData: FormData) {
   const rawRoute = formData.get("route") as string;
   const landings = parseInt(formData.get("landings") as string, 10);
   const duration = parseFloat(formData.get("duration") as string);
-  const takeoff_time = formData.get("takeoff_time") as string;
-  const landing_time = formData.get("landing_time") as string;
+  const takeoff_time = formData.get("takeoff") as string;
+  const landing_time = formData.get("landing") as string;
 
   if (!id) return { error: "ID de vuelo no encontrado" };
 

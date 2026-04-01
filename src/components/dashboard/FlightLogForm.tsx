@@ -44,6 +44,21 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
   // Individual log states for validation and auto-copy
   const [picDayLoc, setPicDayLoc] = useState("");
   const [picDayTra, setPicDayTra] = useState("");
+  
+  // New: Pre-calculate auto-copy if initialData is provided
+  useEffect(() => {
+    if (duration && route) {
+      const local = isLocalFlight(route);
+      if (local) {
+        setPicDayLoc(duration);
+        setPicDayTra("");
+      } else {
+        setPicDayLoc("");
+        setPicDayTra(duration);
+      }
+    }
+  }, [duration, route, initialData]); // Include initialData in deps to trigger once on load if duration/route set
+
   const [picNightLoc, setPicNightLoc] = useState("");
   const [picNightTra, setPicNightTra] = useState("");
   const [sicDayLoc, setSicDayLoc] = useState("");

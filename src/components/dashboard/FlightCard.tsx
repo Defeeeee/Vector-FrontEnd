@@ -184,9 +184,13 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
                   <MiniEdit name="pic_night_tra" label="PIC Noc Trav" val={flight.pic_night_tra} />
                   <MiniEdit name="sic_day_loc" label="SIC Dia Loc" val={flight.sic_day_loc} />
                   <MiniEdit name="sic_day_tra" label="SIC Dia Trav" val={flight.sic_day_tra} />
+                  <MiniEdit name="sic_night_loc" label="SIC Noc Loc" val={flight.sic_night_loc} />
+                  <MiniEdit name="sic_night_tra" label="SIC Noc Trav" val={flight.sic_night_tra} />
                   <MiniEdit name="imc_pil" label="IMC Piloto" val={flight.imc_pil} />
+                  <MiniEdit name="imc_cop" label="IMC Copiloto" val={flight.imc_cop} />
                   <MiniEdit name="capota" label="Capota" val={flight.capota} />
                   <MiniEdit name="sim_instructor" label="Sim Inst" val={flight.sim_instructor} />
+                  <MiniEdit name="sim_pil_en_inst" label="Sim Piloto" val={flight.sim_pil_en_inst} />
                 </div>
               </div>
 
