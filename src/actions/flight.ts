@@ -253,6 +253,8 @@ export async function toggleFlightSession(formData: FormData) {
     throw new Error(error.detail || "Failed to toggle session");
   }
 
+  const data = await response.json();
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/history");
+  return data;
 }

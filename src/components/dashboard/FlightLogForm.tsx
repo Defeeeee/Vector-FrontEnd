@@ -9,14 +9,27 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface FlightLogFormProps {
   aircraft: Aircraft[];
+  initialData?: {
+    aircraft_id?: string;
+    route?: string;
+    takeoff?: string;
+    landing?: string;
+    date?: string;
+    landings?: number;
+    duration?: string;
+  };
+  onSuccess?: () => void;
 }
 
-export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, initialData, onSuccess }: FlightLogFormProps) {
   const [isPending, setIsPending] = useState(false);
-  const [takeoff, setTakeoff] = useState("");
-  const [landing, setLanding] = useState("");
-  const [route, setRoute] = useState("");
-  const [duration, setDuration] = useState("");
+  const [takeoff, setTakeoff] = useState(initialData?.takeoff || "");
+  const [landing, setLanding] = useState(initialData?.landing || "");
+  const [route, setRoute] = useState(initialData?.route || "");
+  const [duration, setDuration] = useState(initialData?.duration || "");
+  const [landings, setLandings] = useState(initialData?.landings?.toString() || "1");
+  const [aircraftId, setAircraftId] = useState(initialData?.aircraft_id || "");
+  const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [error, setError] = useState<string | null>(null);
 
   // Individual log states for validation and auto-copy
@@ -38,11 +51,11 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
 
   // Calculate total duration from times
   useEffect(() => {
-    if (takeoff && landing) {
+    if (takeoff && landing && !initialData?.duration) {
       const calculated = calculateFlightDuration(takeoff, landing);
       setDuration(calculated.toFixed(1));
     }
-  }, [takeoff, landing]);
+  }, [takeoff, landing, initialData?.duration]);
 
   // Auto-copy logic
   useEffect(() => {
@@ -77,6 +90,7 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
 
     try {
       await logFlight(formData);
+      if (onSuccess) onSuccess();
     } catch (e: any) {
       setError(e.message || "Error al registrar el vuelo");
       setIsPending(false);
@@ -109,9 +123,11 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
           <select 
             name="aircraft_id" 
             required
+            value={aircraftId}
+            onChange={(e) => setAircraftId(e.target.value)}
             className="w-full bg-white/[0.02] border border-white/5 rounded-[2rem] px-8 py-6 text-xl font-black text-white outline-none focus:border-white/20 transition-all appearance-none uppercase tracking-tighter"
           >
-            <option value="" disabled selected>Seleccionar Matrícula</option>
+            <option value="" disabled>Seleccionar Matrícula</option>
             {aircraft.map(ac => (
               <option key={ac.id} value={ac.id} className="bg-black text-white">
                 {ac.registration} — {ac.type}
@@ -134,7 +150,7 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
           </FormField>
 
           <FormField label="Fecha" icon={<Calendar className="w-4 h-4" />}>
-            <input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-transparent py-2 text-xl font-black text-white outline-none [color-scheme:dark]" />
+            <input type="date" name="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent py-2 text-xl font-black text-white outline-none [color-scheme:dark]" />
           </FormField>
 
           <FormField label="Despegue (UTC)" icon={<Clock className="w-4 h-4 text-emerald-500" />}>
@@ -150,7 +166,7 @@ export default function FlightLogForm({ aircraft }: FlightLogFormProps) {
           </FormField>
 
           <FormField label="Aterrizajes" icon={<MapPin className="w-4 h-4 text-zinc-500" />}>
-            <input type="number" name="landings" min="1" defaultValue="1" required className="w-full bg-transparent py-2 text-xl font-black text-white outline-none" />
+            <input type="number" name="landings" min="1" value={landings} onChange={(e) => setLandings(e.target.value)} required className="w-full bg-transparent py-2 text-xl font-black text-white outline-none" />
           </FormField>
         </div>
       </section>
