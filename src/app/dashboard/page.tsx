@@ -1,21 +1,23 @@
-import { TrendingUp, Calendar, MapPin, Award, Zap, Compass, History, Clock } from "lucide-react";
+import { TrendingUp, Calendar, MapPin, Award, Zap, Compass, History, Clock, Plus } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import Link from "next/link";
 
 async function getDashboardData() {
-  const [flightsRes, aircraftRes, profilesRes] = await Promise.all([
+  const [flightsRes, aircraftRes, profilesRes, sessionRes] = await Promise.all([
     apiFetch("/flights"),
     apiFetch("/aircraft"),
-    apiFetch("/profiles")
+    apiFetch("/profiles"),
+    apiFetch("/flight-helper/session")
   ]);
 
   const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
   const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
   const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
+  const sessionData = sessionRes.ok ? await sessionRes.json() : { active: false };
 
-  return { flights, aircraft, profile: profiles[0] || null };
+  return { flights, aircraft, profile: profiles[0] || null, session: sessionData };
 }
 
 function splitRoute(route: string): [string, string] {
@@ -28,7 +30,7 @@ function splitRoute(route: string): [string, string] {
 }
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile } = await getDashboardData();
+  const { flights, aircraft, profile, session } = await getDashboardData();
 
   const totalFlights = flights.length;
   const totalHours = flights.reduce((acc, f) => acc + f.duration, 0);
@@ -111,9 +113,34 @@ export default async function Dashboard() {
         
         <Link href="/dashboard/log-flight" className="bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] px-10 py-5 rounded-full shadow-2xl transition-all hover:scale-[1.02] active:scale-95 flex items-center space-x-3">
           <span>Registrar Vuelo</span>
-          <TrendingUp className="w-4 h-4" />
+          <Plus className="w-4 h-4" />
         </Link>
       </section>
+
+      {/* Live Session Widget (If Active) */}
+      {session.active && (
+        <section className="animate-in zoom-in-95 duration-500">
+          <div className="p-1 bg-white rounded-[3.5rem]">
+            <div className="bg-black rounded-[3.4rem] p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="flex items-center space-x-6">
+                <div className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center animate-pulse">
+                  <Compass className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
+                  <h3 className="text-3xl font-black text-white uppercase tracking-tighter">
+                    {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
+                  </h3>
+                </div>
+              </div>
+              <div className="flex flex-col md:items-end leading-none">
+                <span className="text-5xl font-black text-white tracking-tighter italic">LIVE</span>
+                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Hero Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-1">

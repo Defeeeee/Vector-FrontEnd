@@ -51,7 +51,7 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+            <div className="flex items-center space-x-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all transform translate-x-0 md:translate-x-4 md:group-hover:translate-x-0">
               <button 
                 onClick={() => setIsEditing(true)}
                 className="p-3 hover:bg-white text-zinc-500 hover:text-black rounded-full transition-all"

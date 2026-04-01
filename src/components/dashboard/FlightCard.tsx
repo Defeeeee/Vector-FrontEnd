@@ -114,7 +114,7 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
                   <span className="text-4xl font-black text-white tracking-tighter">{flight.duration.toFixed(1)}<span className="text-sm text-zinc-600 ml-1">H</span></span>
                   <span className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-1">Block Time</span>
                 </div>
-                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center space-x-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="p-3 hover:bg-white text-zinc-500 hover:text-black rounded-full transition-all"><Edit2 className="w-4 h-4" /></button>
                   <button onClick={handleDelete} className="p-3 hover:bg-white text-zinc-500 hover:text-black rounded-full transition-all"><Trash2 className="w-4 h-4" /></button>
                 </div>
