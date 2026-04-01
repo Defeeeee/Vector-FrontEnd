@@ -54,7 +54,7 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
                   {aircraft.type_acft && (
                     <>
                       <span className="mx-2 text-zinc-800">/</span>
-                      <span className="text-zinc-400">{aircraft.type_acft}</span>
+                      {aircraft.type_acft}
                     </>
                   )}
                 </p>
