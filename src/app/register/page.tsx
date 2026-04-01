@@ -93,7 +93,6 @@ export default function RegisterPage() {
                   name="first_name"
                   type="text" 
                   placeholder="NOMBRE" 
-                  defaultValue="New"
                   required
                   className="w-full bg-white/[0.03] border border-white/[0.05] rounded-2xl py-5 pl-14 pr-6 outline-none focus:bg-white/[0.05] focus:border-white/20 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-600 uppercase"
                 />
@@ -104,7 +103,6 @@ export default function RegisterPage() {
                   name="last_name"
                   type="text" 
                   placeholder="APELLIDO" 
-                  defaultValue="Pilot"
                   required
                   className="w-full bg-white/[0.03] border border-white/[0.05] rounded-2xl py-5 pl-14 pr-6 outline-none focus:bg-white/[0.05] focus:border-white/20 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-600 uppercase"
                 />
