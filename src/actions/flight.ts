@@ -4,6 +4,11 @@ import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+function getNumber(val: any): number | null {
+  const n = parseFloat(val);
+  return isNaN(n) ? null : n;
+}
+
 export async function logFlight(formData: FormData) {
   const aircraft_id = formData.get("aircraft_id") as string;
   const date = formData.get("date") as string;
@@ -21,17 +26,43 @@ export async function logFlight(formData: FormData) {
   const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
   const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
 
+  // Server-side validation
+  const total = Number(duration);
+  const sumLogs = [
+    formData.get("pic_day_loc"), formData.get("pic_day_tra"), formData.get("pic_night_loc"), formData.get("pic_night_tra"),
+    formData.get("sic_day_loc"), formData.get("sic_day_tra"), formData.get("sic_night_loc"), formData.get("sic_night_tra")
+  ].reduce((acc, val) => acc + (parseFloat(val as string) || 0), 0);
+
+  if (sumLogs > total + 0.01) {
+    throw new Error(`La suma de tiempos PIC/SIC (${sumLogs.toFixed(1)}h) no puede superar el total (${total.toFixed(1)}h)`);
+  }
+
+  const payload = {
+    aircraft_id,
+    date,
+    route,
+    landings: Number(landings),
+    duration: Number(duration),
+    takeoff: takeoff_dt,
+    landing: landing_dt,
+    pic_day_loc: getNumber(formData.get("pic_day_loc")),
+    pic_day_tra: getNumber(formData.get("pic_day_tra")),
+    pic_night_loc: getNumber(formData.get("pic_night_loc")),
+    pic_night_tra: getNumber(formData.get("pic_night_tra")),
+    sic_day_loc: getNumber(formData.get("sic_day_loc")),
+    sic_day_tra: getNumber(formData.get("sic_day_tra")),
+    sic_night_loc: getNumber(formData.get("sic_night_loc")),
+    sic_night_tra: getNumber(formData.get("sic_night_tra")),
+    "IMC Pil": getNumber(formData.get("imc_pil")),
+    "IMC Cop": getNumber(formData.get("imc_cop")),
+    "Capota": getNumber(formData.get("capota")),
+    "Sim Instructor": getNumber(formData.get("sim_instructor")),
+    "Sim Pil en Inst": getNumber(formData.get("sim_pil_en_inst")),
+  };
+
   const response = await apiFetch("/flights", {
     method: "POST",
-    body: JSON.stringify({
-      aircraft_id,
-      date,
-      route,
-      landings: Number(landings),
-      duration: Number(duration),
-      takeoff: takeoff_dt,
-      landing: landing_dt,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -51,8 +82,8 @@ export async function updateFlight(formData: FormData) {
   const rawRoute = formData.get("route") as string;
   const landings = parseInt(formData.get("landings") as string, 10);
   const duration = parseFloat(formData.get("duration") as string);
-  const takeoff_time = formData.get("takeoff") as string;
-  const landing_time = formData.get("landing") as string;
+  const takeoff_time = formData.get("takeoff_time") as string;
+  const landing_time = formData.get("landing_time") as string;
 
   if (!id) return { error: "ID de vuelo no encontrado" };
 
@@ -65,24 +96,44 @@ export async function updateFlight(formData: FormData) {
     route = route.replace(/\s+/g, '');
   }
 
-  // Robust combination of Date + Time into ISO string
+  const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
+  const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
+
+  // Server-side validation
+  const total = Number(duration);
+  const sumLogs = [
+    formData.get("pic_day_loc"), formData.get("pic_day_tra"), formData.get("pic_night_loc"), formData.get("pic_night_tra"),
+    formData.get("sic_day_loc"), formData.get("sic_day_tra"), formData.get("sic_night_loc"), formData.get("sic_night_tra")
+  ].reduce((acc, val) => acc + (parseFloat(val as string) || 0), 0);
+
+  if (sumLogs > total + 0.01) {
+    return { error: `La suma de tiempos PIC/SIC (${sumLogs.toFixed(1)}h) no puede superar el total (${total.toFixed(1)}h)` };
+  }
+
+  const payload = {
+    aircraft_id: String(aircraft_id),
+    date: String(date),
+    route: String(route),
+    landings: Number(landings),
+    duration: Number(duration),
+    takeoff: takeoff_dt,
+    landing: landing_dt,
+    pic_day_loc: getNumber(formData.get("pic_day_loc")),
+    pic_day_tra: getNumber(formData.get("pic_day_tra")),
+    pic_night_loc: getNumber(formData.get("pic_night_loc")),
+    pic_night_tra: getNumber(formData.get("pic_night_tra")),
+    sic_day_loc: getNumber(formData.get("sic_day_loc")),
+    sic_day_tra: getNumber(formData.get("sic_day_tra")),
+    sic_night_loc: getNumber(formData.get("sic_night_loc")),
+    sic_night_tra: getNumber(formData.get("sic_night_tra")),
+    "IMC Pil": getNumber(formData.get("imc_pil")),
+    "IMC Cop": getNumber(formData.get("imc_cop")),
+    "Capota": getNumber(formData.get("capota")),
+    "Sim Instructor": getNumber(formData.get("sim_instructor")),
+    "Sim Pil en Inst": getNumber(formData.get("sim_pil_en_inst")),
+  };
+
   try {
-    // Format: YYYY-MM-DDTHH:MM:SSZ (No milliseconds for Pydantic stability)
-    const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
-    const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
-
-    const payload = {
-      aircraft_id: String(aircraft_id),
-      date: String(date),
-      route: String(route),
-      landings: Number(landings),
-      duration: Number(duration),
-      takeoff: takeoff_dt,
-      landing: landing_dt,
-    };
-
-    console.log("Sending PATCH to backend:", JSON.stringify(payload, null, 2));
-
     const response = await apiFetch(`/flights/${id}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -90,16 +141,14 @@ export async function updateFlight(formData: FormData) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      console.error("Validation error from backend:", JSON.stringify(error, null, 2));
-      return { error: error.detail || "Error de validación: Verifique los datos" };
+      return { error: error.detail || "Error de validación en el servidor" };
     }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/history");
     return { success: true };
   } catch (e) {
-    console.error("Error creating ISO dates:", e);
-    return { error: "Formato de hora inválido" };
+    return { error: "Error de conexión con el servidor" };
   }
 }
 
@@ -126,10 +175,11 @@ export async function addAircraft(formData: FormData) {
   const registration = formData.get("registration") as string;
   const icao = formData.get("icao") as string;
   const type = formData.get("type") as string;
+  const type_acft = formData.get("aircraft_type_wip") as string;
 
   const response = await apiFetch("/aircraft", {
     method: "POST",
-    body: JSON.stringify({ registration, icao, type }),
+    body: JSON.stringify({ registration, icao, type, type_acft }),
   });
 
   if (!response.ok) {
@@ -146,13 +196,14 @@ export async function updateAircraft(formData: FormData) {
   const registration = formData.get("registration") as string;
   const icao = formData.get("icao") as string;
   const type = formData.get("type") as string;
+  const type_acft = formData.get("type_acft") as string;
 
   if (!id) return { error: "ID de aeronave no encontrado" };
 
   try {
     const response = await apiFetch(`/aircraft/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ registration, icao, type }),
+      body: JSON.stringify({ registration, icao, type, type_acft }),
     });
 
     if (!response.ok) {

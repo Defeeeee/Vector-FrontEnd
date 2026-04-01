@@ -32,3 +32,11 @@ export function calculateFlightDuration(takeoffStr: string, landingStr: string):
   return hours + decimal;
 }
 
+export function isLocalFlight(route: string): boolean {
+  if (!route) return true;
+  const parts = route.split(/[ -]/).filter(p => p.trim() !== "");
+  if (parts.length < 2) return true;
+  return parts[0].toUpperCase() === parts[1].toUpperCase();
+}
+
+

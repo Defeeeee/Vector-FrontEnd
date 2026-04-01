@@ -58,7 +58,7 @@ export default async function HistoryPage() {
             <FlightCard 
               key={flight.id} 
               flight={flight} 
-              aircraft={aircraftMap.get(flight.aircraft_id)}
+              aircraft={flight.aircraft_id ? aircraftMap.get(flight.aircraft_id) : undefined}
               allAircraft={aircraft}
             />
           ))

@@ -62,7 +62,7 @@ export default async function Dashboard() {
   const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
   const regMap = new Map<string, number>();
   flights.forEach(f => {
-    const ac = aircraftMap.get(f.aircraft_id);
+    const ac = f.aircraft_id ? aircraftMap.get(f.aircraft_id) : undefined;
     const reg = ac?.registration || "Unknown";
     regMap.set(reg, (regMap.get(reg) || 0) + f.duration);
   });

@@ -1,3 +1,5 @@
+.gemini/
+
 # dependencies
 /node_modules
 /.pnp
