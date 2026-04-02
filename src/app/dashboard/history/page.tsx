@@ -21,7 +21,7 @@ export default async function HistoryPage() {
   const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
 
   const sortedFlights = [...flights].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => new Date(b.takeoff).getTime() - new Date(a.takeoff).getTime()
   );
 
   return (
