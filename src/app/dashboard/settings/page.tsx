@@ -1,30 +1,34 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile } from "@/types";
+import { Aircraft, Profile, FlightPack } from "@/types";
 import { addAircraft } from "@/actions/flight";
-import { Plane, User, Plus, Shield, CreditCard, ChevronRight } from "lucide-react";
+import { createFlightPack } from "@/actions/flight-pack";
+import { Plane, User, Plus, Shield, CreditCard, ChevronRight, Package } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
+import FlightPackCard from "@/components/dashboard/FlightPackCard";
 
 async function getSettingsData() {
-  const [profilesRes, aircraftRes] = await Promise.all([
+  const [profilesRes, aircraftRes, packsRes] = await Promise.all([
     apiFetch("/profiles"),
-    apiFetch("/aircraft")
+    apiFetch("/aircraft"),
+    apiFetch("/flight-packs")
   ]);
 
   const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
   const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
+  const packs: FlightPack[] = packsRes.ok ? await packsRes.json() : [];
 
-  return { profile: profiles[0] || null, aircraft };
+  return { profile: profiles[0] || null, aircraft, packs };
 }
 
 export default async function SettingsPage() {
-  const { profile, aircraft } = await getSettingsData();
+  const { profile, aircraft, packs } = await getSettingsData();
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto pb-20">
       <div className="space-y-1 px-2">
         <h2 className="text-4xl font-black tracking-tight text-white leading-none">Configuración</h2>
-        <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">Gestión de Perfil y Aeronaves</p>
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">Gestión de Perfil, Aeronaves y Packs de Horas</p>
       </div>
 
       {/* Profile Section */}
@@ -38,6 +42,102 @@ export default async function SettingsPage() {
         
         <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03]">
           <ProfileForm profile={profile} />
+        </div>
+      </section>
+
+      {/* Flight Packs Section */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center">
+              <Package className="w-5 h-5 text-purple-500" />
+            </div>
+            <h3 className="text-xl font-black text-white">Packs de Horas</h3>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full">
+            {packs.length} activos
+          </span>
+        </div>
+
+        {/* Existing Packs List */}
+        <div className="grid grid-cols-1 gap-4">
+          {packs.length > 0 ? (
+            packs.map(pack => (
+              <FlightPackCard key={pack.id} pack={pack} aircraft={aircraft} />
+            ))
+          ) : (
+             <div className="col-span-full glass-card p-10 rounded-[2.5rem] text-center border border-dashed border-white/10">
+               <p className="text-zinc-500 font-bold text-sm">No hay packs de horas registrados aún.</p>
+             </div>
+          )}
+        </div>
+
+        {/* Add New Pack Form */}
+        <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03] space-y-8">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center">
+              <Plus className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="text-sm font-black text-white uppercase tracking-[0.1em]">Cargar Nuevo Pack de Horas</h4>
+          </div>
+          
+          <form action={createFlightPack} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Nombre del Pack</label>
+                <input 
+                  name="name" 
+                  placeholder="ej. Pack 50h Cessna" 
+                  required 
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Total de Horas</label>
+                <input 
+                  name="total_hours" 
+                  type="number"
+                  step="0.1"
+                  placeholder="ej. 50" 
+                  required 
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Fecha de Inicio</label>
+                <input 
+                  name="start_date" 
+                  type="date"
+                  defaultValue={new Date().toISOString().split('T')[0]}
+                  required 
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all font-medium" 
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Aeronaves Válidas</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                  {aircraft.map(ac => (
+                    <label key={ac.id} className="flex items-center space-x-3 bg-white/[0.02] border border-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/[0.05] transition-all">
+                      <input 
+                        type="checkbox" 
+                        name="aircraft_ids" 
+                        value={ac.id} 
+                        className="w-5 h-5 rounded border-white/10 bg-white/5 text-purple-500 focus:ring-0 focus:ring-offset-0"
+                      />
+                      <span className="text-sm font-bold text-white uppercase tracking-tight">{ac.registration}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="w-full md:w-auto bg-white text-black hover:bg-zinc-200 font-black text-xs uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all active:scale-[0.98] shadow-xl"
+            >
+              Cargar Pack
+            </button>
+          </form>
         </div>
       </section>
 

@@ -118,12 +118,123 @@ export async function register(formData: FormData) {
   }
 }
 
+export async function recoverPassword(formData: FormData) {
+  const email = formData.get("email");
+
+  if (!email) {
+    return { error: "Email es requerido" };
+  }
+
+  try {
+    const response = await fetch(`${AUTH_URL}/recover`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      return { error: data.detail || "Error enviando correo de recuperación" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Recovery error:", error);
+    return { error: "Ocurrió un error inesperado" };
+  }
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = formData.get("password");
+  const token = await getSessionToken();
+
+  if (!password) {
+    return { error: "La contraseña es requerida" };
+  }
+
+  if (!token) {
+    return { error: "No hay una sesión activa para actualizar la contraseña" };
+  }
+
+  try {
+    const response = await fetch(`${AUTH_URL}/update-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      return { error: data.detail || "Error actualizando la contraseña" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update password error:", error);
+    return { error: "Ocurrió un error inesperado" };
+  }
+}
+
 export async function logout() {
   (await cookies()).delete("session_token");
   (await cookies()).delete("refresh_token");
   redirect("/");
 }
 
+export async function getGoogleLoginUrl() {
+  try {
+    const response = await fetch(`${AUTH_URL}/login/google`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { error: data.detail || "Error getting Google login URL" };
+    }
+    
+    return { url: data.url };
+  } catch (error) {
+    console.error("Google login error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
 export async function getSessionToken() {
   return (await cookies()).get("session_token")?.value;
+}
+
+export async function setSession(token: string, refresh_token?: string, maxAge: number = 60 * 60 * 24) {
+  const cookieStore = await cookies();
+  
+  // Try to get the root domain for cookies
+  let domain = undefined;
+  if (process.env.NODE_ENV === "production") {
+    // We want .fdiaznem.com.ar so it works on all subdomains
+    domain = ".fdiaznem.com.ar";
+  }
+  
+  console.log(`Setting session cookie. Domain=${domain} maxAge=${maxAge}`);
+
+  cookieStore.set("session_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: maxAge,
+    path: "/",
+    domain: domain,
+  });
+
+  if (refresh_token) {
+    cookieStore.set("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: "/",
+      domain,
+    });
+  }
 }

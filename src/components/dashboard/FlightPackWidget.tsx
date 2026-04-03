@@ -1,0 +1,72 @@
+"use client";
+
+import { FlightPack } from "@/types";
+import { Clock, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface FlightPackWidgetProps {
+  packs: FlightPack[];
+}
+
+export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
+  if (!packs || packs.length === 0) return null;
+
+  const activePacks = packs.filter(p => p.is_active && p.remaining_hours > 0);
+  if (activePacks.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      {activePacks.map((pack) => {
+        const percentage = Math.max(0, Math.min(100, (pack.remaining_hours / pack.total_hours) * 100));
+        const isLow = percentage < 20;
+
+        return (
+          <motion.div
+            key={pack.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-zinc-900/50 border border-white/5 rounded-[2rem] p-8 space-y-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isLow ? 'bg-red-500/10 text-red-500' : 'bg-white/10 text-white'}`}>
+                  {isLow ? <AlertCircle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-black text-white uppercase tracking-tighter text-lg leading-tight">{pack.name}</h3>
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">Active Flight Pack</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-4xl font-black text-white tracking-tighter italic">
+                    {pack.remaining_hours.toFixed(1)}
+                    <span className="text-sm font-black text-zinc-600 ml-1 uppercase not-italic tracking-normal">h</span>
+                  </p>
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-1">Remaining of {pack.total_hours}h</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-xl font-black tracking-tighter italic ${isLow ? 'text-red-500' : 'text-white'}`}>
+                    {Math.round(percentage)}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className={`h-full rounded-full ${isLow ? 'bg-red-500' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.3)]'}`}
+                />
+              </div>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}

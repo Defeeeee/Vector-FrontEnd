@@ -42,3 +42,17 @@ export interface Profile {
   cma_expiry?: string;
   license_type?: string;
 }
+
+export interface FlightPack {
+  id: string;
+  user_id: string;
+  name: string;
+  total_hours: number;
+  remaining_hours: number;
+  created_at: string;
+  start_date: string;
+  is_active: boolean;
+  aircraft_ids: string[];
+}
+
+

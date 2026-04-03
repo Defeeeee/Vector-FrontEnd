@@ -1,23 +1,26 @@
 import { TrendingUp, Calendar, MapPin, Award, Zap, Compass, History, Clock, Plus } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { Flight, Aircraft, Profile } from "@/types";
+import { Flight, Aircraft, Profile, FlightPack } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
+import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import Link from "next/link";
 
 async function getDashboardData() {
-  const [flightsRes, aircraftRes, profilesRes, sessionRes] = await Promise.all([
+  const [flightsRes, aircraftRes, profilesRes, sessionRes, packsRes] = await Promise.all([
     apiFetch("/flights"),
     apiFetch("/aircraft"),
     apiFetch("/profiles"),
-    apiFetch("/flight-helper/session")
+    apiFetch("/flight-helper/session"),
+    apiFetch("/flight-packs")
   ]);
 
   const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
   const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
   const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
   const sessionData = sessionRes.ok ? await sessionRes.json() : { active: false };
+  const packs: FlightPack[] = packsRes.ok ? await packsRes.json() : [];
 
-  return { flights, aircraft, profile: profiles[0] || null, session: sessionData };
+  return { flights, aircraft, profile: profiles[0] || null, session: sessionData, packs };
 }
 
 function splitRoute(route: string): [string, string] {
@@ -30,7 +33,7 @@ function splitRoute(route: string): [string, string] {
 }
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session } = await getDashboardData();
+  const { flights, aircraft, profile, session, packs } = await getDashboardData();
 
   const totalFlights = flights.length;
   const totalHours = flights.reduce((acc, f) => acc + f.duration, 0);
@@ -179,6 +182,9 @@ export default async function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Flight Hours Packs Widget */}
+      <FlightPackWidget packs={packs} />
 
       {/* Analytics */}
       <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
