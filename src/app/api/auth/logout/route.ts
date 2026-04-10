@@ -9,5 +9,10 @@ export async function GET(request: NextRequest) {
   cookieStore.delete("session_token");
   cookieStore.delete("refresh_token");
   
-  return NextResponse.redirect(new URL(redirectTo, request.url));
+  const url = request.nextUrl.clone();
+  url.pathname = redirectTo.split('?')[0];
+  const search = redirectTo.split('?')[1];
+  url.search = search ? `?${search}` : "";
+  
+  return NextResponse.redirect(url);
 }

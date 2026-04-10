@@ -21,12 +21,17 @@ export function middleware(request: NextRequest) {
 
   if (isDashboardPage && !token) {
     console.log("Middleware: Redirecting to / due to missing token on dashboard");
-    return NextResponse.redirect(new URL("/?expired=true", request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "?expired=true";
+    return NextResponse.redirect(url);
   }
 
   if (pathname === "/" && token) {
     console.log("Middleware: Redirecting to /dashboard due to existing token");
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
