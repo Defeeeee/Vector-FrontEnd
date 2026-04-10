@@ -7,12 +7,19 @@ import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
 import FlightPackCard from "@/components/dashboard/FlightPackCard";
 
+import { redirect } from "next/navigation";
+
 async function getSettingsData() {
   const [profilesRes, aircraftRes, packsRes] = await Promise.all([
     apiFetch("/profiles"),
     apiFetch("/aircraft"),
     apiFetch("/flight-packs")
   ]);
+
+  if (profilesRes.status === 401 || aircraftRes.status === 401 || packsRes.status === 401) {
+    console.log("SettingsPage: 401 Unauthorized. Redirecting to logout...");
+    redirect("/api/auth/logout?redirect=/?expired=true");
+  }
 
   const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
   const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];

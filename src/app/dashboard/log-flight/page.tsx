@@ -5,11 +5,18 @@ import FlightLogForm from "@/components/dashboard/FlightLogForm";
 import LiveSessionController from "@/components/dashboard/LiveSessionController";
 import { ChevronLeft } from "lucide-react";
 
+import { redirect } from "next/navigation";
+
 async function getData() {
   const [acRes, sessionRes] = await Promise.all([
     apiFetch("/aircraft"),
     apiFetch("/flight-helper/session")
   ]);
+
+  if (acRes.status === 401 || sessionRes.status === 401) {
+    console.log("LogFlightPage: 401 Unauthorized. Redirecting to logout...");
+    redirect("/api/auth/logout?redirect=/?expired=true");
+  }
   
   const aircraft: Aircraft[] = acRes.ok ? await acRes.json() : [];
   const session = sessionRes.ok ? await sessionRes.json() : { active: false };

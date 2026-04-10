@@ -1,17 +1,25 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Lock, Mail, ArrowRight, Loader2, Compass } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Lock, Mail, Loader2, Compass } from "lucide-react";
 import { login, getGoogleLoginUrl, setSession } from "@/actions/auth";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Home() {
+function LoginContent() {
   const [isPending, startTransition] = useTransition();
   const [isGooglePending, setIsGooglePending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expired, setExpired] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "true") {
+      setExpired(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function checkUrlForToken() {
@@ -74,6 +82,39 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10">
+      {/* Session Expired Alert */}
+      <AnimatePresence>
+        {expired && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              className="bg-zinc-900 border border-white/10 rounded-[2.5rem] p-10 max-w-sm w-full text-center space-y-8 shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Sesión Expirada</h2>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest leading-relaxed">Tu sesión ha terminado por seguridad. Por favor, vuelve a ingresar.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setExpired(false);
+                  router.replace("/");
+                }}
+                className="w-full bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] py-5 rounded-2xl"
+              >
+                Entendido
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Branding */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
@@ -210,5 +251,13 @@ export default function Home() {
         Vector v1.0.0
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white uppercase tracking-widest font-black">Loading Vector...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

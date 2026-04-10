@@ -4,11 +4,18 @@ import { Plus, Search, Plane } from "lucide-react";
 import Link from "next/link";
 import FlightCard from "@/components/dashboard/FlightCard";
 
+import { redirect } from "next/navigation";
+
 async function getHistoryData() {
   const [flightsRes, aircraftRes] = await Promise.all([
     apiFetch("/flights"),
     apiFetch("/aircraft")
   ]);
+
+  if (flightsRes.status === 401 || aircraftRes.status === 401) {
+    console.log("HistoryPage: 401 Unauthorized. Redirecting to logout...");
+    redirect("/api/auth/logout?redirect=/?expired=true");
+  }
 
   const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
   const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];

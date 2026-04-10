@@ -5,22 +5,28 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import Link from "next/link";
 
+import { redirect } from "next/navigation";
+
 async function getDashboardData() {
-  const [flightsRes, aircraftRes, profilesRes, sessionRes, packsRes] = await Promise.all([
-    apiFetch("/flights"),
-    apiFetch("/aircraft"),
-    apiFetch("/profiles"),
-    apiFetch("/flight-helper/session"),
-    apiFetch("/flight-packs")
-  ]);
+  const response = await apiFetch("/dashboard");
 
-  const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
-  const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
-  const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
-  const sessionData = sessionRes.ok ? await sessionRes.json() : { active: false };
-  const packs: FlightPack[] = packsRes.ok ? await packsRes.json() : [];
+  if (response.status === 401) {
+    console.log("Dashboard: 401 Unauthorized. Redirecting to logout...");
+    redirect("/api/auth/logout?redirect=/?expired=true");
+  }
 
-  return { flights, aircraft, profile: profiles[0] || null, session: sessionData, packs };
+  if (!response.ok) {
+    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [] };
+  }
+
+  const data = await response.json();
+  return {
+    flights: data.flights || [],
+    aircraft: data.aircraft || [],
+    profile: data.profile || null,
+    session: data.session || { active: false },
+    packs: data.packs || []
+  };
 }
 
 function splitRoute(route: string): [string, string] {
@@ -36,13 +42,13 @@ export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs } = await getDashboardData();
 
   const totalFlights = flights.length;
-  const totalHours = flights.reduce((acc, f) => acc + f.duration, 0);
-  const totalLandings = flights.reduce((acc, f) => acc + f.landings, 0);
+  const totalHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
+  const totalLandings = flights.reduce((acc: number, f: Flight) => acc + f.landings, 0);
   
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const lastMonthFlights = flights.filter(f => new Date(f.date + 'T00:00:00') >= thirtyDaysAgo);
-  const lastMonthHours = lastMonthFlights.reduce((acc, f) => acc + f.duration, 0);
+  const lastMonthFlights = flights.filter((f: Flight) => new Date(f.date + 'T00:00:00') >= thirtyDaysAgo);
+  const lastMonthHours = lastMonthFlights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
 
   const monthlyMap = new Map<string, number>();
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -52,7 +58,7 @@ export default async function Dashboard() {
     const label = `${monthNames[d.getMonth()]}`;
     monthlyMap.set(label, 0);
   }
-  flights.forEach(f => {
+  flights.forEach((f: Flight) => {
     const d = new Date(f.date + 'T00:00:00');
     const label = `${monthNames[d.getMonth()]}`;
     if (monthlyMap.has(label)) {
@@ -64,9 +70,9 @@ export default async function Dashboard() {
     hours: Number(hours.toFixed(1))
   }));
 
-  const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
+  const aircraftMap = new Map<string, Aircraft>(aircraft.map((a: Aircraft) => [a.id, a]));
   const regMap = new Map<string, number>();
-  flights.forEach(f => {
+  flights.forEach((f: Flight) => {
     const ac = f.aircraft_id ? aircraftMap.get(f.aircraft_id) : undefined;
     const reg = ac?.registration || "Unknown";
     regMap.set(reg, (regMap.get(reg) || 0) + f.duration);
@@ -81,7 +87,7 @@ export default async function Dashboard() {
     }));
 
   const airportFreq = new Map<string, number>();
-  flights.forEach(f => {
+  flights.forEach((f: Flight) => {
     const [origin, dest] = splitRoute(f.route);
     if (origin !== "???") {
       const o = origin.toUpperCase();
@@ -97,7 +103,7 @@ export default async function Dashboard() {
   const mostVisited = sortedAirports[0]?.[0] || "---";
   const airports = new Set(airportFreq.keys());
   
-  const longestFlight = flights.length > 0 ? Math.max(...flights.map(f => f.duration)) : 0;
+  const longestFlight = flights.length > 0 ? Math.max(...flights.map((f: Flight) => f.duration)) : 0;
   const avgFlightTime = totalFlights > 0 ? totalHours / totalFlights : 0;
 
   return (

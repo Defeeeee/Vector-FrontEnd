@@ -13,12 +13,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isDashboardPage && !token) {
-    console.log("Middleware: Redirecting to / due to missing token");
-    return NextResponse.redirect(new URL("/", request.url));
+  // Define logout API as a path that shouldn't be redirected
+  const isLogoutPath = pathname.startsWith("/api/auth/logout");
+  if (isLogoutPath) {
+    return NextResponse.next();
   }
 
-  if (request.nextUrl.pathname === "/" && token) {
+  if (isDashboardPage && !token) {
+    console.log("Middleware: Redirecting to / due to missing token on dashboard");
+    return NextResponse.redirect(new URL("/?expired=true", request.url));
+  }
+
+  if (pathname === "/" && token) {
     console.log("Middleware: Redirecting to /dashboard due to existing token");
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }

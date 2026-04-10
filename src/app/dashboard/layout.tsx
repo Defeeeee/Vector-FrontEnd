@@ -6,14 +6,17 @@ import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
 import { apiFetch } from "@/lib/api";
 import { Profile } from "@/types";
 
+import { redirect } from "next/navigation";
+
 async function getProfile() {
-  try {
-    const res = await apiFetch("/profiles");
-    const profiles: Profile[] = res.ok ? await res.json() : [];
-    return profiles[0] || null;
-  } catch (e) {
-    return null;
+  const res = await apiFetch("/profiles");
+  if (res.status === 401) {
+    console.log("DashboardLayout: 401 Unauthorized. Logging out...");
+    redirect("/api/auth/logout?redirect=/?expired=true");
   }
+  if (!res.ok) return null;
+  const profiles: Profile[] = await res.json();
+  return profiles[0] || null;
 }
 
 export default async function DashboardLayout({

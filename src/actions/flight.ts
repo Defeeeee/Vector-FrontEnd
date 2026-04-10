@@ -2,7 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, isRedirectError } from "next/navigation";
 
 function getNumber(val: any): number | null {
   const n = parseFloat(val);
@@ -147,7 +147,8 @@ export async function updateFlight(formData: FormData) {
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/history");
     return { success: true };
-  } catch (e) {
+  } catch (e: any) {
+    if (isRedirectError(e) || e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
     return { error: "Error de conexión con el servidor" };
   }
 }
@@ -166,7 +167,8 @@ export async function deleteFlight(id: string) {
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/history");
     return { success: true };
-  } catch (e) {
+  } catch (e: any) {
+    if (isRedirectError(e) || e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
     return { error: "Error de conexión con el servidor" };
   }
 }
@@ -213,7 +215,8 @@ export async function updateAircraft(formData: FormData) {
 
     revalidatePath("/dashboard/settings");
     return { success: true };
-  } catch (e) {
+  } catch (e: any) {
+    if (isRedirectError(e) || e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
     return { error: "Error de conexión con el servidor" };
   }
 }
@@ -231,7 +234,8 @@ export async function deleteAircraft(id: string) {
 
     revalidatePath("/dashboard/settings");
     return { success: true };
-  } catch (e) {
+  } catch (e: any) {
+    if (isRedirectError(e) || e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
     return { error: "Error de conexión con el servidor" };
   }
 }

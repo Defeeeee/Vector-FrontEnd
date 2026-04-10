@@ -180,10 +180,11 @@ export async function updatePassword(formData: FormData) {
   }
 }
 
-export async function logout() {
+export async function logout(arg?: string | FormData) {
+  const redirectTo = typeof arg === "string" ? arg : "/";
   (await cookies()).delete("session_token");
   (await cookies()).delete("refresh_token");
-  redirect("/");
+  redirect(redirectTo);
 }
 
 export async function getGoogleLoginUrl() {
