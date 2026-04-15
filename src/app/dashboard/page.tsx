@@ -111,11 +111,11 @@ export default async function Dashboard() {
       {/* Dynamic Header */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-4">
         <div className="space-y-3">
-          <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.4em] flex items-center space-x-2">
+          <p className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase tracking-[0.4em] flex items-center space-x-2">
              <Activity className="w-3 h-3" />
              <span>Centro de Operaciones</span>
           </p>
-          <h2 className="text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 leading-none">
+          <h2 className="text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
         </div>
@@ -149,55 +149,55 @@ export default async function Dashboard() {
         )}
 
         {/* Main Experience Card - High Contrast */}
-        <div className="md:col-span-4 lg:col-span-3 p-10 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px] group hover:shadow-cal-highlight transition-all">
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110" />
+        <div className="md:col-span-4 lg:col-span-3 p-10 bg-zinc-900 dark:bg-white border border-zinc-800 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px] group hover:shadow-cal-highlight transition-all">
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/5 dark:bg-black/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/10 text-white rounded-xl flex items-center justify-center mb-6 shadow-sm border border-white/10">
+              <div className="w-12 h-12 bg-white/10 dark:bg-black/5 text-white dark:text-zinc-900 rounded-xl flex items-center justify-center mb-6 shadow-sm border border-white/10 dark:border-transparent">
                  <Award className="w-6 h-6" />
               </div>
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Experiencia Total</p>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
               <div className="flex items-baseline space-x-2 mt-2">
-                <p className="text-8xl font-space-grotesk font-bold text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
-                <p className="text-lg font-bold text-zinc-500 uppercase tracking-widest">Hs</p>
+                <p className="text-8xl font-space-grotesk font-bold text-white dark:text-zinc-900 tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
+                <p className="text-lg font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Hs</p>
               </div>
           </div>
-          <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-6">
+          <div className="relative z-10 flex items-center justify-between border-t border-white/10 dark:border-zinc-200/50 pt-6">
              <div className="flex flex-col">
-                <span className="text-2xl font-bold text-white">{totalFlights}</span>
-                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Vuelos</span>
+                <span className="text-2xl font-bold text-white dark:text-zinc-900">{totalFlights}</span>
+                <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Vuelos</span>
              </div>
-             <Link href="/dashboard/history" className="w-10 h-10 bg-white text-zinc-900 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+             <Link href="/dashboard/history" className="w-10 h-10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                 <Navigation2 className="w-4 h-4 rotate-45" />
              </Link>
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="md:col-span-2 lg:col-span-2 p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal flex flex-col justify-between min-h-[300px] hover:shadow-md transition-shadow">
+        <div className="md:col-span-2 lg:col-span-2 p-10 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between min-h-[300px] hover:shadow-md dark:hover:bg-white/[0.04] transition-all group">
           <div>
-              <div className="w-10 h-10 bg-zinc-50 text-zinc-900 rounded-xl flex items-center justify-center mb-6 border border-zinc-200 shadow-sm">
+              <div className="w-10 h-10 bg-zinc-50 dark:bg-white/[0.05] text-zinc-900 dark:text-white rounded-xl flex items-center justify-center mb-6 border border-zinc-200 dark:border-white/10 shadow-sm">
                  <TrendingUp className="w-5 h-5" />
               </div>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Últimos 30 Días</p>
-              <p className="text-6xl font-space-grotesk font-bold text-zinc-900 tracking-tighter mt-2">{lastMonthHours.toFixed(1)}</p>
+              <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Últimos 30 Días</p>
+              <p className="text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter mt-2">{lastMonthHours.toFixed(1)}</p>
           </div>
-          <div className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100 flex items-center space-x-3">
+          <div className="bg-zinc-50 dark:bg-white/[0.05] p-4 rounded-2xl border border-zinc-100 dark:border-white/10 flex items-center space-x-3 group-hover:border-zinc-300 dark:group-hover:border-white/20 transition-colors">
              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">+{lastMonthFlights.length} Registros Nuevos</span>
+             <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">+{lastMonthFlights.length} Registros Nuevos</span>
           </div>
         </div>
 
         {/* Mini Detail Metrics - Stacked */}
         <div className="md:col-span-2 lg:col-span-1 flex flex-col gap-6">
-           <div className="flex-1 bg-white border border-zinc-200 rounded-[2.5rem] shadow-cal p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md transition-shadow">
-               <div className="p-2 bg-zinc-50 rounded-xl text-zinc-900 border border-zinc-100"><MapPin className="w-4 h-4" /></div>
-               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{airports.size}</p>
-               <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Aeródromos</p>
+           <div className="flex-1 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-white/[0.04] transition-all">
+               <div className="p-2 bg-zinc-50 dark:bg-white/[0.05] rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-white/10"><MapPin className="w-4 h-4" /></div>
+               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{airports.size}</p>
+               <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Aeródromos</p>
            </div>
-           <div className="flex-1 bg-white border border-zinc-200 rounded-[2.5rem] shadow-cal p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md transition-shadow">
-               <div className="p-2 bg-zinc-50 rounded-xl text-zinc-900 border border-zinc-100"><Clock className="w-4 h-4" /></div>
-               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{longestFlight.toFixed(1)}h</p>
-               <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Récord</p>
+           <div className="flex-1 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-white/[0.04] transition-all">
+               <div className="p-2 bg-zinc-50 dark:bg-white/[0.05] rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-white/10"><Clock className="w-4 h-4" /></div>
+               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{longestFlight.toFixed(1)}h</p>
+               <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Récord</p>
            </div>
         </div>
       </div>
@@ -227,13 +227,13 @@ export default async function Dashboard() {
 
 function MetricItem({ label, value, icon }: any) {
   return (
-    <div className="px-8 py-6 rounded-[2rem] bg-white border border-zinc-200 shadow-sm flex items-center space-x-4 hover:shadow-md transition-all group">
-      <div className="text-zinc-500 bg-zinc-50 p-3 rounded-xl border border-zinc-100 group-hover:text-zinc-900 group-hover:border-zinc-300 transition-colors">
+    <div className="px-8 py-6 rounded-[2rem] bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md dark:hover:bg-white/[0.04] transition-all group">
+      <div className="text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-white/[0.05] p-3 rounded-xl border border-zinc-100 dark:border-white/10 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:border-zinc-300 dark:group-hover:border-white/20 transition-colors inline-block mb-3">
         {icon}
       </div>
       <div className="flex flex-col">
-        <p className="text-2xl font-bold font-space-grotesk text-zinc-900 tracking-tight leading-none">{value}</p>
-        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em] mt-1">{label}</p>
+        <p className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
+        <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] mt-1">{label}</p>
       </div>
     </div>
   );

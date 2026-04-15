@@ -31,25 +31,25 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     <form action={handleSubmit} className="space-y-12">
       <input type="hidden" name="id" defaultValue={profile?.id || ""} />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <EditField label="Nombre">
-          <input name="first_name" defaultValue={profile?.first_name || ""} placeholder="Nombre del piloto" required className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-3 text-xl font-bold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <input name="first_name" defaultValue={profile?.first_name || ""} placeholder="Nombre del piloto" required className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
         </EditField>
 
         <EditField label="Apellido">
-          <input name="last_name" defaultValue={profile?.last_name || ""} placeholder="Apellido del piloto" required className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-3 text-xl font-bold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <input name="last_name" defaultValue={profile?.last_name || ""} placeholder="Apellido del piloto" required className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
         </EditField>
 
         <EditField label="Licencia (ANAC)">
-          <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-3 text-xl font-bold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
         </EditField>
 
         <EditField label="Vencimiento CMA">
-          <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-3 text-xl font-bold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all [color-scheme:light] dark:[color-scheme:dark]" />
+          <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
         </EditField>
       </div>
 
-      <div className="flex items-center justify-between pt-8 border-t border-zinc-200 dark:border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-8 border-t border-zinc-200 dark:border-white/10 gap-6">
         <div className="flex items-center space-x-2">
           {success && (
             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center space-x-2 text-green-600">

@@ -163,27 +163,27 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Ruta (ICAO)" icon={<Route className="w-4 h-4" />}>
-            <input name="route" placeholder="SAEZ SACO" required value={route} onChange={(e) => setRoute(e.target.value)} className="w-full bg-transparent py-2 text-xl font-bold text-zinc-900 dark:text-white outline-none uppercase tracking-tighter placeholder:text-zinc-300 dark:placeholder:text-zinc-600" />
+            <input name="route" placeholder="SAEZ SACO" required value={route} onChange={(e) => setRoute(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
           </FormField>
 
           <FormField label="Fecha" icon={<Calendar className="w-4 h-4" />}>
-            <input type="date" name="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent py-2 text-xl font-bold text-zinc-900 dark:text-white outline-none [color-scheme:light] dark:[color-scheme:dark]" />
+            <input type="date" name="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
           </FormField>
 
           <FormField label="Despegue (UTC)" icon={<Clock className="w-4 h-4" />}>
-            <input type="time" name="takeoff" required value={takeoff} onChange={(e) => setTakeoff(e.target.value)} className="w-full bg-transparent py-2 text-xl font-bold text-zinc-900 dark:text-white outline-none [color-scheme:light] dark:[color-scheme:dark]" />
+            <input type="time" name="takeoff" required value={takeoff} onChange={(e) => setTakeoff(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
           </FormField>
 
           <FormField label="Aterrizaje (UTC)" icon={<Clock className="w-4 h-4" />}>
-            <input type="time" name="landing" required value={landing} onChange={(e) => setLanding(e.target.value)} className="w-full bg-transparent py-2 text-xl font-bold text-zinc-900 dark:text-white outline-none [color-scheme:light] dark:[color-scheme:dark]" />
+            <input type="time" name="landing" required value={landing} onChange={(e) => setLanding(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
           </FormField>
 
           <FormField label="Tiempo de Bloque" icon={<Clock className="w-4 h-4" />}>
-            <input type="number" step="0.1" name="duration" placeholder="0.0" required value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full bg-transparent py-2 text-xl font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600" />
+            <input type="number" step="0.1" name="duration" placeholder="0.0" required value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-600" />
           </FormField>
 
           <FormField label="Aterrizajes" icon={<MapPin className="w-4 h-4" />}>
-            <input type="number" name="landings" min="1" value={landings} onChange={(e) => setLandings(e.target.value)} required className="w-full bg-transparent py-2 text-xl font-bold text-zinc-900 dark:text-white outline-none" />
+            <input type="number" name="landings" min="1" value={landings} onChange={(e) => setLandings(e.target.value)} required className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all" />
           </FormField>
         </div>
       </section>
@@ -267,7 +267,7 @@ function FormField({ label, icon, children }: { label: string, icon: React.React
 
 function MiniFormField({ label, name, value, onChange }: { label: string, name: string, value: string, onChange: (val: string) => void }) {
   return (
-    <div className="p-5 bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[2rem] space-y-2 group focus-within:border-zinc-400 dark:focus-within:border-white/20 transition-all text-center shadow-sm">
+    <div className="p-5 bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[2rem] space-y-3 group focus-within:border-zinc-400 dark:focus-within:border-white/20 transition-all text-center shadow-sm">
       <span className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest block">{label}</span>
       <input 
         type="number" 
@@ -276,7 +276,7 @@ function MiniFormField({ label, name, value, onChange }: { label: string, name: 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0.0"
-        className="w-full bg-transparent text-center text-lg font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600" 
+        className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-3 px-4 text-center text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-600" 
       />
     </div>
   );

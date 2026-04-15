@@ -41,13 +41,13 @@ export default async function SettingsPage() {
       {/* Profile Section */}
       <section className="space-y-6">
         <div className="flex items-center space-x-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center border border-blue-100 dark:border-transparent">
-            <User className="w-5 h-5 text-blue-600 dark:text-blue-500" />
+          <div className="w-10 h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+            <User className="w-5 h-5 text-white dark:text-zinc-900" />
           </div>
-          <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white">Perfil del Piloto</h3>
+          <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white uppercase tracking-tighter">Perfil del Piloto</h3>
         </div>
         
-        <div className="bg-white dark:bg-white/[0.02] p-8 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none">
+        <div className="bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none hover:shadow-lg dark:hover:bg-white/[0.04] transition-all">
           <ProfileForm profile={profile} />
         </div>
       </section>
@@ -56,12 +56,12 @@ export default async function SettingsPage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center border border-purple-100 dark:border-transparent">
-              <Package className="w-5 h-5 text-purple-600 dark:text-purple-500" />
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+              <Package className="w-5 h-5 text-white dark:text-zinc-900" />
             </div>
-            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white">Packs de Horas</h3>
+            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white uppercase tracking-tighter">Packs de Horas</h3>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-3 py-1 rounded-full border border-zinc-200 dark:border-transparent">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-4 py-2 rounded-full border border-zinc-200 dark:border-white/10 shadow-sm">
             {packs.length} activos
           </span>
         </div>
@@ -73,19 +73,19 @@ export default async function SettingsPage() {
               <FlightPackCard key={pack.id} pack={pack} aircraft={aircraft} />
             ))
           ) : (
-             <div className="col-span-full bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] text-center border border-dashed border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none">
-               <p className="text-zinc-500 dark:text-zinc-400 font-bold text-sm">No hay packs de horas registrados aún.</p>
+             <div className="col-span-full bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] text-center border border-dashed border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-md dark:hover:bg-white/[0.04] transition-all">
+               <p className="text-zinc-500 dark:text-zinc-400 font-bold text-sm uppercase tracking-widest">No hay packs de horas registrados aún.</p>
              </div>
           )}
         </div>
 
         {/* Add New Pack Form */}
-        <div className="bg-white dark:bg-white/[0.02] p-8 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none space-y-8">
+        <div className="bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none hover:shadow-lg dark:hover:bg-white/[0.04] transition-all space-y-8">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-purple-600 flex items-center justify-center shadow-lg">
-              <Plus className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+              <Plus className="w-4 h-4 text-white dark:text-zinc-900" />
             </div>
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-[0.1em]">Cargar Nuevo Pack de Horas</h4>
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Cargar Nuevo Pack</h4>
           </div>
           
           <form action={createFlightPack} className="space-y-6">
@@ -152,12 +152,12 @@ export default async function SettingsPage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-emerald-500/10 flex items-center justify-center border border-green-100 dark:border-transparent">
-              <Plane className="w-5 h-5 text-green-600 dark:text-emerald-500" />
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+              <Plane className="w-5 h-5 text-white dark:text-zinc-900" />
             </div>
-            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white">Mis Aeronaves</h3>
+            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white uppercase tracking-tighter">Mis Aeronaves</h3>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-3 py-1 rounded-full border border-zinc-200 dark:border-transparent">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-4 py-2 rounded-full border border-zinc-200 dark:border-white/10 shadow-sm">
             {aircraft.length} registradas
           </span>
         </div>
@@ -169,19 +169,19 @@ export default async function SettingsPage() {
               <AircraftCard key={ac.id} aircraft={ac} />
             ))
           ) : (
-             <div className="col-span-full bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] text-center border border-dashed border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none">
-               <p className="text-zinc-500 dark:text-zinc-400 font-bold text-sm">No hay aeronaves registradas aún.</p>
+             <div className="col-span-full bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] text-center border border-dashed border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none hover:shadow-md dark:hover:bg-white/[0.04] transition-all">
+               <p className="text-zinc-500 dark:text-zinc-400 font-bold text-sm uppercase tracking-widest">No hay aeronaves registradas aún.</p>
              </div>
           )}
         </div>
 
         {/* Add New Aircraft Form */}
-        <div className="bg-white dark:bg-white/[0.02] p-8 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none space-y-8">
+        <div className="bg-white dark:bg-white/[0.02] p-10 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none hover:shadow-lg dark:hover:bg-white/[0.04] transition-all space-y-8">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-blue-600 flex items-center justify-center shadow-lg">
-              <Plus className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+              <Plus className="w-4 h-4 text-white dark:text-zinc-900" />
             </div>
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-[0.1em]">Agregar Nueva Aeronave</h4>
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Agregar Nueva Aeronave</h4>
           </div>
           
           <form action={addAircraft} className="space-y-6">
