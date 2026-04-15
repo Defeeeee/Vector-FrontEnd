@@ -33,21 +33,21 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto pb-20">
-      <div className="space-y-1 px-2">
-        <h2 className="text-4xl font-black tracking-tight text-white leading-none">Configuración</h2>
+      <div className="space-y-1 px-2 pt-8">
+        <h2 className="text-4xl font-space-grotesk font-bold tracking-tight text-zinc-900 leading-none">Configuración</h2>
         <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">Gestión de Perfil, Aeronaves y Packs de Horas</p>
       </div>
 
       {/* Profile Section */}
       <section className="space-y-6">
         <div className="flex items-center space-x-3 px-2">
-          <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-blue-500" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+            <User className="w-5 h-5 text-blue-600" />
           </div>
-          <h3 className="text-xl font-black text-white">Perfil del Piloto</h3>
+          <h3 className="text-xl font-bold font-space-grotesk text-zinc-900">Perfil del Piloto</h3>
         </div>
         
-        <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03]">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-200 shadow-cal">
           <ProfileForm profile={profile} />
         </div>
       </section>
@@ -56,12 +56,12 @@ export default async function SettingsPage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-              <Package className="w-5 h-5 text-purple-500" />
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center border border-purple-100">
+              <Package className="w-5 h-5 text-purple-600" />
             </div>
-            <h3 className="text-xl font-black text-white">Packs de Horas</h3>
+            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900">Packs de Horas</h3>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-100 px-3 py-1 rounded-full border border-zinc-200">
             {packs.length} activos
           </span>
         </div>
@@ -73,65 +73,65 @@ export default async function SettingsPage() {
               <FlightPackCard key={pack.id} pack={pack} aircraft={aircraft} />
             ))
           ) : (
-             <div className="col-span-full glass-card p-10 rounded-[2.5rem] text-center border border-dashed border-white/10">
+             <div className="col-span-full bg-white p-10 rounded-[2.5rem] text-center border border-dashed border-zinc-200 shadow-sm">
                <p className="text-zinc-500 font-bold text-sm">No hay packs de horas registrados aún.</p>
              </div>
           )}
         </div>
 
         {/* Add New Pack Form */}
-        <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03] space-y-8">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-200 shadow-cal space-y-8">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center shadow-lg">
               <Plus className="w-4 h-4 text-white" />
             </div>
-            <h4 className="text-sm font-black text-white uppercase tracking-[0.1em]">Cargar Nuevo Pack de Horas</h4>
+            <h4 className="text-sm font-bold text-zinc-900 uppercase tracking-[0.1em]">Cargar Nuevo Pack de Horas</h4>
           </div>
           
           <form action={createFlightPack} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Nombre del Pack</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Nombre del Pack</label>
                 <input 
                   name="name" 
                   placeholder="ej. Pack 50h Cessna" 
                   required 
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all font-medium" 
+                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold placeholder:text-zinc-400" 
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Total de Horas</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Total de Horas</label>
                 <input 
                   name="total_hours" 
                   type="number"
                   step="0.1"
                   placeholder="ej. 50" 
                   required 
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all font-medium" 
+                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold placeholder:text-zinc-400" 
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Fecha de Inicio</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Fecha de Inicio</label>
                 <input 
                   name="start_date" 
                   type="date"
                   defaultValue={new Date().toISOString().split('T')[0]}
                   required 
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all font-medium" 
+                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold" 
                 />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Aeronaves Válidas</label>
+              <div className="space-y-2 md:col-span-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1">Aeronaves Válidas</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                   {aircraft.map(ac => (
-                    <label key={ac.id} className="flex items-center space-x-3 bg-white/[0.02] border border-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/[0.05] transition-all">
+                    <label key={ac.id} className="flex items-center space-x-3 bg-zinc-50 border border-zinc-200 p-4 rounded-xl cursor-pointer hover:bg-zinc-100 transition-all">
                       <input 
                         type="checkbox" 
                         name="aircraft_ids" 
                         value={ac.id} 
-                        className="w-5 h-5 rounded border-white/10 bg-white/5 text-purple-500 focus:ring-0 focus:ring-offset-0"
+                        className="w-5 h-5 rounded border-zinc-300 bg-white text-zinc-900 focus:ring-0 focus:ring-offset-0"
                       />
-                      <span className="text-sm font-bold text-white uppercase tracking-tight">{ac.registration}</span>
+                      <span className="text-sm font-bold text-zinc-900 uppercase tracking-tight">{ac.registration}</span>
                     </label>
                   ))}
                 </div>
@@ -140,7 +140,7 @@ export default async function SettingsPage() {
             
             <button 
               type="submit" 
-              className="w-full md:w-auto bg-white text-black hover:bg-zinc-200 font-black text-xs uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all active:scale-[0.98] shadow-xl"
+              className="w-full md:w-auto bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all active:scale-[0.98] shadow-cal-highlight flex items-center justify-center hover:opacity-90"
             >
               Cargar Pack
             </button>
@@ -152,12 +152,12 @@ export default async function SettingsPage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-              <Plane className="w-5 h-5 text-emerald-500" />
+            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center border border-green-100">
+              <Plane className="w-5 h-5 text-green-600" />
             </div>
-            <h3 className="text-xl font-black text-white">Mis Aeronaves</h3>
+            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900">Mis Aeronaves</h3>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-white/5 px-3 py-1 rounded-full">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 bg-zinc-100 px-3 py-1 rounded-full border border-zinc-200">
             {aircraft.length} registradas
           </span>
         </div>
@@ -169,56 +169,56 @@ export default async function SettingsPage() {
               <AircraftCard key={ac.id} aircraft={ac} />
             ))
           ) : (
-             <div className="col-span-full glass-card p-10 rounded-[2.5rem] text-center border border-dashed border-white/10">
+             <div className="col-span-full bg-white p-10 rounded-[2.5rem] text-center border border-dashed border-zinc-200 shadow-sm">
                <p className="text-zinc-500 font-bold text-sm">No hay aeronaves registradas aún.</p>
              </div>
           )}
         </div>
 
         {/* Add New Aircraft Form */}
-        <div className="glass-card p-8 rounded-[2.5rem] border border-white/[0.03] space-y-8">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-200 shadow-cal space-y-8">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center shadow-lg">
               <Plus className="w-4 h-4 text-white" />
             </div>
-            <h4 className="text-sm font-black text-white uppercase tracking-[0.1em]">Agregar Nueva Aeronave</h4>
+            <h4 className="text-sm font-bold text-zinc-900 uppercase tracking-[0.1em]">Agregar Nueva Aeronave</h4>
           </div>
           
           <form action={addAircraft} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Matrícula</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Matrícula</label>
                 <input 
                   name="registration" 
                   placeholder="ej. LV-ABC" 
                   required 
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium" 
+                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold uppercase placeholder:text-zinc-400" 
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Marca y Modelo</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Marca y Modelo</label>
                 <input 
                   name="type" 
                   placeholder="ej. Cessna 150" 
                   required 
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium" 
+                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold placeholder:text-zinc-400" 
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Tipo ICAO</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Tipo ICAO</label>
                 <input 
                   name="icao" 
                   placeholder="ej. C150" 
                   required 
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium" 
+                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold uppercase placeholder:text-zinc-400" 
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Categoría (ANAC)</label>
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Categoría (ANAC)</label>
                 <div className="relative">
                   <select 
                     name="type_acft"
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all font-medium appearance-none"
+                    className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 px-5 text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 transition-all font-bold appearance-none cursor-pointer"
                   >
                     <option value="MONT-T">MONT-T (Monomotor Terrestre)</option>
                     <option value="MULT-T">MULT-T (Multimotor Terrestre)</option>
@@ -232,7 +232,7 @@ export default async function SettingsPage() {
             
             <button 
               type="submit" 
-              className="w-full md:w-auto bg-white text-black hover:bg-zinc-200 font-black text-xs uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all active:scale-[0.98] shadow-xl"
+              className="w-full md:w-auto bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all active:scale-[0.98] shadow-cal-highlight flex items-center justify-center hover:opacity-90"
             >
               Registrar Aeronave
             </button>

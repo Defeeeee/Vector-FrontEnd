@@ -33,28 +33,28 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
         <EditField label="Nombre">
-          <input name="first_name" defaultValue={profile?.first_name || ""} placeholder="Nombre del piloto" required className="w-full bg-transparent border-b border-white/10 py-3 text-xl font-black text-white outline-none focus:border-white transition-all uppercase tracking-tighter" />
+          <input name="first_name" defaultValue={profile?.first_name || ""} placeholder="Nombre del piloto" required className="w-full bg-transparent border-b border-zinc-300 py-3 text-xl font-bold text-zinc-900 outline-none focus:border-zinc-900 transition-all uppercase tracking-tighter" />
         </EditField>
 
         <EditField label="Apellido">
-          <input name="last_name" defaultValue={profile?.last_name || ""} placeholder="Apellido del piloto" required className="w-full bg-transparent border-b border-white/10 py-3 text-xl font-black text-white outline-none focus:border-white transition-all uppercase tracking-tighter" />
+          <input name="last_name" defaultValue={profile?.last_name || ""} placeholder="Apellido del piloto" required className="w-full bg-transparent border-b border-zinc-300 py-3 text-xl font-bold text-zinc-900 outline-none focus:border-zinc-900 transition-all uppercase tracking-tighter" />
         </EditField>
 
         <EditField label="Licencia (ANAC)">
-          <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-transparent border-b border-white/10 py-3 text-xl font-black text-white outline-none focus:border-white transition-all uppercase tracking-tighter" />
+          <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-transparent border-b border-zinc-300 py-3 text-xl font-bold text-zinc-900 outline-none focus:border-zinc-900 transition-all uppercase tracking-tighter" />
         </EditField>
 
         <EditField label="Vencimiento CMA">
-          <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-transparent border-b border-white/10 py-3 text-xl font-black text-white outline-none focus:border-white transition-all [color-scheme:dark]" />
+          <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-transparent border-b border-zinc-300 py-3 text-xl font-bold text-zinc-900 outline-none focus:border-zinc-900 transition-all" />
         </EditField>
       </div>
 
-      <div className="flex items-center justify-between pt-8 border-t border-white/[0.03]">
+      <div className="flex items-center justify-between pt-8 border-t border-zinc-200">
         <div className="flex items-center space-x-2">
           {success && (
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center space-x-2 text-emerald-500">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Sincronizado</span>
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center space-x-2 text-green-600">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Sincronizado</span>
             </motion.div>
           )}
         </div>
@@ -62,7 +62,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         <button 
           disabled={isPending}
           type="submit" 
-          className="bg-white text-black font-black text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-full shadow-2xl transition-all active:scale-[0.95] flex items-center space-x-3 disabled:opacity-50"
+          className="bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-full shadow-cal-highlight transition-all active:scale-[0.95] flex items-center space-x-3 disabled:opacity-50"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           <span>Guardar Perfil</span>
@@ -75,7 +75,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
 function EditField({ label, children }: { label: string, children: React.ReactNode }) {
   return (
     <div className="space-y-3 group">
-      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-600 group-focus-within:text-white transition-colors">{label}</label>
+      <label className="text-[9px] font-bold uppercase tracking-[0.4em] text-zinc-500 group-focus-within:text-zinc-900 transition-colors">{label}</label>
       {children}
     </div>
   );

@@ -84,7 +84,7 @@ export default async function Dashboard() {
     .map(([name, value], i) => ({
       name,
       value: Number(value.toFixed(1)),
-      color: ["#ffffff", "#71717a", "#27272a", "#18181b"][i % 4]
+      color: ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"][i % 4]
     }));
 
   const airportFreq = new Map<string, number>();
@@ -110,18 +110,18 @@ export default async function Dashboard() {
   return (
     <div className="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
       {/* Dynamic Header */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-8">
         <div className="space-y-4">
-          <div className="h-px w-12 bg-white/20" />
-          <h2 className="text-6xl font-black tracking-tighter text-white leading-none">
+          <div className="h-px w-12 bg-zinc-200" />
+          <h2 className="text-6xl font-space-grotesk font-bold tracking-tighter text-zinc-900 leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
           <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.4em]">
-            Digital Aviator <span className="mx-2 text-zinc-800">/</span> {profile?.license_type || "No Lic."}
+            Digital Aviator <span className="mx-2 text-zinc-300">/</span> {profile?.license_type || "No Lic."}
           </p>
         </div>
         
-        <Link href="/dashboard/log-flight" className="bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] px-10 py-5 rounded-full shadow-2xl transition-all hover:scale-[1.02] active:scale-95 flex items-center space-x-3">
+        <Link href="/dashboard/log-flight" className="bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] px-10 py-5 rounded-xl shadow-cal-highlight transition-all hover:bg-zinc-800 flex items-center space-x-3">
           <span>Registrar Vuelo</span>
           <Plus className="w-4 h-4" />
         </Link>
@@ -130,22 +130,22 @@ export default async function Dashboard() {
       {/* Live Session Widget (If Active) */}
       {session.active && (
         <section className="animate-in zoom-in-95 duration-500">
-          <div className="p-1 bg-white rounded-[3.5rem]">
-            <div className="bg-black rounded-[3.4rem] p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="p-1 bg-zinc-100 rounded-[2.5rem]">
+            <div className="bg-zinc-900 rounded-[2.4rem] p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 shadow-cal">
               <div className="flex items-center space-x-6">
-                <div className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center animate-pulse">
+                <div className="w-16 h-16 bg-white text-zinc-900 rounded-xl flex items-center justify-center animate-pulse shadow-sm">
                   <Compass className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
-                  <h3 className="text-3xl font-black text-white uppercase tracking-tighter">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
+                  <h3 className="text-3xl font-bold font-space-grotesk text-white tracking-tighter">
                     {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
                   </h3>
                 </div>
               </div>
               <div className="flex flex-col md:items-end leading-none">
-                <span className="text-5xl font-black text-white tracking-tighter italic">LIVE</span>
-                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
+                <span className="text-5xl font-bold font-space-grotesk text-white tracking-tighter">LIVE</span>
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em] mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
               </div>
             </div>
           </div>
@@ -153,38 +153,38 @@ export default async function Dashboard() {
       )}
 
       {/* Hero Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
-        <div className="p-10 bg-white/[0.02] border border-white/[0.05] rounded-[3rem] space-y-8 hover:bg-white/[0.04] transition-colors">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal hover:shadow-lg transition-shadow">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
           <div className="space-y-1">
-            <p className="text-7xl font-black text-white tracking-tighter">{totalHours.toFixed(1)}</p>
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Horas de Vuelo</p>
+            <p className="text-7xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{totalHours.toFixed(1)}</p>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Horas de Vuelo</p>
           </div>
-          <div className="flex items-center space-x-2 text-[10px] font-black text-zinc-500 uppercase">
-            <span className="text-white">{totalFlights}</span>
+          <div className="flex items-center space-x-2 text-[10px] font-bold text-zinc-400 uppercase">
+            <span className="text-zinc-900">{totalFlights}</span>
             <span>Vuelos Completados</span>
           </div>
         </div>
 
-        <div className="p-10 bg-white/[0.02] border border-white/[0.05] rounded-[3rem] space-y-8 hover:bg-white/[0.04] transition-colors">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Actividad Reciente</p>
+        <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal hover:shadow-lg transition-shadow">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Actividad Reciente</p>
           <div className="space-y-1">
-            <p className="text-7xl font-black text-white tracking-tighter">{lastMonthHours.toFixed(1)}</p>
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Horas este mes</p>
+            <p className="text-7xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{lastMonthHours.toFixed(1)}</p>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Horas este mes</p>
           </div>
-          <div className="flex items-center space-x-2 text-[10px] font-black text-emerald-500 uppercase">
+          <div className="flex items-center space-x-2 text-[10px] font-bold text-green-600 uppercase">
             <span>+{lastMonthFlights.length} Registros</span>
           </div>
         </div>
 
-        <div className="p-10 bg-white/[0.02] border border-white/[0.05] rounded-[3rem] space-y-8 hover:bg-white/[0.04] transition-colors">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Alcance Global</p>
+        <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal hover:shadow-lg transition-shadow">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Alcance Global</p>
           <div className="space-y-1">
-            <p className="text-7xl font-black text-white tracking-tighter">{airports.size}</p>
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Aeródromos</p>
+            <p className="text-7xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{airports.size}</p>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Aeródromos</p>
           </div>
-          <div className="flex items-center space-x-2 text-[10px] font-black text-zinc-500 uppercase">
-            <span className="text-white">{mostVisited}</span>
+          <div className="flex items-center space-x-2 text-[10px] font-bold text-zinc-400 uppercase">
+            <span className="text-zinc-900">{mostVisited}</span>
             <span>Principal Destino</span>
           </div>
         </div>
@@ -202,11 +202,11 @@ export default async function Dashboard() {
       <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
 
       {/* Detail Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricItem label="Promedio" value={`${avgFlightTime.toFixed(1)}H`} icon={<Zap className="w-3 h-3" />} />
-        <MetricItem label="Record" value={`${longestFlight.toFixed(1)}H`} icon={<Award className="w-3 h-3" />} />
-        <MetricItem label="Landings" value={totalLandings.toString()} icon={<Clock className="w-3 h-3" />} />
-        <MetricItem label="Fleet" value={aircraft.length.toString()} icon={<Compass className="w-3 h-3" />} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <MetricItem label="Promedio" value={`${avgFlightTime.toFixed(1)}H`} icon={<Zap className="w-4 h-4" />} />
+        <MetricItem label="Record" value={`${longestFlight.toFixed(1)}H`} icon={<Award className="w-4 h-4" />} />
+        <MetricItem label="Landings" value={totalLandings.toString()} icon={<Clock className="w-4 h-4" />} />
+        <MetricItem label="Fleet" value={aircraft.length.toString()} icon={<Compass className="w-4 h-4" />} />
       </div>
     </div>
   );
@@ -214,11 +214,11 @@ export default async function Dashboard() {
 
 function MetricItem({ label, value, icon }: any) {
   return (
-    <div className="p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/[0.03] flex flex-col items-center justify-center text-center space-y-3 hover:bg-white/[0.03] transition-colors">
-      <div className="text-zinc-600">{icon}</div>
+    <div className="p-8 rounded-[2rem] bg-white border border-zinc-200 shadow-sm flex flex-col items-center justify-center text-center space-y-3 hover:shadow-md transition-shadow">
+      <div className="text-zinc-900 bg-zinc-50 p-2 rounded-lg">{icon}</div>
       <div className="space-y-1">
-        <p className="text-2xl font-black text-white tracking-tight">{value}</p>
-        <p className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.3em]">{label}</p>
+        <p className="text-2xl font-bold font-space-grotesk text-zinc-900 tracking-tight">{value}</p>
+        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.3em]">{label}</p>
       </div>
     </div>
   );

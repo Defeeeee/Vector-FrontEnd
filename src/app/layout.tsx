@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+});
 
 export const metadata: Metadata = {
   title: "Vector | Digital Logbook",
@@ -16,14 +24,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="light">
       <body
         className={cn(
-          inter.className,
-          "min-h-screen bg-black text-white antialiased overflow-x-hidden"
+          inter.variable,
+          spaceGrotesk.variable,
+          "min-h-screen bg-white text-charcoal antialiased overflow-x-hidden font-sans"
         )}
       >
-        <div className="fixed inset-0 vector-gradient pointer-events-none" />
         <main className="relative flex min-h-screen flex-col items-center overflow-x-hidden">
           {children}
         </main>

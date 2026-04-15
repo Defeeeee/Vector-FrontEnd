@@ -86,11 +86,11 @@ export default function PCATracker({ flights }: PCATrackerProps) {
     <section className="space-y-10">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Requisitos PCA (61.620)</p>
-          <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Tracker de Licencia Comercial</h3>
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Requisitos PCA (61.620)</p>
+          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 tracking-tighter">Tracker de Licencia Comercial</h3>
         </div>
-        <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-          <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">En Progreso</p>
+        <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-full">
+          <p className="text-[8px] font-bold text-green-600 uppercase tracking-widest">En Progreso</p>
         </div>
       </div>
 
@@ -101,42 +101,42 @@ export default function PCATracker({ flights }: PCATrackerProps) {
           const isSubComplete = req.subTarget ? req.current >= req.subTarget : false;
 
           return (
-            <div key={i} className="p-8 bg-white/[0.02] border border-white/[0.05] rounded-[2.5rem] space-y-6 hover:bg-white/[0.04] transition-colors group">
+            <div key={i} className="p-8 bg-white border border-zinc-200 rounded-[2.5rem] space-y-6 shadow-sm hover:shadow-md transition-shadow group">
               <div className="flex items-start justify-between">
-                <div className="p-3 bg-white/[0.05] rounded-2xl text-zinc-400 group-hover:text-white transition-colors">
+                <div className="p-3 bg-zinc-50 rounded-2xl text-zinc-500 group-hover:text-zinc-900 transition-colors">
                   {req.icon}
                 </div>
                 {isComplete ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
                 ) : (
-                  <Circle className="w-5 h-5 text-zinc-800" />
+                  <Circle className="w-5 h-5 text-zinc-300" />
                 )}
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between items-end">
-                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{req.label}</p>
-                  <p className="text-sm font-black text-white italic">
-                    {req.current.toFixed(1)} <span className="text-[10px] text-zinc-600 not-italic uppercase">{req.unit}</span>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{req.label}</p>
+                  <p className="text-sm font-bold text-zinc-900">
+                    {req.current.toFixed(1)} <span className="text-[10px] text-zinc-500 uppercase">{req.unit}</span>
                   </p>
                 </div>
                 
                 {/* Progress Bar */}
-                <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
                     transition={{ duration: 1, delay: i * 0.1 }}
-                    className={`h-full rounded-full ${isComplete ? 'bg-emerald-500' : isSubComplete ? 'bg-amber-500' : 'bg-white'}`}
+                    className={`h-full rounded-full ${isComplete ? 'bg-green-500' : isSubComplete ? 'bg-amber-500' : 'bg-zinc-900'}`}
                   />
                 </div>
 
-                <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
-                  <span className={isComplete ? 'text-emerald-500' : 'text-zinc-600'}>
+                <div className="flex justify-between text-[8px] font-bold uppercase tracking-widest">
+                  <span className={isComplete ? 'text-green-600' : 'text-zinc-500'}>
                     Meta: {req.target}{req.unit}
                   </span>
                   {req.subTarget && (
-                    <span className={isSubComplete ? 'text-amber-500' : 'text-zinc-700'}>
+                    <span className={isSubComplete ? 'text-amber-600' : 'text-zinc-400'}>
                       Reducido: {req.subTarget}{req.unit}
                     </span>
                   )}

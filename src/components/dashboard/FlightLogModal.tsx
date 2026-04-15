@@ -23,7 +23,7 @@ export default function FlightLogModal({ isOpen, onClose, aircraft, initialData 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/90 backdrop-blur-xl cursor-pointer" 
+            className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm cursor-pointer" 
           />
 
           {/* Content */}
@@ -31,23 +31,23 @@ export default function FlightLogModal({ isOpen, onClose, aircraft, initialData 
             initial={{ scale: 0.9, y: 20, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 20, opacity: 0 }}
-            className="relative w-full max-w-4xl bg-black border border-white/10 rounded-[3rem] p-8 md:p-12 shadow-2xl space-y-10 my-auto z-10"
+            className="relative w-full max-w-4xl bg-white border border-zinc-200 rounded-[3rem] p-8 md:p-12 shadow-cal space-y-10 my-auto z-10"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center">
-                  <Plane className="w-6 h-6" />
+                <div className="w-12 h-12 bg-zinc-900 text-white rounded-xl flex items-center justify-center shadow-lg">
+                  <Plane className="w-6 h-6" strokeWidth={1.5} />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Finalizar Vuelo</h2>
+                  <h2 className="text-3xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900">Finalizar Vuelo</h2>
                   <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.2em]">Completa el registro de tu sesión</p>
                 </div>
               </div>
               <button 
                 onClick={onClose}
-                className="p-3 hover:bg-white/5 rounded-full transition-colors group"
+                className="p-3 hover:bg-zinc-100 border border-transparent hover:border-zinc-200 rounded-full transition-colors group"
               >
-                <X className="w-6 h-6 text-zinc-500 group-hover:text-white" />
+                <X className="w-6 h-6 text-zinc-500 group-hover:text-zinc-900" />
               </button>
             </div>
 

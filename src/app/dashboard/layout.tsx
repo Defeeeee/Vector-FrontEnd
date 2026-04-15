@@ -27,26 +27,30 @@ export default async function DashboardLayout({
   const profile = await getProfile();
 
   return (
-    <div className="flex flex-col min-h-screen bg-black w-full relative text-white antialiased">
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 vector-gradient pointer-events-none" />
+    <div className="flex flex-col min-h-screen bg-zinc-50 w-full relative text-zinc-900 antialiased">
+      {/* Dynamic Background Element */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] flex justify-center items-center z-0 overflow-hidden">
+        <div className="w-[1000px] h-[1000px] rounded-full border border-zinc-900" />
+        <div className="absolute w-[800px] h-[800px] rounded-full border border-zinc-900" />
+        <div className="absolute w-[600px] h-[600px] rounded-full border border-zinc-900" />
+      </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 glass px-6 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center space-x-3 group">
-          <div className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+          <div className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center shadow-lg transition-transform duration-500">
             <Compass className="w-5 h-5" strokeWidth={2} />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="text-xl font-black tracking-tighter uppercase">Vector</span>
-            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em]">Pilot Hub</span>
+            <span className="text-xl font-bold font-space-grotesk tracking-tighter uppercase">Vector</span>
+            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Pilot Hub</span>
           </div>
         </Link>
         
         <div className="flex items-center space-x-2">
           <form action={logout}>
-            <button className="p-3 hover:bg-white/5 rounded-2xl transition-all text-zinc-500 hover:text-white active:scale-90">
-              <LogOut className="w-5 h-5" strokeWidth={1.5} />
+            <button className="p-3 hover:bg-zinc-100 rounded-xl transition-all text-zinc-500 hover:text-zinc-900 active:scale-95 shadow-sm border border-transparent hover:border-zinc-200">
+              <LogOut className="w-4 h-4" strokeWidth={1.5} />
             </button>
           </form>
         </div>

@@ -1,51 +1,58 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --color-card: #0a0a0a;
-  --color-card-foreground: #ffffff;
-  --color-popover: #0a0a0a;
-  --color-popover-foreground: #ffffff;
-  --color-primary: #ffffff;
-  --color-primary-foreground: #000000;
-  --color-secondary: #141414;
-  --color-secondary-foreground: #ffffff;
-  --color-muted: #141414;
-  --color-muted-foreground: #71717a;
-  --color-accent: #ffffff;
-  --color-accent-foreground: #000000;
-  --color-border: #1a1a1a;
-  --color-input: #1a1a1a;
-  --color-ring: #ffffff;
+  --color-background: #ffffff;
+  --color-foreground: #242424;
   
-  --radius-lg: 1.5rem;
-  --radius-md: 1rem;
-  --radius-sm: 0.75rem;
+  --color-charcoal: #242424;
+  --color-midnight: #111111;
+  --color-mid-gray: #898989;
+  --color-border-gray: rgba(34, 42, 53, 0.08);
+  --color-link-blue: #0099ff;
+
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-pill: 9999px;
+
+  --shadow-cal: 0px 1px 5px -4px rgba(19, 19, 22, 0.7), 0px 0px 0px 1px rgba(34, 42, 53, 0.08), 0px 4px 8px 0px rgba(34, 42, 53, 0.05);
+  --shadow-cal-inset: rgba(0, 0, 0, 0.16) 0px 1px 1.9px 0px inset;
+  --shadow-cal-highlight: rgba(255, 255, 255, 0.15) 0px 2px 0px inset;
+  
+  --font-sans: var(--font-inter);
+  --font-space-grotesk: var(--font-space-grotesk);
 }
 
 @layer base {
   body {
-    @apply bg-black text-white antialiased selection:bg-white selection:text-black;
+    @apply bg-white text-charcoal antialiased selection:bg-charcoal selection:text-white;
     font-feature-settings: "ss01", "ss02", "cv01", "cv11";
-    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tighter;
+    line-height: 1.1;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-black/40 backdrop-blur-2xl border-b border-white/[0.03];
-  }
-  
-  .glass-card {
-    @apply bg-[#0a0a0a] border border-white/[0.04] shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  .shadow-cal {
+    box-shadow: var(--shadow-cal);
   }
 
-  .vector-gradient {
-    background: radial-gradient(circle at top center, rgba(255,255,255,0.05) 0%, transparent 70%);
+  .shadow-cal-inset {
+    box-shadow: var(--shadow-cal-inset);
   }
 
-  .ios-scroll {
-    -webkit-overflow-scrolling: touch;
+  .shadow-cal-highlight {
+    box-shadow: var(--shadow-cal-highlight);
+  }
+
+  .container-wide {
+    @apply max-w-[1200px] mx-auto px-6;
+  }
+
+  .section-padding {
+    @apply py-20 md:py-24;
   }
 }
