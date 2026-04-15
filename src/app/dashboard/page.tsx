@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile, FlightPack } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
+import PCATracker from "@/components/dashboard/PCATracker";
 import Link from "next/link";
 
 import { redirect } from "next/navigation";
@@ -191,6 +192,11 @@ export default async function Dashboard() {
 
       {/* Flight Hours Packs Widget */}
       <FlightPackWidget packs={packs} />
+
+      {/* PCA Tracker (only for PPA/Privado working towards PCA) */}
+      {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
+        <PCATracker flights={flights} />
+      )}
 
       {/* Analytics */}
       <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
