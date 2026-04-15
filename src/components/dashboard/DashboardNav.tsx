@@ -1,37 +1,77 @@
 "use client";
 
-import { LayoutDashboard, History, Settings } from "lucide-react";
+import { LayoutDashboard, History, Settings, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
-export default function DashboardNav() {
+export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
   const pathname = usePathname();
 
+  const navItems = [
+    { href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" strokeWidth={2} />, label: "Dashboard" },
+    { href: "/dashboard/history", icon: <History className="w-5 h-5" strokeWidth={2} />, label: "Bitácora" },
+    { href: "/dashboard/settings", icon: <Settings className="w-5 h-5" strokeWidth={2} />, label: "Hangar & Perfil" },
+  ];
+
+  if (isDesktop) {
+      return (
+          <nav className="flex flex-col space-y-2">
+              <Link href="/dashboard/log-flight" className="mb-6 bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] px-6 py-4 rounded-xl shadow-cal-highlight transition-all hover:opacity-90 flex items-center justify-between group">
+                 <span>Nuevo Vuelo</span>
+                 <div className="w-6 h-6 bg-white/20 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Plus className="w-4 h-4" />
+                 </div>
+              </Link>
+
+              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 px-4">Menu Principal</div>
+              {navItems.map((item) => {
+                  const active = pathname === item.href;
+                  return (
+                      <Link key={item.href} href={item.href} className="relative px-4 py-3 rounded-xl transition-all group overflow-hidden flex items-center space-x-3">
+                          {active && (
+                              <motion.div 
+                                  layoutId="sidebar-glow"
+                                  className="absolute inset-0 bg-zinc-100 border border-zinc-200"
+                                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                              />
+                          )}
+                          <div className={`relative z-10 flex items-center space-x-3 ${active ? "text-zinc-900" : "text-zinc-500 group-hover:text-zinc-900"}`}>
+                              {item.icon}
+                              <span className="text-xs font-bold uppercase tracking-widest">{item.label}</span>
+                          </div>
+                      </Link>
+                  )
+              })}
+          </nav>
+      )
+  }
+
   return (
-    <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center px-6 pointer-events-none">
-      <nav className="bg-white px-2 py-2 rounded-[2rem] flex items-center space-x-1 shadow-cal border border-border-gray pointer-events-auto">
-        <NavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={1.5} />} label="Stats" active={pathname === "/dashboard"} />
-        <NavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={1.5} />} label="Log" active={pathname === "/dashboard/history"} />
-        <NavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={1.5} />} label="Hangar" active={pathname === "/dashboard/settings"} />
-      </nav>
-    </div>
+    <nav className="bg-white/90 backdrop-blur-xl px-2 py-2 rounded-[2rem] flex items-center space-x-1 shadow-cal border border-zinc-200 pointer-events-auto">
+        <MobileNavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={2} />} label="Stats" active={pathname === "/dashboard"} />
+        <MobileNavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={2} />} label="Log" active={pathname === "/dashboard/history"} />
+        <Link href="/dashboard/log-flight" className="relative p-4 mx-1 -mt-8 bg-zinc-900 text-white rounded-full shadow-cal-highlight flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+            <Plus className="w-6 h-6" strokeWidth={2.5} />
+        </Link>
+        <MobileNavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={2} />} label="Hangar" active={pathname === "/dashboard/settings"} />
+    </nav>
   );
 }
 
-function NavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
+function MobileNavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
   return (
-    <Link href={href} className="relative px-6 py-3 rounded-[1.5rem] transition-all group overflow-hidden">
+    <Link href={href} className="relative px-5 py-3 rounded-[1.5rem] transition-all group overflow-hidden">
       {active && (
         <motion.div 
-          layoutId="nav-glow"
-          className="absolute inset-0 bg-charcoal"
+          layoutId="mobile-nav-glow"
+          className="absolute inset-0 bg-zinc-100"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
-      <div className={`relative z-10 flex items-center space-x-2 ${active ? "text-white" : "text-mid-gray group-hover:text-charcoal"}`}>
+      <div className={`relative z-10 flex flex-col items-center space-y-1 ${active ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-900"}`}>
         {icon}
-        <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest">{label}</span>
       </div>
     </Link>
   );

@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL;
+const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || "https://auth.flightlog.fdiaznem.com.ar";
 
 export async function login(formData: FormData) {
   const email = formData.get("email");

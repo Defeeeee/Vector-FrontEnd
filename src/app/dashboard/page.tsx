@@ -1,11 +1,10 @@
-import { TrendingUp, Calendar, MapPin, Award, Zap, Compass, History, Clock, Plus } from "lucide-react";
+import { TrendingUp, Calendar, MapPin, Award, Zap, Compass, History, Clock, Plus, Activity, Navigation2, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile, FlightPack } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import PCATracker from "@/components/dashboard/PCATracker";
 import Link from "next/link";
-
 import { redirect } from "next/navigation";
 
 async function getDashboardData() {
@@ -108,86 +107,107 @@ export default async function Dashboard() {
   const avgFlightTime = totalFlights > 0 ? totalHours / totalFlights : 0;
 
   return (
-    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
       {/* Dynamic Header */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-8">
-        <div className="space-y-4">
-          <div className="h-px w-12 bg-zinc-200" />
-          <h2 className="text-6xl font-space-grotesk font-bold tracking-tighter text-zinc-900 leading-none">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-4">
+        <div className="space-y-3">
+          <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.4em] flex items-center space-x-2">
+             <Activity className="w-3 h-3" />
+             <span>Centro de Operaciones</span>
+          </p>
+          <h2 className="text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
-          <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.4em]">
-            Digital Aviator <span className="mx-2 text-zinc-300">/</span> {profile?.license_type || "No Lic."}
-          </p>
         </div>
-        
-        <Link href="/dashboard/log-flight" className="bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] px-10 py-5 rounded-xl shadow-cal-highlight transition-all hover:bg-zinc-800 flex items-center space-x-3">
-          <span>Registrar Vuelo</span>
-          <Plus className="w-4 h-4" />
-        </Link>
       </section>
 
-      {/* Live Session Widget (If Active) */}
-      {session.active && (
-        <section className="animate-in zoom-in-95 duration-500">
-          <div className="p-1 bg-zinc-100 rounded-[2.5rem]">
-            <div className="bg-zinc-900 rounded-[2.4rem] p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 shadow-cal">
-              <div className="flex items-center space-x-6">
-                <div className="w-16 h-16 bg-white text-zinc-900 rounded-xl flex items-center justify-center animate-pulse shadow-sm">
+      {/* Bento Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        
+        {/* Live Session - Spans full width if active */}
+        {session.active && (
+          <div className="md:col-span-4 lg:col-span-6 animate-in zoom-in-95 duration-500">
+            <div className="bg-green-500 text-white rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 shadow-cal relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)] pointer-events-none" />
+              <div className="flex items-center space-x-6 relative z-10">
+                <div className="w-16 h-16 bg-white text-green-600 rounded-2xl flex items-center justify-center animate-pulse shadow-lg">
                   <Compass className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
-                  <h3 className="text-3xl font-bold font-space-grotesk text-white tracking-tighter">
+                  <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
+                  <h3 className="text-3xl font-bold font-space-grotesk tracking-tighter">
                     {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
                   </h3>
                 </div>
               </div>
-              <div className="flex flex-col md:items-end leading-none">
-                <span className="text-5xl font-bold font-space-grotesk text-white tracking-tighter">LIVE</span>
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em] mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
+              <div className="flex flex-col md:items-end leading-none relative z-10">
+                <span className="text-5xl font-bold font-space-grotesk tracking-tighter">LIVE</span>
+                <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em] mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
               </div>
             </div>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* Hero Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal hover:shadow-lg transition-shadow">
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
-          <div className="space-y-1">
-            <p className="text-7xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{totalHours.toFixed(1)}</p>
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Horas de Vuelo</p>
+        {/* Main Experience Card - High Contrast */}
+        <div className="md:col-span-4 lg:col-span-3 p-10 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px] group hover:shadow-cal-highlight transition-all">
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110" />
+          <div className="relative z-10">
+              <div className="w-12 h-12 bg-white/10 text-white rounded-xl flex items-center justify-center mb-6 shadow-sm border border-white/10">
+                 <Award className="w-6 h-6" />
+              </div>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em]">Experiencia Total</p>
+              <div className="flex items-baseline space-x-2 mt-2">
+                <p className="text-8xl font-space-grotesk font-bold text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
+                <p className="text-lg font-bold text-zinc-500 uppercase tracking-widest">Hs</p>
+              </div>
           </div>
-          <div className="flex items-center space-x-2 text-[10px] font-bold text-zinc-400 uppercase">
-            <span className="text-zinc-900">{totalFlights}</span>
-            <span>Vuelos Completados</span>
+          <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-6">
+             <div className="flex flex-col">
+                <span className="text-2xl font-bold text-white">{totalFlights}</span>
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Vuelos</span>
+             </div>
+             <Link href="/dashboard/history" className="w-10 h-10 bg-white text-zinc-900 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                <Navigation2 className="w-4 h-4 rotate-45" />
+             </Link>
           </div>
         </div>
 
-        <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal hover:shadow-lg transition-shadow">
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Actividad Reciente</p>
-          <div className="space-y-1">
-            <p className="text-7xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{lastMonthHours.toFixed(1)}</p>
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Horas este mes</p>
+        {/* Recent Activity */}
+        <div className="md:col-span-2 lg:col-span-2 p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal flex flex-col justify-between min-h-[300px] hover:shadow-md transition-shadow">
+          <div>
+              <div className="w-10 h-10 bg-zinc-50 text-zinc-900 rounded-xl flex items-center justify-center mb-6 border border-zinc-200 shadow-sm">
+                 <TrendingUp className="w-5 h-5" />
+              </div>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Últimos 30 Días</p>
+              <p className="text-6xl font-space-grotesk font-bold text-zinc-900 tracking-tighter mt-2">{lastMonthHours.toFixed(1)}</p>
           </div>
-          <div className="flex items-center space-x-2 text-[10px] font-bold text-green-600 uppercase">
-            <span>+{lastMonthFlights.length} Registros</span>
+          <div className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100 flex items-center space-x-3">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">+{lastMonthFlights.length} Registros Nuevos</span>
           </div>
         </div>
 
-        <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] space-y-8 shadow-cal hover:shadow-lg transition-shadow">
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Alcance Global</p>
-          <div className="space-y-1">
-            <p className="text-7xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{airports.size}</p>
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Aeródromos</p>
-          </div>
-          <div className="flex items-center space-x-2 text-[10px] font-bold text-zinc-400 uppercase">
-            <span className="text-zinc-900">{mostVisited}</span>
-            <span>Principal Destino</span>
-          </div>
+        {/* Mini Detail Metrics - Stacked */}
+        <div className="md:col-span-2 lg:col-span-1 flex flex-col gap-6">
+           <div className="flex-1 bg-white border border-zinc-200 rounded-[2.5rem] shadow-cal p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md transition-shadow">
+               <div className="p-2 bg-zinc-50 rounded-xl text-zinc-900 border border-zinc-100"><MapPin className="w-4 h-4" /></div>
+               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{airports.size}</p>
+               <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Aeródromos</p>
+           </div>
+           <div className="flex-1 bg-white border border-zinc-200 rounded-[2.5rem] shadow-cal p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md transition-shadow">
+               <div className="p-2 bg-zinc-50 rounded-xl text-zinc-900 border border-zinc-100"><Clock className="w-4 h-4" /></div>
+               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 tracking-tighter">{longestFlight.toFixed(1)}h</p>
+               <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Récord</p>
+           </div>
         </div>
+      </div>
+
+      {/* Detail Metrics Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <MetricItem label="Promedio de Vuelo" value={`${avgFlightTime.toFixed(1)}h`} icon={<Zap className="w-4 h-4" />} />
+        <MetricItem label="Total Aterrizajes" value={totalLandings.toString()} icon={<Compass className="w-4 h-4" />} />
+        <MetricItem label="Destino Frecuente" value={mostVisited} icon={<MapPin className="w-4 h-4" />} />
+        <MetricItem label="Aeronaves Voladas" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
       </div>
 
       {/* Flight Hours Packs Widget */}
@@ -201,24 +221,19 @@ export default async function Dashboard() {
       {/* Analytics */}
       <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
 
-      {/* Detail Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <MetricItem label="Promedio" value={`${avgFlightTime.toFixed(1)}H`} icon={<Zap className="w-4 h-4" />} />
-        <MetricItem label="Record" value={`${longestFlight.toFixed(1)}H`} icon={<Award className="w-4 h-4" />} />
-        <MetricItem label="Landings" value={totalLandings.toString()} icon={<Clock className="w-4 h-4" />} />
-        <MetricItem label="Fleet" value={aircraft.length.toString()} icon={<Compass className="w-4 h-4" />} />
-      </div>
     </div>
   );
 }
 
 function MetricItem({ label, value, icon }: any) {
   return (
-    <div className="p-8 rounded-[2rem] bg-white border border-zinc-200 shadow-sm flex flex-col items-center justify-center text-center space-y-3 hover:shadow-md transition-shadow">
-      <div className="text-zinc-900 bg-zinc-50 p-2 rounded-lg">{icon}</div>
-      <div className="space-y-1">
-        <p className="text-2xl font-bold font-space-grotesk text-zinc-900 tracking-tight">{value}</p>
-        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.3em]">{label}</p>
+    <div className="px-8 py-6 rounded-[2rem] bg-white border border-zinc-200 shadow-sm flex items-center space-x-4 hover:shadow-md transition-all group">
+      <div className="text-zinc-500 bg-zinc-50 p-3 rounded-xl border border-zinc-100 group-hover:text-zinc-900 group-hover:border-zinc-300 transition-colors">
+        {icon}
+      </div>
+      <div className="flex flex-col">
+        <p className="text-2xl font-bold font-space-grotesk text-zinc-900 tracking-tight leading-none">{value}</p>
+        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em] mt-1">{label}</p>
       </div>
     </div>
   );

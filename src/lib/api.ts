@@ -1,7 +1,7 @@
 import { getSessionToken } from "@/actions/auth";
 import { redirect } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const token = await getSessionToken();
