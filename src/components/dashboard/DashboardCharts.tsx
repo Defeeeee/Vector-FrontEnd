@@ -43,6 +43,15 @@ export default function DashboardCharts({ monthlyData, aircraftData }: Dashboard
   const tooltipBorder = isDark ? "#27272a" : "#e4e4e7";
   const tooltipTextColor = isDark ? "#ffffff" : "#18181b";
 
+  if (!mounted) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full mt-12">
+        <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] h-[450px]" />
+        <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] h-[450px]" />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full mt-12">
       {/* Bar Chart: Flight Hours by Month */}

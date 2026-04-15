@@ -6,6 +6,9 @@ import { useTheme } from "next-themes";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => setMounted(true), []);
 
   return (
     <button
@@ -18,7 +21,7 @@ export function ThemeToggle() {
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </div>
         <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors uppercase tracking-widest">
-          {theme === "dark" ? "Modo Claro" : "Modo Oscuro"}
+          {!mounted ? "Modo Claro" : (theme === "dark" ? "Modo Claro" : "Modo Oscuro")}
         </span>
       </div>
     </button>
