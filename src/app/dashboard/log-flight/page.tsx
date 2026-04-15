@@ -31,14 +31,14 @@ export default async function LogFlightPage() {
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full max-w-4xl mx-auto pb-20 px-2 pt-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div className="space-y-4">
-          <div className="h-px w-12 bg-zinc-200" />
+          <div className="h-px w-12 bg-zinc-200 dark:bg-white/20" />
           <div className="flex items-center space-x-4">
-            <Link href="/dashboard" className="p-2 hover:bg-zinc-100 rounded-full transition-colors group">
-              <ChevronLeft className="w-6 h-6 text-zinc-500 group-hover:text-zinc-900" />
+            <Link href="/dashboard" className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full transition-colors group">
+              <ChevronLeft className="w-6 h-6 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
             </Link>
-            <h2 className="text-6xl font-space-grotesk font-bold tracking-tighter text-zinc-900 leading-none">Registrar</h2>
+            <h2 className="text-6xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">Registrar</h2>
           </div>
-          <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.4em] ml-14">Operaciones de Vuelo</p>
+          <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.4em] ml-14">Operaciones de Vuelo</p>
         </div>
       </div>
 
@@ -50,9 +50,9 @@ export default async function LogFlightPage() {
         <div className="lg:col-span-1 order-1 lg:order-2 space-y-8">
           <LiveSessionController aircraft={aircraft} activeSession={session} />
           
-          <div className="p-10 bg-white border border-zinc-200 rounded-[2.5rem] shadow-sm space-y-4">
-            <h4 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Ayuda Operativa</h4>
-            <p className="text-zinc-500 text-xs font-bold leading-relaxed uppercase tracking-widest">
+          <div className="p-10 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none space-y-4">
+            <h4 className="text-[10px] font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Ayuda Operativa</h4>
+            <p className="text-zinc-500 dark:text-zinc-400 text-xs font-bold leading-relaxed uppercase tracking-widest">
               Usa el cronómetro para un registro preciso. Al finalizar, los tiempos se sincronizarán con tu bitácora.
             </p>
           </div>
