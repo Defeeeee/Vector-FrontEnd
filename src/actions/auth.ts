@@ -37,7 +37,7 @@ export async function login(formData: FormData) {
     // Store JWT in HttpOnly cookie
     (await cookies()).set("session_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: 60 * 60 * 24, // 1 day (standard session)
       path: "/",
@@ -46,7 +46,7 @@ export async function login(formData: FormData) {
     if (data.refresh_token) {
         (await cookies()).set("refresh_token", data.refresh_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: true,
             sameSite: "lax",
             maxAge: 60 * 60 * 24 * 30, // 30 days
             path: "/",
@@ -91,7 +91,7 @@ export async function register(formData: FormData) {
     if (token) {
       (await cookies()).set("session_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
         maxAge: 60 * 60 * 24,
         path: "/",
@@ -101,7 +101,7 @@ export async function register(formData: FormData) {
     if (data.refresh_token) {
       (await cookies()).set("refresh_token", data.refresh_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 30,
         path: "/",
@@ -210,18 +210,14 @@ export async function getSessionToken() {
 export async function setSession(token: string, refresh_token?: string, maxAge: number = 60 * 60 * 24) {
   const cookieStore = await cookies();
   
-  // Try to get the root domain for cookies
-  let domain = undefined;
-  if (process.env.NODE_ENV === "production") {
-    // We want .fdiaznem.com.ar so it works on all subdomains
-    domain = ".fdiaznem.com.ar";
-  }
+  // In production, we use the root domain to ensure availability across subdomains
+  const domain = process.env.NODE_ENV === "production" ? ".fdiaznem.com.ar" : undefined;
   
   console.log(`Setting session cookie. Domain=${domain} maxAge=${maxAge}`);
 
   cookieStore.set("session_token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true, // Required for .domain cookies in many browsers
     sameSite: "lax",
     maxAge: maxAge,
     path: "/",
@@ -231,11 +227,11 @@ export async function setSession(token: string, refresh_token?: string, maxAge: 
   if (refresh_token) {
     cookieStore.set("refresh_token", refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 30, // 30 days
       path: "/",
-      domain,
+      domain: domain,
     });
   }
 }

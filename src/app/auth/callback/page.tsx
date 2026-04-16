@@ -33,8 +33,14 @@ export default function AuthCallback() {
           console.log("AuthCallback: Token detected, updating session...");
           localStorage.setItem("session_token", accessToken);
           await setSession(accessToken, refreshToken || undefined);
-          console.log("AuthCallback: Success, hard redirecting to /dashboard");
-          window.location.href = "/dashboard";
+          
+          console.log("AuthCallback: Session set, waiting for propagation...");
+          // Small delay to ensure cookies are committed before redirect
+          setTimeout(() => {
+              console.log("AuthCallback: Success, hard redirecting to /dashboard");
+              window.location.href = "/dashboard";
+          }, 500);
+          
         } else if (query.get("error")) {
           console.error("AuthCallback: Supabase error:", query.get("error"), query.get("error_description"));
           setError(query.get("error_description") || "Authentication failed");
