@@ -49,9 +49,8 @@ export default async function DashboardLayout({
         </div>
 
         <div className="p-6 border-t border-zinc-100 dark:border-white/10 space-y-4">
-            <div className="flex justify-center">
-                <ThemeToggle />
-            </div>
+            <ThemeToggle />
+            
             <div className="bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-4 border border-zinc-200 dark:border-white/10 flex items-center space-x-3 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-sm uppercase">
                     {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
@@ -79,7 +78,6 @@ export default async function DashboardLayout({
           <span className="text-lg font-bold font-space-grotesk tracking-tighter uppercase dark:text-white">Vector</span>
         </Link>
         <div className="flex items-center space-x-2">
-            <div className="scale-75 origin-right"><ThemeToggle /></div>
             <form action={logout}>
                 <button className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500">
                 <LogOut className="w-4 h-4" strokeWidth={2} />
@@ -90,11 +88,14 @@ export default async function DashboardLayout({
 
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-         <DashboardNav isDesktop={false} />
+         <div className="flex flex-col items-center space-y-4 w-full max-w-[400px]">
+            <div className="w-48 pointer-events-auto"><ThemeToggle /></div>
+            <DashboardNav isDesktop={false} />
+         </div>
       </div>
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar flex justify-center">
+      <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar flex justify-center transition-colors">
         <div className="w-full max-w-5xl">
           {children}
         </div>
