@@ -122,11 +122,11 @@ export default async function Dashboard() {
       </section>
 
       {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 lg:h-[350px]">
         
         {/* Live Session - Spans full width if active */}
         {session.active && (
-          <div className="md:col-span-4 lg:col-span-6 animate-in zoom-in-95 duration-500">
+          <div className="md:col-span-4 lg:col-span-6 animate-in zoom-in-95 duration-500 mb-2">
             <div className="bg-green-500 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 lg:p-12 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 shadow-cal relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)] pointer-events-none" />
               <div className="flex items-center space-x-4 md:space-x-6 relative z-10">
@@ -149,7 +149,7 @@ export default async function Dashboard() {
         )}
 
         {/* Main Experience Card - High Contrast */}
-        <div className="md:col-span-4 lg:col-span-3 p-6 md:p-10 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[250px] md:min-h-[300px] group transition-all">
+        <div className="md:col-span-4 lg:col-span-3 p-6 md:p-10 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between group transition-all h-full">
           <div className="absolute top-0 right-0 w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-white/5 dark:bg-white/5 rounded-full blur-3xl -mr-10 md:-mr-20 -mt-10 md:-mt-20 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="relative z-10">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 dark:bg-white/10 text-white dark:text-white rounded-lg md:rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm border border-white/10 dark:border-white/5">
@@ -173,7 +173,7 @@ export default async function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="md:col-span-2 lg:col-span-2 p-6 md:p-10 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between min-h-[250px] md:min-h-[300px] hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all group">
+        <div className="md:col-span-2 lg:col-span-2 p-6 md:p-10 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all group h-full">
           <div>
               <div className="w-10 h-10 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-lg md:rounded-xl flex items-center justify-center mb-4 md:mb-6 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
                  <TrendingUp className="w-5 h-5" />
@@ -188,15 +188,15 @@ export default async function Dashboard() {
         </div>
 
         {/* Mini Detail Metrics - Stacked */}
-        <div className="md:col-span-2 lg:col-span-1 grid grid-cols-2 md:flex md:flex-col gap-4 md:gap-6">
-           <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
+        <div className="md:col-span-2 lg:col-span-1 grid grid-cols-2 md:flex md:flex-col gap-4 md:gap-6 h-full">
+           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all min-h-[140px] md:min-h-0">
                <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><MapPin className="w-4 h-4" /></div>
-               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{airports.size}</p>
+               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{airports.size}</p>
                <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Aeródromos</p>
            </div>
-           <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
+           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all min-h-[140px] md:min-h-0">
                <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><Clock className="w-4 h-4" /></div>
-               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{longestFlight.toFixed(1)}h</p>
+               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{longestFlight.toFixed(1)}h</p>
                <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Récord</p>
            </div>
         </div>

@@ -49,7 +49,9 @@ export default async function DashboardLayout({
         </div>
 
         <div className="p-6 border-t border-zinc-100 dark:border-white/10 space-y-4">
-            <ThemeToggle />
+            <div className="flex justify-center">
+                <ThemeToggle />
+            </div>
             <div className="bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-4 border border-zinc-200 dark:border-white/10 flex items-center space-x-3 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-sm uppercase">
                     {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
