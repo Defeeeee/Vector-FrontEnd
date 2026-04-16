@@ -11,7 +11,7 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
   const navItems = [
     { href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" strokeWidth={2} />, label: "Dashboard" },
     { href: "/dashboard/history", icon: <History className="w-5 h-5" strokeWidth={2} />, label: "Bitácora" },
-    { href: "/dashboard/settings", icon: <Settings className="w-5 h-5" strokeWidth={2} />, label: "Hangar & Perfil" },
+    { href: "/dashboard/settings", icon: <Settings className="w-5 h-5" strokeWidth={2} />, label: "Hangar" },
   ];
 
   if (isDesktop) {
@@ -22,7 +22,7 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
                  <span>Nuevo Vuelo</span>
               </Link>
 
-              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 px-4">Menu Principal</div>
+              <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2 px-4">Menu Principal</div>
               {navItems.map((item) => {
                   const active = pathname === item.href;
                   return (
@@ -46,30 +46,31 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
   }
 
   return (
-    <nav className="bg-white/90 backdrop-blur-xl px-2 py-2 rounded-[2rem] flex items-center space-x-1 shadow-cal border border-zinc-200 pointer-events-auto">
+    <nav className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl px-2 py-2 rounded-[2.5rem] flex items-center justify-around shadow-cal dark:shadow-none border border-zinc-200 dark:border-white/10 pointer-events-auto w-full max-w-[400px]">
         <MobileNavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={2} />} label="Stats" active={pathname === "/dashboard"} />
         <MobileNavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={2} />} label="Log" active={pathname === "/dashboard/history"} />
-        <Link href="/dashboard/log-flight" className="relative p-4 mx-1 -mt-8 bg-zinc-900 text-white rounded-full shadow-cal-highlight flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
-            <Plus className="w-6 h-6" strokeWidth={2.5} />
+        <Link href="/dashboard/log-flight" className="relative p-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 z-20 -translate-y-2 border-4 border-zinc-50 dark:border-black">
+            <Plus className="w-6 h-6" strokeWidth={3} />
         </Link>
         <MobileNavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={2} />} label="Hangar" active={pathname === "/dashboard/settings"} />
+        <div className="w-12 h-1 {/* Spacer for visual balance if needed */}" />
     </nav>
   );
 }
 
 function MobileNavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
   return (
-    <Link href={href} className="relative px-5 py-3 rounded-[1.5rem] transition-all group overflow-hidden">
+    <Link href={href} className="relative px-4 py-2 rounded-2xl transition-all group overflow-hidden">
       {active && (
         <motion.div 
           layoutId="mobile-nav-glow"
-          className="absolute inset-0 bg-zinc-100"
+          className="absolute inset-0 bg-zinc-100 dark:bg-white/10"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
-      <div className={`relative z-10 flex flex-col items-center space-y-1 ${active ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-900"}`}>
+      <div className={`relative z-10 flex flex-col items-center space-y-1 ${active ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white"}`}>
         {icon}
-        <span className="text-[9px] font-bold uppercase tracking-widest">{label}</span>
+        <span className="text-[8px] font-bold uppercase tracking-widest">{label}</span>
       </div>
     </Link>
   );

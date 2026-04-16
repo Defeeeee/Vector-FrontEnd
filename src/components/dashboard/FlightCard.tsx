@@ -113,9 +113,9 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
                   <span className="text-3xl md:text-4xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{flight.duration.toFixed(1)}<span className="text-sm text-zinc-400 dark:text-zinc-600 ml-1">H</span></span>
                   <span className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] mt-1">Block Time</span>
                 </div>
-                <div className="flex items-center space-x-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="p-2 md:p-3 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-full transition-all"><Edit2 className="w-4 h-4" /></button>
-                  <button onClick={handleDelete} className="p-2 md:p-3 hover:bg-red-50 dark:hover:bg-red-500/10 text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 rounded-full transition-all"><Trash2 className="w-4 h-4" /></button>
+                <div className="flex items-center space-x-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                  <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="p-2 md:p-3 bg-zinc-100 dark:bg-white/10 md:bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-full transition-all"><Edit2 className="w-4 h-4" /></button>
+                  <button onClick={handleDelete} className="p-2 md:p-3 bg-zinc-100 dark:bg-white/10 md:bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 rounded-full transition-all"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             </div>

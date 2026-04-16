@@ -55,13 +55,12 @@ export default function RegisterPage() {
       <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-64 -mt-64 pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-32 -mb-32 pointer-events-none" />
 
-      {/* Top Bar (Back & Theme) */}
-      <div className="absolute top-6 md:top-8 left-0 w-full px-4 md:px-8 flex justify-between items-center z-20">
-        <Link href="/" className="flex items-center space-x-2 text-[10px] md:text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest bg-white/50 dark:bg-white/5 backdrop-blur-sm px-3 py-2 rounded-full border border-zinc-200 dark:border-white/10 md:bg-transparent md:backdrop-blur-none md:p-0 md:border-none">
-            <ChevronLeft className="w-4 h-4" />
-            <span>Volver</span>
+      {/* Minimal Top Bar */}
+      <div className="absolute top-6 left-0 w-full px-6 flex justify-between items-center z-20">
+        <Link href="/" className="p-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-full shadow-sm hover:bg-zinc-50 dark:hover:bg-white/5 transition-all group">
+            <ChevronLeft className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
         </Link>
-        <div className="w-32 md:w-48 scale-90 md:scale-100 origin-right"><ThemeToggle /></div>
+        <div className="w-40 scale-90 origin-right"><ThemeToggle /></div>
       </div>
 
       {/* Content Area */}

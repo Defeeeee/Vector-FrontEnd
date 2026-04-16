@@ -92,8 +92,10 @@ export default async function DashboardLayout({
       </div>
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 pt-24 lg:pt-8 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar">
-        {children}
+      <main className="relative z-10 flex-1 w-full p-4 md:p-10 pt-24 lg:pt-12 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar">
+        <div className="max-w-5xl mx-auto lg:mx-0">
+          {children}
+        </div>
       </main>
 
       {/* Onboarding Logic */}
