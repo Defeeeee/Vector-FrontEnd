@@ -5,6 +5,7 @@ import { Lock, Mail, User, ArrowRight, Loader2, Compass, ChevronLeft } from "luc
 import { register } from "@/actions/auth";
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
@@ -25,23 +26,23 @@ export default function RegisterPage() {
 
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10 text-center space-y-8">
+      <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10 text-center space-y-8 bg-zinc-50 dark:bg-black transition-colors duration-300">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-20 h-20 bg-zinc-900 text-white rounded-full flex items-center justify-center shadow-lg"
+          className="w-20 h-20 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2rem] flex items-center justify-center shadow-lg"
         >
           <Mail className="w-10 h-10" />
         </motion.div>
         
         <div className="space-y-4">
-          <h1 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900">Verifica tu Email</h1>
-          <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
+          <h1 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900 dark:text-white">Verifica tu Email</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
             Hemos enviado un enlace de confirmación a tu correo electrónico. Por favor, verifícalo para activar tu cuenta Vector.
           </p>
         </div>
 
-        <Link href="/" className="bg-white text-zinc-900 border border-zinc-200 font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-full shadow-sm transition-all hover:bg-zinc-50 active:scale-95">
+        <Link href="/" className="bg-white dark:bg-white/[0.02] text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/10 font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-[2rem] shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:scale-95">
           Volver al Inicio
         </Link>
       </div>
@@ -49,125 +50,148 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10">
-      <div className="w-full flex items-center justify-between mb-12">
-        <Link href="/" className="p-3 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-full shadow-sm transition-colors group">
-          <ChevronLeft className="w-5 h-5 text-zinc-500 group-hover:text-zinc-900" />
+    <div className="flex min-h-screen w-full bg-zinc-50 dark:bg-black relative overflow-hidden transition-colors duration-300">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-64 -mt-64 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-32 -mb-32 pointer-events-none" />
+
+      {/* Top Bar (Back & Theme) */}
+      <div className="absolute top-8 left-0 w-full px-8 flex justify-between items-center z-20">
+        <Link href="/" className="flex items-center space-x-2 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
+            <ChevronLeft className="w-4 h-4" />
+            <span>Volver</span>
         </Link>
+        <div className="w-48"><ThemeToggle /></div>
       </div>
 
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center space-y-2 mb-12"
-      >
-        <div className="w-16 h-16 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-6">
-          <Compass className="w-8 h-8" strokeWidth={1.5} />
-        </div>
-        <h1 className="text-4xl font-space-grotesk font-bold tracking-tighter uppercase tracking-[0.1em] text-zinc-900">Nueva Cuenta</h1>
-        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Únete a la red Vector</p>
-      </motion.div>
+      {/* Content Area */}
+      <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto px-6 py-24 relative z-10">
+        {/* Branding */}
+        <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col items-center space-y-4 mb-10 text-center"
+        >
+            <div className="w-12 h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl flex items-center justify-center shadow-lg">
+                <Compass className="w-6 h-6" strokeWidth={1.5} />
+            </div>
+            <div className="space-y-1">
+                <h1 className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Crear Cuenta</h1>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Únete a 45,000+ pilotos</p>
+            </div>
+        </motion.div>
 
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full space-y-8 bg-white border border-zinc-200 p-8 md:p-10 rounded-[2.5rem] shadow-cal"
-      >
-        <form action={handleSubmit} className="space-y-4">
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600 text-xs font-bold text-center uppercase tracking-wider"
-            >
-              {error}
-            </motion.div>
-          )}
+        {/* Register Card */}
+        <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="w-full p-10 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none bg-white dark:bg-[#111111] space-y-10 transition-all hover:shadow-lg dark:hover:bg-[#151515]"
+        >
+            <form action={handleSubmit} className="space-y-6">
+                {error && (
+                    <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl p-4 text-red-600 dark:text-red-500 text-xs font-bold text-center uppercase tracking-wider shadow-sm"
+                    >
+                    {error}
+                    </motion.div>
+                )}
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Nombre</label>
-                <div className="relative">
-                  <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-                  <input 
-                    name="first_name"
-                    type="text" 
-                    placeholder="Julian" 
-                    required
-                    className="w-full bg-transparent border border-zinc-200 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-zinc-400 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-400 uppercase text-zinc-900"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 text-left group">
+                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">First Name</label>
+                        <div className="relative">
+                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                            <input 
+                                name="first_name"
+                                type="text" 
+                                placeholder="Julian" 
+                                required
+                                className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2 text-left group">
+                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Last Name</label>
+                        <div className="relative">
+                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                            <input 
+                                name="last_name"
+                                type="text" 
+                                placeholder="Rossi" 
+                                required
+                                className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                            />
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Apellido</label>
-                <div className="relative">
-                  <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-                  <input 
-                    name="last_name"
-                    type="text" 
-                    placeholder="Rossi" 
-                    required
-                    className="w-full bg-transparent border border-zinc-200 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-zinc-400 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-400 uppercase text-zinc-900"
-                  />
+
+                <div className="space-y-2 text-left group">
+                    <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email Address</label>
+                    <div className="relative">
+                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input 
+                            name="email"
+                            type="email" 
+                            placeholder="name@airline.com" 
+                            required
+                            className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                        />
+                    </div>
                 </div>
-              </div>
-            </div>
+                
+                <div className="space-y-2 text-left group">
+                    <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Password</label>
+                    <div className="relative">
+                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input 
+                            name="password"
+                            type="password" 
+                            placeholder="••••••••" 
+                            required
+                            className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                        />
+                    </div>
+                </div>
 
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-                <input 
-                  name="email"
-                  type="email" 
-                  placeholder="name@airline.com" 
-                  required
-                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-zinc-400 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-400 uppercase text-zinc-900"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Contraseña</label>
-              <div className="relative">
-                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-                <input 
-                  name="password"
-                  type="password" 
-                  placeholder="••••••••" 
-                  required
-                  className="w-full bg-transparent border border-zinc-200 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-zinc-400 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-400 uppercase text-zinc-900"
-                />
-              </div>
-            </div>
-          </div>
+                <div className="pt-4">
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={isPending}
+                        className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-cal-highlight dark:shadow-none transition-all disabled:opacity-50"
+                    >
+                        {isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                        ) : (
+                        <span>Iniciar Prueba Gratuita</span>
+                        )}
+                    </motion.button>
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center mt-6 px-4 leading-relaxed font-bold">
+                        Al continuar, aceptas nuestros <span className="underline decoration-zinc-200 dark:decoration-zinc-700 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">Términos de Servicio</span> y <span className="underline decoration-zinc-200 dark:decoration-zinc-700 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">Política de Privacidad</span>.
+                    </p>
+                </div>
+            </form>
 
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            disabled={isPending}
-            className="w-full bg-zinc-900 text-white font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-cal-highlight transition-all disabled:opacity-50 mt-4"
-          >
-            {isPending ? (
-              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-            ) : (
-              <span>Crear Cuenta</span>
-            )}
-          </motion.button>
-        </form>
+            <div className="flex flex-col items-center space-y-6 pt-6 border-t border-zinc-200 dark:border-white/10 transition-colors">
+                <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest">
+                    <span className="text-zinc-500 dark:text-zinc-400">¿Ya tienes una cuenta?</span>
+                    <Link href="/login" className="text-zinc-900 dark:text-white hover:opacity-70 transition-opacity border-b border-zinc-200 dark:border-white/20 pb-0.5">
+                        Inicia Sesión
+                    </Link>
+                </div>
+            </div>
+        </motion.div>
 
-        <div className="flex flex-col items-center pt-4 border-t border-zinc-100">
-          <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest">
-            <span className="text-zinc-500">¿Ya tienes cuenta?</span>
-            <Link href="/login" className="text-zinc-900 hover:text-zinc-600 transition-colors border-b border-zinc-200 pb-0.5">
-              Ingresa
-            </Link>
-          </div>
+        {/* Version Tag */}
+        <div className="mt-12 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.5em]">
+            Vector Aviation v1.0.0
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
