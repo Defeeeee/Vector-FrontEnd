@@ -92,8 +92,8 @@ export default async function DashboardLayout({
       </div>
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 w-full p-4 md:p-10 pt-24 lg:pt-12 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar">
-        <div className="max-w-5xl mx-auto lg:mx-0">
+      <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar flex justify-center">
+        <div className="w-full max-w-5xl">
           {children}
         </div>
       </main>

@@ -46,21 +46,28 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
   }
 
   return (
-    <nav className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl px-2 py-2 rounded-[2.5rem] flex items-center justify-around shadow-cal dark:shadow-none border border-zinc-200 dark:border-white/10 pointer-events-auto w-full max-w-[400px]">
-        <MobileNavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={2} />} label="Stats" active={pathname === "/dashboard"} />
-        <MobileNavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={2} />} label="Log" active={pathname === "/dashboard/history"} />
-        <Link href="/dashboard/log-flight" className="relative p-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 z-20 -translate-y-2 border-4 border-zinc-50 dark:border-black">
+    <div className="flex items-center space-x-3 pointer-events-auto">
+        {/* Navigation Bubble */}
+        <nav className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl px-2 py-2 rounded-full flex items-center shadow-cal dark:shadow-none border border-zinc-200 dark:border-white/10 transition-colors duration-300">
+            <MobileNavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={2} />} label="Stats" active={pathname === "/dashboard"} />
+            <MobileNavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={2} />} label="Log" active={pathname === "/dashboard/history"} />
+            <MobileNavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={2} />} label="Hangar" active={pathname === "/dashboard/settings"} />
+        </nav>
+
+        {/* Action Bubble (Accent) */}
+        <Link 
+            href="/dashboard/log-flight" 
+            className="p-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 border border-zinc-900 dark:border-white"
+        >
             <Plus className="w-6 h-6" strokeWidth={3} />
         </Link>
-        <MobileNavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={2} />} label="Hangar" active={pathname === "/dashboard/settings"} />
-        <div className="w-12 h-1 {/* Spacer for visual balance if needed */}" />
-    </nav>
+    </div>
   );
 }
 
 function MobileNavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
   return (
-    <Link href={href} className="relative px-4 py-2 rounded-2xl transition-all group overflow-hidden">
+    <Link href={href} className="relative px-5 py-3 rounded-full transition-all group overflow-hidden">
       {active && (
         <motion.div 
           layoutId="mobile-nav-glow"

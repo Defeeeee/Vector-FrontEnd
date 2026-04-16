@@ -61,16 +61,16 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
               </div>
             </div>
             
-            <div className="flex items-center space-x-1 md:space-x-2 md:opacity-0 md:group-hover:opacity-100 transition-all transform md:translate-x-4 md:group-hover:translate-x-0">
+            <div className="flex items-center space-x-1 md:space-x-2 md:opacity-0 md:group-hover:opacity-100 transition-all transform md:translate-x-4 md:group-hover:translate-x-0 flex-shrink-0 ml-4">
               <button 
                 onClick={() => setIsEditing(true)}
-                className="p-2 md:p-3 bg-zinc-100 dark:bg-white/10 md:bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-full transition-all"
+                className="p-2.5 bg-zinc-100 dark:bg-white/10 md:bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-full transition-all"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button 
                 onClick={handleDelete}
-                className="p-2 md:p-3 bg-zinc-100 dark:bg-white/10 md:bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 rounded-full transition-all"
+                className="p-2.5 bg-zinc-100 dark:bg-white/10 md:bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 rounded-full transition-all"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
