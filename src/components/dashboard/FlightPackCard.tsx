@@ -57,7 +57,7 @@ export default function FlightPackCard({ pack, aircraft }: FlightPackCardProps) 
                   </span>
                 </div>
                 <p className="text-zinc-500 dark:text-zinc-400 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] truncate">
-                  {pack.remaining_hours.toFixed(1)}h / {pack.total_hours}h 
+                  <span className={pack.remaining_hours < 0 ? "text-red-600 dark:text-red-500" : ""}>{pack.remaining_hours.toFixed(1)}h</span> / {pack.total_hours}h 
                   <span className="mx-1 md:mx-2 text-zinc-300 dark:text-zinc-700">/</span> 
                   {selectedAircraft.length} Aircraft
                 </p>

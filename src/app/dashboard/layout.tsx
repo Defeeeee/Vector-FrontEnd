@@ -33,7 +33,7 @@ export default async function DashboardLayout({
       <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden lg:flex flex-col w-[280px] bg-white dark:bg-[#0a0a0a] border-r border-zinc-200 dark:border-white/10 relative z-20 h-screen sticky top-0 shrink-0 transition-colors duration-300">
+      <aside className="hidden lg:flex flex-col w-[280px] bg-white dark:bg-[#0a0a0a] border-r border-zinc-200 dark:border-white/10 relative z-20 h-screen sticky top-0 shrink-0 transition-colors duration-300 shadow-sm">
         <div className="p-8 border-b border-zinc-100 dark:border-white/10 flex items-center space-x-3">
           <div className="w-10 h-10 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl flex items-center justify-center shadow-lg transition-transform duration-500 hover:scale-105">
             <Compass className="w-5 h-5" strokeWidth={2} />
@@ -49,16 +49,14 @@ export default async function DashboardLayout({
         </div>
 
         <div className="p-6 border-t border-zinc-100 dark:border-white/10 space-y-4">
-            <ThemeToggle />
-            
-            <div className="bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-4 border border-zinc-200 dark:border-white/10 flex items-center space-x-3 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-sm uppercase">
-                    {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
+            <div className="flex items-center justify-between bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-2 border border-zinc-200 dark:border-white/10">
+                <div className="flex items-center space-x-3 px-2">
+                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase">
+                        {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
+                    </div>
+                    <span className="text-xs font-bold text-zinc-900 dark:text-white truncate max-w-[100px]">{profile?.first_name}</span>
                 </div>
-                <div className="flex flex-col flex-1 overflow-hidden">
-                    <span className="text-sm font-bold text-zinc-900 dark:text-white truncate">{profile?.first_name} {profile?.last_name}</span>
-                    <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest truncate">{profile?.license_type || "Piloto"}</span>
-                </div>
+                <ThemeToggle />
             </div>
             <form action={logout}>
                 <button className="w-full flex items-center justify-center space-x-2 py-3 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl transition-all text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500 hover:border-red-200 dark:hover:border-red-500/50 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95 shadow-sm font-bold text-[10px] uppercase tracking-widest">
@@ -77,9 +75,10 @@ export default async function DashboardLayout({
           </div>
           <span className="text-lg font-bold font-space-grotesk tracking-tighter uppercase dark:text-white">Vector</span>
         </Link>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
+            <ThemeToggle />
             <form action={logout}>
-                <button className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500">
+                <button className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500 border border-transparent hover:border-zinc-200 dark:hover:border-white/10">
                 <LogOut className="w-4 h-4" strokeWidth={2} />
                 </button>
             </form>
@@ -88,10 +87,7 @@ export default async function DashboardLayout({
 
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-         <div className="flex flex-col items-center space-y-4 w-full max-w-[400px]">
-            <div className="w-48 pointer-events-auto"><ThemeToggle /></div>
-            <DashboardNav isDesktop={false} />
-         </div>
+         <DashboardNav isDesktop={false} />
       </div>
 
       {/* Main Content Area */}

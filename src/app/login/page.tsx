@@ -81,17 +81,17 @@ function LoginContent() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-zinc-50 dark:bg-black relative overflow-hidden transition-colors duration-300">
+    <div className="flex min-h-screen w-full bg-zinc-100 dark:bg-black relative overflow-hidden transition-colors duration-300">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-64 -mt-64 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-32 -mb-32 pointer-events-none" />
 
       {/* Minimal Top Bar */}
       <div className="absolute top-6 left-0 w-full px-6 flex justify-between items-center z-20">
-        <Link href="/" className="p-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-full shadow-sm hover:bg-zinc-50 dark:hover:bg-white/5 transition-all group">
+        <Link href="/" className="p-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-full shadow-md hover:bg-zinc-50 dark:hover:bg-white/5 transition-all group">
             <ChevronLeft className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
         </Link>
-        <div className="w-40 scale-90 origin-right"><ThemeToggle /></div>
+        <ThemeToggle />
       </div>
 
       {/* Content Area */}
@@ -136,12 +136,12 @@ function LoginContent() {
             transition={{ duration: 0.6 }}
             className="flex flex-col items-center space-y-4 mb-8 md:mb-10 text-center"
         >
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl flex items-center justify-center shadow-lg">
-                <Compass className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center shadow-2xl">
+                <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Bienvenido</h1>
-                <p className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Accede a tu logbook</p>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Bienvenido</h1>
+                <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Accede a tu logbook</p>
             </div>
         </motion.div>
 
@@ -150,9 +150,9 @@ function LoginContent() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none bg-white dark:bg-[#111111] space-y-8 md:space-y-10 transition-all hover:shadow-lg dark:hover:bg-[#151515]"
+            className="w-full p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-200 dark:border-white/10 shadow-2xl dark:shadow-none bg-white dark:bg-[#0a0a0a] space-y-10 transition-all"
         >
-            <form action={handleSubmit} className="space-y-4 md:space-y-6">
+            <form action={handleSubmit} className="space-y-6">
                 {error && (
                     <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -163,9 +163,9 @@ function LoginContent() {
                     </motion.div>
                 )}
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                     <div className="space-y-2 text-left group">
-                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email</label>
+                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email Address</label>
                         <div className="relative">
                             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                             <input 
@@ -173,13 +173,13 @@ function LoginContent() {
                                 type="email" 
                                 placeholder="name@airline.com" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
                             />
                         </div>
                     </div>
                     
                     <div className="space-y-2 text-left group">
-                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Contraseña</label>
+                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Password</label>
                         <div className="relative">
                             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                             <input 
@@ -187,7 +187,7 @@ function LoginContent() {
                                 type="password" 
                                 placeholder="••••••••" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
                             />
                         </div>
                     </div>
@@ -197,7 +197,7 @@ function LoginContent() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isPending || isGooglePending}
-                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-cal-highlight dark:shadow-none transition-all disabled:opacity-50 mt-2"
+                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2"
                 >
                     {isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -212,7 +212,7 @@ function LoginContent() {
                     <div className="w-full border-t border-zinc-200 dark:border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center text-[8px] font-bold uppercase tracking-[0.3em]">
-                    <span className="bg-white dark:bg-[#111111] px-4 text-zinc-400 dark:text-zinc-500 transition-colors">O continuar con</span>
+                    <span className="bg-white dark:bg-[#0a0a0a] px-4 text-zinc-400 dark:text-zinc-500 transition-colors">O continuar con</span>
                 </div>
             </div>
 
@@ -221,7 +221,7 @@ function LoginContent() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isPending || isGooglePending}
-                className="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.04] disabled:opacity-50 flex items-center justify-center space-x-3 shadow-sm dark:shadow-none"
+                className="w-full bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.08] disabled:opacity-50 flex items-center justify-center space-x-3 shadow-sm dark:shadow-none"
             >
                 {isGooglePending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -263,7 +263,7 @@ function LoginContent() {
 
 export default function Login() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold uppercase tracking-widest animate-pulse bg-zinc-50 dark:bg-black">Cargando Vector...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold uppercase tracking-widest animate-pulse bg-zinc-100 dark:bg-black">Cargando Vector...</div>}>
       <LoginContent />
     </Suspense>
   );
