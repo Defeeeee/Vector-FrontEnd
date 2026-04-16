@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Aircraft } from "@/types";
 import { logFlight } from "@/actions/flight";
-import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Users, Cloud, AlertCircle } from "lucide-react";
+import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Users, Cloud, AlertCircle, Monitor } from "lucide-react";
 import { calculateFlightDuration, isLocalFlight } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -131,26 +131,26 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
         )}
       </AnimatePresence>
 
-      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-cal dark:shadow-none overflow-hidden flex flex-col">
         
         {/* Header Title */}
-        <div className="p-8 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 flex items-center justify-between">
+        <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 flex items-center justify-between">
             <div className="space-y-1">
-                <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase">Nueva Entrada</h3>
+                <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase">Nueva Entrada</h3>
                 <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Bitácora Electrónica</p>
             </div>
-            <div className="w-12 h-12 bg-white dark:bg-[#111111] rounded-2xl flex items-center justify-center shadow-sm border border-zinc-200 dark:border-white/10">
-                <Compass className="w-6 h-6 text-zinc-900 dark:text-white" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-[#111111] rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm border border-zinc-200 dark:border-white/10 transition-colors">
+                <Compass className="w-5 h-5 md:w-6 md:h-6 text-zinc-900 dark:text-white" />
             </div>
         </div>
 
-        <div className="p-8 space-y-10">
+        <div className="p-6 md:p-8 space-y-8 md:space-y-10">
             {/* 01. General & Basic Data Bento */}
             <div className="space-y-4">
                 <div className="flex items-center space-x-3 px-2">
                     <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">01. Información General</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                     
                     {/* Aircraft Selection */}
                     <div className="md:col-span-2 relative group">
@@ -159,7 +159,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
                             required
                             value={aircraftId}
                             onChange={(e) => setAircraftId(e.target.value)}
-                            className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all appearance-none uppercase tracking-widest shadow-sm cursor-pointer"
+                            className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] px-5 md:px-6 py-4 md:py-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all appearance-none uppercase tracking-widest shadow-sm cursor-pointer"
                         >
                             <option value="" disabled>Seleccionar Aeronave...</option>
                             {aircraft.map(ac => (
@@ -168,48 +168,48 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
                             </option>
                             ))}
                         </select>
-                        <Compass className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
+                        <Compass className="absolute right-5 md:right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
                     </div>
 
                     <div className="relative group">
-                        <Route className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-                        <input name="route" placeholder="Ruta (SAEZ SACO)" required value={route} onChange={(e) => setRoute(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] py-4 pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all uppercase tracking-widest placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm" />
+                        <Route className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input name="route" placeholder="Ruta (SAEZ SACO)" required value={route} onChange={(e) => setRoute(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 pl-11 md:pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all uppercase tracking-widest placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm" />
                     </div>
 
                     <div className="relative group">
-                        <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-                        <input type="date" name="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] py-4 pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all [color-scheme:light] dark:[color-scheme:dark] shadow-sm" />
+                        <Calendar className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input type="date" name="date" required value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 pl-11 md:pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all [color-scheme:light] dark:[color-scheme:dark] shadow-sm" />
                     </div>
 
                     <div className="relative group">
-                        <Clock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-                        <input type="time" name="takeoff" placeholder="Despegue" required value={takeoff} onChange={(e) => setTakeoff(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] py-4 pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all [color-scheme:light] dark:[color-scheme:dark] shadow-sm" />
+                        <Clock className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input type="time" name="takeoff" placeholder="Despegue" required value={takeoff} onChange={(e) => setTakeoff(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 pl-11 md:pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all [color-scheme:light] dark:[color-scheme:dark] shadow-sm" />
                     </div>
 
                     <div className="relative group">
-                        <Clock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-                        <input type="time" name="landing" placeholder="Aterrizaje" required value={landing} onChange={(e) => setLanding(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] py-4 pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all [color-scheme:light] dark:[color-scheme:dark] shadow-sm" />
+                        <Clock className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input type="time" name="landing" placeholder="Aterrizaje" required value={landing} onChange={(e) => setLanding(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 pl-11 md:pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all [color-scheme:light] dark:[color-scheme:dark] shadow-sm" />
                     </div>
 
                     <div className="relative group">
-                        <Clock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-                        <input type="number" step="0.1" name="duration" placeholder="Tiempo (H)" required value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] py-4 pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm" />
+                        <Clock className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input type="number" step="0.1" name="duration" placeholder="Tiempo (H)" required value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 pl-11 md:pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm" />
                     </div>
 
                     <div className="relative group">
-                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
-                        <input type="number" name="landings" min="1" placeholder="Aterrizajes" value={landings} onChange={(e) => setLandings(e.target.value)} required className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] py-4 pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm" />
+                        <MapPin className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                        <input type="number" name="landings" min="1" placeholder="Aterrizajes" value={landings} onChange={(e) => setLandings(e.target.value)} required className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 pl-11 md:pl-12 pr-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm" />
                     </div>
                 </div>
             </div>
 
-            {/* 02: Breakdown Tiempos */}
+            {/* 02. Breakdown Tiempos */}
             <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-white/10">
                 <div className="flex items-center justify-between px-2">
                     <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">02. Desglose de Tiempos</p>
                     <User className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     <MiniFormField label="PIC Día Loc" name="pic_day_loc" value={picDayLoc} onChange={setPicDayLoc} />
                     <MiniFormField label="PIC Día Tra" name="pic_day_tra" value={picDayTra} onChange={setPicDayTra} />
                     <MiniFormField label="PIC Noc Loc" name="pic_night_loc" value={picNightLoc} onChange={setPicNightLoc} />
@@ -221,13 +221,13 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
                 </div>
             </div>
 
-            {/* 03: Conditions */}
+            {/* 03. Conditions */}
             <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-white/10">
                 <div className="flex items-center justify-between px-2">
                     <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">03. Condiciones y SIM</p>
                     <Cloud className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
                     <MiniFormField label="IMC Piloto" name="imc_pil" value={imcPil} onChange={setImcPil} />
                     <MiniFormField label="IMC Copiloto" name="imc_cop" value={imcCop} onChange={setImcCop} />
                     <MiniFormField label="Capota" name="capota" value={capota} onChange={setCapota} />
@@ -237,13 +237,14 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
             </div>
         </div>
 
-        <div className="p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5">
+        {/* Footer Button */}
+        <div className="p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5">
             <motion.button 
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             disabled={isPending}
             type="submit" 
-            className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.3em] py-6 rounded-[1.5rem] shadow-cal-highlight dark:shadow-none flex items-center justify-center space-x-3 transition-all disabled:opacity-50"
+            className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.3em] py-5 md:py-6 rounded-xl md:rounded-[1.5rem] shadow-cal-highlight dark:shadow-none flex items-center justify-center space-x-3 transition-all disabled:opacity-50"
             >
             {isPending ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -255,6 +256,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
             )}
             </motion.button>
         </div>
+
       </div>
     </form>
   );
@@ -262,7 +264,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
 
 function MiniFormField({ label, name, value, onChange }: { label: string, name: string, value: string, onChange: (val: string) => void }) {
   return (
-    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-2xl space-y-1 group focus-within:ring-2 focus-within:ring-zinc-900/20 dark:focus-within:ring-white/20 transition-all text-center shadow-sm">
+    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-2xl space-y-1.5 md:space-y-2 group focus-within:ring-2 focus-within:ring-zinc-900/20 dark:focus-within:ring-white/20 transition-all text-center shadow-sm">
       <span className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest block truncate">{label}</span>
       <input 
         type="number" 

@@ -16,13 +16,13 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-2">
         <div className="space-y-1">
-          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter">Packs de Horas</h3>
+          <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase">Packs de Horas</h3>
           <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Paquetes Activos</p>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {activePacks.map((pack) => {
           const percentage = Math.max(0, Math.min(100, (pack.remaining_hours / pack.total_hours) * 100));
           const isLow = percentage < 20;
@@ -32,16 +32,16 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
               key={pack.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all rounded-[2.5rem] p-8 space-y-6 group"
+              className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 space-y-6 group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isLow ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg'}`}>
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center ${isLow ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg'}`}>
                     {isLow ? <AlertCircle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Paquete de Vuelo</p>
-                    <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter text-xl leading-none">{pack.name}</h3>
+                    <p className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Paquete de Vuelo</p>
+                    <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter text-lg md:text-xl leading-none">{pack.name}</h3>
                   </div>
                 </div>
               </div>
@@ -49,8 +49,8 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
               <div className="space-y-4 pt-2">
                 <div className="flex items-end justify-between">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Disponible</p>
-                    <p className="text-4xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">
+                    <p className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Disponible</p>
+                    <p className="text-3xl md:text-4xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">
                       {pack.remaining_hours.toFixed(1)}
                       <span className="text-sm font-bold text-zinc-400 dark:text-zinc-500 ml-1 uppercase tracking-normal">/ {pack.total_hours}H</span>
                     </p>

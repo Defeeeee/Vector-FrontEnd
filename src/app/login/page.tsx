@@ -87,16 +87,16 @@ function LoginContent() {
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-32 -mb-32 pointer-events-none" />
 
       {/* Top Bar (Back & Theme) */}
-      <div className="absolute top-8 left-0 w-full px-8 flex justify-between items-center z-20">
-        <Link href="/" className="flex items-center space-x-2 text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
+      <div className="absolute top-6 md:top-8 left-0 w-full px-4 md:px-8 flex justify-between items-center z-20">
+        <Link href="/" className="flex items-center space-x-2 text-[10px] md:text-xs font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest bg-white/50 dark:bg-white/5 backdrop-blur-sm px-3 py-2 rounded-full border border-zinc-200 dark:border-white/10 md:bg-transparent md:backdrop-blur-none md:p-0 md:border-none">
             <ChevronLeft className="w-4 h-4" />
             <span>Volver</span>
         </Link>
-        <div className="w-48"><ThemeToggle /></div>
+        <div className="w-32 md:w-48 scale-90 md:scale-100 origin-right"><ThemeToggle /></div>
       </div>
 
       {/* Content Area */}
-      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto px-6 py-20 relative z-10">
+      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto px-4 md:px-6 py-12 md:py-20 relative z-10">
         {/* Session Expired Alert */}
         <AnimatePresence>
             {expired && (
@@ -135,14 +135,14 @@ function LoginContent() {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col items-center space-y-4 mb-10 text-center"
+            className="flex flex-col items-center space-y-4 mb-8 md:mb-10 text-center"
         >
-            <div className="w-12 h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl flex items-center justify-center shadow-lg">
-                <Compass className="w-6 h-6" strokeWidth={1.5} />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl flex items-center justify-center shadow-lg">
+                <Compass className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Bienvenido</h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Accede a tu logbook</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Bienvenido</h1>
+                <p className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Accede a tu logbook</p>
             </div>
         </motion.div>
 
@@ -151,9 +151,9 @@ function LoginContent() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full p-10 rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none bg-white dark:bg-[#111111] space-y-10 transition-all hover:shadow-lg dark:hover:bg-[#151515]"
+            className="w-full p-6 md:p-10 rounded-3xl md:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none bg-white dark:bg-[#111111] space-y-8 md:space-y-10 transition-all hover:shadow-lg dark:hover:bg-[#151515]"
         >
-            <form action={handleSubmit} className="space-y-6">
+            <form action={handleSubmit} className="space-y-4 md:space-y-6">
                 {error && (
                     <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -166,7 +166,7 @@ function LoginContent() {
 
                 <div className="space-y-4">
                     <div className="space-y-2 text-left group">
-                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email Address</label>
+                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                             <input 
@@ -180,7 +180,7 @@ function LoginContent() {
                     </div>
                     
                     <div className="space-y-2 text-left group">
-                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Password</label>
+                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Contraseña</label>
                         <div className="relative">
                             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                             <input 

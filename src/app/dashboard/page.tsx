@@ -107,63 +107,63 @@ export default async function Dashboard() {
   const avgFlightTime = totalFlights > 0 ? totalHours / totalFlights : 0;
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
+    <div className="space-y-6 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
       {/* Dynamic Header */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-8 pt-4">
-        <div className="space-y-3">
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-8 pt-4">
+        <div className="space-y-2 md:space-y-3">
           <p className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase tracking-[0.4em] flex items-center space-x-2">
              <Activity className="w-3 h-3" />
              <span>Centro de Operaciones</span>
           </p>
-          <h2 className="text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
+          <h2 className="text-5xl md:text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
         </div>
       </section>
 
       {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
         
         {/* Live Session - Spans full width if active */}
         {session.active && (
           <div className="md:col-span-4 lg:col-span-6 animate-in zoom-in-95 duration-500">
-            <div className="bg-green-500 text-white rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 shadow-cal relative overflow-hidden">
+            <div className="bg-green-500 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 lg:p-12 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 shadow-cal relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)] pointer-events-none" />
-              <div className="flex items-center space-x-6 relative z-10">
-                <div className="w-16 h-16 bg-white text-green-600 rounded-2xl flex items-center justify-center animate-pulse shadow-lg">
-                  <Compass className="w-8 h-8" />
+              <div className="flex items-center space-x-4 md:space-x-6 relative z-10">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-white text-green-600 rounded-xl md:rounded-2xl flex items-center justify-center animate-pulse shadow-lg">
+                  <Compass className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
-                  <h3 className="text-3xl font-bold font-space-grotesk tracking-tighter">
+                  <h3 className="text-2xl md:text-3xl font-bold font-space-grotesk tracking-tighter">
                     {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
                   </h3>
                 </div>
               </div>
-              <div className="flex flex-col md:items-end leading-none relative z-10">
-                <span className="text-5xl font-bold font-space-grotesk tracking-tighter">LIVE</span>
-                <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em] mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
+              <div className="flex flex-col md:items-end leading-none relative z-10 mt-2 md:mt-0">
+                <span className="text-4xl md:text-5xl font-bold font-space-grotesk tracking-tighter">LIVE</span>
+                <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em] mt-1 md:mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Main Experience Card - High Contrast */}
-        <div className="md:col-span-4 lg:col-span-3 p-10 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px] group transition-all">
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/5 dark:bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110" />
+        <div className="md:col-span-4 lg:col-span-3 p-6 md:p-10 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[250px] md:min-h-[300px] group transition-all">
+          <div className="absolute top-0 right-0 w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-white/5 dark:bg-white/5 rounded-full blur-3xl -mr-10 md:-mr-20 -mt-10 md:-mt-20 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/10 dark:bg-white/10 text-white dark:text-white rounded-xl flex items-center justify-center mb-6 shadow-sm border border-white/10 dark:border-white/5">
-                 <Award className="w-6 h-6" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 dark:bg-white/10 text-white dark:text-white rounded-lg md:rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm border border-white/10 dark:border-white/5">
+                 <Award className="w-5 h-5 md:w-6 md:h-6" />
               </div>
               <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
-              <div className="flex items-baseline space-x-2 mt-2">
-                <p className="text-8xl font-space-grotesk font-bold text-white dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
-                <p className="text-lg font-bold text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">Hs</p>
+              <div className="flex items-baseline space-x-2 mt-1 md:mt-2">
+                <p className="text-6xl md:text-8xl font-space-grotesk font-bold text-white dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
+                <p className="text-base md:text-lg font-bold text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">Hs</p>
               </div>
           </div>
-          <div className="relative z-10 flex items-center justify-between border-t border-white/10 dark:border-white/10 pt-6">
+          <div className="relative z-10 flex items-center justify-between border-t border-white/10 dark:border-white/10 pt-4 md:pt-6">
              <div className="flex flex-col">
-                <span className="text-2xl font-bold text-white dark:text-white">{totalFlights}</span>
+                <span className="text-xl md:text-2xl font-bold text-white dark:text-white">{totalFlights}</span>
                 <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">Vuelos</span>
              </div>
              <Link href="/dashboard/history" className="w-10 h-10 bg-white dark:bg-white/10 text-zinc-900 dark:text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform">
@@ -173,41 +173,41 @@ export default async function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="md:col-span-2 lg:col-span-2 p-10 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between min-h-[300px] hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all group">
+        <div className="md:col-span-2 lg:col-span-2 p-6 md:p-10 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between min-h-[250px] md:min-h-[300px] hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all group">
           <div>
-              <div className="w-10 h-10 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-xl flex items-center justify-center mb-6 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
+              <div className="w-10 h-10 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-lg md:rounded-xl flex items-center justify-center mb-4 md:mb-6 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
                  <TrendingUp className="w-5 h-5" />
               </div>
               <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Últimos 30 Días</p>
-              <p className="text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter mt-2">{lastMonthHours.toFixed(1)}</p>
+              <p className="text-5xl md:text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter mt-1 md:mt-2">{lastMonthHours.toFixed(1)}</p>
           </div>
-          <div className="bg-zinc-50 dark:bg-white/5 p-4 rounded-2xl border border-zinc-100 dark:border-transparent flex items-center space-x-3 transition-colors">
-             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">+{lastMonthFlights.length} Registros Nuevos</span>
+          <div className="bg-zinc-50 dark:bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-zinc-100 dark:border-transparent flex items-center space-x-2 md:space-x-3 transition-colors">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+             <span className="text-[9px] md:text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest truncate">+{lastMonthFlights.length} Registros Nuevos</span>
           </div>
         </div>
 
         {/* Mini Detail Metrics - Stacked */}
-        <div className="md:col-span-2 lg:col-span-1 flex flex-col gap-6">
-           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
+        <div className="md:col-span-2 lg:col-span-1 grid grid-cols-2 md:flex md:flex-col gap-4 md:gap-6">
+           <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
                <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><MapPin className="w-4 h-4" /></div>
-               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{airports.size}</p>
+               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{airports.size}</p>
                <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Aeródromos</p>
            </div>
-           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
+           <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
                <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><Clock className="w-4 h-4" /></div>
-               <p className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{longestFlight.toFixed(1)}h</p>
+               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{longestFlight.toFixed(1)}h</p>
                <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Récord</p>
            </div>
         </div>
       </div>
 
       {/* Detail Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <MetricItem label="Promedio de Vuelo" value={`${avgFlightTime.toFixed(1)}h`} icon={<Zap className="w-4 h-4" />} />
-        <MetricItem label="Total Aterrizajes" value={totalLandings.toString()} icon={<Compass className="w-4 h-4" />} />
-        <MetricItem label="Destino Frecuente" value={mostVisited} icon={<MapPin className="w-4 h-4" />} />
-        <MetricItem label="Aeronaves Voladas" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <MetricItem label="Promedio Vuelo" value={`${avgFlightTime.toFixed(1)}h`} icon={<Zap className="w-4 h-4" />} />
+        <MetricItem label="Aterrizajes" value={totalLandings.toString()} icon={<Compass className="w-4 h-4" />} />
+        <MetricItem label="Destino" value={mostVisited} icon={<MapPin className="w-4 h-4" />} />
+        <MetricItem label="Aeronaves" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
       </div>
 
       {/* Flight Hours Packs Widget */}
@@ -215,11 +215,15 @@ export default async function Dashboard() {
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <PCATracker flights={flights} />
+        <div className="pt-4">
+          <PCATracker flights={flights} />
+        </div>
       )}
 
       {/* Analytics */}
-      <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
+      <div className="pt-4">
+        <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
+      </div>
 
     </div>
   );
@@ -227,13 +231,13 @@ export default async function Dashboard() {
 
 function MetricItem({ label, value, icon }: any) {
   return (
-    <div className="px-8 py-6 rounded-[2rem] bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md dark:hover:bg-white/[0.04] transition-all group">
-      <div className="text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-white/[0.05] p-3 rounded-xl border border-zinc-100 dark:border-white/10 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:border-zinc-300 dark:group-hover:border-white/20 transition-colors inline-block mb-3">
+    <div className="px-4 md:px-8 py-5 md:py-6 rounded-2xl md:rounded-[2rem] bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md dark:hover:bg-white/[0.04] transition-all group flex flex-col items-start md:items-center md:flex-row space-y-3 md:space-y-0 md:space-x-4">
+      <div className="text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-white/[0.05] p-2 md:p-3 rounded-xl border border-zinc-100 dark:border-white/10 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:border-zinc-300 dark:group-hover:border-white/20 transition-colors">
         {icon}
       </div>
       <div className="flex flex-col">
-        <p className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
-        <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] mt-1">{label}</p>
+        <p className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
+        <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] mt-1 md:mt-1.5 line-clamp-1">{label}</p>
       </div>
     </div>
   );
