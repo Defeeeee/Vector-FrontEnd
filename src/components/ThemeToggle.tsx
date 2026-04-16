@@ -10,19 +10,21 @@ export function ThemeToggle() {
 
   React.useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="w-10 h-10" />;
+  if (!mounted) return <div className="h-10 w-20" />;
 
   const isDark = theme === "dark";
 
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="p-2.5 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl hover:bg-zinc-200 dark:hover:bg-white/10 transition-all group flex items-center justify-center shadow-sm dark:shadow-none"
+      className="flex items-center justify-between p-1.5 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-full hover:bg-zinc-200 dark:hover:bg-white/10 transition-all group shadow-sm dark:shadow-none relative w-16 h-8"
       title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
     >
-      <div className="relative w-5 h-5 flex items-center justify-center text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-        {isDark ? <Sun className="h-full w-full" /> : <Moon className="h-full w-full" />}
+      <div className="relative z-10 w-full flex justify-between px-1">
+        <Sun className={`h-3 w-3 ${!isDark ? 'text-zinc-900' : 'text-zinc-500'}`} />
+        <Moon className={`h-3 w-3 ${isDark ? 'text-white' : 'text-zinc-400'}`} />
       </div>
+      <div className={`absolute top-1 left-1 bottom-1 w-6 bg-white dark:bg-zinc-800 rounded-full shadow-sm transition-transform duration-300 transform ${isDark ? 'translate-x-8' : 'translate-x-0'}`} />
     </button>
   );
 }

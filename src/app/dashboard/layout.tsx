@@ -49,12 +49,12 @@ export default async function DashboardLayout({
         </div>
 
         <div className="p-6 border-t border-zinc-100 dark:border-white/10 space-y-4">
-            <div className="flex items-center justify-between bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-2 border border-zinc-200 dark:border-white/10">
+            <div className="flex items-center justify-between bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-2 border border-zinc-200 dark:border-white/10 transition-all">
                 <div className="flex items-center space-x-3 px-2">
-                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase">
+                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase flex-shrink-0">
                         {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
                     </div>
-                    <span className="text-xs font-bold text-zinc-900 dark:text-white truncate max-w-[100px]">{profile?.first_name}</span>
+                    <span className="text-xs font-bold text-zinc-900 dark:text-white truncate max-w-[80px]">{profile?.first_name}</span>
                 </div>
                 <ThemeToggle />
             </div>
@@ -68,9 +68,9 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 w-full z-40 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 px-6 py-4 flex items-center justify-between transition-colors duration-300">
+      <header className="lg:hidden fixed top-0 w-full z-40 bg-white dark:bg-black backdrop-blur-md border-b border-zinc-200 dark:border-white/10 px-6 py-4 flex items-center justify-between transition-colors duration-300">
         <Link href="/dashboard" className="flex items-center space-x-3 group">
-          <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg flex items-center justify-center shadow-md">
+          <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg flex items-center justify-center shadow-md">
             <Compass className="w-4 h-4" strokeWidth={2} />
           </div>
           <span className="text-lg font-bold font-space-grotesk tracking-tighter uppercase dark:text-white">Vector</span>

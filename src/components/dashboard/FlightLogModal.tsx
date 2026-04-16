@@ -56,6 +56,7 @@ export default function FlightLogModal({ isOpen, onClose, aircraft, initialData 
                 aircraft={aircraft} 
                 initialData={initialData} 
                 onSuccess={onClose} 
+                inModal={true}
               />
             </div>
           </motion.div>

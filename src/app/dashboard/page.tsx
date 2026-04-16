@@ -122,7 +122,7 @@ export default async function Dashboard() {
       </section>
 
       {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 lg:h-[350px]">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 items-stretch">
         
         {/* Live Session - Spans full width if active */}
         {session.active && (

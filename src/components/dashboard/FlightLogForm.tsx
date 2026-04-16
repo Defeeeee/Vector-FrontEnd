@@ -19,9 +19,10 @@ interface FlightLogFormProps {
     duration?: string;
   };
   onSuccess?: () => void;
+  inModal?: boolean;
 }
 
-export default function FlightLogForm({ aircraft, initialData, onSuccess }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, initialData, onSuccess, inModal = false }: FlightLogFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [takeoff, setTakeoff] = useState(initialData?.takeoff || "");
   const [landing, setLanding] = useState(initialData?.landing || "");
@@ -115,7 +116,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
   }
 
   return (
-    <form action={handleSubmit} className="w-full pb-20">
+    <form action={handleSubmit} className="w-full">
       
       <AnimatePresence>
         {error && (
@@ -131,20 +132,22 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
         )}
       </AnimatePresence>
 
-      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-cal dark:shadow-none overflow-hidden flex flex-col">
+      <div className={`${inModal ? '' : 'bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-cal dark:shadow-none'} overflow-hidden flex flex-col transition-colors`}>
         
-        {/* Header Title */}
-        <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 flex items-center justify-between">
-            <div className="space-y-1">
-                <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase">Nueva Entrada</h3>
-                <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Bitácora Electrónica</p>
-            </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-[#111111] rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm border border-zinc-200 dark:border-white/10 transition-colors">
-                <Compass className="w-5 h-5 md:w-6 md:h-6 text-zinc-900 dark:text-white" />
-            </div>
-        </div>
+        {/* Header Title (Only outside modal) */}
+        {!inModal && (
+          <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 flex items-center justify-between">
+              <div className="space-y-1">
+                  <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase">Nueva Entrada</h3>
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Bitácora Electrónica</p>
+              </div>
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-[#111111] rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm border border-zinc-200 dark:border-white/10 transition-colors">
+                  <Compass className="w-5 h-5 md:w-6 md:h-6 text-zinc-900 dark:text-white" />
+              </div>
+          </div>
+        )}
 
-        <div className="p-6 md:p-8 space-y-8 md:space-y-10">
+        <div className={`${inModal ? 'p-0' : 'p-6 md:p-8'} space-y-8 md:space-y-10`}>
             {/* 01. General & Basic Data Bento */}
             <div className="space-y-4">
                 <div className="flex items-center space-x-3 px-2">
@@ -238,7 +241,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess }: Flig
         </div>
 
         {/* Footer Button */}
-        <div className="p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5">
+        <div className={`${inModal ? 'p-0 pt-6' : 'p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5'}`}>
             <motion.button 
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}

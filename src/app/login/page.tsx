@@ -140,7 +140,7 @@ function LoginContent() {
                 <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Bienvenido</h1>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase transition-colors">Bienvenido</h1>
                 <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Accede a tu logbook</p>
             </div>
         </motion.div>
@@ -173,7 +173,7 @@ function LoginContent() {
                                 type="email" 
                                 placeholder="name@airline.com" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>
@@ -187,7 +187,7 @@ function LoginContent() {
                                 type="password" 
                                 placeholder="••••••••" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>
@@ -197,7 +197,7 @@ function LoginContent() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isPending || isGooglePending}
-                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2"
+                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
                 >
                     {isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -263,7 +263,7 @@ function LoginContent() {
 
 export default function Login() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold uppercase tracking-widest animate-pulse bg-zinc-100 dark:bg-black">Cargando Vector...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold uppercase tracking-widest animate-pulse bg-zinc-100 dark:bg-black transition-colors duration-300">Cargando Vector...</div>}>
       <LoginContent />
     </Suspense>
   );
