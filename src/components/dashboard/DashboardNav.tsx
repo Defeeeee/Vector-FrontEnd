@@ -17,11 +17,9 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
   if (isDesktop) {
       return (
           <nav className="flex flex-col space-y-2">
-              <Link href="/dashboard/log-flight" className="mb-6 bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-[0.2em] px-6 py-4 rounded-xl shadow-cal-highlight transition-all hover:opacity-90 flex items-center justify-between group">
+              <Link href="/dashboard/log-flight" className="mb-6 mx-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.2em] px-4 py-3 rounded-lg shadow-sm transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center space-x-2">
+                 <Plus className="w-4 h-4" />
                  <span>Nuevo Vuelo</span>
-                 <div className="w-6 h-6 bg-white/20 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Plus className="w-4 h-4" />
-                 </div>
               </Link>
 
               <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 px-4">Menu Principal</div>
@@ -32,11 +30,11 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
                           {active && (
                               <motion.div 
                                   layoutId="sidebar-glow"
-                                  className="absolute inset-0 bg-zinc-100 border border-zinc-200"
+                                  className="absolute inset-0 bg-zinc-100 border border-zinc-200 dark:bg-white/5 dark:border-white/10"
                                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                               />
                           )}
-                          <div className={`relative z-10 flex items-center space-x-3 ${active ? "text-zinc-900" : "text-zinc-500 group-hover:text-zinc-900"}`}>
+                          <div className={`relative z-10 flex items-center space-x-3 ${active ? "text-zinc-900 dark:text-white" : "text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white"}`}>
                               {item.icon}
                               <span className="text-xs font-bold uppercase tracking-widest">{item.label}</span>
                           </div>

@@ -149,39 +149,39 @@ export default async function Dashboard() {
         )}
 
         {/* Main Experience Card - High Contrast */}
-        <div className="md:col-span-4 lg:col-span-3 p-10 bg-zinc-900 dark:bg-white border border-zinc-800 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px] group hover:shadow-cal-highlight transition-all">
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/5 dark:bg-black/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110" />
+        <div className="md:col-span-4 lg:col-span-3 p-10 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[300px] group transition-all">
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/5 dark:bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/10 dark:bg-black/5 text-white dark:text-zinc-900 rounded-xl flex items-center justify-center mb-6 shadow-sm border border-white/10 dark:border-transparent">
+              <div className="w-12 h-12 bg-white/10 dark:bg-white/10 text-white dark:text-white rounded-xl flex items-center justify-center mb-6 shadow-sm border border-white/10 dark:border-white/5">
                  <Award className="w-6 h-6" />
               </div>
               <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
               <div className="flex items-baseline space-x-2 mt-2">
-                <p className="text-8xl font-space-grotesk font-bold text-white dark:text-zinc-900 tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
-                <p className="text-lg font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Hs</p>
+                <p className="text-8xl font-space-grotesk font-bold text-white dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
+                <p className="text-lg font-bold text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">Hs</p>
               </div>
           </div>
-          <div className="relative z-10 flex items-center justify-between border-t border-white/10 dark:border-zinc-200/50 pt-6">
+          <div className="relative z-10 flex items-center justify-between border-t border-white/10 dark:border-white/10 pt-6">
              <div className="flex flex-col">
-                <span className="text-2xl font-bold text-white dark:text-zinc-900">{totalFlights}</span>
-                <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Vuelos</span>
+                <span className="text-2xl font-bold text-white dark:text-white">{totalFlights}</span>
+                <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">Vuelos</span>
              </div>
-             <Link href="/dashboard/history" className="w-10 h-10 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+             <Link href="/dashboard/history" className="w-10 h-10 bg-white dark:bg-white/10 text-zinc-900 dark:text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                 <Navigation2 className="w-4 h-4 rotate-45" />
              </Link>
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="md:col-span-2 lg:col-span-2 p-10 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between min-h-[300px] hover:shadow-md dark:hover:bg-white/[0.04] transition-all group">
+        <div className="md:col-span-2 lg:col-span-2 p-10 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between min-h-[300px] hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all group">
           <div>
-              <div className="w-10 h-10 bg-zinc-50 dark:bg-white/[0.05] text-zinc-900 dark:text-white rounded-xl flex items-center justify-center mb-6 border border-zinc-200 dark:border-white/10 shadow-sm">
+              <div className="w-10 h-10 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-xl flex items-center justify-center mb-6 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
                  <TrendingUp className="w-5 h-5" />
               </div>
               <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Últimos 30 Días</p>
               <p className="text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter mt-2">{lastMonthHours.toFixed(1)}</p>
           </div>
-          <div className="bg-zinc-50 dark:bg-white/[0.05] p-4 rounded-2xl border border-zinc-100 dark:border-white/10 flex items-center space-x-3 group-hover:border-zinc-300 dark:group-hover:border-white/20 transition-colors">
+          <div className="bg-zinc-50 dark:bg-white/5 p-4 rounded-2xl border border-zinc-100 dark:border-transparent flex items-center space-x-3 transition-colors">
              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
              <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">+{lastMonthFlights.length} Registros Nuevos</span>
           </div>
@@ -189,13 +189,13 @@ export default async function Dashboard() {
 
         {/* Mini Detail Metrics - Stacked */}
         <div className="md:col-span-2 lg:col-span-1 flex flex-col gap-6">
-           <div className="flex-1 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-white/[0.04] transition-all">
-               <div className="p-2 bg-zinc-50 dark:bg-white/[0.05] rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-white/10"><MapPin className="w-4 h-4" /></div>
+           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
+               <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><MapPin className="w-4 h-4" /></div>
                <p className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{airports.size}</p>
                <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Aeródromos</p>
            </div>
-           <div className="flex-1 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-white/[0.04] transition-all">
-               <div className="p-2 bg-zinc-50 dark:bg-white/[0.05] rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-white/10"><Clock className="w-4 h-4" /></div>
+           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-cal dark:shadow-none p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all">
+               <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><Clock className="w-4 h-4" /></div>
                <p className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">{longestFlight.toFixed(1)}h</p>
                <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Récord</p>
            </div>
