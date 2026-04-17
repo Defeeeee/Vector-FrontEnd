@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
   cookieStore.delete("session_token");
   cookieStore.delete("refresh_token");
   
-  // Use relative redirect if possible, otherwise use original request.url to construct URL
-  // But constructing a URL from a relative path if redirect(redirectTo) doesn't work.
-  // In Route Handlers, redirect() from next/navigation is the preferred way.
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const redirectUrl = new URL(redirectTo, `${proto}://${host}`);
   
-  return redirect(redirectTo);
+  return NextResponse.redirect(redirectUrl);
 }
