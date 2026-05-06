@@ -60,8 +60,8 @@ export default function DashboardCharts({ monthlyData, aircraftData }: Dashboard
           <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter">Horas por Mes</h3>
           <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Tendencia Temporal</p>
         </div>
-        <div className="flex-1 w-full -ml-4">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 w-full -ml-4 min-h-0">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <XAxis 
                 dataKey="name" 
@@ -104,8 +104,8 @@ export default function DashboardCharts({ monthlyData, aircraftData }: Dashboard
           <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter">Horas por Aeronave</h3>
           <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Distribución de Flota</p>
         </div>
-        <div className="flex-1 w-full relative">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 w-full relative min-h-0">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <PieChart>
               <Pie
                 data={aircraftData}

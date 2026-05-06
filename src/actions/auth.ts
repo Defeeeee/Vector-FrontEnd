@@ -199,13 +199,14 @@ export async function setSession(token: string, refresh_token?: string, maxAge: 
   
   // In production, we use the root domain to ensure availability across subdomains
   const domain = process.env.NODE_ENV === "production" ? ".fdiaznem.com.ar" : undefined;
+  const isSecure = process.env.NODE_ENV === "production";
   
-  console.log(`setSession: Domain=${domain} maxAge=${maxAge} tokenLength=${token?.length}`);
+  console.log(`setSession: Domain=${domain} maxAge=${maxAge} tokenLength=${token?.length} secure=${isSecure}`);
 
   try {
     cookieStore.set("session_token", token, {
       httpOnly: true,
-      secure: true, // Required for .domain cookies in many browsers
+      secure: isSecure,
       sameSite: "lax",
       maxAge: maxAge,
       path: "/",
@@ -215,7 +216,7 @@ export async function setSession(token: string, refresh_token?: string, maxAge: 
     if (refresh_token) {
       cookieStore.set("refresh_token", refresh_token, {
         httpOnly: true,
-        secure: true,
+        secure: isSecure,
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: "/",

@@ -33,18 +33,16 @@ export function middleware(request: NextRequest) {
 
   if (isDashboardPage && !token) {
     console.log("Middleware: Redirecting to / due to missing token on dashboard");
-    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
-    const proto = request.headers.get("x-forwarded-proto") || "https";
-    const redirectUrl = new URL("/", `${proto}://${host}`);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/";
     redirectUrl.searchParams.set("expired", "true");
     return NextResponse.redirect(redirectUrl);
   }
 
   if (pathname === "/" && token) {
     console.log("Middleware: Redirecting to /dashboard due to existing token");
-    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
-    const proto = request.headers.get("x-forwarded-proto") || "https";
-    const redirectUrl = new URL("/dashboard", `${proto}://${host}`);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);
   }
 
