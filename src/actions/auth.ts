@@ -169,8 +169,23 @@ export async function updatePassword(formData: FormData) {
 
 export async function logout(arg?: string | FormData) {
   const redirectTo = typeof arg === "string" ? arg : "/";
-  (await cookies()).delete("session_token");
-  (await cookies()).delete("refresh_token");
+  const cookieStore = await cookies();
+  const domain = process.env.NODE_ENV === "production" ? ".fdiaznem.com.ar" : undefined;
+  
+  cookieStore.set("session_token", "", {
+    path: "/",
+    domain: domain,
+    maxAge: 0,
+    expires: new Date(0),
+  });
+  
+  cookieStore.set("refresh_token", "", {
+    path: "/",
+    domain: domain,
+    maxAge: 0,
+    expires: new Date(0),
+  });
+
   redirect(redirectTo);
 }
 

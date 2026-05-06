@@ -33,16 +33,18 @@ export function proxy(request: NextRequest) {
 
   if (isDashboardPage && !token) {
     console.log("Proxy: Redirecting to / due to missing token on dashboard");
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const redirectUrl = new URL("/", `${proto}://${host}`);
     redirectUrl.searchParams.set("expired", "true");
     return NextResponse.redirect(redirectUrl);
   }
 
   if (pathname === "/" && token) {
     console.log("Proxy: Redirecting to /dashboard due to existing token");
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const redirectUrl = new URL("/dashboard", `${proto}://${host}`);
     return NextResponse.redirect(redirectUrl);
   }
 

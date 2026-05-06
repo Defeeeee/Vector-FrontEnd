@@ -7,8 +7,21 @@ export async function GET(request: NextRequest) {
   const redirectTo = searchParams.get("redirect") || "/";
   
   const cookieStore = await cookies();
-  cookieStore.delete("session_token");
-  cookieStore.delete("refresh_token");
+  const domain = process.env.NODE_ENV === "production" ? ".fdiaznem.com.ar" : undefined;
+
+  cookieStore.set("session_token", "", {
+    path: "/",
+    domain: domain,
+    maxAge: 0,
+    expires: new Date(0),
+  });
+  
+  cookieStore.set("refresh_token", "", {
+    path: "/",
+    domain: domain,
+    maxAge: 0,
+    expires: new Date(0),
+  });
   
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
   const proto = request.headers.get("x-forwarded-proto") || "https";
