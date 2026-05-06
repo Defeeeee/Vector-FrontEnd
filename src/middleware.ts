@@ -12,7 +12,8 @@ export function middleware(request: NextRequest) {
     xForwardedHost: request.headers.get("x-forwarded-host"),
     xForwardedProto: request.headers.get("x-forwarded-proto"),
     url: request.url,
-    nextUrl: request.nextUrl.toString()
+    nextUrl: request.nextUrl.toString(),
+    cookies: request.cookies.getAll().map(c => c.name)
   });
 
   const isDashboardPage = pathname.startsWith("/dashboard");
