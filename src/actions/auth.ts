@@ -25,33 +25,20 @@ export async function login(formData: FormData) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.log("login: Response not OK", data);
       return { error: data.detail || "Invalid credentials" };
     }
 
     const token = data.access_token;
+    console.log(`login: Token received, length=${token?.length}`);
 
     if (!token) {
       return { error: "Authentication failed: No token received" };
     }
 
-    // Store JWT in HttpOnly cookie
-    (await cookies()).set("session_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 1 day (standard session)
-      path: "/",
-    });
+    await setSession(token, data.refresh_token, 60 * 60 * 24);
+    console.log("login: session set, redirecting...");
 
-    if (data.refresh_token) {
-        (await cookies()).set("refresh_token", data.refresh_token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "lax",
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-            path: "/",
-        });
-    }
 
   } catch (error) {
     console.error("Login error:", error);
@@ -212,26 +199,32 @@ export async function setSession(token: string, refresh_token?: string, maxAge: 
   
   // In production, we use the root domain to ensure availability across subdomains
   const domain = process.env.NODE_ENV === "production" ? ".fdiaznem.com.ar" : undefined;
+  const isSecure = process.env.NODE_ENV === "production";
   
-  console.log(`Setting session cookie. Domain=${domain} maxAge=${maxAge}`);
+  console.log(`setSession: Domain=${domain} maxAge=${maxAge} tokenLength=${token?.length} secure=${isSecure}`);
 
-  cookieStore.set("session_token", token, {
-    httpOnly: true,
-    secure: true, // Required for .domain cookies in many browsers
-    sameSite: "lax",
-    maxAge: maxAge,
-    path: "/",
-    domain: domain,
-  });
-
-  if (refresh_token) {
-    cookieStore.set("refresh_token", refresh_token, {
+  try {
+    cookieStore.set("session_token", token, {
       httpOnly: true,
-      secure: true,
+      secure: isSecure,
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+      maxAge: maxAge,
       path: "/",
       domain: domain,
     });
+
+    if (refresh_token) {
+      cookieStore.set("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: "/",
+        domain: domain,
+      });
+    }
+    console.log("setSession: SUCCESS - Cookies set");
+  } catch (error) {
+    console.error("setSession: ERROR setting cookies:", error);
   }
 }

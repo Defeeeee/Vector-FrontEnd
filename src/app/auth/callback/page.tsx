@@ -32,7 +32,12 @@ export default function AuthCallback() {
         if (accessToken) {
           console.log("AuthCallback: Token detected, updating session...");
           localStorage.setItem("session_token", accessToken);
-          await setSession(accessToken, refreshToken || undefined);
+          try {
+            await setSession(accessToken, refreshToken || undefined);
+            console.log("AuthCallback: setSession call completed");
+          } catch (e) {
+            console.error("AuthCallback: setSession failed:", e);
+          }
           
           console.log("AuthCallback: Session set, waiting for propagation...");
           // Small delay to ensure cookies are committed before redirect

@@ -4,6 +4,7 @@ import { logout } from "@/actions/auth";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
 import { Profile } from "@/types";
 
@@ -58,12 +59,7 @@ export default async function DashboardLayout({
                 </div>
                 <ThemeToggle />
             </div>
-            <form action={logout}>
-                <button className="w-full flex items-center justify-center space-x-2 py-3 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl transition-all text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500 hover:border-red-200 dark:hover:border-red-500/50 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95 shadow-sm font-bold text-[10px] uppercase tracking-widest">
-                    <LogOut className="w-4 h-4" strokeWidth={2} />
-                    <span>Cerrar Sesión</span>
-                </button>
-            </form>
+            <LogoutButton />
         </div>
       </aside>
 
@@ -77,11 +73,7 @@ export default async function DashboardLayout({
         </Link>
         <div className="flex items-center space-x-3">
             <ThemeToggle />
-            <form action={logout}>
-                <button className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500 border border-transparent hover:border-zinc-200 dark:hover:border-white/10">
-                <LogOut className="w-4 h-4" strokeWidth={2} />
-                </button>
-            </form>
+            <LogoutButton isMobile={true} />
         </div>
       </header>
 
