@@ -3,8 +3,9 @@
 import { motion } from "framer-motion";
 import { Compass, Check, ArrowRight, Layout, TrendingUp, Award, Clock, Database, Target, MapPin, X, Menu } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "Características", href: "#features" },
@@ -13,6 +14,18 @@ const navLinks = [
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Detect if we landed here with auth tokens (common on mobile or direct redirects)
+    const hash = window.location.hash;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    if (hash.includes("access_token") || searchParams.has("access_token") || searchParams.has("code")) {
+      console.log("LandingPage: Auth tokens detected, redirecting to callback...");
+      router.replace(`/auth/callback${window.location.search}${window.location.hash}`);
+    }
+  }, [router]);
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-zinc-50 dark:bg-black overflow-hidden transition-colors duration-300">
