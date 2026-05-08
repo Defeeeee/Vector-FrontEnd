@@ -1,32 +1,36 @@
 import { apiFetch } from "@/lib/api";
-import { Flight, Aircraft } from "@/types";
+import { Flight, Aircraft, Profile } from "@/types";
 import { Plus, Search, Plane } from "lucide-react";
 import Link from "next/link";
 import FlightCard from "@/components/dashboard/FlightCard";
 import ExportFlightsButton from "@/components/dashboard/ExportFlightsButton";
+import ExportPdfButton from "@/components/dashboard/ExportPdfButton";
 import FlightListClient from "@/components/dashboard/FlightListClient";
 
 import { redirect } from "next/navigation";
 
 async function getHistoryData() {
-  const [flightsRes, aircraftRes] = await Promise.all([
-    apiFetch("/flights"),
-    apiFetch("/aircraft")
-  ]);
+  const response = await apiFetch("/dashboard");
 
-  if (flightsRes.status === 401 || aircraftRes.status === 401) {
+  if (response.status === 401) {
     console.log("HistoryPage: 401 Unauthorized. Redirecting to logout...");
     redirect("/api/auth/logout?redirect=/?expired=true");
   }
 
-  const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
-  const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
+  if (!response.ok) {
+    return { flights: [], aircraft: [], profile: null };
+  }
 
-  return { flights, aircraft };
+  const data = await response.json();
+  return {
+    flights: (data.flights || []) as Flight[],
+    aircraft: (data.aircraft || []) as Aircraft[],
+    profile: (data.profile || null) as Profile | null
+  };
 }
 
 export default async function HistoryPage() {
-  const { flights, aircraft } = await getHistoryData();
+  const { flights, aircraft, profile } = await getHistoryData();
   const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
 
   const sortedFlights = [...flights].sort(
@@ -47,6 +51,7 @@ export default async function HistoryPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          <ExportPdfButton flights={sortedFlights} aircraft={aircraft} profile={profile} />
           <ExportFlightsButton flights={sortedFlights} aircraft={aircraft} />
           
           <Link href="/dashboard/log-flight" className="flex-1 md:flex-none bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.2em] px-8 md:px-10 py-4 md:py-5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center space-x-3">
