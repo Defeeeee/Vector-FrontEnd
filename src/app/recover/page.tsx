@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Mail, ArrowRight, Loader2, Compass, ChevronLeft } from "lucide-react";
+import { Mail, Loader2, Compass, ChevronLeft } from "lucide-react";
 import { recoverPassword } from "@/actions/auth";
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function RecoverPage() {
   const [isPending, startTransition] = useTransition();
@@ -25,95 +26,121 @@ export default function RecoverPage() {
 
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10 text-center space-y-8">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-20 h-20 bg-zinc-900 text-white rounded-full flex items-center justify-center shadow-lg"
-        >
-          <Mail className="w-10 h-10" />
-        </motion.div>
+      <div className="flex min-h-screen w-full bg-zinc-100 dark:bg-black relative overflow-hidden transition-colors duration-300">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-64 -mt-64 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-32 -mb-32 pointer-events-none" />
         
-        <div className="space-y-4">
-          <h1 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900">Email Enviado</h1>
-          <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
-            Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
-          </p>
-        </div>
+        <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto px-6 py-12 relative z-10 text-center space-y-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-20 h-20 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full flex items-center justify-center shadow-2xl"
+          >
+            <Mail className="w-10 h-10" />
+          </motion.div>
+          
+          <div className="space-y-4">
+            <h1 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900 dark:text-white">Email Enviado</h1>
+            <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
+              Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
+            </p>
+          </div>
 
-        <Link href="/" className="bg-white text-zinc-900 border border-zinc-200 font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-full shadow-sm transition-all hover:bg-zinc-50 active:scale-95">
-          Volver al Inicio
-        </Link>
+          <Link href="/" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95">
+            Volver al Inicio
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10">
-      <div className="w-full flex items-center justify-between mb-12">
-        <Link href="/login" className="p-3 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-full shadow-sm transition-colors group">
-          <ChevronLeft className="w-5 h-5 text-zinc-500 group-hover:text-zinc-900" />
+    <div className="flex min-h-screen w-full bg-zinc-100 dark:bg-black relative overflow-hidden transition-colors duration-300">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-64 -mt-64 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-32 -mb-32 pointer-events-none" />
+
+      {/* Minimal Top Bar */}
+      <div className="absolute top-6 left-0 w-full px-6 flex justify-between items-center z-20">
+        <Link href="/login" className="p-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-full shadow-md hover:bg-zinc-50 dark:hover:bg-white/5 transition-all group">
+            <ChevronLeft className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
         </Link>
+        <ThemeToggle />
       </div>
 
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center space-y-2 mb-12"
-      >
-        <div className="w-16 h-16 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-6">
-          <Compass className="w-8 h-8" strokeWidth={1.5} />
-        </div>
-        <h1 className="text-4xl font-space-grotesk font-bold tracking-tighter uppercase tracking-[0.1em] text-zinc-900">Recuperar</h1>
-        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Acceso a la Red Vector</p>
-      </motion.div>
-
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full space-y-8 bg-white border border-zinc-200 p-8 md:p-10 rounded-[2.5rem] shadow-cal"
-      >
-        <form action={handleSubmit} className="space-y-4">
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600 text-xs font-bold text-center uppercase tracking-wider"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          <div className="space-y-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 ml-1 group-focus-within:text-zinc-900 transition-colors">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-              <input 
-                name="email"
-                type="email" 
-                placeholder="name@airline.com" 
-                required
-                className="w-full bg-transparent border border-zinc-200 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-zinc-400 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-400 uppercase text-zinc-900"
-              />
-            </div>
+      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto px-4 md:px-6 py-12 md:py-20 relative z-10">
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="flex flex-col items-center space-y-4 mb-8 md:mb-10 text-center"
+        >
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center shadow-2xl">
+            <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
           </div>
+          <div className="space-y-1">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase transition-colors">Recuperar</h1>
+            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Acceso a la Red Vector</p>
+          </div>
+        </motion.div>
 
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            disabled={isPending}
-            className="w-full bg-zinc-900 text-white font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-cal-highlight transition-all disabled:opacity-50 mt-4"
-          >
-            {isPending ? (
-              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-            ) : (
-              <span>Enviar Instrucciones</span>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="w-full p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-200 dark:border-white/10 shadow-2xl dark:shadow-none bg-white dark:bg-[#0a0a0a] space-y-10 transition-all"
+        >
+          <form action={handleSubmit} className="space-y-6">
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl p-4 text-red-600 dark:text-red-500 text-xs font-bold text-center uppercase tracking-wider shadow-sm"
+              >
+                {error}
+              </motion.div>
             )}
-          </motion.button>
-        </form>
-      </motion.div>
+
+            <div className="space-y-2 group">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                <input 
+                  name="email"
+                  type="email" 
+                  placeholder="name@airline.com" 
+                  required
+                  className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
+                />
+              </div>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={isPending}
+              className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
+            >
+              {isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : (
+                <span>Enviar Instrucciones</span>
+              )}
+            </motion.button>
+          </form>
+
+          <div className="flex flex-col items-center pt-6 border-t border-zinc-200 dark:border-white/10 transition-colors">
+            <Link href="/login" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
+              Volver al Login
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Version Tag */}
+        <div className="mt-12 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.5em]">
+          Vector Aviation v2.0.1
+        </div>
+      </div>
     </div>
   );
 }
