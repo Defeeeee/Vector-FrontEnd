@@ -20,16 +20,30 @@ export default function ExportPdfButton({ flights, aircraft, profile }: ExportPd
     setIsGenerating(true);
 
     try {
+      console.log("Generating PDF for", flights.length, "flights...");
       const pdfBytes = await generateLogbookPdf(flights, aircraft, profile);
+      console.log("PDF generated, size:", pdfBytes.length, "bytes");
+
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
+      const filename = `Libro_Vuelo_${profile?.last_name || "Vector"}_${new Date().toISOString().split('T')[0]}.pdf`;
       
       const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `Libro_Vuelo_${profile?.last_name || "Vector"}_${new Date().toISOString().split('T')[0]}.pdf`);
+      link.href = url;
+      link.download = filename;
+      
+      // For insecure connections, some browsers block blob downloads
+      // We can try to force it by appending to body
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      
+      // Cleanup with a delay to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log("Download triggered for", filename);
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Error al generar el PDF. Por favor, intenta de nuevo.");
