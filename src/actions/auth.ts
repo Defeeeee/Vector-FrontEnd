@@ -205,6 +205,22 @@ export async function getGoogleLoginUrl() {
   }
 }
 
+export async function getAppleLoginUrl() {
+  try {
+    const response = await fetch(`${AUTH_URL}/login/apple`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { error: data.detail || "Error getting Apple login URL" };
+    }
+    
+    return { url: data.url };
+  } catch (error) {
+    console.error("Apple login error:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}
+
 export async function getSessionToken() {
   return (await cookies()).get("session_token")?.value;
 }
