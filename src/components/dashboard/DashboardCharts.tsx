@@ -90,8 +90,8 @@ export default function DashboardCharts({ monthlyData, aircraftData }: Dashboard
               <Bar 
                 dataKey="hours" 
                 fill={barColor} 
-                radius={[4, 4, 0, 0]} 
-                barSize={40}
+                radius={[6, 6, 0, 0]} 
+                barSize={32}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -111,11 +111,12 @@ export default function DashboardCharts({ monthlyData, aircraftData }: Dashboard
                 data={aircraftData}
                 cx="50%"
                 cy="45%"
-                innerRadius={80}
-                outerRadius={110}
-                paddingAngle={4}
+                innerRadius={85}
+                outerRadius={115}
+                paddingAngle={6}
                 dataKey="value"
                 stroke="none"
+                cornerRadius={4}
               >
                 {aircraftData.map((entry, index) => {
                   const colors = isDark ? ["#ffffff", "#a1a1aa", "#52525b", "#27272a"] : ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"];
