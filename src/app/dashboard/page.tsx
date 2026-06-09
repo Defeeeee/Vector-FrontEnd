@@ -86,6 +86,22 @@ export default async function Dashboard() {
       color: ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"][i % 4]
     }));
 
+  // Cumulative hours data (sorted by date, running total)
+  const monthNamesShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const sortedForCumulative = [...flights].sort(
+    (a: Flight, b: Flight) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime()
+  );
+  let runningTotal = 0;
+  const cumulativeData = sortedForCumulative.map((f: Flight) => {
+    runningTotal += f.duration;
+    const d = new Date(f.date + 'T00:00:00');
+    return {
+      date: `${d.getDate()} ${monthNamesShort[d.getMonth()]} ${d.getFullYear().toString().slice(2)}`,
+      total: Number(runningTotal.toFixed(1)),
+      hours: f.duration
+    };
+  });
+
   const airportFreq = new Map<string, number>();
   flights.forEach((f: Flight) => {
     const [origin, dest] = splitRoute(f.route);
@@ -222,7 +238,7 @@ export default async function Dashboard() {
 
       {/* Analytics */}
       <div className="pt-4">
-        <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} />
+        <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} cumulativeData={cumulativeData} />
       </div>
 
     </div>
