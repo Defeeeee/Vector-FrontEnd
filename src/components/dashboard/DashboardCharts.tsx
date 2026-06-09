@@ -32,7 +32,7 @@ interface PieData {
 interface CumulativePoint {
   date: string;
   total: number;
-  hours: number;
+  monthHours: number;
 }
 
 interface DashboardChartsProps {
@@ -67,7 +67,7 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
       <div style={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 12, padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
         <p style={{ color: textColor, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 6 }}>{d.date}</p>
         <p style={{ color: tooltipTextColor, fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{d.total.toFixed(1)}<span style={{ fontSize: 11, fontWeight: 700, marginLeft: 4, color: textColor }}>hs acum.</span></p>
-        {d.hours > 0 && <p style={{ color: textColor, fontSize: 10, fontWeight: 700, marginTop: 4 }}>+{d.hours.toFixed(1)} este vuelo</p>}
+        {d.monthHours > 0 && <p style={{ color: textColor, fontSize: 10, fontWeight: 700, marginTop: 4 }}>+{d.monthHours.toFixed(1)} este mes</p>}
       </div>
     );
   };

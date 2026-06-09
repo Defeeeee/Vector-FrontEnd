@@ -86,21 +86,37 @@ export default async function Dashboard() {
       color: ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"][i % 4]
     }));
 
-  // Cumulative hours data (sorted by date, running total)
+  // Cumulative hours — one point per calendar month so scale is consistent
   const monthNamesShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const sortedForCumulative = [...flights].sort(
-    (a: Flight, b: Flight) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime()
-  );
-  let runningTotal = 0;
-  const cumulativeData = sortedForCumulative.map((f: Flight) => {
-    runningTotal += f.duration;
-    const d = new Date(f.date + 'T00:00:00');
-    return {
-      date: `${d.getDate()} ${monthNamesShort[d.getMonth()]} ${d.getFullYear().toString().slice(2)}`,
-      total: Number(runningTotal.toFixed(1)),
-      hours: f.duration
-    };
-  });
+  const cumulativeData = (() => {
+    if (flights.length === 0) return [];
+    // Sum hours per month key "YYYY-MM"
+    const monthTotals = new Map<string, number>();
+    for (const f of flights as Flight[]) {
+      const key = f.date.slice(0, 7); // "YYYY-MM"
+      monthTotals.set(key, (monthTotals.get(key) || 0) + f.duration);
+    }
+    // Build a continuous range from first flight month to current month
+    const allKeys = Array.from(monthTotals.keys()).sort();
+    const [startYear, startMonth] = allKeys[0].split("-").map(Number);
+    const now = new Date();
+    const points: { date: string; total: number; monthHours: number }[] = [];
+    let running = 0;
+    let y = startYear, m = startMonth;
+    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth() + 1)) {
+      const key = `${y}-${String(m).padStart(2, "0")}`;
+      const hrs = monthTotals.get(key) || 0;
+      running += hrs;
+      points.push({
+        date: `${monthNamesShort[m - 1]} ${String(y).slice(2)}`,
+        total: Number(running.toFixed(1)),
+        monthHours: Number(hrs.toFixed(1)),
+      });
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+    return points;
+  })();
 
   const airportFreq = new Map<string, number>();
   flights.forEach((f: Flight) => {
