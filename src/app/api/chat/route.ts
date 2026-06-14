@@ -121,11 +121,17 @@ ${flightContext}`;
       systemInstruction: systemPrompt,
     });
 
+    const formattedHistory = (history || []).map((m: { role: string; content: string }) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    // Gemini requires the history to start with a 'user' message.
+    const firstUserIndex = formattedHistory.findIndex((h: any) => h.role === "user");
+    const cleanHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
+
     const chat = model.startChat({
-      history: (history || []).map((m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
+      history: cleanHistory,
     });
 
     const result = await chat.sendMessage(message);
