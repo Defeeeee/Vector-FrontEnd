@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Compass, Bot, User, ArrowLeft, Printer, TrendingUp, Award, Share2, Eye, Square, FileText } from "lucide-react";
+import { Compass, Bot, User, ArrowLeft, Printer, TrendingUp, Award, Share2, Eye, Square, FileText, CheckCircle2, Shield } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "next-themes";
@@ -11,22 +11,22 @@ interface ChatSimMessage {
   content: string;
 }
 
-const CHAT_SIMULATIONS: Record<"hours" | "cma" | "route" | "goal", ChatSimMessage[]> = {
+const CHAT_SIMULATIONS: Record<"hours" | "ifr" | "night" | "commercial", ChatSimMessage[]> = {
   hours: [
-    { role: "user", content: "¿Cuántas horas volé en total?" },
-    { role: "assistant", content: "Analizando tu bitácora... 📊 Tenés un total de **485.5 horas de vuelo**, distribuidas principalmente en tu LV-XYZ (320.0h) y LV-ABC (165.5h)." }
+    { role: "user", content: "¿Tengo al día mis horas de piloto al mando (PIC) en multimotor?" },
+    { role: "assistant", content: "Analizando tus registros... ✈️ Sí, acumulás **124.5 horas PIC** en aeronaves multimotor (ME). Estás en regla para tu habilitación de tipo." }
   ],
-  cma: [
-    { role: "user", content: "¿Cuándo vence mi CMA?" },
-    { role: "assistant", content: "Revisando tu perfil... ⏳ Tu Certificado Médico Aeronáutico (CMA) Clase 1 vence el **15 de Noviembre de 2026**. Estás en tiempo para tu renovación." }
+  ifr: [
+    { role: "user", content: "¿Cuándo vence mi habilitación IFR y el psicofísico?" },
+    { role: "assistant", content: "Revisando tus vencimientos... ⏳ Tu habilitación IFR vence el **12 de Octubre de 2026**. Tu CMA Clase 1 vence el **15 de Noviembre de 2026**. ¡Tenés 3 meses para planificar el turno!" }
   ],
-  route: [
-    { role: "user", content: "¿Cuál es mi ruta más frecuente?" },
-    { role: "assistant", content: "Analizando tus rutas... 🛩️ Tu ruta más frecuente es **SADP - SABE** (San Fernando a Aeroparque), registrada un total de 42 veces este año." }
+  night: [
+    { role: "user", content: "¿Cuántos aterrizajes nocturnos registré en los últimos 90 días?" },
+    { role: "assistant", content: "Revisando aterrizajes nocturnos... 🌙 Registraste **8 aterrizajes nocturnos** en los últimos 90 días. Cumplís con el requisito de reciente experiencia (mínimo 3 de noche) para el transporte de pasajeros." }
   ],
-  goal: [
-    { role: "user", content: "¿Llego a las 500 horas este mes?" },
-    { role: "assistant", content: "¡Sí, vas por buen camino! 🎯 Te faltan solo **14.5 horas** para alcanzar las 500h totales. Al ritmo de tu último mes (24.0h), lo lograrías en 12 días." }
+  commercial: [
+    { role: "user", content: "¿Cuántas horas me faltan para la licencia Comercial de 500h?" },
+    { role: "assistant", content: "Calculando progreso de licencia comercial... 🎯 Te faltan exactamente **14.5 horas** de vuelo. Manteniendo tu promedio mensual actual de 24.0h, alcanzarás el objetivo en **18 días**." }
   ]
 };
 
@@ -204,7 +204,7 @@ export default function PromoFlyerPage() {
                     Tu bitácora ahora es inteligente.
                   </h1>
                   <p className="text-zinc-500 dark:text-zinc-400 text-xs font-bold leading-relaxed print:text-zinc-700">
-                    Conversá con tus datos de vuelo. Analizá estadísticas, rutas y habilitaciones con lenguaje natural.
+                    Conversá con tu historial. Consultá habilitaciones, aterrizajes nocturnos y horas PIC multimotor en tiempo real.
                   </p>
                 </div>
 
@@ -285,7 +285,7 @@ export default function PromoFlyerPage() {
               <div className="col-span-4 flex flex-col justify-between gap-4">
                 <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-5 flex-1 flex flex-col justify-between print:bg-zinc-50 print:border-zinc-200">
                   <div>
-                    <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">Preguntas Sugeridas</p>
+                    <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">Consultas Frecuentes</p>
                     <div className="space-y-1.5 print:hidden">
                       {(Object.keys(CHAT_SIMULATIONS) as Array<keyof typeof CHAT_SIMULATIONS>).map((key) => {
                         const label = CHAT_SIMULATIONS[key][0].content;
@@ -294,7 +294,7 @@ export default function PromoFlyerPage() {
                           <button
                             key={key}
                             onClick={() => setActiveSim(key)}
-                            className={`w-full text-left text-[10px] font-bold px-3.5 py-2.5 rounded-xl border transition-all active:scale-[0.98] ${
+                            className={`w-full text-left text-[9px] font-bold px-3 py-2 rounded-xl border transition-all active:scale-[0.98] ${
                               isActive
                                 ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent"
                                 : "bg-white dark:bg-black/40 hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-white/10"
@@ -306,16 +306,15 @@ export default function PromoFlyerPage() {
                       })}
                     </div>
                     <div className="hidden print:block space-y-1 text-[10px] font-bold text-zinc-700">
-                      <div>• ¿Cuántas horas volé en total?</div>
-                      <div>• ¿Cuándo vence mi CMA?</div>
-                      <div>• ¿Cuál es mi ruta más frecuente?</div>
+                      <div>• ¿Tengo al día mis horas PIC ME?</div>
+                      <div>• ¿Cuándo vence mi CMA e IFR?</div>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-zinc-200 dark:border-white/10 mt-3 print:border-zinc-200">
-                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Privacidad</p>
+                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Acreditación</p>
                     <p className="text-[9px] text-zinc-500 dark:text-zinc-400 leading-tight font-medium print:text-zinc-700">
-                      Procesamiento local temporal sin almacenamiento del chat.
+                      Cálculos automáticos bajo regulaciones de aeronavegación.
                     </p>
                   </div>
                 </div>
@@ -323,7 +322,7 @@ export default function PromoFlyerPage() {
                 <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-5 print:bg-zinc-50 print:border-zinc-200">
                   <div className="flex items-center space-x-2 mb-2">
                     <TrendingUp className="w-3.5 h-3.5 text-zinc-500" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Progreso Anual</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Progreso Comercial</span>
                   </div>
                   <div className="flex justify-between items-baseline mb-1">
                     <span className="text-xl font-bold font-space-grotesk tracking-tighter">485.5</span>
@@ -345,7 +344,7 @@ export default function PromoFlyerPage() {
                   Tu bitácora ahora es inteligente.
                 </h1>
                 <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium mt-2 print:text-zinc-700">
-                  Presentamos el nuevo **Copiloto IA**. Analizá estadísticas y registros conversando directamente con tus datos de vuelo.
+                  Presentamos el nuevo **Copiloto IA**. Consultá vencimientos, habilitaciones y estadísticas conversando directamente con tus registros de vuelo.
                 </p>
               </div>
 
@@ -354,7 +353,7 @@ export default function PromoFlyerPage() {
                 <div className="col-span-7 flex flex-col justify-between bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-5 print:bg-zinc-50 print:border-zinc-200">
                   <div className="h-8 border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-1 mb-2">
                     <div className="flex items-center space-x-1.5">
-                      <div className="w-5 h-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded flex items-center justify-center print:bg-black">
+                      <div className="w-5 h-5 bg-zinc-900 dark:bg-white rounded flex items-center justify-center print:bg-black">
                         <Bot className="w-3 h-3" />
                       </div>
                       <span className="text-[10px] font-bold font-space-grotesk">Copiloto IA</span>
@@ -405,7 +404,7 @@ export default function PromoFlyerPage() {
 
                   <div className="border-t border-zinc-200 dark:border-white/10 pt-3">
                     <div className="bg-white dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-lg px-2.5 py-1.5 flex items-center justify-between print:border-zinc-300">
-                      <span className="text-zinc-400 dark:text-zinc-600 text-[10px] font-bold">Preguntale sobre tus vuelos...</span>
+                      <span className="text-zinc-400 dark:text-zinc-600 text-[10px] font-bold">Consultá a tu copilot...</span>
                       <span className="text-[10px] text-zinc-300">↑</span>
                     </div>
                   </div>
@@ -415,7 +414,7 @@ export default function PromoFlyerPage() {
                 <div className="col-span-5 flex flex-col gap-6">
                   {/* QR integrated */}
                   <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-6 flex flex-col items-center justify-between text-center print:bg-zinc-50 print:border-zinc-200">
-                    <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest print:text-zinc-600">Escaneá para probar</p>
+                    <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest print:text-zinc-600">Escaneá para ingresar</p>
                     <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/10 flex items-center justify-center my-3 shadow-sm print:bg-white">
                       <img src={qrUrl} alt="QR a Vector" className="w-24 h-24" />
                     </div>
@@ -427,7 +426,7 @@ export default function PromoFlyerPage() {
                   {/* Prompts Triggers */}
                   <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-6 flex-1 flex flex-col justify-between print:bg-zinc-50 print:border-zinc-200">
                     <div>
-                      <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">Preguntas de Prueba</p>
+                      <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">Experiencia Reciente</p>
                       <div className="space-y-1.5 print:hidden">
                         {(Object.keys(CHAT_SIMULATIONS) as Array<keyof typeof CHAT_SIMULATIONS>).map((key) => {
                           const label = CHAT_SIMULATIONS[key][0].content;
@@ -438,7 +437,7 @@ export default function PromoFlyerPage() {
                               onClick={() => setActiveSim(key)}
                               className={`w-full text-left text-[10px] font-bold px-3 py-2 rounded-xl border transition-all active:scale-[0.98] ${
                                 isActive
-                                  ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent"
+                                  ? "bg-zinc-950 dark:bg-white text-white dark:text-zinc-900 border-transparent"
                                   : "bg-white dark:bg-black/40 hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-white/10"
                               }`}
                             >
@@ -448,14 +447,14 @@ export default function PromoFlyerPage() {
                         })}
                       </div>
                       <div className="hidden print:block space-y-1 text-[10px] font-bold text-zinc-700">
-                        <div>• ¿Cuántas horas volé en total?</div>
-                        <div>• ¿Cuándo vence mi CMA?</div>
+                        <div>• ¿Cuántas horas me faltan para Comercial?</div>
+                        <div>• ¿Cuántos aterrizajes de noche tengo?</div>
                       </div>
                     </div>
 
                     <div className="pt-3 border-t border-zinc-200 dark:border-white/10 mt-3 print:border-zinc-200">
                       <div className="flex justify-between items-baseline mb-1">
-                        <span className="text-sm font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Total</span>
+                        <span className="text-sm font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Horas Totales</span>
                         <span className="text-lg font-bold font-space-grotesk tracking-tighter">485.5 h</span>
                       </div>
                       <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
@@ -476,7 +475,7 @@ export default function PromoFlyerPage() {
                   Tu bitácora ahora es inteligente.
                 </h1>
                 <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium mt-2 print:text-zinc-700">
-                  Presentamos el nuevo **Copiloto IA**. Analizá estadísticas y registros conversando directamente con tus datos de vuelo.
+                  Presentamos el nuevo **Copiloto IA**. Consultá vencimientos, habilitaciones y estadísticas conversando directamente con tus registros de vuelo.
                 </p>
               </div>
 
@@ -485,7 +484,7 @@ export default function PromoFlyerPage() {
                 <div className="col-span-7 flex flex-col justify-between bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-5 print:bg-zinc-50 print:border-zinc-200">
                   <div className="h-8 border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-1 mb-2">
                     <div className="flex items-center space-x-1.5">
-                      <div className="w-5 h-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded flex items-center justify-center print:bg-black">
+                      <div className="w-5 h-5 bg-zinc-900 dark:bg-white rounded flex items-center justify-center print:bg-black">
                         <Bot className="w-3 h-3" />
                       </div>
                       <span className="text-[10px] font-bold font-space-grotesk">Copiloto IA</span>
@@ -546,7 +545,7 @@ export default function PromoFlyerPage() {
                 <div className="col-span-5 flex flex-col gap-6">
                   {/* QR integrated */}
                   <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-6 flex flex-col items-center justify-between text-center print:bg-zinc-50 print:border-zinc-200">
-                    <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest print:text-zinc-600">Escaneá para probar</p>
+                    <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest print:text-zinc-600">Escaneá para ingresar</p>
                     <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/10 flex items-center justify-center my-4 shadow-sm print:bg-white">
                       <img src={qrUrl} alt="QR a Vector" className="w-28 h-28" />
                     </div>
@@ -569,7 +568,7 @@ export default function PromoFlyerPage() {
                               onClick={() => setActiveSim(key)}
                               className={`w-full text-left text-xs font-bold px-3.5 py-2.5 rounded-xl border transition-all active:scale-[0.98] ${
                                 isActive
-                                  ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent"
+                                  ? "bg-zinc-950 dark:bg-white text-white dark:text-zinc-900 border-transparent"
                                   : "bg-white dark:bg-black/40 hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-white/10"
                               }`}
                             >
@@ -581,13 +580,12 @@ export default function PromoFlyerPage() {
                       <div className="hidden print:block space-y-1 text-xs font-bold text-zinc-700">
                         <div>• ¿Cuántas horas volé en total?</div>
                         <div>• ¿Cuándo vence mi CMA?</div>
-                        <div>• ¿Cuál es mi ruta más frecuente?</div>
                       </div>
                     </div>
 
                     <div className="pt-4 border-t border-zinc-200 dark:border-white/10 mt-4 print:border-zinc-200">
                       <div className="flex justify-between items-baseline mb-1">
-                        <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Progreso Anual</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Progreso Comercial</span>
                         <span className="text-xl font-bold font-space-grotesk tracking-tighter">485.5 / 500 h</span>
                       </div>
                       <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
@@ -620,7 +618,7 @@ export default function PromoFlyerPage() {
                   {/* Triggers */}
                   <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-3xl p-6 flex-1 flex flex-col justify-between transition-colors shadow-sm dark:shadow-none print:bg-zinc-50 print:border-zinc-200">
                     <div>
-                      <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Preguntas de Prueba</p>
+                      <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Experiencia Reciente</p>
                       <div className="space-y-2.5 print:hidden">
                         {(Object.keys(CHAT_SIMULATIONS) as Array<keyof typeof CHAT_SIMULATIONS>).map((key) => {
                           const label = CHAT_SIMULATIONS[key][0].content;
@@ -631,7 +629,7 @@ export default function PromoFlyerPage() {
                               onClick={() => setActiveSim(key)}
                               className={`w-full text-left text-xs font-bold px-4 py-3 rounded-xl border transition-all active:scale-[0.98] ${
                                 isActive
-                                  ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent"
+                                  ? "bg-zinc-950 dark:bg-white text-white dark:text-zinc-900 border-transparent"
                                   : "bg-white dark:bg-black/40 hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-white/10"
                               }`}
                             >
@@ -673,7 +671,7 @@ export default function PromoFlyerPage() {
                         <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500">/ 500 Horas</span>
                       </div>
                       <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="h-full w-[97%] bg-zinc-900 dark:bg-white print:bg-black" />
+                        <div className="h-full w-[97%] bg-zinc-950 dark:bg-white print:bg-black" />
                       </div>
                     </div>
                   </div>
@@ -712,7 +710,7 @@ export default function PromoFlyerPage() {
                               <p>
                                 {msg.content.split("**").map((text, idx) => (
                                   idx % 2 === 1 ? <strong key={idx} className="font-bold">{text}</strong> : text
-                                ))}
+                                  ))}
                               </p>
                             ) : (
                               msg.content
