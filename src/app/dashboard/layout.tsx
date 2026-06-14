@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
 import { Profile } from "@/types";
+import ChatWidget from "@/components/dashboard/ChatWidget";
 
 import { redirect } from "next/navigation";
 
@@ -91,6 +92,9 @@ export default async function DashboardLayout({
 
       {/* Onboarding Logic */}
       <OnboardingOverlay profile={profile} />
+
+      {/* AI Chat Widget */}
+      <ChatWidget />
     </div>
   );
 }
