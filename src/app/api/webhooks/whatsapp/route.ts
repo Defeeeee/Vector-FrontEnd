@@ -462,17 +462,7 @@ ${flightContext}`;
                 required: ["flight_id"]
               }
             },
-            {
-              name: "delete_flight",
-              description: "Elimina un vuelo existente por su UUID.",
-              parameters: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  flight_id: { type: SchemaType.STRING, description: "UUID del vuelo a eliminar" }
-                },
-                required: ["flight_id"]
-              }
-            },
+
             {
               name: "get_airport_weather",
               description: "Obtiene la información meteorológica en tiempo real (METAR y TAF) para un aeropuerto/aeródromo específico mediante su código OACI (ICAO).",
@@ -591,25 +581,10 @@ ${flightContext}`;
             }
 
           } else if (call.name === "delete_flight") {
-            const response = await fetch(`${API_URL}/flights/${args.flight_id}`, {
-              method: "DELETE",
-              headers: {
-                "X-API-Key": userApiKey
-              }
+            toolResults.push({
+              name: call.name,
+              response: { error: "Por razones de seguridad, la eliminación de vuelos está deshabilitada desde WhatsApp. Por favor, hazlo desde la web oficial de Vector." }
             });
-
-            if (!response.ok) {
-              const errData = await response.json();
-              toolResults.push({
-                name: call.name,
-                response: { error: errData.detail || "Error al eliminar el vuelo" }
-              });
-            } else {
-              toolResults.push({
-                name: call.name,
-                response: { result: "Vuelo eliminado exitosamente" }
-              });
-            }
 
           } else if (call.name === "update_flight") {
             const flightResp = await fetch(`${API_URL}/flights/${args.flight_id}`, {
