@@ -94,11 +94,14 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
   };
 
   const currentCat = categoryColors[data?.category || "UNK"] || categoryColors.UNK;
+
   return (
-    <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-cal dark:shadow-none flex flex-col justify-between h-full relative overflow-hidden group transition-all duration-300">
+    <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-cal dark:shadow-none flex flex-col md:flex-row gap-6 md:gap-8 items-stretch w-full justify-between group transition-all duration-300">
       
-      {/* Upper header */}
-      <div className="space-y-6">
+      {/* Left Column: Station, Category, Wind and Temp */}
+      <div className="flex-1 flex flex-col justify-between space-y-6">
+        
+        {/* Header and Search Form */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-xl flex items-center justify-center border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
@@ -123,18 +126,21 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
           </form>
         </div>
 
-        {/* Status indicator */}
+        {/* Loading and Data */}
         {loading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex-1 flex items-center justify-center py-12">
             <RefreshCw className="w-6 h-6 animate-spin text-zinc-400" />
           </div>
         ) : error ? (
-          <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 flex items-start space-x-3 text-red-500 text-xs">
-            <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p className="font-bold leading-normal">{error}</p>
+          <div className="flex-1 flex items-center">
+            <div className="w-full bg-red-500/5 border border-red-500/10 rounded-2xl p-4 flex items-start space-x-3 text-red-500 text-xs">
+              <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p className="font-bold leading-normal">{error}</p>
+            </div>
           </div>
         ) : data ? (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 flex flex-col justify-end pt-4">
+            
             {/* Category Banner */}
             <div className={`border rounded-2xl p-4 flex items-center justify-between gap-3 ${currentCat.bg} transition-all`}>
               <div className="space-y-1">
@@ -168,17 +174,29 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
                 <Thermometer className="w-5 h-5 text-zinc-400" />
                 <div>
                   <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest leading-none">Temperatura</p>
-                  <p className="text-xs font-bold text-zinc-900 dark:text-white mt-1">
+                  <p className="text-xs font-bold text-zinc-950 dark:text-white mt-1">
                     {data.temp !== null ? `${data.temp} °C` : "---"}
                   </p>
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center py-12 text-zinc-400 text-xs font-bold">No hay datos</div>
+        )}
+      </div>
 
+      {/* Right Column: METAR, TAF and Actions */}
+      <div className="flex-1 flex flex-col justify-between space-y-4 border-t md:border-t-0 md:border-l border-zinc-200 dark:border-white/10 pt-6 md:pt-0 md:pl-8">
+        
+        {data ? (
+          <div className="space-y-4 flex-1 flex flex-col justify-between">
             {/* METAR Code Box */}
-            <div className="bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 space-y-1.5 select-all font-mono text-[10px] font-bold leading-relaxed text-zinc-600 dark:text-zinc-300 break-words shadow-inner">
-              <p className="text-[8px] font-sans font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none mb-1.5">METAR</p>
-              {data.metar}
+            <div className="bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 space-y-1.5 select-all font-mono text-[10px] font-bold leading-relaxed text-zinc-600 dark:text-zinc-300 break-words shadow-inner flex-1 flex flex-col justify-center">
+              <div>
+                <p className="text-[8px] font-sans font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none mb-2">METAR CODE</p>
+                <p className="break-all">{data.metar}</p>
+              </div>
             </div>
 
             {/* TAF Toggle & Box */}
@@ -186,7 +204,7 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
               <button 
                 type="button" 
                 onClick={() => setShowTaf(!showTaf)}
-                className="w-full flex items-center justify-between text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors py-1"
+                className="w-full flex items-center justify-between text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors py-2"
               >
                 <span className="flex items-center space-x-1.5">
                   <BookOpen className="w-4 h-4" />
@@ -213,20 +231,20 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-zinc-400 text-xs font-bold">No hay datos</div>
+          <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-bold">Aún sin reportes cargados</div>
+        )}
+
+        {/* Button to refresh manually */}
+        {!loading && data && (
+          <button 
+            onClick={() => fetchWeather(airport)}
+            className="w-full flex items-center justify-center space-x-2 bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-bold text-[8px] uppercase tracking-widest py-3.5 rounded-xl transition-all active:scale-[0.98] mt-2"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Actualizar Clima</span>
+          </button>
         )}
       </div>
-
-      {/* Button to refresh manually */}
-      {!loading && data && (
-        <button 
-          onClick={() => fetchWeather(airport)}
-          className="mt-6 w-full flex items-center justify-center space-x-2 bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-bold text-[8px] uppercase tracking-widest py-3.5 rounded-xl transition-all active:scale-[0.98]"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Actualizar Clima</span>
-        </button>
-      )}
     </div>
   );
 }

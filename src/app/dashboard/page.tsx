@@ -257,27 +257,17 @@ export default async function Dashboard() {
         <MetricItem label="Aeronaves" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
       </div>
 
-      {/* Row: Packs & Weather (sharing height) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch pt-4">
-        {hasActivePacks ? (
-          <>
-            <div className="lg:col-span-2">
-              <FlightPackWidget packs={packs} />
-            </div>
-            <div className="lg:col-span-1">
-              <WeatherWidget defaultAirport={mostVisited} />
-            </div>
-          </>
-        ) : (
-          <div className="lg:col-span-3">
-            <WeatherWidget defaultAirport={mostVisited} />
-          </div>
-        )}
+      {/* Flight Hours Packs */}
+      <FlightPackWidget packs={packs} />
+
+      {/* METAR/TAF Weather Widget - Full width horizontal card */}
+      <div className="pt-4">
+        <WeatherWidget defaultAirport={mostVisited} />
       </div>
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <div className="pt-2">
+        <div className="pt-6">
           <PCATracker flights={flights} />
         </div>
       )}
