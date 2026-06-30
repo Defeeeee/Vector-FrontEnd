@@ -192,11 +192,8 @@ export async function POST(req: NextRequest) {
     // Fetch user dashboard data from Python backend using WhatsApp phone number
     const secret = process.env.WHATSAPP_WEBHOOK_SECRET || "shared-vector-secret-2026";
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
-    const normalizedApiUrl = API_URL.endsWith("/api")
-      ? API_URL.slice(0, -4)
-      : (API_URL.endsWith("/api/") ? API_URL.slice(0, -5) : API_URL);
 
-    const userRes = await fetch(`${normalizedApiUrl}/api/whatsapp/user-data?phone=${fromNumber}&secret=${secret}`);
+    const userRes = await fetch(`${API_URL}/whatsapp/user-data?phone=${fromNumber}&secret=${secret}`);
     if (!userRes.ok) {
       const errText = await userRes.text().catch(() => "");
       console.error("Failed to fetch user-data from backend. Status:", userRes.status, "Body:", errText, "URL:", userRes.url);
@@ -228,7 +225,7 @@ export async function POST(req: NextRequest) {
     const session = userData.session || { active: false };
 
     // Fetch chat history from Python backend
-    const historyRes = await fetch(`${normalizedApiUrl}/api/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`);
+    const historyRes = await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`);
     let history: any[] = [];
     if (historyRes.ok) {
       const histData = await historyRes.json();
@@ -425,7 +422,7 @@ ${flightContext}`;
             const landing_dt = new Date(`${args.date}T${args.landing}:00Z`).toISOString().split('.')[0] + 'Z';
             const computedDuration = calculateFlightDuration(args.takeoff, args.landing);
 
-            const response = await fetch(`${normalizedApiUrl}/api/flights`, {
+            const response = await fetch(`${API_URL}/flights`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -473,7 +470,7 @@ ${flightContext}`;
             }
 
           } else if (call.name === "delete_flight") {
-            const response = await fetch(`${normalizedApiUrl}/api/flights/${args.flight_id}`, {
+            const response = await fetch(`${API_URL}/flights/${args.flight_id}`, {
               method: "DELETE",
               headers: {
                 "X-API-Key": userApiKey
@@ -494,7 +491,7 @@ ${flightContext}`;
             }
 
           } else if (call.name === "update_flight") {
-            const flightResp = await fetch(`${normalizedApiUrl}/api/flights/${args.flight_id}`, {
+            const flightResp = await fetch(`${API_URL}/flights/${args.flight_id}`, {
               headers: {
                 "X-API-Key": userApiKey
               }
@@ -574,7 +571,7 @@ ${flightContext}`;
               discount_amount: args.discount_amount !== undefined ? args.discount_amount : existingFlight.discount_amount
             };
 
-            const response = await fetch(`${normalizedApiUrl}/api/flights/${args.flight_id}`, {
+            const response = await fetch(`${API_URL}/flights/${args.flight_id}`, {
               method: "PATCH",
               headers: {
                 "Content-Type": "application/json",
@@ -624,7 +621,7 @@ ${flightContext}`;
       { role: "assistant", content: replyText }
     ];
 
-    await fetch(`${normalizedApiUrl}/api/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+    await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ history: updatedHistory })
