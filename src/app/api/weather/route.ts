@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
       const json = await metarRes.json();
       if (json && Array.isArray(json) && json.length > 0) {
         metarData = json[0];
-        rawMetar = metarData.rawOb || "No disponible";
-        category = metarData.fltcat || "UNK";
+        rawMetar = metarData.rawText || metarData.rawOb || "No disponible";
+        category = metarData.fltCat || metarData.fltcat || "UNK";
         temp = metarData.temp !== undefined ? metarData.temp : null;
         windSpeed = metarData.wspd !== undefined ? metarData.wspd : null;
         windDir = metarData.wdir !== undefined ? metarData.wdir : null;
