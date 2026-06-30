@@ -4,9 +4,9 @@ import { calculateFlightDuration } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-async function sendWhatsAppMessage(to: string, text: string) {
+async function sendWhatsAppMessage(to: string, text: string, dynamicPhoneId?: string) {
   const apiKey = process.env.KAPSO_API_KEY;
-  const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID;
+  const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID || dynamicPhoneId;
 
   if (!apiKey || !phoneNumberId) {
     console.error("Missing Kapso API configuration (KAPSO_API_KEY or KAPSO_PHONE_NUMBER_ID)");
@@ -32,7 +32,7 @@ async function sendWhatsAppMessage(to: string, text: string) {
     });
     if (!res.ok) {
       const errText = await res.text();
-      console.error("Error sending WhatsApp message via Kapso:", errText);
+      console.error("Error sending WhatsApp message via Kapso:", errText, "URL:", url);
     }
   } catch (err) {
     console.error("Failed to send WhatsApp message:", err);
@@ -168,15 +168,21 @@ export async function POST(req: NextRequest) {
 
     let fromNumber = "";
     let messageText = "";
+    let payloadPhoneNumberId = "";
 
     // Parse Kapso format or Meta raw format
-    if (body.event === "whatsapp.message.received" && body.data) {
+    if (body.message) {
+      fromNumber = body.message.from || body.conversation?.phone_number || "";
+      messageText = body.message.text?.body || body.message.kapso?.content || "";
+      payloadPhoneNumberId = body.phone_number_id || body.conversation?.phone_number_id || "";
+    } else if (body.event === "whatsapp.message.received" && body.data) {
       fromNumber = body.data.from;
       messageText = body.data.text?.body || "";
     } else if (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
       const msg = body.entry[0].changes[0].value.messages[0];
       fromNumber = msg.from;
       messageText = msg.text?.body || "";
+      payloadPhoneNumberId = body.entry[0].changes[0].value.metadata?.phone_number_id || "";
     }
 
     if (!fromNumber || !messageText.trim()) {
@@ -191,7 +197,8 @@ export async function POST(req: NextRequest) {
     if (!userRes.ok) {
       await sendWhatsAppMessage(
         fromNumber,
-        "Hola 🛩️ Tu número de WhatsApp no está asociado a ningún piloto en Vector. Ingresá a la web, ve a tu Perfil y vinculá tu número en el campo 'WhatsApp (para Copiloto IA)'."
+        "Hola 🛩️ Tu número de WhatsApp no está asociado a ningún piloto en Vector. Ingresá a la web, ve a tu Perfil y vinculá tu número en el campo 'WhatsApp (para Copiloto IA)'.",
+        payloadPhoneNumberId
       );
       return NextResponse.json({ success: true });
     }
@@ -201,7 +208,8 @@ export async function POST(req: NextRequest) {
     if (!userApiKey) {
       await sendWhatsAppMessage(
         fromNumber,
-        "Hola 🛩️ Tu cuenta no tiene un token de acceso activo. Ingresá a la web y genera tu token en el perfil."
+        "Hola 🛩️ Tu cuenta no tiene un token de acceso activo. Ingresá a la web y genera tu token en el perfil.",
+        payloadPhoneNumberId
       );
       return NextResponse.json({ success: true });
     }
@@ -617,7 +625,7 @@ ${flightContext}`;
       body: JSON.stringify({ history: updatedHistory })
     });
 
-    await sendWhatsAppMessage(fromNumber, replyText);
+    await sendWhatsAppMessage(fromNumber, replyText, payloadPhoneNumberId);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
