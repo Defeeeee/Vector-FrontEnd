@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { Profile, Aircraft, FlightPack, Transaction, Flight } from "@/types";
-import { toggleTrackingMode, depositBalance, updateAircraftCost } from "@/actions/balance";
+import { toggleTrackingMode, depositBalance, updateAircraftCost, deleteTransactionAction } from "@/actions/balance";
 import { 
   Wallet, Coins, ArrowUpRight, ArrowDownRight, 
   Plane, Package, Check, X, Edit2, Loader2, Plus,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -33,6 +33,8 @@ export default function BalanceClient({
   const [topUpDesc, setTopUpDesc] = useState("");
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null);
   const [topUpType, setTopUpType] = useState<"deposit" | "charge">("deposit");
+  const [isOverrideOpen, setIsOverrideOpen] = useState(false);
+  const [overrideAmount, setOverrideAmount] = useState("");
   
   // Rate Editing state
   const [editingAircraftId, setEditingAircraftId] = useState<string | null>(null);
@@ -73,6 +75,43 @@ export default function BalanceClient({
     });
   };
 
+  const handleOverrideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetBalance = parseFloat(overrideAmount);
+    if (isNaN(targetBalance)) {
+      alert("Por favor ingresa un monto válido");
+      return;
+    }
+    const difference = targetBalance - initialBalance;
+    if (difference === 0) {
+      setIsOverrideOpen(false);
+      return;
+    }
+    
+    startTransition(async () => {
+      try {
+        await depositBalance(difference, "Ajuste manual de saldo");
+        setIsOverrideOpen(false);
+        setOverrideAmount("");
+      } catch (err: any) {
+        alert(err.message || "Error al ajustar el saldo");
+      }
+    });
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este movimiento? Esto recalculará tu saldo.")) {
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await deleteTransactionAction(id);
+      } catch (err: any) {
+        alert(err.message || "Error al eliminar movimiento");
+      }
+    });
+  };
+
   const handleSaveRate = (aircraftId: string) => {
     const cost = parseFloat(editingCost);
     if (isNaN(cost) || cost < 0) {
@@ -90,6 +129,16 @@ export default function BalanceClient({
       }
     });
   };
+
+  const balanceString = initialBalance.toLocaleString("es-AR", { 
+    minimumFractionDigits: Math.abs(initialBalance) >= 1000000 ? 0 : 2,
+    maximumFractionDigits: Math.abs(initialBalance) >= 1000000 ? 0 : 2
+  });
+  const balanceFontSize = balanceString.length > 12 
+    ? "text-2xl md:text-3xl" 
+    : balanceString.length > 8 
+      ? "text-3xl md:text-4xl" 
+      : "text-4xl md:text-5xl";
 
   return (
     <div className="space-y-8 md:space-y-12">
@@ -303,9 +352,21 @@ export default function BalanceClient({
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.25em] block leading-none">Saldo Disponible</span>
-                    <h3 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none pt-1">
-                      $ {initialBalance.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <h3 className={`${balanceFontSize} font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none pt-1`}>
+                        $ {balanceString}
+                      </h3>
+                      <button
+                        onClick={() => {
+                          setOverrideAmount(String(initialBalance));
+                          setIsOverrideOpen(true);
+                        }}
+                        className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                        title="Ajustar saldo directamente"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -333,7 +394,7 @@ export default function BalanceClient({
                       {initialTransactions.map((tx) => {
                         const isDeposit = tx.type === "deposit";
                         return (
-                          <div key={tx.id} className="p-5 md:p-6 flex items-center justify-between gap-4 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                          <div key={tx.id} className="group p-5 md:p-6 flex items-center justify-between gap-4 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01] transition-colors">
                             <div className="flex items-center space-x-4">
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm border ${
                                 isDeposit 
@@ -351,9 +412,22 @@ export default function BalanceClient({
                                 </span>
                               </div>
                             </div>
-                            <span className={`text-base font-bold font-space-grotesk ${isDeposit ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
-                              {isDeposit ? "+" : "-"}$ {Math.abs(tx.amount).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                            </span>
+                            <div className="flex items-center space-x-3">
+                              <span className={`text-base font-bold font-space-grotesk ${isDeposit ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
+                                {isDeposit ? "+" : "-"}$ {Math.abs(tx.amount).toLocaleString("es-AR", { 
+                                  minimumFractionDigits: Math.abs(tx.amount) >= 100000 ? 0 : 2,
+                                  maximumFractionDigits: Math.abs(tx.amount) >= 100000 ? 0 : 2
+                                })}
+                              </span>
+                              <button
+                                onClick={() => handleDeleteTransaction(tx.id)}
+                                disabled={isPending}
+                                className="p-1.5 text-zinc-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                title="Eliminar registro"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -590,6 +664,75 @@ export default function BalanceClient({
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <span>{topUpType === "deposit" ? "Confirmar Carga" : "Confirmar Retiro"}</span>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Balance Override Modal */}
+      <AnimatePresence>
+        {isOverrideOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOverrideOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] w-full max-w-md p-6 md:p-8 shadow-2xl relative z-10 space-y-6"
+            >
+              <div className="flex justify-between items-center border-b border-zinc-100 dark:border-white/5 pb-4">
+                <h4 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white uppercase tracking-tight">
+                  Ajustar Saldo Actual
+                </h4>
+                <button
+                  onClick={() => setIsOverrideOpen(false)}
+                  className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleOverrideSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block">
+                    Nuevo Saldo en Cuenta ($)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      required
+                      value={overrideAmount}
+                      onChange={(e) => setOverrideAmount(e.target.value)}
+                      className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-zinc-900 dark:text-white w-full outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all"
+                    />
+                  </div>
+                  <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide mt-2">
+                    * Se creará una transacción de ajuste para compensar la diferencia automáticamente.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-cal-highlight dark:shadow-none hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 transition-all flex items-center justify-center space-x-2 pt-4"
+                >
+                  {isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>Confirmar Ajuste</span>
                   )}
                 </button>
               </form>

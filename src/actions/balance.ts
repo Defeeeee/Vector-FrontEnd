@@ -69,3 +69,21 @@ export async function updateAircraftCost(aircraftId: string, costPerHour: number
   revalidatePath("/dashboard/balance");
   revalidatePath("/dashboard/settings");
 }
+
+export async function deleteTransactionAction(transactionId: string) {
+  if (!transactionId) {
+    throw new Error("ID de transacción no encontrado");
+  }
+
+  const response = await apiFetch(`/transactions/${transactionId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Error al eliminar la transacción");
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/balance");
+}
