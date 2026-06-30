@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Profile, Aircraft, FlightPack, Transaction } from "@/types";
+import { Profile, Aircraft, FlightPack, Transaction, Flight } from "@/types";
 import { toggleTrackingMode, depositBalance, updateAircraftCost } from "@/actions/balance";
 import { 
   Wallet, Coins, ArrowUpRight, ArrowDownRight, 
-  Plane, Package, Check, X, Edit2, Loader2, Plus 
+  Plane, Package, Check, X, Edit2, Loader2, Plus,
+  ChevronDown, ChevronUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,6 +16,7 @@ interface BalanceClientProps {
   packs: FlightPack[];
   initialTransactions: Transaction[];
   initialBalance: number;
+  flights: Flight[];
 }
 
 export default function BalanceClient({
@@ -23,11 +25,13 @@ export default function BalanceClient({
   packs,
   initialTransactions,
   initialBalance,
+  flights,
 }: BalanceClientProps) {
   const [isPending, startTransition] = useTransition();
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpDesc, setTopUpDesc] = useState("");
+  const [expandedPackId, setExpandedPackId] = useState<string | null>(null);
   
   // Rate Editing state
   const [editingAircraftId, setEditingAircraftId] = useState<string | null>(null);
@@ -196,18 +200,83 @@ export default function BalanceClient({
                           </div>
                         </div>
 
-                        <div className="border-t border-zinc-100 dark:border-white/5 pt-4">
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-2">Aeronaves Habilitadas</span>
-                          <div className="flex flex-wrap gap-2">
-                            {pack.aircraft_ids.map((aid) => {
-                              const acft = aircraft.find(a => a.id === aid);
-                              return (
-                                <span key={aid} className="text-[9px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-white/5 shadow-sm">
-                                  {acft ? `${acft.registration} (${acft.icao})` : "Aeronave"}
-                                </span>
-                              );
-                            })}
+                        <div className="border-t border-zinc-100 dark:border-white/5 pt-4 flex flex-col space-y-4">
+                          <div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block mb-2">Aeronaves Habilitadas</span>
+                            <div className="flex flex-wrap gap-2">
+                              {pack.aircraft_ids.map((aid) => {
+                                const acft = aircraft.find(a => a.id === aid);
+                                return (
+                                  <span key={aid} className="text-[9px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-white/5 shadow-sm">
+                                    {acft ? `${acft.registration} (${acft.icao})` : "Aeronave"}
+                                  </span>
+                                );
+                              })}
+                            </div>
                           </div>
+
+                          {/* Consumptions History */}
+                          {(() => {
+                            const packFlights = flights.filter(f => 
+                              f.aircraft_id && 
+                              pack.aircraft_ids.includes(f.aircraft_id) && 
+                              new Date(f.takeoff) >= new Date(pack.start_date)
+                            ).sort((a, b) => new Date(b.takeoff).getTime() - new Date(a.takeoff).getTime());
+
+                            const isExpanded = expandedPackId === pack.id;
+
+                            return (
+                              <div className="pt-2 border-t border-zinc-100/50 dark:border-white/5 flex flex-col w-full">
+                                <button
+                                  onClick={() => setExpandedPackId(isExpanded ? null : pack.id)}
+                                  className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white flex items-center space-x-2 transition-colors self-start"
+                                >
+                                  {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  <span>Historial de Consumo</span>
+                                  <span className="bg-zinc-100 dark:bg-white/5 px-2 py-0.5 rounded-full text-[8px] text-zinc-400">
+                                    {packFlights.length} {packFlights.length === 1 ? "vuelo" : "vuelos"}
+                                  </span>
+                                </button>
+
+                                <AnimatePresence>
+                                  {isExpanded && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                      animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                      className="overflow-hidden space-y-2 w-full"
+                                    >
+                                      {packFlights.length > 0 ? (
+                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                          {packFlights.map((f) => {
+                                            const acft = aircraft.find(a => a.id === f.aircraft_id);
+                                            return (
+                                              <div key={f.id} className="flex justify-between items-center text-xs py-2 border-b border-zinc-100/50 dark:border-white/5 last:border-b-0">
+                                                <div className="flex flex-col">
+                                                  <span className="font-bold text-zinc-900 dark:text-white uppercase">{f.route}</span>
+                                                  <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-0.5">
+                                                    {new Date(f.date + 'T00:00:00').toLocaleDateString("es-AR")} • {acft?.registration}
+                                                  </span>
+                                                </div>
+                                                <span className="font-bold text-zinc-500 dark:text-zinc-400 font-space-grotesk">
+                                                  -{f.duration.toFixed(1)} hs
+                                                </span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-center py-4">
+                                          No hay vuelos registrados para este pack.
+                                        </p>
+                                      )}
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            );
+                          })()}
+
                         </div>
                       </div>
                     );

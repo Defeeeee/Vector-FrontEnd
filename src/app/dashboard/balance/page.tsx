@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile, FlightPack, Transaction } from "@/types";
+import { Aircraft, Profile, FlightPack, Transaction, Flight } from "@/types";
 import BalanceClient from "@/components/dashboard/BalanceClient";
 import { redirect } from "next/navigation";
 
@@ -17,7 +17,8 @@ async function getBalanceData() {
       aircraft: [], 
       packs: [], 
       transactions: [], 
-      balance: 0 
+      balance: 0,
+      flights: []
     };
   }
 
@@ -28,11 +29,12 @@ async function getBalanceData() {
     packs: (data.packs || []) as FlightPack[],
     transactions: (data.transactions || []) as Transaction[],
     balance: (data.balance || 0) as number,
+    flights: (data.flights || []) as Flight[]
   };
 }
 
 export default async function BalancePage() {
-  const { profile, aircraft, packs, transactions, balance } = await getBalanceData();
+  const { profile, aircraft, packs, transactions, balance, flights } = await getBalanceData();
 
   return (
     <BalanceClient
@@ -41,6 +43,7 @@ export default async function BalancePage() {
       packs={packs}
       initialTransactions={transactions}
       initialBalance={balance}
+      flights={flights}
     />
   );
 }
