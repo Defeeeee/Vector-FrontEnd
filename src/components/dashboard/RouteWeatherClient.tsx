@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CloudRain, Search, RefreshCw, ShieldAlert, BookOpen, Copy, Check, Compass, Play, MapPin, AlertCircle, ArrowRight, Wind, Thermometer } from "lucide-react";
+import { CloudRain, Search, RefreshCw, ShieldAlert, BookOpen, Copy, Check, Compass, Play, MapPin, AlertCircle, ArrowRight, Wind, Thermometer, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Profile, Flight } from "@/types";
 
@@ -20,14 +20,24 @@ interface AirportWeather {
   windDir: string | number | null;
 }
 
+interface NotamItem {
+  code: string;
+  from: string;
+  to: string;
+  textRaw: string;
+  textEsp: string;
+}
+
 export default function RouteWeatherClient({ profile, flights }: RouteWeatherClientProps) {
   const [routeInput, setRouteInput] = useState("");
   const [activeRoute, setActiveRoute] = useState<string[]>(["SADF", "SAAK", "SAEZ"]);
   const [weatherData, setWeatherData] = useState<Record<string, AirportWeather>>({});
+  const [notamsData, setNotamsData] = useState<Record<string, NotamItem[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [expandedTafs, setExpandedTafs] = useState<Record<string, boolean>>({});
+  const [expandedNotams, setExpandedNotams] = useState<Record<string, boolean>>({});
 
   // Parse frequent routes from flight history
   const getFrequentRoutes = () => {
@@ -43,7 +53,6 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
       .map(([routeStr]) => {
-        // Split SADF SADF or SADF-SAAK
         return routeStr.split(/[\s\-\>]+/).filter((a) => a.length >= 3 && a.length <= 4);
       })
       .filter((routeArr) => routeArr.length >= 2);
@@ -56,11 +65,12 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
     setLoading(true);
     setError(null);
     const results: Record<string, AirportWeather> = {};
-    let hasError = false;
+    const notamsResults: Record<string, NotamItem[]> = {};
     
     try {
       await Promise.all(
         airports.map(async (icao) => {
+          // Weather lookup
           try {
             const res = await fetch(`/api/weather?icao=${icao}`);
             if (res.ok) {
@@ -88,9 +98,23 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
               windDir: null
             };
           }
+
+          // NOTAMs lookup
+          try {
+            const nRes = await fetch(`/api/notams?icao=${icao}`);
+            if (nRes.ok) {
+              const data = await nRes.json();
+              notamsResults[icao] = data.notams || [];
+            } else {
+              notamsResults[icao] = [];
+            }
+          } catch (e) {
+            notamsResults[icao] = [];
+          }
         })
       );
       setWeatherData(results);
+      setNotamsData(notamsResults);
     } catch (err) {
       setError("Ocurrió un error al consultar las estaciones de la ruta.");
     } finally {
@@ -104,7 +128,6 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Parse route input: SADF SAAK SAEZ or SADF -> SAAK
     const airports = routeInput
       .toUpperCase()
       .split(/[\s\-\>\,\/]+/)
@@ -131,6 +154,10 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
     setExpandedTafs((prev) => ({ ...prev, [icao]: !prev[icao] }));
   };
 
+  const toggleNotams = (icao: string) => {
+    setExpandedNotams((prev) => ({ ...prev, [icao]: !prev[icao] }));
+  };
+
   // Weather rules config
   const categoryConfig: Record<string, { bg: string; text: string; dot: string; label: string; severity: number }> = {
     VFR: { bg: "bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/5 dark:border-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]", label: "VFR", severity: 0 },
@@ -146,6 +173,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
     let worstStation = "";
     let highWindStation = "";
     let highWindVal = 0;
+    let hasNotams = false;
 
     activeRoute.forEach((icao) => {
       const w = weatherData[icao];
@@ -159,6 +187,9 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
           highWindVal = w.windSpeed;
           highWindStation = icao;
         }
+      }
+      if (notamsData[icao] && notamsData[icao].length > 0) {
+        hasNotams = true;
       }
     });
 
@@ -179,6 +210,12 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
         type: "warning",
         title: "Advertencia de Viento Fuerte",
         desc: `Atención: Se reportan vientos de ${highWindVal} KT en la estación ${highWindStation}. Verificar el viento de costado cruzado máximo demostrado para tu aeronave.`
+      };
+    } else if (hasNotams) {
+      return {
+        type: "warning",
+        title: "NOTAMs Activos en la Ruta",
+        desc: "Atención: Se han reportado avisos NOTAM en una o más estaciones de tu trayecto. Revisa los detalles abajo para verificar clausuras de pista o restricciones de servicio."
       };
     } else {
       return {
@@ -201,7 +238,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
           Planificador Meteorológico de Ruta
         </h1>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-2xl">
-          Ingresa la ruta completa de tu vuelo para obtener un análisis meteorológico tramo por tramo del estado del METAR y TAF de cada aeródromo.
+          Ingresa la ruta completa de tu vuelo para obtener un análisis meteorológico tramo por tramo del estado del METAR y TAF de cada aeródromo, incluyendo los NOTAMs oficiales vigentes de la ANAC.
         </p>
       </div>
 
@@ -384,7 +421,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Consultando meteorología en tiempo real...</p>
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Consultando meteorología y NOTAMs en vivo...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -392,6 +429,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
               const w = weatherData[icao];
               if (!w) return null;
               const config = categoryConfig[w.category] || categoryConfig.UNK;
+              const airportNotams = notamsData[icao] || [];
               
               return (
                 <div 
@@ -453,7 +491,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                     </div>
                   </div>
 
-                  {/* Right panel: METAR raw code and TAF dropdown */}
+                  {/* Right panel: METAR raw code, TAF and NOTAMs */}
                   <div className="flex-1 flex flex-col justify-between space-y-4 border-t xl:border-t-0 xl:border-l border-zinc-200 dark:border-white/10 pt-6 xl:pt-0 xl:pl-8">
                     
                     {/* METAR Code display box */}
@@ -512,6 +550,53 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                         )}
                       </AnimatePresence>
                     </div>
+
+                    {/* NOTAMs List */}
+                    <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                      <button 
+                        type="button" 
+                        onClick={() => toggleNotams(icao)}
+                        className="w-full flex items-center justify-between text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors py-1.5"
+                      >
+                        <span className="flex items-center space-x-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-zinc-400" />
+                          <span>Avisos NOTAM ({airportNotams.length})</span>
+                        </span>
+                        <span className="text-xs font-normal text-zinc-400">{expandedNotams[icao] ? "▲" : "▼"}</span>
+                      </button>
+                      
+                      <AnimatePresence>
+                        {expandedNotams[icao] && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar pr-1 pt-1">
+                              {airportNotams.length > 0 ? (
+                                airportNotams.map((notam, nIdx) => (
+                                  <div key={nIdx} className="bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl p-3.5 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-black font-space-grotesk tracking-wide text-zinc-900 dark:text-white">{notam.code}</span>
+                                      <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500">Desde: {notam.from}</span>
+                                    </div>
+                                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 leading-none">Hasta: {notam.to}</p>
+                                    <p className="text-[10px] leading-relaxed text-zinc-700 dark:text-zinc-300 font-mono bg-zinc-900 dark:bg-black/30 text-zinc-200 p-3 rounded-lg border border-black/5 dark:border-white/5 font-semibold">
+                                      {notam.textEsp || notam.textRaw}
+                                    </p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 py-2 font-semibold italic text-center">No hay NOTAMs activos reportados para esta estación en la ANAC.</p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                   </div>
                 </div>
               );
