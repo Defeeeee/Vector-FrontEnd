@@ -224,7 +224,18 @@ ${flightContext}`;
                   pic_day_loc: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
                   pic_day_tra: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
                   pic_night_loc: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
-                  pic_night_tra: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" }
+                  pic_night_tra: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" },
+                  sic_day_loc: { type: SchemaType.NUMBER, description: "Horas SIC Diurno Local (opcional)" },
+                  sic_day_tra: { type: SchemaType.NUMBER, description: "Horas SIC Diurno Traslado (opcional)" },
+                  sic_night_loc: { type: SchemaType.NUMBER, description: "Horas SIC Nocturno Local (opcional)" },
+                  sic_night_tra: { type: SchemaType.NUMBER, description: "Horas SIC Nocturno Traslado (opcional)" },
+                  imc_pil: { type: SchemaType.NUMBER, description: "Horas de vuelo en IMC Real Piloto (opcional)" },
+                  imc_cop: { type: SchemaType.NUMBER, description: "Horas de vuelo en IMC Real Copiloto (opcional)" },
+                  capota: { type: SchemaType.NUMBER, description: "Horas de vuelo bajo Capota/Instrumental Simulado (opcional)" },
+                  sim_instructor: { type: SchemaType.NUMBER, description: "Horas en Simulador como Instructor (opcional)" },
+                  sim_pil_en_inst: { type: SchemaType.NUMBER, description: "Horas en Simulador como Piloto en Instrucción (opcional)" },
+                  discount_type: { type: SchemaType.STRING, description: "Tipo de descuento aplicado, ej: pack, rate (opcional)" },
+                  discount_amount: { type: SchemaType.NUMBER, description: "Monto del descuento en horas o dinero (opcional)" }
                 },
                 required: ["aircraft_registration", "date", "route", "duration", "takeoff", "landing", "landings", "purpose"]
               }
@@ -247,7 +258,18 @@ ${flightContext}`;
                   pic_day_loc: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Diurno Local (opcional)" },
                   pic_day_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Diurno Traslado (opcional)" },
                   pic_night_loc: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Local (opcional)" },
-                  pic_night_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Traslado (opcional)" }
+                  pic_night_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Traslado (opcional)" },
+                  sic_day_loc: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Diurno Local (opcional)" },
+                  sic_day_tra: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Diurno Traslado (opcional)" },
+                  sic_night_loc: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Nocturno Local (opcional)" },
+                  sic_night_tra: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Nocturno Traslado (opcional)" },
+                  imc_pil: { type: SchemaType.NUMBER, description: "Nuevas horas IMC Real Piloto (opcional)" },
+                  imc_cop: { type: SchemaType.NUMBER, description: "Nuevas horas IMC Real Copiloto (opcional)" },
+                  capota: { type: SchemaType.NUMBER, description: "Nuevas horas bajo Capota (opcional)" },
+                  sim_instructor: { type: SchemaType.NUMBER, description: "Nuevas horas Simulador como Instructor (opcional)" },
+                  sim_pil_en_inst: { type: SchemaType.NUMBER, description: "Nuevas horas Simulador como Piloto en Instrucción (opcional)" },
+                  discount_type: { type: SchemaType.STRING, description: "Nuevo tipo de descuento (opcional)" },
+                  discount_amount: { type: SchemaType.NUMBER, description: "Nuevo monto de descuento (opcional)" }
                 },
                 required: ["flight_id"]
               }
@@ -323,7 +345,18 @@ ${flightContext}`;
                 pic_day_loc: args.pic_day_loc || null,
                 pic_day_tra: args.pic_day_tra || null,
                 pic_night_loc: args.pic_night_loc || null,
-                pic_night_tra: args.pic_night_tra || null
+                pic_night_tra: args.pic_night_tra || null,
+                sic_day_loc: args.sic_day_loc || null,
+                sic_day_tra: args.sic_day_tra || null,
+                sic_night_loc: args.sic_night_loc || null,
+                sic_night_tra: args.sic_night_tra || null,
+                "IMC Pil": args.imc_pil || null,
+                "IMC Cop": args.imc_cop || null,
+                "Capota": args.capota || null,
+                "Sim Instructor": args.sim_instructor || null,
+                "Sim Pil en Inst": args.sim_pil_en_inst || null,
+                discount_type: args.discount_type || null,
+                discount_amount: args.discount_amount || null
               })
             });
 
@@ -422,7 +455,18 @@ ${flightContext}`;
               pic_day_loc: args.pic_day_loc !== undefined ? args.pic_day_loc : existingFlight.pic_day_loc,
               pic_day_tra: args.pic_day_tra !== undefined ? args.pic_day_tra : existingFlight.pic_day_tra,
               pic_night_loc: args.pic_night_loc !== undefined ? args.pic_night_loc : existingFlight.pic_night_loc,
-              pic_night_tra: args.pic_night_tra !== undefined ? args.pic_night_tra : existingFlight.pic_night_tra
+              pic_night_tra: args.pic_night_tra !== undefined ? args.pic_night_tra : existingFlight.pic_night_tra,
+              sic_day_loc: args.sic_day_loc !== undefined ? args.sic_day_loc : existingFlight.sic_day_loc,
+              sic_day_tra: args.sic_day_tra !== undefined ? args.sic_day_tra : existingFlight.sic_day_tra,
+              sic_night_loc: args.sic_night_loc !== undefined ? args.sic_night_loc : existingFlight.sic_night_loc,
+              sic_night_tra: args.sic_night_tra !== undefined ? args.sic_night_tra : existingFlight.sic_night_tra,
+              "IMC Pil": args.imc_pil !== undefined ? args.imc_pil : existingFlight["IMC Pil"],
+              "IMC Cop": args.imc_cop !== undefined ? args.imc_cop : existingFlight["IMC Cop"],
+              "Capota": args.capota !== undefined ? args.capota : existingFlight["Capota"],
+              "Sim Instructor": args.sim_instructor !== undefined ? args.sim_instructor : existingFlight["Sim Instructor"],
+              "Sim Pil en Inst": args.sim_pil_en_inst !== undefined ? args.sim_pil_en_inst : existingFlight["Sim Pil en Inst"],
+              discount_type: args.discount_type !== undefined ? args.discount_type : existingFlight.discount_type,
+              discount_amount: args.discount_amount !== undefined ? args.discount_amount : existingFlight.discount_amount
             };
 
             const response = await apiFetch(`/flights/${args.flight_id}`, {
