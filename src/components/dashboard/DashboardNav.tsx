@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Settings, Plus, Wallet } from "lucide-react";
+import { LayoutDashboard, History, Settings, Plus, Wallet, CloudRain } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -12,6 +12,7 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
     { href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" strokeWidth={2} />, label: "Dashboard" },
     { href: "/dashboard/history", icon: <History className="w-5 h-5" strokeWidth={2} />, label: "Bitácora" },
     { href: "/dashboard/balance", icon: <Wallet className="w-5 h-5" strokeWidth={2} />, label: "Balance" },
+    { href: "/dashboard/route-weather", icon: <CloudRain className="w-5 h-5" strokeWidth={2} />, label: "Ruta METAR" },
     { href: "/dashboard/settings", icon: <Settings className="w-5 h-5" strokeWidth={2} />, label: "Hangar" },
   ];
 
@@ -53,6 +54,7 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
             <MobileNavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={2} />} label="Stats" active={pathname === "/dashboard"} />
             <MobileNavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={2} />} label="Log" active={pathname === "/dashboard/history"} />
             <MobileNavItem href="/dashboard/balance" icon={<Wallet className="w-5 h-5" strokeWidth={2} />} label="Balance" active={pathname === "/dashboard/balance"} />
+            <MobileNavItem href="/dashboard/route-weather" icon={<CloudRain className="w-5 h-5" strokeWidth={2} />} label="Rutas" active={pathname === "/dashboard/route-weather"} />
             <MobileNavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={2} />} label="Hangar" active={pathname === "/dashboard/settings"} />
         </nav>
 
