@@ -64,6 +64,10 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
           <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
         </EditField>
 
+        <EditField label="WhatsApp (para Copiloto IA)">
+          <input name="whatsapp_phone" defaultValue={profile?.whatsapp_phone || ""} placeholder="Ej: 5491123456789" className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase tracking-tighter placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+        </EditField>
+
         <div className="md:col-span-2 p-6 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] space-y-4">
           <div className="flex justify-between items-center">
             <div>

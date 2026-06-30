@@ -48,6 +48,7 @@ export interface Profile {
   license_type?: string;
   tracking_mode?: 'packs' | 'balance';
   api_key?: string;
+  whatsapp_phone?: string;
 }
 
 export interface FlightPack {

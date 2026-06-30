@@ -9,6 +9,7 @@ export async function updateProfile(formData: FormData) {
   const last_name = formData.get("last_name") as string;
   const license_type = formData.get("license_type") as string;
   const cma_expiry = formData.get("cma_expiry") as string;
+  const whatsapp_phone = formData.get("whatsapp_phone") as string;
 
   if (!id) {
     throw new Error("ID de perfil no encontrado");
@@ -21,6 +22,7 @@ export async function updateProfile(formData: FormData) {
       last_name,
       license_type,
       cma_expiry: cma_expiry || null,
+      whatsapp_phone: whatsapp_phone || null,
     }),
   });
 
