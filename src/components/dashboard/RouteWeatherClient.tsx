@@ -38,6 +38,12 @@ interface MadhelData {
   control: string;
   traffic: string;
   status: string;
+  runways: string[];
+  radio: string[];
+  localization: string;
+  fuel: string;
+  telephone: string[];
+  norms: string;
 }
 
 export default function RouteWeatherClient({ profile, flights }: RouteWeatherClientProps) {
@@ -51,6 +57,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [expandedTafs, setExpandedTafs] = useState<Record<string, boolean>>({});
   const [expandedNotams, setExpandedNotams] = useState<Record<string, boolean>>({});
+  const [expandedMadhel, setExpandedMadhel] = useState<Record<string, boolean>>({});
 
   // Parse frequent routes from flight history
   const getFrequentRoutes = () => {
@@ -174,6 +181,10 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
 
   const toggleNotams = (icao: string) => {
     setExpandedNotams((prev) => ({ ...prev, [icao]: !prev[icao] }));
+  };
+
+  const toggleMadhelDropdown = (icao: string) => {
+    setExpandedMadhel((prev) => ({ ...prev, [icao]: !prev[icao] }));
   };
 
   // Weather rules config
@@ -563,7 +574,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                     )}
                   </div>
 
-                  {/* Right panel: METAR raw code, TAF and NOTAMs */}
+                  {/* Right panel: METAR raw code, TAF, NOTAMs, and MADHEL Tech */}
                   <div className="flex-1 flex flex-col justify-between space-y-4 border-t xl:border-t-0 xl:border-l border-zinc-200 dark:border-white/10 pt-6 xl:pt-0 xl:pl-8">
                     
                     {/* METAR Code display box */}
@@ -603,7 +614,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                           <BookOpen className="w-3.5 h-3.5" />
                           <span>Ver Pronóstico TAF</span>
                         </span>
-                        <span className="text-xs font-normal">{expandedTafs[icao] ? "▲" : "▼"}</span>
+                        <span className="text-xs font-normal text-zinc-400">{expandedTafs[icao] ? "▲" : "▼"}</span>
                       </button>
                       
                       <AnimatePresence>
@@ -668,6 +679,115 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                         )}
                       </AnimatePresence>
                     </div>
+
+                    {/* MADHEL Technical Dropdown */}
+                    {madhel && (
+                      <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                        <button 
+                          type="button" 
+                          onClick={() => toggleMadhelDropdown(icao)}
+                          className="w-full flex items-center justify-between text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors py-1.5"
+                        >
+                          <span className="flex items-center space-x-1.5">
+                            <Compass className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>Ficha Técnica MADHEL</span>
+                          </span>
+                          <span className="text-xs font-normal text-zinc-400">{expandedMadhel[icao] ? "▲" : "▼"}</span>
+                        </button>
+                        
+                        <AnimatePresence>
+                          {expandedMadhel[icao] && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 space-y-4 text-xs">
+                                
+                                {/* Runways (Pistas) */}
+                                <div className="space-y-1.5">
+                                  <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Pistas (Runways)</p>
+                                  <div className="space-y-1">
+                                    {madhel.runways && madhel.runways.length > 0 ? (
+                                      madhel.runways.map((rwy, rIdx) => (
+                                        <p key={rIdx} className="font-bold text-zinc-800 dark:text-zinc-200 leading-normal font-mono bg-white dark:bg-[#151515] px-3 py-2.5 rounded-lg border border-zinc-200/50 dark:border-white/5">
+                                          {rwy}
+                                        </p>
+                                      ))
+                                    ) : (
+                                      <p className="text-zinc-500 italic text-[10px]">No especificadas.</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Frequencies (Frecuencias) */}
+                                <div className="space-y-1.5">
+                                  <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Frecuencias de Radio</p>
+                                  <div className="space-y-1">
+                                    {madhel.radio && madhel.radio.length > 0 ? (
+                                      madhel.radio.map((freq, fIdx) => (
+                                        <p key={fIdx} className="font-bold text-zinc-800 dark:text-zinc-200 leading-normal font-mono bg-white dark:bg-[#151515] px-3 py-2.5 rounded-lg border border-zinc-200/50 dark:border-white/5">
+                                          {freq}
+                                        </p>
+                                      ))
+                                    ) : (
+                                      <p className="text-zinc-500 italic text-[10px]">No especificadas (Frecuencia común local 123.50 MHz / 123.20 MHz).</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Location details (Ubicación respecto a la ciudad) */}
+                                {madhel.localization && (
+                                  <div className="space-y-1">
+                                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Ubicación de Referencia</p>
+                                    <p className="font-medium text-zinc-700 dark:text-zinc-300 leading-normal bg-white dark:bg-[#151515] px-3 py-2.5 rounded-lg border border-zinc-200/50 dark:border-white/5">
+                                      {madhel.localization}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Fuel & Telephones */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-1">
+                                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Combustible</p>
+                                    <p className="font-bold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-[#151515] px-3 py-2 rounded-lg border border-zinc-200/50 dark:border-white/5 font-mono text-[10px]">
+                                      {madhel.fuel}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Teléfonos</p>
+                                    <div className="space-y-1">
+                                      {madhel.telephone && madhel.telephone.length > 0 ? (
+                                        madhel.telephone.map((tel, tIdx) => (
+                                          <p key={tIdx} className="font-bold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-[#151515] px-3 py-1.5 rounded-lg border border-zinc-200/50 dark:border-white/5 text-[9px] font-mono leading-none">
+                                            {tel}
+                                          </p>
+                                        ))
+                                      ) : (
+                                        <p className="text-zinc-500 italic text-[10px] pt-1">No cargados.</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Normas particulares (AIP particular norms) */}
+                                {madhel.norms && (
+                                  <div className="space-y-1">
+                                    <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Normas Particulares ANAC</p>
+                                    <p className="font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed bg-white dark:bg-[#151515] p-3 rounded-lg border border-zinc-200/50 dark:border-white/5 text-[10px] whitespace-pre-line">
+                                      {madhel.norms}
+                                    </p>
+                                  </div>
+                                )}
+
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
 
                   </div>
                 </div>
