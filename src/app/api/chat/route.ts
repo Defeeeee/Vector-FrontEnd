@@ -5,7 +5,15 @@ import { Flight, Aircraft, Profile } from "@/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-function buildFlightContext(flights: Flight[], aircraft: Aircraft[], profile: Profile | null): string {
+function buildFlightContext(
+  flights: Flight[],
+  aircraft: Aircraft[],
+  profile: Profile | null,
+  packs: any[],
+  transactions: any[],
+  balance: number,
+  session: any
+): string {
   const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -58,21 +66,46 @@ function buildFlightContext(flights: Flight[], aircraft: Aircraft[], profile: Pr
     .map(([k, h]) => `${k}: ${h.toFixed(1)}h`)
     .join("; ");
 
+  const txLines = transactions.slice(0, 5).map(t => {
+    return `- [${t.type.toUpperCase()}] ${new Date(t.created_at).toLocaleDateString("es-AR")}: $${t.amount} | ${t.description || ""}`;
+  }).join("\n");
+
+  const packLines = packs.map(p => {
+    const acRegs = p.aircraft_ids.map((aid: string) => aircraftMap.get(aid)?.registration || "Avión").join(", ");
+    return `- Pack "${p.name}": ${p.remaining_hours.toFixed(1)} hs restantes de ${p.total_hours.toFixed(1)} hs totales (aviones: ${acRegs}) | ${p.is_active ? "Activo" : "Inactivo"}`;
+  }).join("\n");
+
+  const activeSessionStr = session?.active 
+    ? `Sí, activo en ${aircraftMap.get(session.session.aircraft_id)?.registration || "Desconocido"} desde las ${new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} UTC`
+    : "No hay vuelo en curso.";
+
   return `
 ## Perfil del piloto
 Nombre: ${profile ? `${profile.first_name} ${profile.last_name}` : "Desconocido"}
 Licencia: ${profile?.license_type || "No especificada"}
 Vencimiento CMA: ${profile?.cma_expiry || "No especificado"}
+Modo de seguimiento: ${profile?.tracking_mode === "balance" ? "Saldo en Cuenta ($)" : "Packs de Horas"}
 
-## Resumen estadístico
-Total vuelos: ${flights.length}
-Total horas: ${totalHours.toFixed(1)}h
+## Estado Financiero (Modo Saldo en Cuenta)
+Saldo disponible en cuenta: $ ${balance.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+Últimos movimientos de dinero:
+${txLines || "(Sin transacciones registradas)"}
+
+## Packs de Horas (Modo Packs de Horas)
+${packLines || "(Sin packs de horas registrados)"}
+
+## Vuelo en Vivo (Flight Helper)
+Vuelo actual en curso: ${activeSessionStr}
+
+## Resumen estadístico de bitácora
+Total vuelos registrados: ${flights.length}
+Total horas voladas: ${totalHours.toFixed(1)}h
 Total aterrizajes: ${totalLandings}
 Aeronaves usadas: ${aircraft.map(a => `${a.registration} (${a.icao}, ${a.type})`).join("; ")}
 Horas por aeronave: ${acSummary}
 Rutas más frecuentes: ${topRoutes}
-Vuelo más largo: ${Math.max(...flights.map(f => f.duration)).toFixed(1)}h
-Promedio por vuelo: ${(totalHours / flights.length).toFixed(1)}h
+Vuelo más largo: ${flights.length > 0 ? Math.max(...flights.map(f => f.duration)).toFixed(1) + "h" : "0h"}
+Promedio por vuelo: ${flights.length > 0 ? (totalHours / flights.length).toFixed(1) + "h" : "0h"}
 
 ## Registro completo de vuelos (${flights.length} vuelos)
 ${flightLines}
@@ -91,19 +124,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "API key de Gemini no configurada" }, { status: 500 });
     }
 
-    // Fetch pilot data
-    const [flightsRes, aircraftRes, profilesRes] = await Promise.all([
-      apiFetch("/flights"),
-      apiFetch("/aircraft"),
-      apiFetch("/profiles"),
-    ]);
+    // Fetch pilot data in a consolidated call to dashboard
+    const dashboardRes = await apiFetch("/dashboard");
+    if (!dashboardRes.ok) {
+      return NextResponse.json({ error: "No se pudieron obtener los datos de la bitácora" }, { status: 500 });
+    }
 
-    const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
-    const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
-    const profiles: Profile[] = profilesRes.ok ? await profilesRes.json() : [];
-    const profile = profiles[0] || null;
+    const data = await dashboardRes.json();
+    const flights: Flight[] = data.flights || [];
+    const aircraft: Aircraft[] = data.aircraft || [];
+    const profile: Profile | null = data.profile || null;
+    const packs = data.packs || [];
+    const transactions = data.transactions || [];
+    const balance = data.balance || 0;
+    const session = data.session || { active: false };
 
-    const flightContext = buildFlightContext(flights, aircraft, profile);
+    const flightContext = buildFlightContext(
+      flights,
+      aircraft,
+      profile,
+      packs,
+      transactions,
+      balance,
+      session
+    );
 
     const systemPrompt = `Eres un asistente de aviación inteligente integrado en Vector, una aplicación de bitácora de vuelo. 
 Tu rol es ayudar al piloto a analizar su historial de vuelos, estadísticas, y responder preguntas sobre su experiencia aérea.

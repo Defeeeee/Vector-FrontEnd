@@ -32,3 +32,17 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/settings");
 }
+
+export async function regenerateApiKey() {
+  const response = await apiFetch("/profiles/apikey/regenerate", {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Error al regenerar el token");
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+}

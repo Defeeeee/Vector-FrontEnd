@@ -159,22 +159,35 @@ export default async function Dashboard() {
         {/* Live Session - Spans full width if active */}
         {session.active && (
           <div className="md:col-span-4 lg:col-span-6 animate-in zoom-in-95 duration-500 mb-2">
-            <div className="bg-green-500 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 lg:p-12 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 shadow-cal relative overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)] pointer-events-none" />
-              <div className="flex items-center space-x-4 md:space-x-6 relative z-10">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-white text-green-600 rounded-xl md:rounded-2xl flex items-center justify-center animate-pulse shadow-lg">
-                  <Compass className="w-6 h-6 md:w-8 md:h-8" />
+            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-green-500/20 dark:border-green-500/10 rounded-[2rem] p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500" />
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center animate-pulse flex-shrink-0">
+                  <Compass className="w-5 h-5" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em]">Vuelo en Progreso</p>
-                  <h3 className="text-2xl md:text-3xl font-bold font-space-grotesk tracking-tighter">
+                <div className="space-y-0.5">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-widest leading-none">Vuelo en Curso</p>
+                  </div>
+                  <h3 className="text-lg font-bold font-space-grotesk tracking-tight text-zinc-900 dark:text-white uppercase mt-0.5">
                     {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
                   </h3>
                 </div>
               </div>
-              <div className="flex flex-col md:items-end leading-none relative z-10 mt-2 md:mt-0">
-                <span className="text-4xl md:text-5xl font-bold font-space-grotesk tracking-tighter">LIVE</span>
-                <p className="text-[10px] font-bold text-green-100 uppercase tracking-[0.3em] mt-1 md:mt-2">Desde {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} UTC</p>
+              <div className="flex items-center space-x-6 md:text-right">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Desde (UTC)</span>
+                  <span className="text-sm font-bold font-space-grotesk text-zinc-900 dark:text-white mt-1">
+                    {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
+                  </span>
+                </div>
+                <Link 
+                  href="/dashboard/log-flight"
+                  className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[9px] uppercase tracking-widest px-5 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-sm border border-zinc-200 dark:border-white/10"
+                >
+                  Ver Vuelo
+                </Link>
               </div>
             </div>
           </div>

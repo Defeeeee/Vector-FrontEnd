@@ -46,6 +46,7 @@ export interface Profile {
   cma_expiry?: string;
   license_type?: string;
   tracking_mode?: 'packs' | 'balance';
+  api_key?: string;
 }
 
 export interface FlightPack {

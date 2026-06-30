@@ -1,7 +1,7 @@
 "use client";
 
 import { Profile } from "@/types";
-import { updateProfile } from "@/actions/profile";
+import { updateProfile, regenerateApiKey } from "@/actions/profile";
 import { User, Shield, Calendar, CreditCard, Save, Loader2, Compass } from "lucide-react";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
@@ -13,6 +13,22 @@ interface ProfileFormProps {
 export default function ProfileForm({ profile }: ProfileFormProps) {
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  async function handleRegenerateKey() {
+    if (!confirm("¿Estás seguro de que querés regenerar tu token de acceso? El token anterior dejará de funcionar inmediatamente.")) {
+      return;
+    }
+    setIsRegenerating(true);
+    try {
+      await regenerateApiKey();
+    } catch (e) {
+      alert("Error al regenerar el token");
+    } finally {
+      setIsRegenerating(false);
+    }
+  }
 
   async function handleSubmit(formData: FormData) {
     setSuccess(false);
@@ -47,6 +63,47 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         <EditField label="Vencimiento CMA">
           <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
         </EditField>
+
+        <div className="md:col-span-2 p-6 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h4 className="text-[10px] font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Token de Acceso API (iOS Shortcuts)</h4>
+              <p className="text-zinc-500 dark:text-zinc-400 text-[9px] uppercase tracking-wider mt-0.5 leading-relaxed">Usa este token único para automatizar el inicio y fin de tus vuelos mediante un Shortcut de iOS.</p>
+            </div>
+            <Shield className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input 
+              readOnly 
+              type="text" 
+              value={profile?.api_key || "No disponible. Guarda tu perfil primero."} 
+              className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3.5 text-xs font-mono font-bold text-zinc-600 dark:text-zinc-300 outline-none select-all shadow-sm" 
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (profile?.api_key) {
+                    navigator.clipboard.writeText(profile.api_key);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }
+                }}
+                className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[9px] uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all active:scale-[0.95] flex-shrink-0"
+              >
+                {copied ? "¡Copiado!" : "Copiar"}
+              </button>
+              <button
+                type="button"
+                onClick={handleRegenerateKey}
+                disabled={isRegenerating}
+                className="bg-transparent hover:bg-zinc-100 dark:hover:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 font-bold text-[9px] uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all disabled:opacity-50 flex-shrink-0"
+              >
+                {isRegenerating ? "Generando..." : "Regenerar"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-8 border-t border-zinc-200 dark:border-white/10 gap-6">

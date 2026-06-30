@@ -24,7 +24,23 @@ async function getData() {
   return { aircraft, session };
 }
 
-export default async function LogFlightPage() {
+interface PageProps {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined };
+}
+
+export default async function LogFlightPage({ searchParams }: PageProps) {
+  const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
+  const prefill = resolvedParams.prefill === "true";
+  const prefillData = prefill ? {
+    aircraft_id: resolvedParams.aircraft_id as string,
+    route: resolvedParams.route as string,
+    takeoff: resolvedParams.takeoff as string,
+    landing: resolvedParams.landing as string,
+    date: resolvedParams.date as string,
+    landings: resolvedParams.landings ? parseInt(resolvedParams.landings as string, 10) : undefined,
+    duration: resolvedParams.duration as string,
+  } : undefined;
+
   const { aircraft, session } = await getData();
 
   return (
@@ -44,7 +60,7 @@ export default async function LogFlightPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2 order-2 lg:order-1">
-          <FlightLogForm aircraft={aircraft} />
+          <FlightLogForm aircraft={aircraft} initialData={prefillData} />
         </div>
         
         <div className="lg:col-span-1 order-1 lg:order-2 space-y-6 md:space-y-8">
