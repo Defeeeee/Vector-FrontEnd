@@ -162,13 +162,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let fromNumber = "";
+  let payloadPhoneNumberId = "";
   try {
     const body = await req.json();
     console.log("Incoming WhatsApp Webhook Payload:", JSON.stringify(body, null, 2));
 
-    let fromNumber = "";
     let messageText = "";
-    let payloadPhoneNumberId = "";
 
     // Parse Kapso format or Meta raw format
     if (body.message) {
@@ -632,6 +632,18 @@ ${flightContext}`;
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("WhatsApp webhook execution error:", err);
-    return NextResponse.json({ error: err.message || "Internal error" }, { status: 500 });
+    if (fromNumber) {
+      const isQuotaError = err.message?.includes("quota") || err.message?.includes("429");
+      const userMessage = isQuotaError
+        ? "Hola 🛩️ He recibido tu mensaje, pero el Copiloto IA ha alcanzado temporalmente su límite de cuota diaria. Por favor, intenta de nuevo en unos minutos."
+        : "Hola 🛩️ Ocurrió un error al procesar tu solicitud con el Copiloto IA. Por favor, intenta de nuevo en un momento.";
+      try {
+        await sendWhatsAppMessage(fromNumber, userMessage, payloadPhoneNumberId);
+      } catch (sendErr) {
+        console.error("Failed to send fallback WhatsApp error message:", sendErr);
+      }
+    }
+    // Return 200 to prevent retry loops
+    return NextResponse.json({ success: false, error: err.message || "Internal error" });
   }
 }
