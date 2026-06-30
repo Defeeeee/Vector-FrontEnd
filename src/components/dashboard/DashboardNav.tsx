@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Settings, Plus } from "lucide-react";
+import { LayoutDashboard, History, Settings, Plus, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
   const navItems = [
     { href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" strokeWidth={2} />, label: "Dashboard" },
     { href: "/dashboard/history", icon: <History className="w-5 h-5" strokeWidth={2} />, label: "Bitácora" },
+    { href: "/dashboard/balance", icon: <Wallet className="w-5 h-5" strokeWidth={2} />, label: "Balance" },
     { href: "/dashboard/settings", icon: <Settings className="w-5 h-5" strokeWidth={2} />, label: "Hangar" },
   ];
 
@@ -21,8 +22,8 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
                  <Plus className="w-4 h-4" />
                  <span>Nuevo Vuelo</span>
               </Link>
-
-              <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2 px-4">Menu Principal</div>
+ 
+               <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2 px-4">Menu Principal</div>
               {navItems.map((item) => {
                   const active = pathname === item.href;
                   return (
@@ -51,6 +52,7 @@ export default function DashboardNav({ isDesktop }: { isDesktop?: boolean }) {
         <nav className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl px-2 py-2 rounded-full flex items-center shadow-cal dark:shadow-none border border-zinc-200 dark:border-white/10 transition-colors duration-300">
             <MobileNavItem href="/dashboard" icon={<LayoutDashboard className="w-5 h-5" strokeWidth={2} />} label="Stats" active={pathname === "/dashboard"} />
             <MobileNavItem href="/dashboard/history" icon={<History className="w-5 h-5" strokeWidth={2} />} label="Log" active={pathname === "/dashboard/history"} />
+            <MobileNavItem href="/dashboard/balance" icon={<Wallet className="w-5 h-5" strokeWidth={2} />} label="Balance" active={pathname === "/dashboard/balance"} />
             <MobileNavItem href="/dashboard/settings" icon={<Settings className="w-5 h-5" strokeWidth={2} />} label="Hangar" active={pathname === "/dashboard/settings"} />
         </nav>
 

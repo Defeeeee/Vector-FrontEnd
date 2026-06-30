@@ -58,6 +58,8 @@ export async function logFlight(formData: FormData) {
     "Capota": getNumber(formData.get("capota")),
     "Sim Instructor": getNumber(formData.get("sim_instructor")),
     "Sim Pil en Inst": getNumber(formData.get("sim_pil_en_inst")),
+    discount_type: (formData.get("discount_type") as string) || null,
+    discount_amount: getNumber(formData.get("discount_amount")),
   };
 
   const response = await apiFetch("/flights", {
@@ -131,6 +133,8 @@ export async function updateFlight(formData: FormData) {
     "Capota": getNumber(formData.get("capota")),
     "Sim Instructor": getNumber(formData.get("sim_instructor")),
     "Sim Pil en Inst": getNumber(formData.get("sim_pil_en_inst")),
+    discount_type: (formData.get("discount_type") as string) || null,
+    discount_amount: getNumber(formData.get("discount_amount")),
   };
 
   try {

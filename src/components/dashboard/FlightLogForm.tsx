@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Aircraft } from "@/types";
 import { logFlight } from "@/actions/flight";
-import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Users, Cloud, AlertCircle, Monitor } from "lucide-react";
+import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Users, Cloud, AlertCircle, Monitor, Percent } from "lucide-react";
 import { calculateFlightDuration, isLocalFlight } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,6 +17,8 @@ interface FlightLogFormProps {
     date?: string;
     landings?: number;
     duration?: string;
+    discount_type?: string;
+    discount_amount?: number;
   };
   onSuccess?: () => void;
   inModal?: boolean;
@@ -40,6 +42,9 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
   const [aircraftId, setAircraftId] = useState(initialData?.aircraft_id || "");
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [error, setError] = useState<string | null>(null);
+
+  const [discountType, setDiscountType] = useState(initialData?.discount_type || "");
+  const [discountAmount, setDiscountAmount] = useState(initialData?.discount_amount ? String(initialData.discount_amount) : "");
 
   const [picDayLoc, setPicDayLoc] = useState("");
   const [picDayTra, setPicDayTra] = useState("");
@@ -236,6 +241,41 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                     <MiniFormField label="Capota" name="capota" value={capota} onChange={setCapota} />
                     <MiniFormField label="Sim. Inst." name="sim_instructor" value={simInst} onChange={setSimInst} />
                     <MiniFormField label="Sim. Piloto" name="sim_pil_en_inst" value={simPil} onChange={setSimPil} />
+                </div>
+            </div>
+            {/* 04. Descuentos */}
+            <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-white/10">
+                <div className="flex items-center justify-between px-2">
+                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">04. Descuento Aplicado</p>
+                    <Percent className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                    <div className="relative group">
+                        <select 
+                            name="discount_type" 
+                            value={discountType} 
+                            onChange={(e) => setDiscountType(e.target.value)} 
+                            className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 px-4 text-sm font-bold text-zinc-500 dark:text-zinc-400 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all shadow-sm cursor-pointer"
+                        >
+                            <option value="">Sin Descuento</option>
+                            <option value="value">Valor Fijo ($)</option>
+                            <option value="percent">Porcentaje (%)</option>
+                        </select>
+                    </div>
+                    {discountType && (
+                        <div className="relative group">
+                            <input 
+                                type="number" 
+                                name="discount_amount" 
+                                min="0" 
+                                step="0.01" 
+                                placeholder={discountType === "value" ? "Monto de descuento ($)" : "Porcentaje de descuento (%)"} 
+                                value={discountAmount} 
+                                onChange={(e) => setDiscountAmount(e.target.value)} 
+                                className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] py-4 px-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600 shadow-sm"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

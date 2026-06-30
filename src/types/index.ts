@@ -24,6 +24,9 @@ export interface Flight {
   capota?: number;
   sim_instructor?: number;
   sim_pil_en_inst?: number;
+  
+  discount_type?: 'value' | 'percent';
+  discount_amount?: number;
 }
 
 export interface Aircraft {
@@ -33,6 +36,7 @@ export interface Aircraft {
   icao: string;
   type: string; // Marca y Modelo
   type_acft?: string; // MONT-T, MULT-T, etc.
+  cost_per_hour?: number;
 }
 
 export interface Profile {
@@ -41,6 +45,7 @@ export interface Profile {
   last_name: string;
   cma_expiry?: string;
   license_type?: string;
+  tracking_mode?: 'packs' | 'balance';
 }
 
 export interface FlightPack {
@@ -53,6 +58,16 @@ export interface FlightPack {
   start_date: string;
   is_active: boolean;
   aircraft_ids: string[];
+}
+
+export interface Transaction {
+  id: string;
+  user_id: string;
+  flight_id?: string;
+  amount: number;
+  type: 'deposit' | 'charge';
+  description?: string;
+  created_at: string;
 }
 
 
