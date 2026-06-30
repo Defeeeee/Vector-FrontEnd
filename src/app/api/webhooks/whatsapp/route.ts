@@ -39,6 +39,35 @@ async function sendWhatsAppMessage(to: string, text: string, dynamicPhoneId?: st
   }
 }
 
+function formatForWhatsApp(text: string): string {
+  let formatted = text;
+
+  // 1. Convert headers (e.g. ### Title) to bold uppercase titles: *TITLE*
+  formatted = formatted.replace(/^(#{1,6})\s+(.*?)$/gm, (match, hashes, title) => {
+    return `\n*${title.trim().toUpperCase()}*\n`;
+  });
+
+  // 2. Convert markdown bold (**text**) to WhatsApp bold (*text*)
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, "*$1*");
+
+  // 3. Remove horizontal rules
+  formatted = formatted.replace(/^\s*[-*_]{3,}\s*$/gm, "\n*~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~*\n");
+
+  // 4. Format bullet lists: convert lines starting with `* ` or `- ` (plus optional whitespace) to `• ` and strip extra indentation
+  formatted = formatted.replace(/^\s*[-*]\s+(.*?)$/gm, "• $1");
+
+  // 5. Clean up numbered lists (remove extra spaces between number and text)
+  formatted = formatted.replace(/^\s*(\d+)\.\s+(.*?)$/gm, "$1. $2");
+
+  // 6. Format Markdown links [text](url) to "text (url)" or "text: url"
+  formatted = formatted.replace(/\[(.*?)\]\((.*?)\)/g, "$1: $2");
+
+  // 7. Remove excessive vertical whitespace (more than 2 consecutive newlines)
+  formatted = formatted.replace(/\n{3,}/g, "\n\n");
+
+  return formatted.trim();
+}
+
 function buildFlightContext(
   flights: any[],
   aircraft: any[],
@@ -627,7 +656,7 @@ ${flightContext}`;
       body: JSON.stringify({ history: updatedHistory })
     });
 
-    await sendWhatsAppMessage(fromNumber, replyText, payloadPhoneNumberId);
+    await sendWhatsAppMessage(fromNumber, formatForWhatsApp(replyText), payloadPhoneNumberId);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
