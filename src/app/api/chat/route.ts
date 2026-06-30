@@ -198,6 +198,11 @@ Ejemplos:
 - Un vuelo de 45 minutos dura exactamente 0.7 horas.
 Informa al usuario usando siempre esta tabla para ser consistente con la web.
 
+## REGLAS PARA METAR, TAF, NOTAM Y DATOS DE AERÓDROMO:
+1. Si el usuario te pregunta por el clima, reporte meteorológico, METAR o TAF de un aeropuerto, debes indicar que esa función está disponible en el Planificador de Ruta y que lamentablemente en este chat aún no puedes consultar el METAR en tiempo real.
+2. Si el usuario te pregunta por NOTAMs, pistas, frecuencias, datos técnicos del aeródromo, combustible, teléfonos, normas operativas, o si un aeródromo está ABIERTO o CERRADO (ej: "NOTAMs de SAAK", "frecuencias de SADF", "pistas de Ezeiza"), debes usar la herramienta 'get_airport_info' que consulta el registro oficial MADHEL de la ANAC en tiempo real.
+3. Al recibir los datos de 'get_airport_info', preséntale al piloto la ficha técnica en formato claro y organizado, incluyendo los NOTAMs activos si los hay.
+
 ## Datos de la bitácora del piloto:
 ${flightContext}`;
 
@@ -283,6 +288,17 @@ ${flightContext}`;
                   flight_id: { type: SchemaType.STRING, description: "UUID del vuelo a eliminar" }
                 },
                 required: ["flight_id"]
+              }
+            },
+            {
+              name: "get_airport_info",
+              description: "Obtiene la ficha técnica completa de un aeródromo desde el registro oficial MADHEL de la ANAC Argentina: pistas y sus características, frecuencias de radio, ubicación respecto a la ciudad, combustible disponible, teléfonos de contacto, normas particulares y NOTAMs activos. Úsala cuando el usuario pregunte por datos técnicos, NOTAMs, pistas, frecuencias, información del aeropuerto o si está CERRADO.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeródromo (ej. SADF, SAAK, SAEZ)" }
+                },
+                required: ["icao_code"]
               }
             }
           ]
@@ -486,6 +502,57 @@ ${flightContext}`;
               toolResults.push({
                 name: call.name,
                 response: { result: `Vuelo actualizado exitosamente (duración calculada: ${duration}h)`, flight: resData }
+              });
+            }
+          } else if (call.name === "get_airport_info") {
+            const icao = args.icao_code?.trim().toUpperCase();
+            if (!icao) {
+              toolResults.push({
+                name: call.name,
+                response: { error: "Código OACI no provisto." }
+              });
+              continue;
+            }
+            try {
+              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://vector.fly.ar";
+              const infoRes = await fetch(`${baseUrl}/api/notams?icao=${icao}`, {
+                headers: { "User-Agent": "Vector-Chat-App" },
+                cache: "no-store"
+              });
+              if (!infoRes.ok) throw new Error(`API responded ${infoRes.status}`);
+              const infoData = await infoRes.json();
+
+              const m = infoData.madhel;
+              const notams: any[] = infoData.notams || [];
+
+              const madhelSummary = m ? [
+                `Aeródromo: ${m.fullName || icao}`,
+                `Estado: ${m.state || "Desconocido"}`,
+                `FIR: ${m.fir || "Desconocido"}`,
+                `Elevación: ${m.elevation}m (${Math.round(m.elevation * 3.28084)}ft)`,
+                `Condición: ${m.condition}`,
+                `Control: ${m.control}`,
+                `Tráfico: ${m.traffic}`,
+                `Pistas: ${m.runways?.length > 0 ? m.runways.join(" | ") : "No especificadas"}`,
+                `Frecuencias: ${m.radio?.length > 0 ? m.radio.join(" | ") : "No especificadas"}`,
+                `Ubicación: ${m.localization || "No especificada"}`,
+                `Combustible: ${m.fuel || "No especificado"}`,
+                `Teléfonos: ${m.telephone?.length > 0 ? m.telephone.join(", ") : "No especificados"}`,
+                m.norms ? `Normas Particulares: ${m.norms}` : ""
+              ].filter(Boolean).join("\n") : "No se encontraron datos MADHEL para este aeródromo.";
+
+              const notamSummary = notams.length > 0
+                ? notams.map((n: any, i: number) => `NOTAM ${i + 1} [${n.code}] Desde: ${n.from} | Hasta: ${n.to}\n${n.textEsp || n.textRaw}`).join("\n\n")
+                : "Sin NOTAMs activos para este aeródromo.";
+
+              toolResults.push({
+                name: call.name,
+                response: { madhel: madhelSummary, notams: notamSummary }
+              });
+            } catch (err: any) {
+              toolResults.push({
+                name: call.name,
+                response: { error: `Error consultando MADHEL: ${err.message}` }
               });
             }
           }

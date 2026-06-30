@@ -364,9 +364,12 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
 4. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
 5. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
 
-## REGLAS PARA METAR Y TAF:
+## REGLAS PARA METAR, TAF, NOTAM Y DATOS DE AERÓDROMO:
 1. Si el usuario te pregunta por el clima, reporte meteorológico, METAR o TAF de un aeropuerto (ej: "clima en SADF" o "METAR SAEZ"), debes obtenerlo usando la herramienta 'get_airport_weather'.
 2. Al recibir la respuesta de la herramienta, debes decodificar/explicar el reporte METAR y TAF en español claro y conciso para el piloto, e incluir el reporte en texto crudo (raw) al final.
+3. Si el usuario te pregunta por NOTAMs, pistas, frecuencias, datos técnicos del aeródromo, combustible, teléfonos, normas operativas, o si un aeródromo está ABIERTO o CERRADO (ej: "NOTAMs de SAAK", "frecuencias de SADF", "pistas de Ezeiza"), debes usar la herramienta 'get_airport_info' que consulta el registro oficial MADHEL de la ANAC.
+4. Al recibir los datos de 'get_airport_info', preséntale al piloto la ficha técnica en formato claro y organizado, incluyendo los NOTAMs si los hay.
+
 
 ## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
 Para determinar la duración de un vuelo o validarla, resta la hora de despegue de la de aterrizaje para obtener horas y minutos. Los minutos deben convertirse a decimales con precisión según la siguiente tabla exacta:
@@ -470,6 +473,17 @@ ${flightContext}`;
                 type: SchemaType.OBJECT,
                 properties: {
                   icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeropuerto (ej. SADF, SADR, SAEZ)" }
+                },
+                required: ["icao_code"]
+              }
+            },
+            {
+              name: "get_airport_info",
+              description: "Obtiene la ficha técnica completa de un aeródromo desde el registro oficial MADHEL de la ANAC Argentina: pistas y sus características, frecuencias de radio, ubicación respecto a la ciudad, combustible disponible, teléfonos de contacto, normas particulares y NOTAMs activos. Úsala cuando el usuario pregunte por datos técnicos de un aeródromo, NOTAMs, pistas, frecuencias, información del aeropuerto o si está CERRADO.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeródromo (ej. SADF, SAAK, SAEZ)" }
                 },
                 required: ["icao_code"]
               }
@@ -712,6 +726,60 @@ ${flightContext}`;
               toolResults.push({
                 name: call.name,
                 response: { metar: metar.trim(), taf: taf.trim() }
+              });
+            } catch (err: any) {
+              toolResults.push({
+                name: call.name,
+                response: { error: `Error consultando clima: ${(err as any).message}` }
+              });
+            }
+          } else if (call.name === "get_airport_info") {
+            const icao = args.icao_code?.trim().toUpperCase();
+            if (!icao) {
+              toolResults.push({
+                name: call.name,
+                response: { error: "Código OACI no provisto." }
+              });
+              continue;
+            }
+            try {
+              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://vector.fly.ar";
+              const infoRes = await fetch(`${baseUrl}/api/notams?icao=${icao}`, {
+                headers: { "User-Agent": "Vector-Flight-Log-App" },
+                cache: "no-store"
+              });
+              if (!infoRes.ok) throw new Error(`API responded ${infoRes.status}`);
+              const infoData = await infoRes.json();
+
+              const m = infoData.madhel;
+              const notams: any[] = infoData.notams || [];
+
+              const madhelSummary = m ? [
+                `Aeródromo: ${m.fullName || icao}`,
+                `Estado: ${m.state || "Desconocido"}`,
+                `FIR: ${m.fir || "Desconocido"}`,
+                `Elevación: ${m.elevation}m (${Math.round(m.elevation * 3.28084)}ft)`,
+                `Condición: ${m.condition}`,
+                `Control: ${m.control}`,
+                `Tráfico: ${m.traffic}`,
+                `Pistas: ${m.runways?.length > 0 ? m.runways.join(" | ") : "No especificadas"}`,
+                `Frecuencias: ${m.radio?.length > 0 ? m.radio.join(" | ") : "No especificadas"}`,
+                `Ubicación: ${m.localization || "No especificada"}`,
+                `Combustible: ${m.fuel || "No especificado"}`,
+                `Teléfonos: ${m.telephone?.length > 0 ? m.telephone.join(", ") : "No especificados"}`,
+                m.norms ? `Normas Particulares: ${m.norms}` : ""
+              ].filter(Boolean).join("\n") : "No se encontraron datos en el MADHEL para este aeródromo.";
+
+              const notamSummary = notams.length > 0
+                ? notams.map((n: any, i: number) => `NOTAM ${i + 1} [${n.code}] Desde: ${n.from} | Hasta: ${n.to}\n${n.textEsp || n.textRaw}`).join("\n\n")
+                : "Sin NOTAMs activos.";
+
+              toolResults.push({
+                name: call.name,
+                response: {
+                  madhel: madhelSummary,
+                  notams: notamSummary
+                }
               });
             } catch (err: any) {
               toolResults.push({
