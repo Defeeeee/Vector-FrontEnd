@@ -32,6 +32,7 @@ export default function BalanceClient({
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpDesc, setTopUpDesc] = useState("");
   const [expandedPackId, setExpandedPackId] = useState<string | null>(null);
+  const [topUpType, setTopUpType] = useState<"deposit" | "charge">("deposit");
   
   // Rate Editing state
   const [editingAircraftId, setEditingAircraftId] = useState<string | null>(null);
@@ -58,14 +59,16 @@ export default function BalanceClient({
       return;
     }
     
+    const finalAmount = topUpType === "deposit" ? amount : -amount;
+    
     startTransition(async () => {
       try {
-        await depositBalance(amount, topUpDesc);
+        await depositBalance(finalAmount, topUpDesc);
         setIsTopUpOpen(false);
         setTopUpAmount("");
         setTopUpDesc("");
       } catch (err: any) {
-        alert(err.message || "Error al depositar");
+        alert(err.message || "Error al procesar la transacción");
       }
     });
   };
@@ -408,45 +411,63 @@ export default function BalanceClient({
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-zinc-200/50 dark:border-white/5">
+                    <div className="flex flex-col pt-2 border-t border-zinc-200/50 dark:border-white/5 space-y-2">
                       {trackingMode === "balance" ? (
                         <>
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Tarifa por Hora</span>
-                          
-                          {isEditing ? (
-                            <div className="flex items-center space-x-2">
-                              <div className="relative">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">$</span>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={editingCost}
-                                  onChange={(e) => setEditingCost(e.target.value)}
-                                  className="bg-white dark:bg-black/40 border border-zinc-300 dark:border-white/10 rounded-lg pl-6 pr-2 py-1 text-xs font-bold text-zinc-900 dark:text-white w-24 outline-none focus:border-zinc-900 dark:focus:border-white/50"
-                                />
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Tarifa por Hora</span>
+                            
+                            {isEditing ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="relative">
+                                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">$</span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingCost}
+                                    onChange={(e) => setEditingCost(e.target.value)}
+                                    className="bg-white dark:bg-black/40 border border-zinc-300 dark:border-white/10 rounded-lg pl-6 pr-2 py-1 text-xs font-bold text-zinc-900 dark:text-white w-24 outline-none focus:border-zinc-900 dark:focus:border-white/50"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => handleSaveRate(ac.id)}
+                                  disabled={isPending}
+                                  className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:scale-105 transition-transform"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => setEditingAircraftId(null)}
+                                  className="p-1.5 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
                               </div>
-                              <button
-                                onClick={() => handleSaveRate(ac.id)}
-                                disabled={isPending}
-                                className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:scale-105 transition-transform"
-                              >
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={() => setEditingAircraftId(null)}
-                                className="p-1.5 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-sm font-bold text-zinc-950 dark:text-white font-space-grotesk">
-                              $ {(ac.cost_per_hour || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })} <span className="text-[10px] text-zinc-400">/hs</span>
-                            </span>
-                          )}
+                            ) : (
+                              <span className="text-sm font-bold text-zinc-950 dark:text-white font-space-grotesk">
+                                $ {(ac.cost_per_hour || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })} <span className="text-[10px] text-zinc-400">/hs</span>
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-white/5">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Horas Estimadas</span>
+                            {ac.cost_per_hour && ac.cost_per_hour > 0 ? (
+                              (() => {
+                                const estHours = initialBalance / ac.cost_per_hour;
+                                const isEstNegative = estHours < 0;
+                                return (
+                                  <span className={`text-sm font-bold font-space-grotesk ${isEstNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-950 dark:text-white'}`}>
+                                    {estHours.toFixed(1)} <span className="text-[10px] text-zinc-400">hs</span>
+                                  </span>
+                                );
+                              })()
+                            ) : (
+                              <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 font-space-grotesk">—</span>
+                            )}
+                          </div>
                         </>
                       ) : (
-                        <>
+                        <div className="flex items-center justify-between">
                           <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Horas Disponibles</span>
                           {(() => {
                             const totalRemainingHoursForAc = packs
@@ -460,7 +481,7 @@ export default function BalanceClient({
                               </span>
                             );
                           })()}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -493,7 +514,9 @@ export default function BalanceClient({
               className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] w-full max-w-md p-6 md:p-8 shadow-2xl relative z-10 space-y-6"
             >
               <div className="flex justify-between items-center border-b border-zinc-100 dark:border-white/5 pb-4">
-                <h4 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white uppercase tracking-tight">Cargar Saldo</h4>
+                <h4 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white uppercase tracking-tight">
+                  {topUpType === "deposit" ? "Cargar Saldo" : "Retirar Saldo"}
+                </h4>
                 <button
                   onClick={() => setIsTopUpOpen(false)}
                   className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
@@ -503,8 +526,36 @@ export default function BalanceClient({
               </div>
 
               <form onSubmit={handleTopUpSubmit} className="space-y-4">
+                {/* Movement Type Pill Toggle */}
+                <div className="flex bg-zinc-100 dark:bg-white/5 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setTopUpType("deposit")}
+                    className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-center transition-all ${
+                      topUpType === "deposit"
+                        ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    }`}
+                  >
+                    Cargar (+)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTopUpType("charge")}
+                    className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-center transition-all ${
+                      topUpType === "charge"
+                        ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    }`}
+                  >
+                    Retirar (-)
+                  </button>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block">Monto a Cargar ($)</label>
+                  <label className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block">
+                    {topUpType === "deposit" ? "Monto a Cargar ($)" : "Monto a Retirar ($)"}
+                  </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">$</span>
                     <input
@@ -523,7 +574,7 @@ export default function BalanceClient({
                   <label className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block">Concepto / Descripción</label>
                   <input
                     type="text"
-                    placeholder="Ej. Transferencia Banco"
+                    placeholder={topUpType === "deposit" ? "Ej. Transferencia Banco" : "Ej. Ajuste manual de saldo"}
                     value={topUpDesc}
                     onChange={(e) => setTopUpDesc(e.target.value)}
                     className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white w-full outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all"
@@ -538,7 +589,7 @@ export default function BalanceClient({
                   {isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <span>Confirmar Carga</span>
+                    <span>{topUpType === "deposit" ? "Confirmar Carga" : "Confirmar Retiro"}</span>
                   )}
                 </button>
               </form>

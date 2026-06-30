@@ -26,8 +26,8 @@ export async function toggleTrackingMode(profileId: string, mode: 'packs' | 'bal
 }
 
 export async function depositBalance(amount: number, description?: string) {
-  if (amount <= 0) {
-    throw new Error("El monto debe ser mayor a cero");
+  if (amount === 0) {
+    throw new Error("El monto no puede ser cero");
   }
 
   const response = await apiFetch("/transactions/deposit", {
