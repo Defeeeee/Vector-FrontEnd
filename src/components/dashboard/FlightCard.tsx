@@ -7,6 +7,31 @@ import { useState, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateFlightDuration } from "@/lib/utils";
 
+const PURPOSE_OPTIONS = [
+  { value: "ACR", label: "ACR – Acrobacia" },
+  { value: "ADAP", label: "ADAP – Adaptación" },
+  { value: "AER", label: "AER – Aeroaplicación" },
+  { value: "CI", label: "CI – Combate contra Incendios" },
+  { value: "ENT", label: "ENT – Entrenamiento" },
+  { value: "EXA", label: "EXA – Examen" },
+  { value: "FOR", label: "FOR – Formación" },
+  { value: "FOT", label: "FOT – Fotografía" },
+  { value: "I", label: "I – Instructor (Impartición Instrucción)" },
+  { value: "INST", label: "INST – Instrucción (Recepción Instrucción)" },
+  { value: "IP", label: "IP – Inspector (Inspección de Pilotos o Alumnos)" },
+  { value: "LA", label: "LA – Línea Aérea (RAAC 121)" },
+  { value: "LP", label: "LP – Lanzamiento Paracaidistas" },
+  { value: "N", label: "N – Transporte Aéreo no Regular (RAAC 135)" },
+  { value: "PA", label: "PA – Prueba de Aeronaves" },
+  { value: "READ", label: "READ – Readaptación" },
+  { value: "RP", label: "RP – Remolque Planeadores" },
+  { value: "SAN", label: "SAN – Sanitario" },
+  { value: "TA", label: "TA – Trabajo Aéreo" },
+  { value: "TAXI", label: "TAXI – Taxi Aéreo" },
+  { value: "VO", label: "VO – Vuelo Oficial" },
+  { value: "VP", label: "VP – Vuelo Privado" }
+];
+
 interface FlightCardProps {
   flight: Flight;
   aircraft: Aircraft | undefined;
@@ -99,8 +124,15 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
                 </div>
                 <div className="hidden md:block h-12 w-px bg-zinc-200 dark:bg-white/10" />
                 <div className="flex flex-col space-y-1">
-                  <p className="text-zinc-900 dark:text-white font-bold text-xs md:text-sm tracking-tight uppercase">
-                    {aircraft?.registration} <span className="mx-1.5 md:mx-2 text-zinc-300 dark:text-zinc-700">•</span> {aircraft?.type}
+                  <p className="text-zinc-900 dark:text-white font-bold text-xs md:text-sm tracking-tight uppercase flex items-center gap-2">
+                    <span>{aircraft?.registration}</span>
+                    <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                    <span>{aircraft?.type}</span>
+                    {flight.purpose && (
+                      <span className="text-[8px] font-extrabold bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        {flight.purpose}
+                      </span>
+                    )}
                   </p>
                   <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                     {new Date(flight.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })}
@@ -161,9 +193,14 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
               <input type="hidden" name="id" value={flight.id} />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 md:gap-y-8">
-                <EditField label="Aircraft">
+                 <EditField label="Aircraft">
                   <select name="aircraft_id" defaultValue={flight.aircraft_id} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all font-bold">
                     {allAircraft.map(ac => <option key={ac.id} value={ac.id} className="dark:bg-zinc-900">{ac.registration} ({ac.type})</option>)}
+                  </select>
+                </EditField>
+                <EditField label="Finalidad">
+                  <select name="purpose" defaultValue={flight.purpose || "VP"} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all font-bold">
+                    {PURPOSE_OPTIONS.map(opt => <option key={opt.value} value={opt.value} className="dark:bg-zinc-900">{opt.label}</option>)}
                   </select>
                 </EditField>
                 <EditField label="Route"><input name="route" defaultValue={flight.route} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none uppercase font-bold focus:border-zinc-900 dark:focus:border-white transition-colors" /></EditField>

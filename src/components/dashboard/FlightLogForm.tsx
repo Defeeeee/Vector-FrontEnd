@@ -7,6 +7,31 @@ import { Route, MapPin, Clock, Calendar, ArrowRight, Loader2, Compass, User, Use
 import { calculateFlightDuration, isLocalFlight } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+const PURPOSE_OPTIONS = [
+  { value: "ACR", label: "ACR – Acrobacia" },
+  { value: "ADAP", label: "ADAP – Adaptación" },
+  { value: "AER", label: "AER – Aeroaplicación" },
+  { value: "CI", label: "CI – Combate contra Incendios" },
+  { value: "ENT", label: "ENT – Entrenamiento" },
+  { value: "EXA", label: "EXA – Examen" },
+  { value: "FOR", label: "FOR – Formación" },
+  { value: "FOT", label: "FOT – Fotografía" },
+  { value: "I", label: "I – Instructor (Impartición Instrucción)" },
+  { value: "INST", label: "INST – Instrucción (Recepción Instrucción)" },
+  { value: "IP", label: "IP – Inspector (Inspección de Pilotos o Alumnos)" },
+  { value: "LA", label: "LA – Línea Aérea (RAAC 121)" },
+  { value: "LP", label: "LP – Lanzamiento Paracaidistas" },
+  { value: "N", label: "N – Transporte Aéreo no Regular (RAAC 135)" },
+  { value: "PA", label: "PA – Prueba de Aeronaves" },
+  { value: "READ", label: "READ – Readaptación" },
+  { value: "RP", label: "RP – Remolque Planeadores" },
+  { value: "SAN", label: "SAN – Sanitario" },
+  { value: "TA", label: "TA – Trabajo Aéreo" },
+  { value: "TAXI", label: "TAXI – Taxi Aéreo" },
+  { value: "VO", label: "VO – Vuelo Oficial" },
+  { value: "VP", label: "VP – Vuelo Privado" }
+];
+
 interface FlightLogFormProps {
   aircraft: Aircraft[];
   initialData?: {
@@ -19,6 +44,7 @@ interface FlightLogFormProps {
     duration?: string;
     discount_type?: string;
     discount_amount?: number;
+    purpose?: string;
   };
   onSuccess?: () => void;
   inModal?: boolean;
@@ -36,6 +62,9 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
       const calculated = calculateFlightDuration(initialData.takeoff, initialData.landing);
       setDuration(calculated.toFixed(1));
     }
+    if (initialData?.purpose) {
+      setPurpose(initialData.purpose);
+    }
   }, [initialData]);
 
   const [landings, setLandings] = useState(initialData?.landings?.toString() || "1");
@@ -45,6 +74,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
 
   const [discountType, setDiscountType] = useState(initialData?.discount_type || "");
   const [discountAmount, setDiscountAmount] = useState(initialData?.discount_amount ? String(initialData.discount_amount) : "");
+  const [purpose, setPurpose] = useState(initialData?.purpose || "VP");
 
   const [picDayLoc, setPicDayLoc] = useState("");
   const [picDayTra, setPicDayTra] = useState("");
@@ -173,6 +203,25 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                             {aircraft.map(ac => (
                             <option key={ac.id} value={ac.id} className="dark:bg-zinc-900">
                                 {ac.registration} — {ac.type}
+                            </option>
+                            ))}
+                        </select>
+                        <Compass className="absolute right-5 md:right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 pointer-events-none" />
+                    </div>
+
+                    {/* Purpose Selection */}
+                    <div className="md:col-span-2 relative group">
+                        <select 
+                            name="purpose" 
+                            required
+                            value={purpose}
+                            onChange={(e) => setPurpose(e.target.value)}
+                            className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-xl md:rounded-[1.5rem] px-5 md:px-6 py-4 md:py-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all appearance-none uppercase tracking-widest shadow-sm cursor-pointer"
+                        >
+                            <option value="" disabled>Seleccionar Finalidad...</option>
+                            {PURPOSE_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value} className="dark:bg-zinc-900">
+                                {opt.label}
                             </option>
                             ))}
                         </select>

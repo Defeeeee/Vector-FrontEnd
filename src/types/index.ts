@@ -27,6 +27,7 @@ export interface Flight {
   
   discount_type?: 'value' | 'percent';
   discount_amount?: number;
+  purpose: string;
 }
 
 export interface Aircraft {
