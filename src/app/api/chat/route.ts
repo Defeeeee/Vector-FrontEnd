@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile } from "@/types";
 
@@ -58,7 +58,7 @@ function buildFlightContext(
         f.imc_pil       ? `IMC piloto ${f.imc_pil}h` : "",
         f.capota        ? `Capotaje ${f.capota}h` : "",
       ].filter(Boolean).join(", ");
-      return `- ${label}: ${f.route.toUpperCase()} | ${acStr} | ${f.duration}h | ${f.landings} aterrizajes${times}${cols ? " | " + cols : ""}`;
+      return `- [ID: ${f.id}] ${label}: ${f.route.toUpperCase()} | ${acStr} | ${f.duration}h | ${f.landings} aterrizajes${times}${cols ? " | " + cols : ""}`;
     })
     .join("\n");
 
@@ -149,13 +149,24 @@ export async function POST(req: NextRequest) {
       session
     );
 
-    const systemPrompt = `Eres un asistente de aviación inteligente integrado en Vector, una aplicación de bitácora de vuelo. 
-Tu rol es ayudar al piloto a analizar su historial de vuelos, estadísticas, y responder preguntas sobre su experiencia aérea.
+    const systemPrompt = `Eres un asistente de aviación inteligente integrado en Vector, una aplicación de bitácora de vuelo.
+Tu rol es ayudar al piloto a analizar su historial de vuelos, estadísticas, responder preguntas, y también puedes EDITAR, REGISTRAR o ELIMINAR vuelos del libro de vuelo usando tus herramientas integradas.
 
 Responde siempre en español, de forma concisa y clara. Usa emojis cuando sean útiles.
-Cuando hagas cálculos o referencias a vuelos específicos, sé preciso con los datos.
-Si el piloto pregunta algo que no está en sus datos, dilo honestamente.
-No inventes datos ni vuelos que no estén en el registro.
+
+## REGLAS CRÍTICAS PARA REGISTRO Y EDICIÓN:
+1. NUNCA inventes información. Si falta algún dato obligatorio para registrar un vuelo, pídeselo de forma clara al usuario.
+2. Campos obligatorios para registrar un vuelo ('log_flight'):
+   - aircraft_registration: Matrícula de la aeronave (debe coincidir con alguna en el hangar, ej: LV-S153).
+   - date: Fecha (YYYY-MM-DD).
+   - route: Ruta (ej: SADF - SADR).
+   - duration: Horas de duración (ej: 1.5).
+   - takeoff: Hora despegue (HH:MM).
+   - landing: Hora aterrizaje (HH:MM).
+   - landings: Aterrizajes (número entero, por defecto pídelo o pon 1 si está implícito).
+   - purpose: Finalidad del vuelo (debe ser un código corto como VP para Vuelo Privado, ENT para Entrenamiento, EXA para Examen, INST para Instrucción, etc. Si el piloto no lo indica, PREGÚNTALE siempre primero).
+3. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
+4. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
 
 ## Datos de la bitácora del piloto:
 ${flightContext}`;
@@ -163,6 +174,68 @@ ${flightContext}`;
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       systemInstruction: systemPrompt,
+      tools: [
+        {
+          functionDeclarations: [
+            {
+              name: "log_flight",
+              description: "Registra un nuevo vuelo en la bitácora del piloto. Todos los campos requeridos son estrictamente obligatorios.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  aircraft_registration: { type: SchemaType.STRING, description: "Matrícula de la aeronave (ej. LV-S153)" },
+                  date: { type: SchemaType.STRING, description: "Fecha del vuelo en formato YYYY-MM-DD" },
+                  route: { type: SchemaType.STRING, description: "Ruta del vuelo (ej. SADF - SADR)" },
+                  duration: { type: SchemaType.NUMBER, description: "Duración total del vuelo en horas decimales (ej. 1.2)" },
+                  takeoff: { type: SchemaType.STRING, description: "Hora de despegue en formato de 24 hs (HH:MM)" },
+                  landing: { type: SchemaType.STRING, description: "Hora de aterrizaje en formato de 24 hs (HH:MM)" },
+                  landings: { type: SchemaType.INTEGER, description: "Cantidad de aterrizajes realizados" },
+                  purpose: { type: SchemaType.STRING, description: "Código de finalidad del vuelo (ej. VP, ENT, EXA, INST, ACR, etc.)" },
+                  pic_day_loc: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
+                  pic_day_tra: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
+                  pic_night_loc: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
+                  pic_night_tra: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" }
+                },
+                required: ["aircraft_registration", "date", "route", "duration", "takeoff", "landing", "landings", "purpose"]
+              }
+            },
+            {
+              name: "update_flight",
+              description: "Actualiza los datos de un vuelo existente.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  flight_id: { type: SchemaType.STRING, description: "El UUID del vuelo a actualizar" },
+                  aircraft_registration: { type: SchemaType.STRING, description: "Nueva matrícula de aeronave (opcional)" },
+                  date: { type: SchemaType.STRING, description: "Nueva fecha en formato YYYY-MM-DD (opcional)" },
+                  route: { type: SchemaType.STRING, description: "Nueva ruta (opcional)" },
+                  duration: { type: SchemaType.NUMBER, description: "Nueva duración en horas (opcional)" },
+                  takeoff: { type: SchemaType.STRING, description: "Nueva hora de despegue (HH:MM) (opcional)" },
+                  landing: { type: SchemaType.STRING, description: "Nueva hora de aterrizaje (HH:MM) (opcional)" },
+                  landings: { type: SchemaType.INTEGER, description: "Nueva cantidad de aterrizajes (opcional)" },
+                  purpose: { type: SchemaType.STRING, description: "Nueva finalidad (opcional)" },
+                  pic_day_loc: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Diurno Local (opcional)" },
+                  pic_day_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Diurno Traslado (opcional)" },
+                  pic_night_loc: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Local (opcional)" },
+                  pic_night_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Traslado (opcional)" }
+                },
+                required: ["flight_id"]
+              }
+            },
+            {
+              name: "delete_flight",
+              description: "Elimina un vuelo existente por su UUID.",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  flight_id: { type: SchemaType.STRING, description: "UUID del vuelo a eliminar" }
+                },
+                required: ["flight_id"]
+              }
+            }
+          ]
+        }
+      ]
     });
 
     const formattedHistory = (history || []).map((m: { role: string; content: string }) => ({
@@ -178,9 +251,183 @@ ${flightContext}`;
       history: cleanHistory,
     });
 
-    const result = await chat.sendMessage(message);
-    const text = result.response.text();
+    let result = await chat.sendMessage(message);
+    let functionCalls = result.response.functionCalls();
 
+    // Loop to handle potential multiple sequential function calls (multi-turn tool use)
+    while (functionCalls && functionCalls.length > 0) {
+      const toolResults = [];
+
+      for (const call of functionCalls) {
+        const args: any = call.args;
+
+        try {
+          if (call.name === "log_flight") {
+            const ac = aircraft.find(
+              a => a.registration.trim().toUpperCase() === args.aircraft_registration.trim().toUpperCase()
+            );
+            if (!ac) {
+              toolResults.push({
+                name: call.name,
+                response: { error: `La aeronave con matrícula '${args.aircraft_registration}' no está registrada en tu hangar.` }
+              });
+              continue;
+            }
+
+            const takeoff_dt = new Date(`${args.date}T${args.takeoff}:00Z`).toISOString().split('.')[0] + 'Z';
+            const landing_dt = new Date(`${args.date}T${args.landing}:00Z`).toISOString().split('.')[0] + 'Z';
+
+            const response = await apiFetch("/flights", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                aircraft_id: ac.id,
+                date: args.date,
+                route: args.route,
+                landings: args.landings,
+                duration: args.duration,
+                takeoff: takeoff_dt,
+                landing: landing_dt,
+                purpose: args.purpose,
+                pic_day_loc: args.pic_day_loc || null,
+                pic_day_tra: args.pic_day_tra || null,
+                pic_night_loc: args.pic_night_loc || null,
+                pic_night_tra: args.pic_night_tra || null
+              })
+            });
+
+            if (!response.ok) {
+              const errData = await response.json();
+              toolResults.push({
+                name: call.name,
+                response: { error: errData.detail || "Error al registrar el vuelo en el servidor" }
+              });
+            } else {
+              const resData = await response.json();
+              toolResults.push({
+                name: call.name,
+                response: { result: "Vuelo registrado exitosamente", flight: resData }
+              });
+            }
+
+          } else if (call.name === "delete_flight") {
+            const response = await apiFetch(`/flights/${args.flight_id}`, {
+              method: "DELETE"
+            });
+
+            if (!response.ok) {
+              const errData = await response.json();
+              toolResults.push({
+                name: call.name,
+                response: { error: errData.detail || "Error al eliminar el vuelo del servidor" }
+              });
+            } else {
+              toolResults.push({
+                name: call.name,
+                response: { result: "Vuelo eliminado exitosamente" }
+              });
+            }
+
+          } else if (call.name === "update_flight") {
+            const flightResp = await apiFetch(`/flights/${args.flight_id}`);
+            if (!flightResp.ok) {
+              toolResults.push({
+                name: call.name,
+                response: { error: "Vuelo no encontrado" }
+              });
+              continue;
+            }
+            const existingFlight = await flightResp.json();
+
+            const targetDate = args.date || existingFlight.date;
+            let targetAircraftId = existingFlight.aircraft_id;
+
+            if (args.aircraft_registration) {
+              const ac = aircraft.find(
+                a => a.registration.trim().toUpperCase() === args.aircraft_registration.trim().toUpperCase()
+              );
+              if (!ac) {
+                toolResults.push({
+                  name: call.name,
+                  response: { error: `La aeronave con matrícula '${args.aircraft_registration}' no está registrada en tu hangar.` }
+                });
+                continue;
+              }
+              targetAircraftId = ac.id;
+            }
+
+            let takeoff_dt = existingFlight.takeoff;
+            if (args.takeoff) {
+              takeoff_dt = new Date(`${targetDate}T${args.takeoff}:00Z`).toISOString().split('.')[0] + 'Z';
+            } else if (args.date && existingFlight.takeoff) {
+              const originalTime = existingFlight.takeoff.split('T')[1].slice(0, 5);
+              takeoff_dt = new Date(`${targetDate}T${originalTime}:00Z`).toISOString().split('.')[0] + 'Z';
+            }
+
+            let landing_dt = existingFlight.landing;
+            if (args.landing) {
+              landing_dt = new Date(`${targetDate}T${args.landing}:00Z`).toISOString().split('.')[0] + 'Z';
+            } else if (args.date && existingFlight.landing) {
+              const originalTime = existingFlight.landing.split('T')[1].slice(0, 5);
+              landing_dt = new Date(`${targetDate}T${originalTime}:00Z`).toISOString().split('.')[0] + 'Z';
+            }
+
+            const payload = {
+              aircraft_id: targetAircraftId,
+              date: targetDate,
+              route: args.route !== undefined ? args.route : existingFlight.route,
+              landings: args.landings !== undefined ? args.landings : existingFlight.landings,
+              duration: args.duration !== undefined ? args.duration : existingFlight.duration,
+              takeoff: takeoff_dt,
+              landing: landing_dt,
+              purpose: args.purpose !== undefined ? args.purpose : existingFlight.purpose,
+              pic_day_loc: args.pic_day_loc !== undefined ? args.pic_day_loc : existingFlight.pic_day_loc,
+              pic_day_tra: args.pic_day_tra !== undefined ? args.pic_day_tra : existingFlight.pic_day_tra,
+              pic_night_loc: args.pic_night_loc !== undefined ? args.pic_night_loc : existingFlight.pic_night_loc,
+              pic_night_tra: args.pic_night_tra !== undefined ? args.pic_night_tra : existingFlight.pic_night_tra
+            };
+
+            const response = await apiFetch(`/flights/${args.flight_id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+              const errData = await response.json();
+              toolResults.push({
+                name: call.name,
+                response: { error: errData.detail || "Error al actualizar el vuelo en el servidor" }
+              });
+            } else {
+              const resData = await response.json();
+              toolResults.push({
+                name: call.name,
+                response: { result: "Vuelo actualizado exitosamente", flight: resData }
+              });
+            }
+          }
+        } catch (err: any) {
+          toolResults.push({
+            name: call.name,
+            response: { error: err.message || "Error al procesar la herramienta" }
+          });
+        }
+      }
+
+      // Convert tool results to Parts for the generative model
+      const toolParts = toolResults.map(tr => ({
+        functionResponse: {
+          name: tr.name,
+          response: tr.response
+        }
+      }));
+
+      result = await chat.sendMessage(toolParts);
+      functionCalls = result.response.functionCalls();
+    }
+
+    const text = result.response.text();
     return NextResponse.json({ reply: text });
   } catch (err: any) {
     console.error("Chat API error:", err);
