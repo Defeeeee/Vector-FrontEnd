@@ -162,7 +162,8 @@ export default function BalanceClient({
               <div className="grid grid-cols-1 gap-6">
                 {packs.length > 0 ? (
                   packs.map((pack) => {
-                    const progress = Math.min((pack.remaining_hours / pack.total_hours) * 100, 100);
+                    const isNegative = pack.remaining_hours < 0;
+                    const progress = Math.max(0, Math.min((pack.remaining_hours / pack.total_hours) * 100, 100));
                     return (
                       <div 
                         key={pack.id} 
@@ -185,7 +186,7 @@ export default function BalanceClient({
                         <div className="space-y-2">
                           <div className="flex justify-between items-end">
                             <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Horas Restantes</span>
-                            <span className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white">
+                            <span className={`text-2xl font-bold font-space-grotesk ${isNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-900 dark:text-white'}`}>
                               {pack.remaining_hours.toFixed(1)} <span className="text-xs font-bold text-zinc-400">/ {pack.total_hours.toFixed(1)} hs</span>
                             </span>
                           </div>
