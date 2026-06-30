@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile } from "@/types";
+import { calculateFlightDuration } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -139,6 +140,15 @@ export async function POST(req: NextRequest) {
     const balance = data.balance || 0;
     const session = data.session || { active: false };
 
+    const todayStr = new Date().toLocaleDateString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    const [d, m, y] = todayStr.split("/");
+    const currentLocalDate = `${y}-${m}-${d}`;
+
     const flightContext = buildFlightContext(
       flights,
       aircraft,
@@ -154,19 +164,39 @@ Tu rol es ayudar al piloto a analizar su historial de vuelos, estadísticas, res
 
 Responde siempre en español, de forma concisa y clara. Usa emojis cuando sean útiles.
 
+La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fecha actual de referencia cuando el usuario mencione "hoy", "ayer" o fechas relativas.
+
 ## REGLAS CRÍTICAS PARA REGISTRO Y EDICIÓN:
 1. NUNCA inventes información. Si falta algún dato obligatorio para registrar un vuelo, pídeselo de forma clara al usuario.
 2. Campos obligatorios para registrar un vuelo ('log_flight'):
    - aircraft_registration: Matrícula de la aeronave (debe coincidir con alguna en el hangar, ej: LV-S153).
    - date: Fecha (YYYY-MM-DD).
    - route: Ruta (ej: SADF - SADR).
-   - duration: Horas de duración (ej: 1.5).
+   - duration: Horas de duración (ej: 1.5). Calcula o valida la duración SIEMPRE usando la conversión de minutos a decimales aeronáuticos que se detalla abajo.
    - takeoff: Hora despegue (HH:MM).
    - landing: Hora aterrizaje (HH:MM).
    - landings: Aterrizajes (número entero, por defecto pídelo o pon 1 si está implícito).
    - purpose: Finalidad del vuelo (debe ser un código corto como VP para Vuelo Privado, ENT para Entrenamiento, EXA para Examen, INST para Instrucción, etc. Si el piloto no lo indica, PREGÚNTALE siempre primero).
 3. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
 4. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
+
+## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
+Para determinar la duración de un vuelo o validarla, resta la hora de despegue de la de aterrizaje para obtener horas y minutos. Los minutos deben convertirse a decimales con precisión según la siguiente tabla exacta:
+- 0 a 2 minutos: .0
+- 3 a 8 minutos: .1
+- 9 a 14 minutos: .2
+- 15 a 20 minutos: .3
+- 21 a 26 minutos: .4
+- 27 a 33 minutos: .5
+- 34 a 39 minutos: .6
+- 40 a 45 minutos: .7
+- 46 a 51 minutos: .8
+- 52 a 57 minutos: .9
+- 58 a 60 minutos: 1.0 (suma una hora al total)
+Ejemplos: 
+- Un vuelo de 1 hora y 15 minutos dura exactamente 1.3 horas (y no 1.25).
+- Un vuelo de 45 minutos dura exactamente 0.7 horas.
+Informa al usuario usando siempre esta tabla para ser consistente con la web.
 
 ## Datos de la bitácora del piloto:
 ${flightContext}`;
@@ -276,6 +306,7 @@ ${flightContext}`;
 
             const takeoff_dt = new Date(`${args.date}T${args.takeoff}:00Z`).toISOString().split('.')[0] + 'Z';
             const landing_dt = new Date(`${args.date}T${args.landing}:00Z`).toISOString().split('.')[0] + 'Z';
+            const computedDuration = calculateFlightDuration(args.takeoff, args.landing);
 
             const response = await apiFetch("/flights", {
               method: "POST",
@@ -285,7 +316,7 @@ ${flightContext}`;
                 date: args.date,
                 route: args.route,
                 landings: args.landings,
-                duration: args.duration,
+                duration: computedDuration,
                 takeoff: takeoff_dt,
                 landing: landing_dt,
                 purpose: args.purpose,
@@ -306,7 +337,7 @@ ${flightContext}`;
               const resData = await response.json();
               toolResults.push({
                 name: call.name,
-                response: { result: "Vuelo registrado exitosamente", flight: resData }
+                response: { result: `Vuelo registrado exitosamente (duración calculada: ${computedDuration}h)`, flight: resData }
               });
             }
 
@@ -372,12 +403,19 @@ ${flightContext}`;
               landing_dt = new Date(`${targetDate}T${originalTime}:00Z`).toISOString().split('.')[0] + 'Z';
             }
 
+            let takeoffTime = args.takeoff || existingFlight.takeoff?.split('T')[1]?.slice(0, 5);
+            let landingTime = args.landing || existingFlight.landing?.split('T')[1]?.slice(0, 5);
+            let duration = args.duration !== undefined ? args.duration : existingFlight.duration;
+            if (args.takeoff || args.landing) {
+              duration = calculateFlightDuration(takeoffTime, landingTime);
+            }
+
             const payload = {
               aircraft_id: targetAircraftId,
               date: targetDate,
               route: args.route !== undefined ? args.route : existingFlight.route,
               landings: args.landings !== undefined ? args.landings : existingFlight.landings,
-              duration: args.duration !== undefined ? args.duration : existingFlight.duration,
+              duration: duration,
               takeoff: takeoff_dt,
               landing: landing_dt,
               purpose: args.purpose !== undefined ? args.purpose : existingFlight.purpose,
@@ -403,7 +441,7 @@ ${flightContext}`;
               const resData = await response.json();
               toolResults.push({
                 name: call.name,
-                response: { result: "Vuelo actualizado exitosamente", flight: resData }
+                response: { result: `Vuelo actualizado exitosamente (duración calculada: ${duration}h)`, flight: resData }
               });
             }
           }
