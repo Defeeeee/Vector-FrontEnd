@@ -195,6 +195,8 @@ export async function POST(req: NextRequest) {
 
     const userRes = await fetch(`${API_URL}/api/whatsapp/user-data?phone=${fromNumber}&secret=${secret}`);
     if (!userRes.ok) {
+      const errText = await userRes.text().catch(() => "");
+      console.error("Failed to fetch user-data from backend. Status:", userRes.status, "Body:", errText, "URL:", userRes.url);
       await sendWhatsAppMessage(
         fromNumber,
         "Hola 🛩️ Tu número de WhatsApp no está asociado a ningún piloto en Vector. Ingresá a la web, ve a tu Perfil y vinculá tu número en el campo 'WhatsApp (para Copiloto IA)'.",
