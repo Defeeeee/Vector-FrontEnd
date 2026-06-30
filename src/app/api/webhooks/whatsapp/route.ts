@@ -198,23 +198,65 @@ export async function POST(req: NextRequest) {
     console.log("Incoming WhatsApp Webhook Payload:", JSON.stringify(body, null, 2));
 
     let messageText = "";
+    let mediaId = "";
+    let audioMimeType = "";
 
     // Parse Kapso format or Meta raw format
     if (body.message) {
       fromNumber = body.message.from || body.conversation?.phone_number || "";
-      messageText = body.message.text?.body || body.message.kapso?.content || "";
       payloadPhoneNumberId = body.phone_number_id || body.conversation?.phone_number_id || "";
+      if (body.message.type === "audio" && body.message.audio) {
+        mediaId = body.message.audio.id;
+        audioMimeType = body.message.audio.mime_type || "audio/ogg";
+      } else {
+        messageText = body.message.text?.body || body.message.kapso?.content || "";
+      }
     } else if (body.event === "whatsapp.message.received" && body.data) {
       fromNumber = body.data.from;
       messageText = body.data.text?.body || "";
     } else if (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
       const msg = body.entry[0].changes[0].value.messages[0];
       fromNumber = msg.from;
-      messageText = msg.text?.body || "";
       payloadPhoneNumberId = body.entry[0].changes[0].value.metadata?.phone_number_id || "";
+      if (msg.type === "audio" && msg.audio) {
+        mediaId = msg.audio.id;
+        audioMimeType = msg.audio.mime_type || "audio/ogg";
+      } else {
+        messageText = msg.text?.body || "";
+      }
     }
 
-    if (!fromNumber || !messageText.trim()) {
+    let audioBuffer: Buffer | null = null;
+    if (mediaId) {
+      console.log(`Processing incoming WhatsApp audio. MediaID: ${mediaId}, MimeType: ${audioMimeType}`);
+      try {
+        const mediaRes = await fetch(`https://api.kapso.ai/meta/whatsapp/v24.0/${mediaId}?phone_number_id=${payloadPhoneNumberId || "597907523413541"}`, {
+          headers: { "X-API-Key": process.env.KAPSO_API_KEY || "" }
+        });
+        if (mediaRes.ok) {
+          const mediaMeta = await mediaRes.json();
+          const downloadUrl = mediaMeta.download_url;
+          if (downloadUrl) {
+            const audioFileRes = await fetch(downloadUrl);
+            if (audioFileRes.ok) {
+              const arrayBuffer = await audioFileRes.arrayBuffer();
+              audioBuffer = Buffer.from(arrayBuffer);
+              console.log(`Successfully downloaded audio binary. Size: ${audioBuffer.length} bytes`);
+            } else {
+              console.error(`Failed to download audio file from Kapso CDN. Status: ${audioFileRes.status}`);
+            }
+          } else {
+            console.error("Kapso media metadata response does not contain a download_url");
+          }
+        } else {
+          console.error(`Failed to fetch media metadata from Kapso. Status: ${mediaRes.status}`);
+        }
+      } catch (err) {
+        console.error("Error retrieving media from Kapso:", err);
+      }
+    }
+
+    if (!fromNumber || (!messageText.trim() && !audioBuffer)) {
       return NextResponse.json({ success: true, message: "Ignored (empty values)" });
     }
 
@@ -261,6 +303,22 @@ export async function POST(req: NextRequest) {
       history = histData.history || [];
     }
 
+    // Check for history clearing commands
+    const cleanMsg = messageText.toLowerCase().trim();
+    if (cleanMsg === "borrar historial" || cleanMsg === "reiniciar chat" || cleanMsg === "limpiar chat") {
+      await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history: [] })
+      });
+      await sendWhatsAppMessage(
+        fromNumber,
+        "Hola 🛩️ He borrado tu historial de conversación con el Copiloto IA. El chat ha sido reiniciado y listo para consultar el clima.",
+        payloadPhoneNumberId
+      );
+      return NextResponse.json({ success: true });
+    }
+
     const flightContext = buildFlightContext(
       flights,
       aircraft,
@@ -299,8 +357,16 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
    - landing: Hora aterrizaje (HH:MM).
    - landings: Aterrizajes (número entero, por defecto pídelo o pon 1 si está implícito).
    - purpose: Finalidad del vuelo (debe ser un código corto como VP para Vuelo Privado, ENT para Entrenamiento, EXA para Examen, INST para Instrucción, etc. Si el piloto no lo indica, PREGÚNTALE siempre primero).
-3. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
-4. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
+3. PASO DE CONFIRMACIÓN OBLIGATORIO: Cuando el usuario te pida registrar un nuevo vuelo (ya sea describiéndolo por texto o mediante una nota de voz), NO debes llamar a la función 'log_flight' inmediatamente.
+   - Primero, debes redactar un resumen formateado de todos los datos que vas a registrar (aeronave, fecha, ruta, despegue/aterrizaje, duración calculada, aterrizajes y finalidad) y preguntarle explícitamente al usuario: "¿Está todo correcto? Por favor responde 'Ok', 'Sí' o 'Confirmar' para registrar el vuelo."
+   - Únicamente si el usuario responde en el mensaje inmediatamente siguiente con una afirmación (como "ok", "sí", "confirmar", "dale", "correcto", "go"), debes proceder a llamar a la función 'log_flight' con los parámetros correspondientes.
+   - Si el usuario te corrige algún dato, genera un nuevo resumen corregido y vuelve a pedir la confirmación.
+4. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
+5. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
+
+## REGLAS PARA METAR Y TAF:
+1. Si el usuario te pregunta por el clima, reporte meteorológico, METAR o TAF de un aeropuerto (ej: "clima en SADF" o "METAR SAEZ"), debes obtenerlo usando la herramienta 'get_airport_weather'.
+2. Al recibir la respuesta de la herramienta, debes decodificar/explicar el reporte METAR y TAF en español claro y conciso para el piloto, e incluir el reporte en texto crudo (raw) al final.
 
 ## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
 Para determinar la duración de un vuelo o validarla, resta la hora de despegue de la de aterrizaje para obtener horas y minutos. Los minutos deben convertirse a decimales con precisión según la siguiente tabla exacta:
@@ -406,6 +472,17 @@ ${flightContext}`;
                 },
                 required: ["flight_id"]
               }
+            },
+            {
+              name: "get_airport_weather",
+              description: "Obtiene la información meteorológica en tiempo real (METAR y TAF) para un aeropuerto/aeródromo específico mediante su código OACI (ICAO).",
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeropuerto (ej. SADF, SADR, SAEZ)" }
+                },
+                required: ["icao_code"]
+              }
             }
           ]
         }
@@ -425,7 +502,22 @@ ${flightContext}`;
       history: cleanHistory,
     });
 
-    let result = await chat.sendMessage(messageText);
+    const chatParts: any[] = [];
+    if (audioBuffer) {
+      chatParts.push({
+        inlineData: {
+          data: audioBuffer.toString("base64"),
+          mimeType: audioMimeType
+        }
+      });
+      chatParts.push({
+        text: "Transcribe y procesa esta nota de voz. Si el piloto solicita registrar un vuelo, recuerda que primero debes presentar un resumen de confirmación antes de llamar a la herramienta 'log_flight'. Si no, responde su pregunta normalmente."
+      });
+    } else {
+      chatParts.push({ text: messageText });
+    }
+
+    let result = await chat.sendMessage(chatParts);
     let functionCalls = result.response.functionCalls();
 
     while (functionCalls && functionCalls.length > 0) {
@@ -622,6 +714,36 @@ ${flightContext}`;
                 response: { result: `Vuelo actualizado exitosamente (duración calculada: ${duration}h)`, flight: resData }
               });
             }
+          } else if (call.name === "get_airport_weather") {
+            const icao = args.icao_code?.trim().toUpperCase();
+            if (!icao) {
+              toolResults.push({
+                name: call.name,
+                response: { error: "Código OACI no provisto." }
+              });
+              continue;
+            }
+            try {
+              const metarRes = await fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`, {
+                headers: { "User-Agent": "Vector-Flight-Log-App" }
+              });
+              const metar = metarRes.ok ? await metarRes.text() : "No disponible";
+
+              const tafRes = await fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`, {
+                headers: { "User-Agent": "Vector-Flight-Log-App" }
+              });
+              const taf = tafRes.ok ? await tafRes.text() : "No disponible";
+
+              toolResults.push({
+                name: call.name,
+                response: { metar: metar.trim(), taf: taf.trim() }
+              });
+            } catch (err: any) {
+              toolResults.push({
+                name: call.name,
+                response: { error: `Error al obtener clima: ${err.message}` }
+              });
+            }
           }
         } catch (err: any) {
           toolResults.push({
@@ -644,9 +766,10 @@ ${flightContext}`;
 
     const replyText = result.response.text();
 
+    const userMessageContent = messageText.trim() || "[Nota de voz]";
     const updatedHistory = [
       ...history,
-      { role: "user", content: messageText },
+      { role: "user", content: userMessageContent },
       { role: "assistant", content: replyText }
     ];
 
