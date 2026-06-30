@@ -51,7 +51,7 @@ export default async function HistoryPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          <ExportPdfButton flights={sortedFlights} aircraft={aircraft} profile={profile} />
+          {/* <ExportPdfButton flights={sortedFlights} aircraft={aircraft} profile={profile} /> */}
           <ExportFlightsButton flights={sortedFlights} aircraft={aircraft} />
           
           <Link href="/dashboard/log-flight" className="flex-1 md:flex-none bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.2em] px-8 md:px-10 py-4 md:py-5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center space-x-3">
