@@ -28,11 +28,24 @@ interface NotamItem {
   textEsp: string;
 }
 
+interface MadhelData {
+  name: string;
+  fullName: string;
+  state: string;
+  fir: string;
+  elevation: number;
+  condition: string;
+  control: string;
+  traffic: string;
+  status: string;
+}
+
 export default function RouteWeatherClient({ profile, flights }: RouteWeatherClientProps) {
   const [routeInput, setRouteInput] = useState("");
   const [activeRoute, setActiveRoute] = useState<string[]>(["SADF", "SAAK", "SAEZ"]);
   const [weatherData, setWeatherData] = useState<Record<string, AirportWeather>>({});
   const [notamsData, setNotamsData] = useState<Record<string, NotamItem[]>>({});
+  const [madhelData, setMadhelData] = useState<Record<string, MadhelData | null>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
@@ -66,6 +79,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
     setError(null);
     const results: Record<string, AirportWeather> = {};
     const notamsResults: Record<string, NotamItem[]> = {};
+    const madhelResults: Record<string, MadhelData | null> = {};
     
     try {
       await Promise.all(
@@ -99,22 +113,26 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
             };
           }
 
-          // NOTAMs lookup
+          // NOTAMs & MADHEL lookup
           try {
             const nRes = await fetch(`/api/notams?icao=${icao}`);
             if (nRes.ok) {
               const data = await nRes.json();
               notamsResults[icao] = data.notams || [];
+              madhelResults[icao] = data.madhel || null;
             } else {
               notamsResults[icao] = [];
+              madhelResults[icao] = null;
             }
           } catch (e) {
             notamsResults[icao] = [];
+            madhelResults[icao] = null;
           }
         })
       );
       setWeatherData(results);
       setNotamsData(notamsResults);
+      setMadhelData(madhelResults);
     } catch (err) {
       setError("Ocurrió un error al consultar las estaciones de la ruta.");
     } finally {
@@ -238,7 +256,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
           Planificador Meteorológico de Ruta
         </h1>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-2xl">
-          Ingresa la ruta completa de tu vuelo para obtener un análisis meteorológico tramo por tramo del estado del METAR y TAF de cada aeródromo, incluyendo los NOTAMs oficiales vigentes de la ANAC.
+          Ingresa la ruta completa de tu vuelo para obtener un análisis meteorológico tramo por tramo del estado del METAR y TAF de cada aeródromo, incluyendo datos del registro oficial MADHEL de la ANAC.
         </p>
       </div>
 
@@ -430,13 +448,14 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
               if (!w) return null;
               const config = categoryConfig[w.category] || categoryConfig.UNK;
               const airportNotams = notamsData[icao] || [];
+              const madhel = madhelData[icao];
               
               return (
                 <div 
                   key={icao + "-details-" + idx}
                   className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] p-6 md:p-8 shadow-cal dark:shadow-none flex flex-col xl:flex-row gap-6 justify-between items-stretch transition-all duration-300 group"
                 >
-                  {/* Left panel: Station identifier and simple rule */}
+                  {/* Left panel: Station identifier, simple rule, Wind/Temp, and MADHEL */}
                   <div className="flex-1 flex flex-col justify-between space-y-6 xl:max-w-md">
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-xl flex items-center justify-center border border-zinc-200 dark:border-white/5 shadow-sm">
@@ -489,6 +508,59 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                         </div>
                       </div>
                     </div>
+
+                    {/* MADHEL General Info sub-card */}
+                    {madhel && (
+                      <div className="bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center justify-between border-b border-zinc-200/50 dark:border-white/5 pb-2">
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">REGISTRO OFICIAL MADHEL</p>
+                          <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
+                            madhel.status === "OK" 
+                              ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" 
+                              : "bg-red-500/10 text-red-500 border border-red-500/20"
+                          }`}>
+                            {madhel.status}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 uppercase leading-snug">
+                            {madhel.fullName}
+                          </p>
+                          <p className="text-[8px] text-zinc-400 dark:text-zinc-500 font-bold leading-none">{madhel.state}</p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                          <div className="bg-white dark:bg-black/20 rounded-lg p-1.5 border border-zinc-200/50 dark:border-white/5">
+                            <p className="text-[7px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">ELEVACIÓN</p>
+                            <p className="text-[10px] font-black font-space-grotesk text-zinc-900 dark:text-white mt-1 leading-none">
+                              {madhel.elevation}m <span className="text-[8px] font-normal text-zinc-400">({Math.round(madhel.elevation * 3.28084)}ft)</span>
+                            </p>
+                          </div>
+                          <div className="bg-white dark:bg-black/20 rounded-lg p-1.5 border border-zinc-200/50 dark:border-white/5">
+                            <p className="text-[7px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">FIR</p>
+                            <p className="text-[10px] font-black font-space-grotesk text-zinc-900 dark:text-white mt-1 leading-none">
+                              {madhel.fir}
+                            </p>
+                          </div>
+                          <div className="bg-white dark:bg-black/20 rounded-lg p-1.5 border border-zinc-200/50 dark:border-white/5">
+                            <p className="text-[7px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">TRÁNSITO</p>
+                            <p className="text-[10px] font-black font-space-grotesk text-zinc-900 dark:text-white mt-1 leading-none">
+                              {madhel.traffic === "INTL" ? "INTL" : "NAC"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-zinc-200/50 dark:bg-white/5 text-zinc-600 dark:text-zinc-400 border border-zinc-300/30 dark:border-white/10 uppercase">
+                            {madhel.condition === "PUBLICO" ? "Público" : "Privado"}
+                          </span>
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-zinc-200/50 dark:bg-white/5 text-zinc-600 dark:text-zinc-400 border border-zinc-300/30 dark:border-white/10 uppercase">
+                            {madhel.control === "CONTROLLED" ? "Controlado" : "No Controlado"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right panel: METAR raw code, TAF and NOTAMs */}
