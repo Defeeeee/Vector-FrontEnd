@@ -24,14 +24,21 @@ export async function GET(req: NextRequest) {
     let windDir: string | number | null = null;
 
     if (metarRes.ok) {
-      const json = await metarRes.json();
-      if (json && Array.isArray(json) && json.length > 0) {
-        metarData = json[0];
-        rawMetar = metarData.rawText || metarData.rawOb || "No disponible";
-        category = metarData.fltCat || metarData.fltcat || "UNK";
-        temp = metarData.temp !== undefined ? metarData.temp : null;
-        windSpeed = metarData.wspd !== undefined ? metarData.wspd : null;
-        windDir = metarData.wdir !== undefined ? metarData.wdir : null;
+      const text = await metarRes.text();
+      if (text.trim().length > 0) {
+        try {
+          const json = JSON.parse(text);
+          if (json && Array.isArray(json) && json.length > 0) {
+            metarData = json[0];
+            rawMetar = metarData.rawText || metarData.rawOb || "No disponible";
+            category = metarData.fltCat || metarData.fltcat || "UNK";
+            temp = metarData.temp !== undefined ? metarData.temp : null;
+            windSpeed = metarData.wspd !== undefined ? metarData.wspd : null;
+            windDir = metarData.wdir !== undefined ? metarData.wdir : null;
+          }
+        } catch (parseErr) {
+          console.error("Error parsing weather JSON:", parseErr);
+        }
       }
     }
 
