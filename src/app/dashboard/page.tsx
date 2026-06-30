@@ -41,6 +41,7 @@ function splitRoute(route: string): [string, string] {
 
 export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs } = await getDashboardData();
+  const hasActivePacks = packs && packs.filter((p: FlightPack) => p.is_active).length > 0;
 
   const totalFlights = flights.length;
   const totalHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
@@ -256,20 +257,30 @@ export default async function Dashboard() {
         <MetricItem label="Aeronaves" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
       </div>
 
-      {/* Flight Hours Packs, PCA Tracker and Weather Widget Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start pt-4">
-        <div className="lg:col-span-2 space-y-6">
-          <FlightPackWidget packs={packs} />
-          
-          {/* PCA Tracker (only for PPA/Privado working towards PCA) */}
-          {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-            <PCATracker flights={flights} />
-          )}
-        </div>
-        <div className="lg:col-span-1">
-          <WeatherWidget defaultAirport={mostVisited} />
-        </div>
+      {/* Row: Packs & Weather (sharing height) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch pt-4">
+        {hasActivePacks ? (
+          <>
+            <div className="lg:col-span-2">
+              <FlightPackWidget packs={packs} />
+            </div>
+            <div className="lg:col-span-1">
+              <WeatherWidget defaultAirport={mostVisited} />
+            </div>
+          </>
+        ) : (
+          <div className="lg:col-span-3">
+            <WeatherWidget defaultAirport={mostVisited} />
+          </div>
+        )}
       </div>
+
+      {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
+      {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
+        <div className="pt-2">
+          <PCATracker flights={flights} />
+        </div>
+      )}
 
       {/* Analytics */}
       <div className="pt-4">
