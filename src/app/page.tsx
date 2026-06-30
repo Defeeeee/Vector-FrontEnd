@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Compass, Check, ArrowRight, Layout, TrendingUp, Award, Clock, Database, Target, MapPin, X, Menu } from "lucide-react";
+import { Compass, Check, ArrowRight, Layout, TrendingUp, Award, Clock, Database, Target, MapPin, X, Menu, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -223,14 +223,17 @@ export default function LandingPage() {
             {[
               { t: "Registro Rápido", d: "Diseñado para entornos de alta tensión. Interfaces enfocadas tipo Bento que minimizan el tiempo de carga de datos.", i: <Layout className="w-6 h-6" /> },
               { t: "Seguimiento PCA", d: "Visualiza automáticamente tu progreso hacia los requisitos comerciales (Reg. 61.620) con gráficos de avance claros.", i: <Target className="w-6 h-6" /> },
-              { t: "Gestión de Packs", d: "Controla horas prepagadas en aeronaves o simuladores. Alertas visuales cuando el paquete está por agotarse.", i: <Database className="w-6 h-6" /> }
+              { t: "Copiloto IA", d: "Consulta tu bitácora, analiza tu carrera, calcula horas y registra vuelos conversando con tu propio asistente inteligente de aviación.", i: <Compass className="w-6 h-6" /> },
+              { t: "Integración WhatsApp", d: "Registra tus vuelos enviando textos o notas de voz (audio) en segundos. Recibe resúmenes de confirmación y consulta el clima METAR/TAF en vivo.", i: <MessageCircle className="w-6 h-6" /> },
+              { t: "Gestión de Packs", d: "Controla horas prepagadas en aeronaves o simuladores con alertas visuales cuando el paquete está por agotarse.", i: <Database className="w-6 h-6" /> },
+              { t: "Balances y Finanzas", d: "Lleva el control de tu saldo en cuenta de piloto, depósitos, gastos de alquiler de aeronaves y consumos detallados.", i: <TrendingUp className="w-6 h-6" /> }
             ].map((feature, i) => (
               <motion.div
                 key={feature.t}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.05 }}
                 className="p-6 md:p-10 rounded-2xl md:rounded-[2.5rem] bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-cal dark:shadow-none dark:hover:bg-[#151515] transition-all space-y-4 md:space-y-6 group"
               >
                 <div className="w-12 md:w-14 h-12 md:h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
@@ -257,7 +260,10 @@ export default function LandingPage() {
               {[
                 "Estadísticas automáticas de horas de vuelo (Día, Noche, IFR)",
                 "Carga unificada de información detallada de la aeronave",
+                "Copiloto de IA por WhatsApp con transcripción de notas de voz",
+                "Clima METAR/TAF decodificado e interactivo en tiempo real",
                 "Monitoreo de vencimientos médicos y licencias",
+                "Control financiero integrado de depósitos y alquileres",
                 "Interfaz Modo Oscuro nativa para planeamientos nocturnos"
               ].map((item) => (
                 <div key={item} className="flex items-start md:items-center space-x-3 md:space-x-4">

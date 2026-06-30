@@ -4,6 +4,7 @@ import { Flight, Aircraft, Profile, FlightPack } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import PCATracker from "@/components/dashboard/PCATracker";
+import WeatherWidget from "@/components/dashboard/WeatherWidget";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -255,15 +256,20 @@ export default async function Dashboard() {
         <MetricItem label="Aeronaves" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
       </div>
 
-      {/* Flight Hours Packs Widget */}
-      <FlightPackWidget packs={packs} />
-
-      {/* PCA Tracker (only for PPA/Privado working towards PCA) */}
-      {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <div className="pt-4">
-          <PCATracker flights={flights} />
+      {/* Flight Hours Packs, PCA Tracker and Weather Widget Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start pt-4">
+        <div className="lg:col-span-2 space-y-6">
+          <FlightPackWidget packs={packs} />
+          
+          {/* PCA Tracker (only for PPA/Privado working towards PCA) */}
+          {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
+            <PCATracker flights={flights} />
+          )}
         </div>
-      )}
+        <div className="lg:col-span-1">
+          <WeatherWidget defaultAirport={mostVisited} />
+        </div>
+      </div>
 
       {/* Analytics */}
       <div className="pt-4">
