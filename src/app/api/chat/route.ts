@@ -296,7 +296,7 @@ ${flightContext}`;
               parameters: {
                 type: SchemaType.OBJECT,
                 properties: {
-                  icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeródromo (ej. SADF, SAAK, SAEZ)" }
+                  icao_code: { type: SchemaType.STRING, description: "El código del aeródromo. Acepta TANTO códigos OACI de 4 letras (SADF, SAAK, SAEZ) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE). Usa el código EXACTAMENTE como lo dice el usuario, sin agregar ni quitar letras." }
                 },
                 required: ["icao_code"]
               }

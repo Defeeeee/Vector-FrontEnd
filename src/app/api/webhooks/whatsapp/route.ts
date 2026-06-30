@@ -367,8 +367,9 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
 ## REGLAS PARA METAR, TAF, NOTAM Y DATOS DE AERÓDROMO:
 1. Si el usuario te pregunta por el clima, reporte meteorológico, METAR o TAF de un aeropuerto (ej: "clima en SADF" o "METAR SAEZ"), debes obtenerlo usando la herramienta 'get_airport_weather'.
 2. Al recibir la respuesta de la herramienta, debes decodificar/explicar el reporte METAR y TAF en español claro y conciso para el piloto, e incluir el reporte en texto crudo (raw) al final.
-3. Si el usuario te pregunta por NOTAMs, pistas, frecuencias, datos técnicos del aeródromo, combustible, teléfonos, normas operativas, o si un aeródromo está ABIERTO o CERRADO (ej: "NOTAMs de SAAK", "frecuencias de SADF", "pistas de Ezeiza"), debes usar la herramienta 'get_airport_info' que consulta el registro oficial MADHEL de la ANAC.
+3. Si el usuario te pregunta por NOTAMs, pistas, frecuencias, datos técnicos del aeródromo, combustible, teléfonos, normas operativas, o si un aeródromo está ABIERTO o CERRADO (ej: "NOTAMs de SAAK", "frecuencias de SADF", "pistas de Ezeiza", "info MGI", "notam FDO"), debes usar la herramienta 'get_airport_info' que consulta el registro oficial MADHEL de la ANAC.
 4. Al recibir los datos de 'get_airport_info', preséntale al piloto la ficha técnica en formato claro y organizado, incluyendo los NOTAMs si los hay.
+5. CRÍTICO: La herramienta 'get_airport_info' acepta TANTO códigos OACI de 4 letras (SADF, SAEZ, SAAK) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE, PAL, PTA). NUNCA inventes ni modifiques el código: si el usuario dice 'MGI' llama a la herramienta con 'MGI', si dice 'info FDO' usa 'FDO', si dice 'SADF' usa 'SADF'. No le agregues ni quites letras.
 
 
 ## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
@@ -483,7 +484,7 @@ ${flightContext}`;
               parameters: {
                 type: SchemaType.OBJECT,
                 properties: {
-                  icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeródromo (ej. SADF, SAAK, SAEZ)" }
+                  icao_code: { type: SchemaType.STRING, description: "El código del aeródromo. Acepta TANTO códigos OACI de 4 letras (SADF, SAAK, SAEZ) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE). NUNCA modifiques ni le agregues letras al código que te pasa el usuario: si dice MGI usa MGI, si dice SAAK usa SAAK." }
                 },
                 required: ["icao_code"]
               }

@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Mapping of common ICAO codes to ANAC local indicators
 const ICAO_TO_ANAC: Record<string, string> = {
+  // 4-letter ICAO → 3-letter ANAC local indicator
   SABE: "AER", // Aeroparque
   SADF: "FDO", // San Fernando
   SAEZ: "EZE", // Ezeiza
   SADP: "PTA", // La Plata
   SADL: "PAL", // El Palomar
   SADQ: "ILM", // Quilmes
+  SAAK: "MGI", // Martín García
+  SRDR: "GEZ", // General Rodríguez
   SAZM: "MDP", // Mar del Plata
   SAZS: "BAR", // Bariloche
   SACO: "FMA", // Córdoba
@@ -28,6 +31,24 @@ const ICAO_TO_ANAC: Record<string, string> = {
   SAOU: "UIS", // San Luis
   SAMR: "SRA", // San Rafael
   SFDO: "FDO", // Fallback for San Fernando
+  // Direct 3-letter ANAC local indicators → themselves (for chatbot passthrough)
+  MGI: "MGI", // Martín García
+  FDO: "FDO", // San Fernando
+  GEZ: "GEZ", // General Rodríguez
+  AER: "AER", // Aeroparque
+  EZE: "EZE", // Ezeiza
+  PTA: "PTA", // La Plata
+  PAL: "PAL", // El Palomar
+  ILM: "ILM", // Quilmes
+  MDP: "MDP", // Mar del Plata
+  BAR: "BAR", // Bariloche
+  ROS: "ROS", // Rosario
+  TUC: "TUC", // Tucumán
+  CRV: "CRV", // Comodoro Rivadavia
+  TRE: "TRE", // Trelew
+  USU: "USU", // Ushuaia
+  GAL: "GAL", // Río Gallegos
+  SAL: "SAL", // Salta
 };
 
 // Fallbacks for controlled airports that don't publish runways/frequencies directly in the MADHEL API
@@ -140,9 +161,16 @@ export async function GET(req: NextRequest) {
   // Find the ANAC indicator
   let indicator = ICAO_TO_ANAC[icao];
   if (!indicator) {
-    if (icao.startsWith("SA") || icao.startsWith("SD")) {
-      indicator = icao.slice(1); 
+    if (icao.startsWith("SA") || icao.startsWith("SD") || icao.startsWith("SR") || icao.startsWith("SF")) {
+      // Standard Argentine 4-letter ICAO → strip first letter to get local indicator
+      indicator = icao.slice(1);
+    } else if (icao.length === 4 && icao.startsWith("S") && !icao.startsWith("SA")) {
+      // Model may have mangled a 3-letter ANAC code by prepending 'S' (e.g. SMGI → MGI)
+      // Try stripping the leading S as a fallback
+      const stripped = icao.slice(1); // e.g. MGI
+      indicator = ICAO_TO_ANAC[stripped] || stripped;
     } else {
+      // Already a local indicator (3-letter) or unknown — pass through as-is
       indicator = icao;
     }
   }
