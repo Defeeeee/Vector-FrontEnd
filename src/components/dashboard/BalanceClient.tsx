@@ -395,7 +395,7 @@ export default function BalanceClient({
                         </span>
                       </div>
                       
-                      {!isEditing && (
+                      {trackingMode === "balance" && !isEditing && (
                         <button
                           onClick={() => {
                             setEditingAircraftId(ac.id);
@@ -409,38 +409,58 @@ export default function BalanceClient({
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-zinc-200/50 dark:border-white/5">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Tarifa por Hora</span>
-                      
-                      {isEditing ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">$</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={editingCost}
-                              onChange={(e) => setEditingCost(e.target.value)}
-                              className="bg-white dark:bg-black/40 border border-zinc-300 dark:border-white/10 rounded-lg pl-6 pr-2 py-1 text-xs font-bold text-zinc-900 dark:text-white w-24 outline-none focus:border-zinc-900 dark:focus:border-white/50"
-                            />
-                          </div>
-                          <button
-                            onClick={() => handleSaveRate(ac.id)}
-                            disabled={isPending}
-                            className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:scale-105 transition-transform"
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => setEditingAircraftId(null)}
-                            className="p-1.5 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
+                      {trackingMode === "balance" ? (
+                        <>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Tarifa por Hora</span>
+                          
+                          {isEditing ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="relative">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">$</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={editingCost}
+                                  onChange={(e) => setEditingCost(e.target.value)}
+                                  className="bg-white dark:bg-black/40 border border-zinc-300 dark:border-white/10 rounded-lg pl-6 pr-2 py-1 text-xs font-bold text-zinc-900 dark:text-white w-24 outline-none focus:border-zinc-900 dark:focus:border-white/50"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleSaveRate(ac.id)}
+                                disabled={isPending}
+                                className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:scale-105 transition-transform"
+                              >
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => setEditingAircraftId(null)}
+                                className="p-1.5 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-bold text-zinc-950 dark:text-white font-space-grotesk">
+                              $ {(ac.cost_per_hour || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })} <span className="text-[10px] text-zinc-400">/hs</span>
+                            </span>
+                          )}
+                        </>
                       ) : (
-                        <span className="text-sm font-bold text-zinc-950 dark:text-white font-space-grotesk">
-                          $ {(ac.cost_per_hour || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })} <span className="text-[10px] text-zinc-400">/hs</span>
-                        </span>
+                        <>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Horas Disponibles</span>
+                          {(() => {
+                            const totalRemainingHoursForAc = packs
+                              .filter(p => p.is_active && p.aircraft_ids.includes(ac.id))
+                              .reduce((sum, p) => sum + p.remaining_hours, 0);
+                            const hasNegative = totalRemainingHoursForAc < 0;
+
+                            return (
+                              <span className={`text-sm font-bold font-space-grotesk ${hasNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-950 dark:text-white'}`}>
+                                {totalRemainingHoursForAc.toFixed(1)} <span className="text-[10px] text-zinc-400">hs</span>
+                              </span>
+                            );
+                          })()}
+                        </>
                       )}
                     </div>
                   </div>
