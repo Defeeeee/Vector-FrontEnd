@@ -13,7 +13,7 @@ async function sendWhatsAppMessage(to: string, text: string, dynamicPhoneId?: st
     return;
   }
 
-  const url = `https://api.kapso.ai/meta/whatsapp/${phoneNumberId}/messages`;
+  const url = `https://api.kapso.ai/meta/whatsapp/v24.0/${phoneNumberId}/messages`;
   try {
     const res = await fetch(url, {
       method: "POST",
