@@ -4,6 +4,9 @@ import { calculateFlightDuration } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+// Memory cache to keep track of processed message IDs and prevent duplicate replies due to WhatsApp/Kapso retries
+const processedMessageIds = new Set<string>();
+
 async function sendWhatsAppMessage(to: string, text: string, dynamicPhoneId?: string) {
   const apiKey = process.env.KAPSO_API_KEY;
   const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID || dynamicPhoneId;
@@ -405,12 +408,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("Incoming WhatsApp Webhook Payload:", JSON.stringify(body, null, 2));
 
+    let messageId = "";
     let messageText = "";
     let mediaId = "";
     let audioMimeType = "";
 
     // Parse Kapso format or Meta raw format
     if (body.message) {
+      messageId = body.message.id || "";
       fromNumber = body.message.from || body.conversation?.phone_number || "";
       payloadPhoneNumberId = body.phone_number_id || body.conversation?.phone_number_id || "";
       if (body.message.type === "audio" && body.message.audio) {
@@ -420,10 +425,12 @@ export async function POST(req: NextRequest) {
         messageText = body.message.text?.body || body.message.kapso?.content || "";
       }
     } else if (body.event === "whatsapp.message.received" && body.data) {
+      messageId = body.data.id || "";
       fromNumber = body.data.from;
       messageText = body.data.text?.body || "";
     } else if (body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
       const msg = body.entry[0].changes[0].value.messages[0];
+      messageId = msg.id || "";
       fromNumber = msg.from;
       payloadPhoneNumberId = body.entry[0].changes[0].value.metadata?.phone_number_id || "";
       if (msg.type === "audio" && msg.audio) {
@@ -431,6 +438,21 @@ export async function POST(req: NextRequest) {
         audioMimeType = msg.audio.mime_type || "audio/ogg";
       } else {
         messageText = msg.text?.body || "";
+      }
+    }
+
+    // Deduplicate webhook retries
+    if (messageId) {
+      if (processedMessageIds.has(messageId)) {
+        console.log(`Duplicate WhatsApp webhook delivery detected for message ID: ${messageId}. Ignoring.`);
+        return NextResponse.json({ success: true, message: "Duplicate message ignored" });
+      }
+      processedMessageIds.add(messageId);
+
+      // Keep cache size manageable to prevent memory growth
+      if (processedMessageIds.size > 1000) {
+        const first = processedMessageIds.values().next().value;
+        if (first) processedMessageIds.delete(first);
       }
     }
 
