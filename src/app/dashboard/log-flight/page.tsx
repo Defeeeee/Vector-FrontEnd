@@ -56,6 +56,13 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
           </div>
           <p className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] md:text-xs uppercase tracking-[0.4em] ml-14 md:ml-16">Operaciones de Vuelo</p>
         </div>
+
+        <Link 
+          href="/dashboard/log-flight/import" 
+          className="border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-bold text-[10px] uppercase tracking-wider px-5 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] self-start md:self-auto flex items-center space-x-2"
+        >
+          <span>Importar desde PDF (Beta)</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">

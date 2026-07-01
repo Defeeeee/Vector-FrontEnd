@@ -268,3 +268,73 @@ export async function toggleFlightSession(formData: FormData) {
   revalidatePath("/dashboard/history");
   return data;
 }
+
+export async function bulkLogFlights(flights: any[]) {
+  try {
+    for (const f of flights) {
+      const aircraft_id = f.aircraft_id;
+      const date = f.date;
+      const rawRoute = f.route || "";
+      const landings = parseInt(f.landings, 10) || 1;
+      const duration = parseFloat(f.duration) || 0;
+      const takeoff_time = f.takeoff;
+      const landing_time = f.landing;
+
+      if (!aircraft_id || !date || !takeoff_time || !landing_time) {
+        throw new Error("Datos incompletos para uno de los vuelos. Matrícula, fecha, despegue y aterrizaje son requeridos.");
+      }
+
+      let route = rawRoute.trim();
+      if (route.includes('-')) {
+        route = route.replace(/\s+/g, '');
+      }
+
+      const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
+      const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
+
+      const payload = {
+        aircraft_id,
+        date,
+        route,
+        landings,
+        duration,
+        takeoff: takeoff_dt,
+        landing: landing_dt,
+        pic_day_loc: getNumber(f.pic_day_loc),
+        pic_day_tra: getNumber(f.pic_day_tra),
+        pic_night_loc: getNumber(f.pic_night_loc),
+        pic_night_tra: getNumber(f.pic_night_tra),
+        sic_day_loc: getNumber(f.sic_day_loc),
+        sic_day_tra: getNumber(f.sic_day_tra),
+        sic_night_loc: getNumber(f.sic_night_loc),
+        sic_night_tra: getNumber(f.sic_night_tra),
+        "IMC Pil": getNumber(f.imc_pil),
+        "IMC Cop": getNumber(f.imc_cop),
+        "Capota": getNumber(f.capota),
+        "Sim Instructor": getNumber(f.sim_instructor),
+        "Sim Pil en Inst": getNumber(f.sim_pil_en_inst),
+        discount_type: f.discount_type || null,
+        discount_amount: getNumber(f.discount_amount),
+        purpose: f.purpose || "VP",
+      };
+
+      const response = await apiFetch("/flights", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Error al registrar vuelo del ${date} (${route})`);
+      }
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/history");
+    return { success: true };
+  } catch (err: any) {
+    console.error("bulkLogFlights error:", err);
+    return { error: err.message || "Error al registrar los vuelos" };
+  }
+}
+
