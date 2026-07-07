@@ -4,22 +4,9 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("session_token")?.value;
   const { pathname } = request.nextUrl;
-  
-  // Debug headers
-  console.log("Proxy Debug:", {
-    pathname,
-    host: request.headers.get("host"),
-    xForwardedHost: request.headers.get("x-forwarded-host"),
-    xForwardedProto: request.headers.get("x-forwarded-proto"),
-    url: request.url,
-    nextUrl: request.nextUrl.toString(),
-    cookies: request.cookies.getAll().map(c => c.name)
-  });
 
   const isDashboardPage = pathname.startsWith("/dashboard");
   const isAuthCallback = pathname.startsWith("/auth/callback");
-
-  console.log(`Proxy: path=${pathname} hasToken=${!!token}`);
 
   if (isAuthCallback) {
     return NextResponse.next();
@@ -32,7 +19,6 @@ export function proxy(request: NextRequest) {
   }
 
   if (isDashboardPage && !token) {
-    console.log("Proxy: Redirecting to / due to missing token on dashboard");
     const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
     const proto = request.headers.get("x-forwarded-proto") || "https";
     const redirectUrl = new URL("/", `${proto}://${host}`);
@@ -41,7 +27,6 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname === "/" && token) {
-    console.log("Proxy: Redirecting to /dashboard due to existing token");
     const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "vector.fdiaznem.com.ar";
     const proto = request.headers.get("x-forwarded-proto") || "https";
     const redirectUrl = new URL("/dashboard", `${proto}://${host}`);
