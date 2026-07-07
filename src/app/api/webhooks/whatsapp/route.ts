@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { calculateFlightDuration } from "@/lib/utils";
+import { timingSafeEqual } from "crypto";
+
+// Compares the caller-supplied secret against the configured one without leaking timing info,
+// and without throwing when lengths differ (timingSafeEqual requires equal-length buffers).
+function secretsMatch(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -387,13 +397,19 @@ ${flightLines}
 }
 
 export async function GET(req: NextRequest) {
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
+  if (!verifyToken) {
+    console.error("WHATSAPP_VERIFY_TOKEN is not configured; rejecting webhook verification.");
+    return new Response("Forbidden", { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get("hub.mode");
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
   if (mode && token) {
-    if (mode === "subscribe" && token === (process.env.WHATSAPP_VERIFY_TOKEN || "vector-verify")) {
+    if (mode === "subscribe" && secretsMatch(token, verifyToken)) {
       return new Response(challenge, { status: 200 });
     }
     return new Response("Forbidden", { status: 403 });
@@ -402,6 +418,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Reject unauthenticated calls: the URL registered with Kapso must include
+  // `?token=<KAPSO_WEBHOOK_SECRET>` so we can confirm the delivery actually came from Kapso
+  // rather than an arbitrary caller spoofing a phone number.
+  const webhookSecret = process.env.KAPSO_WEBHOOK_SECRET;
+  const providedToken = new URL(req.url).searchParams.get("token") || "";
+  if (!webhookSecret || !secretsMatch(providedToken, webhookSecret)) {
+    console.error("Rejected WhatsApp webhook POST: missing or invalid token.");
+    return new Response("Forbidden", { status: 403 });
+  }
+
   let fromNumber = "";
   let payloadPhoneNumberId = "";
   try {
