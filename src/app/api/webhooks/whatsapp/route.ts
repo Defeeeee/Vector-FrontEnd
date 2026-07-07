@@ -418,20 +418,31 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // Reject unauthenticated calls: the URL registered with Kapso must include
-  // `?token=<KAPSO_WEBHOOK_SECRET>` so we can confirm the delivery actually came from Kapso
-  // rather than an arbitrary caller spoofing a phone number.
+  // Authenticate via Kapso's X-Webhook-Signature header (HMAC-SHA256 of raw body with our secret).
   const webhookSecret = process.env.KAPSO_WEBHOOK_SECRET;
-  const providedToken = new URL(req.url).searchParams.get("token") || "";
-  if (!webhookSecret || !secretsMatch(providedToken, webhookSecret)) {
-    console.error("Rejected WhatsApp webhook POST: missing or invalid token.");
-    return new Response("Forbidden", { status: 403 });
+  let rawBodyText: string | null = null;
+  if (webhookSecret) {
+    rawBodyText = await req.text();
+    const { createHmac } = await import("crypto");
+    const expectedSig = createHmac("sha256", webhookSecret).update(rawBodyText).digest("hex");
+    const providedSig = req.headers.get("x-webhook-signature") || "";
+    // Kapso may send the signature as "sha256=<hex>" or just "<hex>"
+    const normalizedSig = providedSig.startsWith("sha256=") ? providedSig.slice(7) : providedSig;
+    if (!normalizedSig || !secretsMatch(normalizedSig, expectedSig)) {
+      console.error("Rejected WhatsApp webhook POST: invalid X-Webhook-Signature. Got:", providedSig, "Expected:", expectedSig);
+      return new Response("Forbidden", { status: 403 });
+    }
+    console.log("WhatsApp webhook POST: signature validated OK.");
+  } else {
+    console.warn("KAPSO_WEBHOOK_SECRET not set — skipping signature validation.");
   }
 
   let fromNumber = "";
   let payloadPhoneNumberId = "";
   try {
-    const body = await req.json();
+    // If we already consumed the body for signature verification, use the cached text
+    const bodyText = rawBodyText !== null ? rawBodyText : await req.text();
+    const body = JSON.parse(bodyText);
     console.log("Incoming WhatsApp Webhook Payload:", JSON.stringify(body, null, 2));
 
     let messageId = "";
