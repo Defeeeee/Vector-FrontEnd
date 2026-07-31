@@ -4,6 +4,26 @@ Este archivo es la **bitácora obligatoria** de todo agente de IA que modifique
 este repositorio. Igual que un piloto no cierra un vuelo sin cargarlo en el
 libro, ningún agente cierra una tanda de cambios sin dejar su entrada acá.
 
+## Orientación rápida
+
+- **Este repo es solo el frontend** (Next.js 16 App Router, React 19, Tailwind
+  v4 — sin `tailwind.config.js`, el tema vive en `@theme` dentro de
+  `src/app/globals.css` —, Framer Motion, next-themes). Los datos reales viven
+  en un backend aparte (Python + Litestar + Supabase, en
+  `/home/ubuntu/FlightLog-BackEnd`) y la autenticación en otro servicio. El
+  frontend habla con los dos vía `apiFetch` (`src/lib/api.ts`) con Bearer
+  token. **Cualquier cambio de modelo de datos requiere tocar el backend**, no
+  alcanza con este repo.
+- **El brief que originó este trabajo está en `docs/brief/`.** Leelo en orden:
+  `01-benchmark-flightdeck.md` (a dónde queremos llegar),
+  `02-estado-actual-vector.md` (punto de partida),
+  `03-plan-implementacion.md` (el plan fase por fase). La sección
+  "Pasos a seguir" al final de este archivo dice qué está hecho y qué no.
+- **El dataset de aeródromos se regenera con `npm run build:airports`**
+  (baja OurAirports y reescribe `src/data/airports.tsv`). El TSV está
+  commiteado a propósito: la app no depende de red en build ni en runtime.
+  Correlo cada varios meses; el archivo upstream cambia lento.
+
 ---
 
 ## Proceso obligatorio
@@ -251,13 +271,53 @@ la cuenta real, claro y oscuro a 1500px y en iPhone 13:
   abre mostrando May–Jul.
 - 0 errores de consola en todas las corridas.
 
+### 2026-07-31 18:06 UTC — Claude (Opus 5, vía Claude Code) — Hacer el repo autocontenido
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/` — el brief completo (4 documentos) commiteado al repo, con una
+  nota arriba del README aclarando que las Fases 0, 1 y 3 ya están hechas.
+- `AGENTS.md` — sección "Orientación rápida" al principio, y las referencias al
+  brief ahora apuntan a `docs/brief/` en vez de citarlo por nombre.
+- `package.json` — `npm run build:airports`.
+
+**Por qué:** Federico preguntó si un agente que clone el repo entiende todo, y
+la respuesta era **no**. Este archivo citaba el brief once veces y decía "el
+plan completo está en `03-plan-implementacion.md`", pero ese archivo vivía en
+un `/tmp` de mi sesión: el próximo agente iba a leer una referencia a un
+documento que no existe en ningún lado que él pueda alcanzar. Tres huecos, tres
+arreglos:
+
+1. **El brief no estaba versionado.** Ahora sí. Se commiteó con la decisión
+   explícita de Federico, porque el repo es público y el brief incluye un
+   benchmark de un competidor con nombre y URL más el roadmap del producto.
+   No es una decisión que un agente deba tomar solo — preguntá antes de
+   publicar material de estrategia.
+2. **`scripts/build-airports.mjs` no estaba en `package.json`.** El brief pedía
+   un cron mensual de refresco; sin un script registrado, el próximo agente
+   tenía que deducir el comando leyendo el archivo.
+3. **Faltaba el contexto de arquitectura.** Que este repo es solo el frontend y
+   que cualquier cambio de modelo de datos obliga a tocar otro repo es la
+   restricción que más condiciona el trabajo acá, y estaba solo implícita en
+   las entradas de las fases bloqueadas.
+
+**Estado:** Terminado.
+
+**Verificación:** Las referencias cruzadas dentro del brief
+(`01-benchmark-flightdeck.md` desde `03-plan-implementacion.md`) son rutas
+relativas y los cuatro archivos quedaron en la misma carpeta, así que siguen
+resolviendo. Los cuatro documentos se revisaron buscando credenciales antes de
+commitear: la única coincidencia es la descripción de arquitectura con los
+hostnames públicos de la API, sin secretos.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
 
-El plan completo está en el brief `vector-opus5-implementation-brief`
-(`03-plan-implementacion.md`). **Hechas: Fase 0, Fase 1, Fase 3 y el fix del
-copiloto.** Lo que queda, en el orden en que conviene agarrarlo:
+El plan completo está en `docs/brief/03-plan-implementacion.md`.
+**Hechas: Fase 0, Fase 1, Fase 3 y el fix del copiloto.** Lo que queda, en el
+orden en que conviene agarrarlo:
 
 ### 1. Fase 5 — Calculadoras operativas · DESBLOQUEADA, empezá por acá
 
