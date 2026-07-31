@@ -16,61 +16,66 @@ const navItems = [
   { href: "/dashboard/settings", icon: Settings, label: "Hangar" },
 ];
 
+const AUDIT_HREF = "/dashboard/audit";
+
 /**
  * How many destinations get their own slot in the mobile pill. The rest fall
  * into the "Más" sheet.
  *
- * The pill is a fixed-width strip sharing the bottom of the screen with the
- * action pill, so slots don't get cheaper as destinations are added — going
- * from five to seven would put every tab under ~35 px on a phone and squash the
- * labels. Five visible plus an overflow keeps the original destinations exactly
- * where they were while leaving room to keep growing.
+ * The pill shares the bottom edge with the segregated action pill, so it only
+ * ever gets ~220 px on a phone — slots don't get cheaper as destinations are
+ * added. Five visible plus an overflow keeps the original destinations where
+ * they were while leaving room to keep growing.
  */
 const MOBILE_SLOTS = 5;
-
-const shortLabels: Record<string, string> = {
-  "Dashboard": "Inicio",
-  "Bitácora": "Log",
-  "Balance": "Saldo",
-  "Ruta METAR": "Ruta",
-  "Herramientas": "Calc",
-  "Auditoría": "Audit",
-  "Hangar": "Hangar",
-};
 
 export default function DashboardNav({
   variant,
   auditCount = 0,
 }: {
   variant: "rail" | "mobile";
-  /** Unsuppressed critical findings — drives the badge. 0 hides it. */
+  /** Unsuppressed findings. Drives the badge; 0 hides it. */
   auditCount?: number;
 }) {
   const pathname = usePathname();
 
   if (variant === "rail") {
     return (
-      <nav className="flex flex-col items-center gap-2">
+      <nav className="flex flex-col items-center gap-1">
         {navItems.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
-          const badge = item.href === "/dashboard/audit" ? auditCount : 0;
+          const flagged = item.href === AUDIT_HREF && auditCount > 0;
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`group relative flex items-center justify-center w-12 h-12 rounded-2xl transition-colors ${
-                active ? "bg-white/10 text-aviation-cyan" : "text-zinc-500 hover:text-white hover:bg-white/5"
-              }`}
+              aria-current={active ? "page" : undefined}
+              className="group relative flex items-center justify-center w-12 h-12"
             >
-              <Icon className="w-5 h-5" strokeWidth={2} />
-              {badge > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                  {badge > 9 ? "9+" : badge}
-                </span>
+              {active && (
+                <motion.div
+                  layoutId="rail-nav-active"
+                  className="absolute inset-0 rounded-2xl bg-white/10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                />
               )}
+
+              <span className="relative z-10">
+                <Icon
+                  className={`w-5 h-5 transition-colors ${
+                    active ? "text-aviation-cyan" : "text-zinc-500 group-hover:text-white"
+                  }`}
+                  strokeWidth={2}
+                />
+                {flagged && <Dot ring="ring-zinc-950" />}
+              </span>
+
+              {/* The rail is icon-only, so the tooltip carries the label. */}
               <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg bg-zinc-900 text-white text-xs font-semibold px-3 py-1.5 opacity-0 scale-95 origin-left group-hover:opacity-100 group-hover:scale-100 transition-all z-50 shadow-xl border border-white/10">
                 {item.label}
+                {flagged && <span className="ml-1.5 text-red-400">{auditCount}</span>}
               </span>
             </Link>
           );
@@ -82,12 +87,17 @@ export default function DashboardNav({
   return <MobileNav pathname={pathname} auditCount={auditCount} />;
 }
 
-// Floating pill for the primary destinations — fills whatever width its wrapper
-// gives it (see dashboard/layout.tsx) rather than shrink-wrapping to a cramped
-// intrinsic size. Every tab is a fixed-width column (so the bar's total width
-// never changes and can never crowd into the segregated action pill), with a
-// roomier active chip than the original tiny-label version. The primary action
-// and AI copilot live in their own segregated pill at the right edge.
+/**
+ * Floating pill for the primary destinations.
+ *
+ * Icon-only, deliberately. The previous version stacked a 10 px label under
+ * every icon, but the bar only gets ~220 px next to the action pill, so at six
+ * slots the labels had to be cut down to "Log" / "Saldo" / "Calc" / "Más" —
+ * cryptic *and* cluttered, the worst of both. Cutting destinations doesn't
+ * rescue them either: "Bitácora" doesn't fit in a 44 px slot. Dropping the
+ * labels is what actually buys the icons room to breathe; the full names live
+ * in the overflow sheet and in the rail's tooltips.
+ */
 function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: number }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -95,10 +105,8 @@ function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: num
   const visible = navItems.slice(0, MOBILE_SLOTS);
   const overflow = navItems.slice(MOBILE_SLOTS);
   const overflowActive = overflow.some((i) => i.href === pathname);
-  const overflowBadge = overflow.some((i) => i.href === "/dashboard/audit") ? auditCount : 0;
+  const overflowFlagged = overflow.some((i) => i.href === AUDIT_HREF) && auditCount > 0;
 
-  // Close on tap-outside. Navigating also closes it via the pathname effect
-  // below, since Next keeps this component mounted across route changes.
   useEffect(() => {
     if (!sheetOpen) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -108,6 +116,8 @@ function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: num
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [sheetOpen]);
 
+  // Next keeps this mounted across route changes, so the sheet has to be told
+  // to close once navigation actually happened.
   useEffect(() => setSheetOpen(false), [pathname]);
 
   return (
@@ -115,33 +125,32 @@ function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: num
       <AnimatePresence>
         {sheetOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full right-0 mb-2 w-52 origin-bottom-right rounded-3xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-2xl overflow-hidden p-1.5"
+            className="absolute bottom-full right-0 mb-3 w-56 origin-bottom-right rounded-3xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-2xl overflow-hidden p-2"
           >
             {overflow.map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href;
-              const badge = item.href === "/dashboard/audit" ? auditCount : 0;
+              const flagged = item.href === AUDIT_HREF && auditCount > 0;
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setSheetOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors ${
                     active
                       ? "bg-aviation-blue/10 text-aviation-blue-dark dark:text-aviation-cyan"
                       : "text-zinc-600 dark:text-zinc-300 active:bg-zinc-100 dark:active:bg-white/5"
                   }`}
                 >
                   <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
-                  <span className="text-sm font-bold">{item.label}</span>
-                  {badge > 0 && (
-                    <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                      {badge > 9 ? "9+" : badge}
-                    </span>
+                  <span className="text-sm font-semibold">{item.label}</span>
+                  {flagged && (
+                    <span className="ml-auto text-[11px] font-bold tabular-nums text-red-500">{auditCount}</span>
                   )}
                 </Link>
               );
@@ -155,9 +164,10 @@ function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: num
           <MobileNavItem
             key={item.href}
             href={item.href}
+            label={item.label}
             icon={<item.icon className="w-[22px] h-[22px]" strokeWidth={2} />}
-            label={shortLabels[item.label] || item.label}
             active={pathname === item.href}
+            flagged={item.href === AUDIT_HREF && auditCount > 0}
           />
         ))}
 
@@ -165,7 +175,7 @@ function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: num
           label="Más"
           icon={<MoreHorizontal className="w-[22px] h-[22px]" strokeWidth={2} />}
           active={overflowActive || sheetOpen}
-          badge={overflowBadge}
+          flagged={overflowFlagged}
           onClick={() => setSheetOpen((o) => !o)}
         />
       </nav>
@@ -178,14 +188,15 @@ function MobileNavItem({
   icon,
   label,
   active = false,
-  badge = 0,
+  flagged = false,
   onClick,
 }: {
   href?: string;
   icon: React.ReactNode;
+  /** Not rendered — the bar is icon-only. Exposed to assistive tech instead. */
   label: string;
   active?: boolean;
-  badge?: number;
+  flagged?: boolean;
   onClick?: () => void;
 }) {
   const inner = (
@@ -193,23 +204,18 @@ function MobileNavItem({
       {active && (
         <motion.div
           layoutId="mobile-nav-active"
-          className="absolute inset-1.5 rounded-2xl bg-aviation-blue/10"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+          className="absolute inset-y-1.5 inset-x-1 rounded-2xl bg-aviation-blue/10"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
         />
       )}
-      <div
-        className={`relative z-10 flex flex-col items-center gap-1 transition-colors ${
+      <span
+        className={`relative z-10 transition-colors ${
           active ? "text-aviation-blue-dark dark:text-aviation-cyan" : "text-zinc-400 dark:text-zinc-500"
         }`}
       >
         {icon}
-        <span className="text-[10px] font-bold leading-none">{label}</span>
-      </div>
-      {badge > 0 && (
-        <span className="absolute top-1 right-1/2 translate-x-[14px] min-w-[15px] h-[15px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none z-20">
-          {badge > 9 ? "9+" : badge}
-        </span>
-      )}
+        {flagged && <Dot ring="ring-white dark:ring-zinc-900" />}
+      </span>
     </>
   );
 
@@ -217,15 +223,35 @@ function MobileNavItem({
 
   if (href) {
     return (
-      <Link href={href} className={className}>
+      <Link href={href} aria-label={label} aria-current={active ? "page" : undefined} className={className}>
         {inner}
       </Link>
     );
   }
 
   return (
-    <button type="button" onClick={onClick} aria-label={label} className={className}>
+    <button type="button" onClick={onClick} aria-label={label} aria-expanded={active} className={className}>
       {inner}
     </button>
+  );
+}
+
+/**
+ * Attention marker for the audit destination.
+ *
+ * A dot rather than a count bubble: the number was big enough to break the
+ * pill's silhouette and had nowhere to sit that wasn't overlapping the rounded
+ * edge. The exact figure still shows where there's room for it — the tooltip on
+ * the rail, the row in the overflow sheet, and the audit page itself.
+ *
+ * Anchored to the icon, not to the slot: the slot is a flex column whose width
+ * depends on how many destinations are visible, so positioning against it left
+ * the dot drifting away from the glyph as that count changed.
+ */
+function Dot({ ring }: { ring: string }) {
+  return (
+    <span
+      className={`absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ${ring} z-20`}
+    />
   );
 }

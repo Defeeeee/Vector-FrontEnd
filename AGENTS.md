@@ -471,6 +471,57 @@ formatea.**
 **Verificación:** Log del dev server limpio tras recargar: 0 errores de
 hidratación en las 4 combinaciones (antes había 8).
 
+### 2026-07-31 23:33 UTC — Claude (Opus 5, vía Claude Code) — Rediseño de la barra de navegación
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/components/dashboard/DashboardNav.tsx` — la barra móvil pasa a ser
+  **icon-only**; el badge numerado se reemplaza por un punto; el rail gana el
+  mismo indicador activo animado que ya tenía el móvil.
+
+**Por qué:** Federico dijo que la barra quedaba fea y cargada, y tenía razón.
+Screenshot en mano el problema era medible:
+
+1. **Las etiquetas eran la fuente del ruido.** La barra comparte el borde
+   inferior con la píldora de acciones, así que sólo dispone de ~222 px en un
+   teléfono de 390. Con seis slots eso son 37 px cada uno, y a 10 px las
+   etiquetas había que recortarlas a "Log" / "Saldo" / "Calc" / "Más": crípticas
+   **y** apelmazadas, lo peor de los dos mundos.
+
+   **Bajar la cantidad de destinos no las salvaba**, que fue lo primero que
+   probé: con 5 slots son 44 px, y "Bitácora" a 10 px mide ~48 px. No entra a
+   ninguna cantidad razonable de ítems. Por eso se van del todo en vez de
+   seguir recortándolas — es lo único que le da aire a los íconos. Los nombres
+   completos siguen estando donde hay lugar: la hoja de "Más" y los tooltips del
+   rail.
+
+2. **El badge rompía la silueta.** El círculo con el número se apoyaba sobre el
+   borde redondeado de la píldora y no tenía dónde ubicarse sin pisarlo. Pasa a
+   ser un punto de 8 px; el número exacto se sigue viendo en el tooltip del
+   rail, en la fila de la hoja y en la propia página de auditoría.
+
+3. **El punto va anclado al ícono, no al slot.** Anclado al slot se despegaba
+   del glifo a medida que cambiaba la cantidad de destinos visibles, porque el
+   ancho del slot es `flex-1`.
+
+4. **El rail ahora usa `layoutId` como el móvil.** Antes el estado activo era un
+   cambio de clase seco; ahora el chip se desliza entre ítems con el mismo
+   resorte. Es el mismo lenguaje en las dos variantes.
+
+Lo que **no** se tocó: los 5 destinos visibles siguen siendo los mismos y en el
+mismo orden (la memoria muscular no se toca), y la píldora de acciones segregada
+queda igual.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. Playwright contra un
+harness que reproduce el envoltorio exacto del layout (ancho real de iPhone,
+píldora de acciones incluida), en claro y oscuro, con capturas a 4x: los 6 slots
+miden 34×54 px —por encima del mínimo táctil— el chip activo se lee sin
+ambigüedad, y la hoja de "Más" muestra nombres completos y el conteo. 0 errores
+de consola (queda el 404 de `/favicon.ico`, preexistente).
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
