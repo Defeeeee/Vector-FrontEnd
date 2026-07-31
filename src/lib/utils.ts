@@ -150,6 +150,39 @@ export function buildActivityHeatmap(
   return { weeks, months, max, totalDays, totalHours: Number(totalHours.toFixed(1)) };
 }
 
+export interface DocumentStatus {
+  daysRemaining: number;
+  tone: "expired" | "critical" | "warning" | "ok";
+  label: string;
+}
+
+/**
+ * How urgent a document's expiry is.
+ *
+ * Thresholds mirror the 60/30/7 alert ladder in the backend sweep so the colour
+ * on screen and the WhatsApp message agree — a card reading "en regla" the same
+ * morning a warning arrives would undermine both.
+ *
+ * Compared in UTC against the date alone: expiries are calendar dates, and
+ * running them through local time would flip the count a day either way
+ * depending on the pilot's timezone.
+ */
+export function documentStatus(expiryDate: string, today = new Date()): DocumentStatus {
+  const expiry = Date.parse(`${expiryDate.slice(0, 10)}T00:00:00Z`);
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const daysRemaining = Math.round((expiry - todayUtc) / DAY_MS);
+
+  if (daysRemaining < 0) {
+    const days = Math.abs(daysRemaining);
+    return { daysRemaining, tone: "expired", label: `Vencido hace ${days} ${days === 1 ? "día" : "días"}` };
+  }
+  if (daysRemaining === 0) return { daysRemaining, tone: "expired", label: "Vence hoy" };
+  if (daysRemaining <= 7) return { daysRemaining, tone: "critical", label: `Vence en ${daysRemaining} ${daysRemaining === 1 ? "día" : "días"}` };
+  if (daysRemaining <= 30) return { daysRemaining, tone: "warning", label: `Vence en ${daysRemaining} días` };
+  if (daysRemaining <= 60) return { daysRemaining, tone: "warning", label: `Vence en ${daysRemaining} días` };
+  return { daysRemaining, tone: "ok", label: `Vence en ${daysRemaining} días` };
+}
+
 export function isLocalFlight(route: string): boolean {
   if (!route) return true;
   const parts = route.split(/[ -]/).filter(p => p.trim() !== "");

@@ -75,6 +75,50 @@ export interface Transaction {
 
 
 
+export type AuditRuleType = "overlap" | "unregistered_aircraft" | "duplicate" | "inconsistent_total";
+export type AuditSeverity = "critical" | "warning";
+
+export interface AuditFinding {
+  id: string;
+  user_id: string;
+  flight_id?: string | null;
+  rule_type: AuditRuleType;
+  severity: AuditSeverity;
+  message: string;
+  suppressed: boolean;
+  suppressed_reason?: string | null;
+  created_at: string;
+  recalculated_at: string;
+}
+
+export interface AuditSummary {
+  critical: number;
+  warning: number;
+  suppressed: number;
+  /** Unsuppressed findings — what the nav badge counts. */
+  open_total: number;
+  by_rule: Partial<Record<AuditRuleType, number>>;
+  last_recalculated_at?: string | null;
+}
+
+export type DocumentKind = "cma" | "licencia" | "habilitacion" | "seguro" | "aeronavegabilidad" | "otro";
+
+export interface PilotDocument {
+  id: string;
+  user_id: string;
+  kind: DocumentKind;
+  name: string;
+  /** "YYYY-MM-DD" */
+  expiry_date: string;
+  issued_date?: string | null;
+  notes?: string | null;
+  alert_days: number[];
+  last_alert_threshold?: number | null;
+  last_alert_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /** An aerodrome resolved by /api/airports/search. Mirrors `Airport` in
  *  src/lib/airports.ts, declared here so client components can type the
  *  response without importing the server-only (fs-backed) module. */

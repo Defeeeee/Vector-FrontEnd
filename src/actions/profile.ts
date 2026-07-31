@@ -8,20 +8,21 @@ export async function updateProfile(formData: FormData) {
   const first_name = formData.get("first_name") as string;
   const last_name = formData.get("last_name") as string;
   const license_type = formData.get("license_type") as string;
-  const cma_expiry = formData.get("cma_expiry") as string;
   const whatsapp_phone = formData.get("whatsapp_phone") as string;
 
   if (!id) {
     throw new Error("ID de perfil no encontrado");
   }
 
+  // cma_expiry is deliberately not sent: the medical lives in the `documents`
+  // table now (see src/actions/document.ts), and writing both would recreate
+  // the split source of truth this migration removed.
   const response = await apiFetch(`/profiles/${id}`, {
     method: "PATCH",
     body: JSON.stringify({
       first_name,
       last_name,
       license_type,
-      cma_expiry: cma_expiry || null,
       whatsapp_phone: whatsapp_phone || null,
     }),
   });

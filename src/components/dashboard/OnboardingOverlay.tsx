@@ -2,6 +2,7 @@
 
 import { Profile } from "@/types";
 import { updateProfile } from "@/actions/profile";
+import { upsertCmaDocument } from "@/actions/document";
 import { Shield, Calendar, CreditCard, ArrowRight, Loader2, Compass } from "lucide-react";
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,14 +15,25 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(true);
 
-  const needsOnboarding = profile?.license_type === "-" || profile?.cma_expiry === "2100-12-31";
+  // Only the licence placeholder gates onboarding now. The old check also fired
+  // on the `2100-12-31` CMA sentinel, but the medical is a `documents` row
+  // rather than a profile column, so that sentinel no longer tracks whether the
+  // pilot has actually filled anything in.
+  const needsOnboarding = profile?.license_type === "-";
 
   if (!needsOnboarding || !isOpen) return null;
 
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
       try {
+        // Two writes because they land in two places: the licence on the
+        // profile, the medical as the pilot's first document.
         await updateProfile(formData);
+        const result = await upsertCmaDocument(formData.get("cma_expiry") as string);
+        if (result?.error) {
+          alert(result.error);
+          return;
+        }
         setIsOpen(false);
       } catch (e) {
         alert("Error al guardar los datos de inicio.");

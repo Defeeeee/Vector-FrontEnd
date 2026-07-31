@@ -251,97 +251,365 @@ la cuenta real, claro y oscuro a 1500px y en iPhone 13:
   abre mostrando May–Jul.
 - 0 errores de consola en todas las corridas.
 
+### 2026-07-31 23:14 UTC — Claude (Opus 5, vía Claude Code) — RLS en `whatsapp_chats`
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- Migración Supabase `enable_rls_on_whatsapp_chats` — `ALTER TABLE
+  public.whatsapp_chats ENABLE ROW LEVEL SECURITY`, sin políticas.
+
+**Por qué:** La tabla guarda `phone` + `history` (la conversación completa con el
+copiloto) y era la **única** de las ocho con RLS apagada: con la anon key
+cualquiera podía leerla o reescribirla entera. No lo detectó ninguna entrada
+anterior de esta bitácora; salió del linter de Supabase.
+
+Se dejó **sin políticas a propósito**. El único consumidor es el backend
+(`src/controllers/whatsapp.py`), que llega por el *service client* y por lo tanto
+saltea RLS; el frontend no la toca nunca. Activar RLS sin políticas niega el
+acceso a `anon` y `authenticated`, que es exactamente la accesibilidad deseada.
+Agregar políticas por `user_id` habría sido imposible igual: la tabla se indexa
+por teléfono y no tiene columna de usuario.
+
+**Estado:** Terminado.
+
+**Verificación:** `pg_class.relrowsecurity = true` confirmado por consulta. El
+flujo del bot sigue andando porque el service role no está sujeto a RLS.
+
+### 2026-07-31 23:14 UTC — Claude (Opus 5, vía Claude Code) — Fase 5: calculadoras operativas
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/lib/aviation.ts` — toda la matemática, pura y sin React.
+- `src/components/dashboard/tools/ToolPrimitives.tsx` — `NumberField`,
+  `ResultTile`, `ToolLayout`, y los helpers de formato.
+- `src/components/dashboard/tools/{UnitConverter,FuelCalculator,WindCalculator,
+  AltitudeCalculator,CloudBaseCalculator,GlideCalculator,Kneeboard}.tsx`.
+- `src/components/dashboard/tools/ToolsClient.tsx` — selector de herramienta.
+- `src/app/dashboard/tools/page.tsx` — la página.
+- `src/components/dashboard/DashboardNav.tsx` — reescrito (ver abajo).
+
+**Por qué:**
+
+1. **Los inputs guardan `string`, no `number`.** Con estado numérico el campo
+   pelea con el usuario a mitad de tipeo: "1." o "-" no parsean y el valor se
+   borra solo. Se parsea en cada render, que además es lo que hace que el
+   recálculo en vivo salga gratis.
+
+2. **Una herramienta a la vez, no siete tarjetas apiladas.** Cada calculadora
+   tiene cinco o seis campos; todas juntas entierran la que estás usando debajo
+   de una página de campos ajenos, justo en el teléfono, que es donde esto se
+   abre. El estado vive dentro de cada componente, así que cambiar de pestaña lo
+   resetea — volver a una calculadora y encontrar números de hace una hora es
+   peor que empezar limpio.
+
+3. **El nav móvil no aguantaba dos destinos más.** Era una píldora de ancho fijo
+   con 5 slots; pasar a 7 dejaba cada tab en ~35 px y aplastaba las etiquetas.
+   Se agregó un slot "Más" que abre una hoja con lo que no entra. Los 5 destinos
+   originales quedan **exactamente donde estaban** (la memoria muscular no se
+   toca) y hay lugar para seguir creciendo. El rail de escritorio es vertical y
+   los muestra todos.
+
+4. **La piernera guarda `startedAt`, no el conteo.** Un cronómetro de cabina que
+   se congela al bloquear el teléfono no sirve. Guardando la hora de arranque, el
+   tiempo se recalcula contra el reloj de pared al volver.
+
+5. **Las aproximaciones son las del E6B a propósito** (30 ft/hPa, 118,8 ft/°C,
+   400 ft por °C de spread). Coincidir con el número que da el examen ANAC vale
+   más que un modelo barométrico riguroso que discrepe con la respuesta oficial.
+
+**Estado:** Terminado, las siete.
+
+**Verificación:** `tsc --noEmit` limpio, `npm run build` OK. Playwright contra
+las cuatro combinaciones (claro/oscuro × 1500 px/iPhone 13), **22 checks
+numéricos** contra valores calculados a mano:
+- Conversor: 100 NM = 185,2 km.
+- Combustible: 120 L a 32 L/h → 3:45 de autonomía, 3:00 útil con 45 min de
+  reserva, 285 NM de alcance, 72 L para una etapa de 1.5 h, sobran 48 L.
+- Viento: pista 360, TAS 110, viento 310/18 → 11,6 kt de frente, 13,8 kt
+  cruzado por izquierda, rumbo 353, GS 98.
+- Altitud: 79 ft con QNH 1013 y 30 °C → PA 87 ft, DA 1.889 ft, ISA +15,2.
+- Nubes: spread de 10 °C → 4.000 ft AGL, 12,0 °C en la base.
+- Planeo: 3.000 ft a 9:1 → 4,4 NM, llega al campo a 4 NM.
+- Piernera: el cronómetro avanza de verdad tras 2 s.
+- Sin desborde horizontal: `scrollWidth == clientWidth` en las 7 pestañas a
+  390 px. 0 errores de consola (queda un 404 de `/favicon.ico`, preexistente).
+
+### 2026-07-31 23:14 UTC — Claude (Opus 5, vía Claude Code) — Fase 2: motor de auditoría
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- Migración `create_audit_findings` — tabla + RLS por `user_id` + índice único.
+- Backend `src/services/audit_engine.py` — las cuatro reglas, puras.
+- Backend `src/controllers/audit.py`, `src/models/audit.py` — los endpoints.
+- Backend `src/controllers/flights.py` — recálculo tras crear/editar/borrar.
+- Backend `src/controllers/dashboard.py` — contadores en el endpoint consolidado.
+- Backend `test_audit_engine.py` — 19 checks, corren sin base ni servidor.
+- Frontend `src/app/dashboard/audit/page.tsx`, `AuditClient.tsx`,
+  `src/actions/audit.ts`, `LogbookHealthCard.tsx`.
+
+**Por qué:**
+
+1. **Es tabla y no vista** porque lo único que no es derivado es la decisión del
+   piloto de suprimir un hallazgo. El sync es upsert + borrado de lo que ya no
+   aplica, y el payload del upsert **omite** `suppressed` para que el
+   `ON CONFLICT` no pueda pisarlo. Un wipe-and-reinsert des-suprimiría todo en el
+   próximo vuelo cargado.
+
+2. **Recálculo completo, no incremental** como pedía el brief. Editar un vuelo
+   puede *limpiar* un hallazgo en **otro** vuelo (arreglás una superposición y
+   hay que borrar también la del contrario), así que el pase incremental tiene
+   que recorrer los vecinos igual. A escala de libro de vuelo es una query y un
+   barrido ordenado.
+
+3. **Un duplicado exacto no reporta además superposición.** Dos vuelos idénticos
+   se solapan por definición; mostrar las dos reglas son dos hallazgos críticos
+   por un solo error, y apunta al diagnóstico vago ("se superpone con...") en vez
+   del accionable ("borrá la copia"). El motor le pasa los pares duplicados a la
+   regla de superposición para que los ignore — pero si el vuelo *además* choca
+   con un tercero no relacionado, esa sí se reporta. **Lo encontró un test**, no
+   la lectura del código.
+
+4. **Los timestamps que cruzan medianoche se normalizan.** El frontend arma
+   `takeoff` y `landing` con la **misma** fecha (ver `logFlight`), así que un
+   vuelo 23:30 → 00:20 vuelve con `landing < takeoff`. Sin corregirlo, se leía
+   como un bloque de 23 h que se superponía con todo lo de esa noche.
+
+5. **`inconsistent_total` distingue tres casos.** El form ya bloquea la
+   sobre-asignación al guardar; lo retroactivo interesante es lo contrario:
+   vuelos viejos sin desglose (advertencia) o con horas sin asignar
+   (advertencia). Sobre-asignado queda como crítico.
+
+**Estado:** Terminado.
+
+**Verificación:** `test_audit_engine.py` 19/19. La app Litestar levanta y las
+rutas registran. Contraste independiente en SQL contra los **39 vuelos reales**
+de Federico: 0 superposiciones, 0 duplicados, 0 aeronaves faltantes, 0 totales
+que no cierren — o sea que el motor no le va a inventar hallazgos. **No se probó
+el ciclo HTTP completo contra el backend desplegado** (no hay credenciales de
+Supabase en esta sesión); lo verificado es el motor y el armado de la app.
+
+### 2026-07-31 23:14 UTC — Claude (Opus 5, vía Claude Code) — Fase 4: vencimientos y migración del CMA
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- Migración `create_documents_and_backfill_cma` — tabla `documents` + RLS +
+  trigger de re-armado + backfill de los CMA que había en `profiles`.
+- Backend `src/services/document_alerts.py`, `src/controllers/documents.py`,
+  `src/models/document.py`, `src/config.py` (`DOCUMENTS_ALERT_SECRET`).
+- Frontend `src/actions/document.ts`, `DocumentsManager.tsx`,
+  `src/app/api/cron/document-alerts/route.ts`, `src/lib/whatsapp.ts`.
+- Frontend: se sacó el campo CMA de `ProfileForm` y de `actions/profile.ts`;
+  `OnboardingOverlay` ahora crea el documento; el contexto de IA (chat y
+  WhatsApp) lista todos los vencimientos en vez de solo el CMA.
+
+**Por qué:**
+
+1. **El envío vive en el frontend y la decisión en el backend.** Las credenciales
+   de Kapso están en la app Next, así que el backend dice *qué* vence
+   (`/document-alerts/pending`) y registra *qué se entregó*
+   (`/document-alerts/{id}/sent`), y el cron de Next es solo el cartero. Se
+   marca **después** de un envío exitoso: al revés, una caída de Kapso quemaría
+   el aviso de 60 días para siempre.
+
+2. **`last_alert_threshold` guarda el bucket más ajustado ya avisado**, y un
+   trigger lo pone en NULL cuando cambia `expiry_date`. Renovar un documento
+   re-arma la escalera 60/30/7 sola, sin contabilidad extra.
+
+3. **El endpoint del barrido falla cerrado.** Corre con service role sobre
+   *todos* los usuarios, así que si `DOCUMENTS_ALERT_SECRET` no está configurado
+   rechaza la llamada en vez de caer a un default — al revés de lo que hace hoy
+   `WhatsAppController._verify_secret`, que cae a una constante hardcodeada (no
+   lo toqué: cambiarlo puede desincronizar el secreto con el frontend).
+
+4. **La columna `profiles.cma_expiry` sigue existiendo pero ya nadie la lee ni la
+   escribe.** No la borré porque es `NOT NULL` y el backend desplegado la sigue
+   insertando al auto-crear perfiles: tirarla ahora rompe producción hasta que se
+   despliegue este código. Queda como el único paso pendiente de esta fase (ver
+   abajo). La fuente de verdad en el código ya es una sola.
+
+**Estado:** Terminado salvo el `DROP COLUMN`, que depende del despliegue.
+
+**Verificación:** Backfill confirmado: 8 CMA migrados sobre 8 perfiles con fecha
+real (se excluyó el centinela `2100-12-31` que escribe el backend al auto-crear
+perfiles). `test_audit_engine.py` cubre además la lógica de escalonado de avisos
+(6 checks: 60 → 30 → vencido, y que no repita ninguno). `tsc --noEmit` y
+`npm run build` OK. Playwright: la tarjeta de vencimientos marca "Vencido hace N
+días" en rojo y el próximo vencimiento en la card del dashboard. **El envío real
+por WhatsApp no se probó** — requiere credenciales de Kapso y mandar un mensaje
+de verdad.
+
+### 2026-07-31 23:14 UTC — Claude (Opus 5, vía Claude Code) — Dos bugs de hidratación
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `AuditClient.tsx` + `audit/page.tsx` — el timestamp se formatea en el server y
+  baja como string ya armado.
+- `DocumentsManager.tsx` + `settings/page.tsx` — "hoy" lo decide el server y baja
+  como `todayIso`.
+
+**Por qué:** Los encontró Playwright, no la lectura del código.
+
+1. `toLocaleString("es-AR")` con hora **no da lo mismo en Node que en Chrome**:
+   diferían en el espacio antes de "p. m.", y React tiraba mismatch y
+   re-renderizaba el árbol entero.
+2. `documentStatus()` usaba `new Date()` dentro de un client component. El server
+   corre en UTC y el navegador de Federico en UTC-3: cualquier noche después de
+   las 21:00 los dos caen en días distintos y **todos** los badges de "vence en N
+   días" desincronizan.
+
+Es la misma trampa que ya documentaba la entrada del heatmap; conviene tratarla
+como regla del repo: **fecha/hora localizada se formatea en el server o no se
+formatea.**
+
+**Estado:** Terminado.
+
+**Verificación:** Log del dev server limpio tras recargar: 0 errores de
+hidratación en las 4 combinaciones (antes había 8).
+
+### 2026-07-31 23:33 UTC — Claude (Opus 5, vía Claude Code) — Rediseño de la barra de navegación
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/components/dashboard/DashboardNav.tsx` — la barra móvil pasa a ser
+  **icon-only**; el badge numerado se reemplaza por un punto; el rail gana el
+  mismo indicador activo animado que ya tenía el móvil.
+
+**Por qué:** Federico dijo que la barra quedaba fea y cargada, y tenía razón.
+Screenshot en mano el problema era medible:
+
+1. **Las etiquetas eran la fuente del ruido.** La barra comparte el borde
+   inferior con la píldora de acciones, así que sólo dispone de ~222 px en un
+   teléfono de 390. Con seis slots eso son 37 px cada uno, y a 10 px las
+   etiquetas había que recortarlas a "Log" / "Saldo" / "Calc" / "Más": crípticas
+   **y** apelmazadas, lo peor de los dos mundos.
+
+   **Bajar la cantidad de destinos no las salvaba**, que fue lo primero que
+   probé: con 5 slots son 44 px, y "Bitácora" a 10 px mide ~48 px. No entra a
+   ninguna cantidad razonable de ítems. Por eso se van del todo en vez de
+   seguir recortándolas — es lo único que le da aire a los íconos. Los nombres
+   completos siguen estando donde hay lugar: la hoja de "Más" y los tooltips del
+   rail.
+
+2. **El badge rompía la silueta.** El círculo con el número se apoyaba sobre el
+   borde redondeado de la píldora y no tenía dónde ubicarse sin pisarlo. Pasa a
+   ser un punto de 8 px; el número exacto se sigue viendo en el tooltip del
+   rail, en la fila de la hoja y en la propia página de auditoría.
+
+3. **El punto va anclado al ícono, no al slot.** Anclado al slot se despegaba
+   del glifo a medida que cambiaba la cantidad de destinos visibles, porque el
+   ancho del slot es `flex-1`.
+
+4. **El rail ahora usa `layoutId` como el móvil.** Antes el estado activo era un
+   cambio de clase seco; ahora el chip se desliza entre ítems con el mismo
+   resorte. Es el mismo lenguaje en las dos variantes.
+
+Lo que **no** se tocó: los 5 destinos visibles siguen siendo los mismos y en el
+mismo orden (la memoria muscular no se toca), y la píldora de acciones segregada
+queda igual.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. Playwright contra un
+harness que reproduce el envoltorio exacto del layout (ancho real de iPhone,
+píldora de acciones incluida), en claro y oscuro, con capturas a 4x: los 6 slots
+miden 34×54 px —por encima del mínimo táctil— el chip activo se lee sin
+ambigüedad, y la hoja de "Más" muestra nombres completos y el conteo. 0 errores
+de consola (queda el 404 de `/favicon.ico`, preexistente).
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
 
-El plan completo está en el brief `vector-opus5-implementation-brief`
-(`03-plan-implementacion.md`). **Hechas: Fase 0, Fase 1, Fase 3 y el fix del
-copiloto.** Lo que queda, en el orden en que conviene agarrarlo:
+El plan del brief `vector-opus5-implementation-brief`
+(`03-plan-implementacion.md`) está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el
+fix del copiloto. Lo que queda no es una fase nueva sino deuda concreta:
 
-### 1. Fase 5 — Calculadoras operativas · DESBLOQUEADA, empezá por acá
+### 1. Borrar `profiles.cma_expiry` — pendiente de despliegue
 
-100% frontend, sin backend, sin dependencias nuevas. Son siete: conversor de
-unidades, combustible (consumo/autonomía), viento (triángulo y deriva),
-altitud densidad y de presión, base de nubes, planeo, y piernera (bloc de
-notas + cronómetros de cabina).
+El CMA ya vive en `documents` y **ningún código lo lee ni lo escribe**. La
+columna sigue en la base porque es `NOT NULL` y el backend *desplegado* la sigue
+insertando al auto-crear perfiles (`ProfilesController.get_profiles`, con el
+centinela `2100-12-31`). Secuencia segura:
 
-Cosas a respetar, que no están en el brief:
+1. Desplegar este backend (el de acá ya no la escribe desde el frontend).
+2. Sacar `cma_expiry` de `ProfilesController.get_profiles`, de
+   `src/models/profile.py` y de `Profile` en `src/types/index.ts`.
+3. Recién ahí: `ALTER TABLE public.profiles DROP COLUMN cma_expiry;`
 
-- Todas comparten la misma forma: entradas numéricas → resultado en vivo.
-  **Nada de botón "Calcular"** — recalculá en cada tecla, igual que el
-  `AirportResolver` y el `TimeAllocator`. Esa es la sensación que pidió
-  Federico y ya es el patrón del repo.
-- Reusá lo que existe: `StyledSelect` para elegir unidades,
-  `src/app/globals.css` → `.anac-slider` si algún parámetro se presta a slider,
-  `PageHeader` para el encabezado de la página.
-- Va como ítem nuevo en el nav (`src/components/dashboard/DashboardNav.tsx`,
-  hoy 5 íconos: Dashboard, Historial, Balance, Ruta METAR, Configuración).
-- La piernera necesita persistencia local — `localStorage`, no backend.
+Hacer el paso 3 antes del 1 rompe producción.
 
-### 2. Fase 2 — Motor de auditoría · BLOQUEADA
+### 2. Configurar el cron de vencimientos
 
-**No se puede hacer solo en el frontend** como se hizo la Fase 0: son datos
-derivados y persistentes por usuario, con supresión de hallazgos.
+Sin esto la Fase 4 guarda documentos pero no avisa nada. Hace falta:
 
-Para desbloquearla hace falta una de estas dos:
-- Que Federico autorice el conector MCP de Supabase (configuración de
-  conectores en claude.ai, o `claude mcp` / `/mcp` en una sesión
-  **interactiva** — en sesiones no interactivas el OAuth no corre), **o**
-- que aplique a mano la migración.
+- `DOCUMENTS_ALERT_SECRET` con el **mismo valor** en el `.env` del backend y en
+  el del frontend. Si falta, el barrido rechaza la llamada a propósito (corre
+  con service role sobre todos los usuarios: tiene que fallar cerrado).
+- Una entrada de cron diaria, por ejemplo desde el mismo host del backend:
+  ```
+  0 12 * * * curl -fsS -X POST \
+    "https://vector.fdiaznem.com.ar/api/cron/document-alerts?secret=$DOCUMENTS_ALERT_SECRET"
+  ```
+  Devuelve `{pending, sent, skipped, failed}`. `skipped` son pilotos sin WhatsApp
+  cargado; esos quedan **sin marcar** para que el aviso salga si después lo
+  cargan.
 
-Lo que hay que crear, según el brief:
-- Tabla `audit_findings`: `id`, `user_id`, `flight_id`, `rule_type`
-  (`overlap` | `unregistered_aircraft` | `duplicate` | `inconsistent_total`),
-  `severity` (`critical` | `warning`), `message`, `suppressed` (bool),
-  `suppressed_reason`, `created_at`, `recalculated_at`. Con RLS por `user_id`,
-  igual que el resto de las tablas.
-- Reglas iniciales: superposición temporal entre vuelos del mismo usuario;
-  aeronave referenciada que no está en el Hangar; duplicados (misma
-  fecha/ruta/matrícula/horarios); suma de segmentos ≠ total.
-- Recálculo al crear/editar/borrar un vuelo, para ese vuelo y los que se
-  solapen en fecha.
-- Endpoints Litestar: `GET /audit/summary`, `GET /audit/findings`,
-  `POST /audit/findings/:id/suppress`.
-- Frontend: página nueva + ítem de nav con badge de conteo, 3 cards
-  (Críticas/Advertencias/Suprimidas), y card "Salud del logbook" en el
-  Dashboard cerca del `PCATracker`.
+### 3. Correr la auditoría una primera vez por usuario
 
-Nota: la regla `inconsistent_total` **ya se valida al guardar** en
-`src/actions/flight.ts`; acá se trata de dejarla además como hallazgo
-auditable retroactivo sobre los vuelos viejos, no de duplicar el bloqueo.
+El recálculo se dispara solo al crear/editar/borrar un vuelo, así que un libro
+que no se toca no tiene hallazgos hasta entonces. El botón **Reanalizar** de
+`/dashboard/audit` lo fuerza. Contra los vuelos actuales de Federico da limpio
+(verificado por SQL), así que la página va a decir "sin observaciones" — es
+correcto, no es que esté rota.
 
-### 3. Fase 4 — Tracker de vencimientos · BLOQUEADA (mismo motivo)
+### 4. Deuda menor que quedó identificada
 
-Tabla `documents` + cron diario de alertas (60/30/7 días) + endpoints CRUD.
-Lo interesante es el tie-in con el bot de WhatsApp que **ya existe** en este
-repo (`src/app/api/webhooks/whatsapp/`): mandar el aviso de vencimiento por
-WhatsApp reusando el motor de function-calling. Eso FlightDeck no lo puede
-hacer. Ojo: hay que **migrar** el campo "Vencimiento CMA" que hoy vive suelto
-en Configuración a ser una fila más de esta tabla, no dejar los dos.
+- **`WhatsAppController._verify_secret` cae a una constante hardcodeada**
+  (`"shared-vector-secret-2026"`) porque `whatsapp_webhook_secret` **no está
+  declarado** en `src/config.py` y `extra="ignore"` descarta la variable de
+  entorno. O sea que hoy el secreto real del `.env` no se usa. No lo cambié
+  porque el frontend manda su propio valor y arreglarlo de un lado sin el otro
+  corta el bot. Hay que cambiar los dos a la vez.
+- **Avisos del linter de Supabase que quedan** (ninguno crítico): protección de
+  contraseñas filtradas desactivada, `handle_new_user()` y
+  `handle_deleted_user()` ejecutables por `anon` vía RPC, y `search_path`
+  mutable en `handle_deleted_user`.
+- **`Libro Digital.pdf` y `extract_pdf.js` están commiteados** en la raíz y nada
+  del código los importa (son restos de la prueba de parseo de PDF). No los borré
+  porque borrar archivos es decisión de Federico, pero se pueden sacar.
 
 ### Antes de tocar nada
 
 - **Leé las entradas de la bitácora de arriba.** Varias decisiones (el bucket
   "resto", por qué la sección 03 no comparte pool, por qué los aeródromos no
-  están en Supabase) no se deducen del código y revertirlas por accidente es
-  fácil.
-- Correr `npx tsc --noEmit` y `npm run build` antes de dar algo por terminado.
+  están en Supabase, por qué un duplicado no reporta además superposición) no se
+  deducen del código y revertirlas por accidente es fácil.
+- **Fecha u hora localizada: se formatea en el server, o no se formatea.** Ya
+  costó dos bugs de hidratación (ver la entrada correspondiente). `toLocaleString`
+  con hora difiere entre Node y Chrome, y `new Date()` en un client component
+  hace que server y navegador discrepen de día.
+- Correr `npx tsc --noEmit` y `npm run build` antes de dar algo por terminado, y
+  `python test_audit_engine.py` en el backend si tocás las reglas.
 - Verificar en el navegador, claro **y** oscuro, desktop **y** móvil. Todo el
   repo está hecho con las dos variantes y es donde más se rompen las cosas.
 
 ### Notas de infraestructura
 
-- El backend está en `/home/ubuntu/FlightLog-BackEnd` (Python + Litestar +
-  Supabase), **no** en la ruta macOS `/Users/defeee/...` que aparece en el
-  brief. Router con prefijo `/api`, `auth_guard`, `request.state.user.id`, RLS
-  con clientes Supabase por usuario.
-- Los MCP de Supabase y `Claude_Code_Remote` requieren OAuth y **no** están
-  autenticados en sesiones no interactivas.
-- **`.env` está trackeado en git** (viene de antes de estas sesiones). No lo
-  commitees con cambios locales. Convendría sacarlo del índice
-  (`git rm --cached .env`), agregarlo al `.gitignore` y rotar lo que haya
-  quedado expuesto — no lo hice porque es una decisión de Federico, no mía.
-- `scratch/`, `HOJA LIBRO DE VUELO.pdf` y
-  `src/components/dashboard/pdf_fields.json` son restos de una prueba de
-  parseo de PDF. No están commiteados y nada del código los importa.
+- El backend es Python + Litestar + Supabase. Router con prefijo `/api`,
+  `auth_guard`, `request.state.user.id`, RLS con clientes Supabase por usuario.
+  Los controladores que corren sobre todos los usuarios (`/whatsapp`,
+  `/document-alerts`) no llevan `auth_guard` y validan un secreto compartido —
+  van en controladores aparte porque los guards de Litestar se **acumulan** por
+  capa y un handler no puede optar por salirse.
+- **`.env` ya no está trackeado** (`git rm --cached`, más `.gitignore`). Sus dos
+  valores eran las URLs públicas de la API y coinciden exactamente con los
+  fallbacks que ya tenía el código, así que sacarlo no cambia comportamiento.
+  Nunca hubo secretos ahí. La plantilla de variables está en `.env.example`.
+- El MCP de Supabase **sí** estuvo autenticado en esta sesión (entradas
+  anteriores decían lo contrario): las tres migraciones se aplicaron desde acá.

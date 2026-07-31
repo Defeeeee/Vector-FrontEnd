@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { calculateFlightDuration } from "@/lib/utils";
+import { calculateFlightDuration, documentStatus } from "@/lib/utils";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { timingSafeEqual } from "crypto";
 
 // Compares the caller-supplied secret against the configured one without leaking timing info,
@@ -16,41 +17,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Memory cache to keep track of processed message IDs and prevent duplicate replies due to WhatsApp/Kapso retries
 const processedMessageIds = new Set<string>();
-
-async function sendWhatsAppMessage(to: string, text: string, dynamicPhoneId?: string) {
-  const apiKey = process.env.KAPSO_API_KEY;
-  const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID || dynamicPhoneId;
-
-  if (!apiKey || !phoneNumberId) {
-    console.error("Missing Kapso API configuration (KAPSO_API_KEY or KAPSO_PHONE_NUMBER_ID)");
-    return;
-  }
-
-  const url = `https://api.kapso.ai/meta/whatsapp/v24.0/${phoneNumberId}/messages`;
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: to,
-        type: "text",
-        text: {
-          body: text
-        }
-      })
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Error sending WhatsApp message via Kapso:", errText, "URL:", url);
-    }
-  } catch (err) {
-    console.error("Failed to send WhatsApp message:", err);
-  }
-}
 
 function formatForWhatsApp(text: string): string {
   let formatted = text;
@@ -296,7 +262,8 @@ function buildFlightContext(
   packs: any[],
   transactions: any[],
   balance: number,
-  session: any
+  session: any,
+  documents: any[] = []
 ): string {
   const aircraftMap = new Map(aircraft.map((a: any) => [a.id, a]));
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -363,12 +330,23 @@ function buildFlightContext(
     ? `Sí, activo en ${aircraftMap.get(session.session.aircraft_id)?.registration || "Desconocido"} desde las ${new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} UTC`
     : "No hay vuelo en curso.";
 
+  // Expiries live in the documents table now, so the copilot can answer about
+  // the licence or the insurance too — not only the medical.
+  const documentLines = documents
+    .map((doc: any) => {
+      const status = documentStatus(doc.expiry_date);
+      return `- ${doc.name}: vence ${doc.expiry_date} (${status.label.toLowerCase()})`;
+    })
+    .join("\n");
+
   return `
 ## Perfil del piloto
 Nombre: ${profile ? `${profile.first_name} ${profile.last_name}` : "Desconocido"}
 Licencia: ${profile?.license_type || "No especificada"}
-Vencimiento CMA: ${profile?.cma_expiry || "No especificado"}
 Modo de seguimiento: ${profile?.tracking_mode === "balance" ? "Saldo en Cuenta ($)" : "Packs de Horas"}
+
+## Documentos y vencimientos
+${documentLines || "(Sin documentos cargados)"}
 
 ## Estado Financiero (Modo Saldo en Cuenta)
 Saldo disponible en cuenta: $ ${balance.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
@@ -561,6 +539,7 @@ export async function POST(req: NextRequest) {
     const transactions = userData.transactions || [];
     const balance = userData.balance || 0;
     const session = userData.session || { active: false };
+    const documents = userData.documents || [];
 
     // Fetch chat history from Python backend
     const historyRes = await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`);
@@ -593,7 +572,8 @@ export async function POST(req: NextRequest) {
       packs,
       transactions,
       balance,
-      session
+      session,
+      documents
     );
 
     const todayStr = new Date().toLocaleDateString("es-AR", {

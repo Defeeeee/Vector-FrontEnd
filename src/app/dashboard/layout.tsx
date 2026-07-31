@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
-import { Profile } from "@/types";
+import { AuditSummary, Profile } from "@/types";
 import ChatWidget from "@/components/dashboard/ChatWidget";
 
 import { redirect } from "next/navigation";
@@ -22,12 +22,30 @@ async function getProfile() {
   return profiles[0] || null;
 }
 
+/**
+ * Open-findings count for the nav badge.
+ *
+ * Lives in the layout so the badge is present on every dashboard page, not just
+ * the audit one. Failures are swallowed to zero on purpose: a badge is not
+ * worth taking the whole dashboard shell down for.
+ */
+async function getAuditCount(): Promise<number> {
+  try {
+    const res = await apiFetch("/audit/summary");
+    if (!res.ok) return 0;
+    const summary: AuditSummary = await res.json();
+    return summary.open_total ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const profile = await getProfile();
+  const [profile, auditCount] = await Promise.all([getProfile(), getAuditCount()]);
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
@@ -44,7 +62,7 @@ export default async function DashboardLayout({
         </Link>
 
         <div className="flex-1 flex flex-col justify-center">
-          <DashboardNav variant="rail" />
+          <DashboardNav variant="rail" auditCount={auditCount} />
         </div>
 
         <div className="flex flex-col items-center gap-1 mt-auto">
@@ -106,7 +124,7 @@ export default async function DashboardLayout({
         className="lg:hidden fixed left-4 right-[9.5rem] z-50 pointer-events-auto"
         style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
       >
-        <DashboardNav variant="mobile" />
+        <DashboardNav variant="mobile" auditCount={auditCount} />
       </div>
 
       {/* Onboarding Logic */}

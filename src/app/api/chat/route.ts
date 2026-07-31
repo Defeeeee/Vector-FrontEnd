@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { apiFetch } from "@/lib/api";
-import { Flight, Aircraft, Profile } from "@/types";
-import { calculateFlightDuration } from "@/lib/utils";
+import { Flight, Aircraft, Profile, PilotDocument } from "@/types";
+import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -32,7 +32,8 @@ function buildFlightContext(
   packs: any[],
   transactions: any[],
   balance: number,
-  session: any
+  session: any,
+  documents: PilotDocument[] = []
 ): string {
   const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -99,12 +100,24 @@ function buildFlightContext(
     ? `Sí, activo en ${aircraftMap.get(session.session.aircraft_id)?.registration || "Desconocido"} desde las ${new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} UTC`
     : "No hay vuelo en curso.";
 
+  // Expiries come from the documents table now, not a column on the profile, so
+  // the copilot can answer about the licence or the insurance too — not just
+  // the medical.
+  const documentLines = documents
+    .map(doc => {
+      const status = documentStatus(doc.expiry_date);
+      return `- ${doc.name}: vence ${doc.expiry_date} (${status.label.toLowerCase()})`;
+    })
+    .join("\n");
+
   return `
 ## Perfil del piloto
 Nombre: ${profile ? `${profile.first_name} ${profile.last_name}` : "Desconocido"}
 Licencia: ${profile?.license_type || "No especificada"}
-Vencimiento CMA: ${profile?.cma_expiry || "No especificado"}
 Modo de seguimiento: ${profile?.tracking_mode === "balance" ? "Saldo en Cuenta ($)" : "Packs de Horas"}
+
+## Documentos y vencimientos
+${documentLines || "(Sin documentos cargados)"}
 
 ## Estado Financiero (Modo Saldo en Cuenta)
 Saldo disponible en cuenta: $ ${balance.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
@@ -366,6 +379,7 @@ export async function POST(req: NextRequest) {
     const transactions = data.transactions || [];
     const balance = data.balance || 0;
     const session = data.session || { active: false };
+    const documents: PilotDocument[] = data.documents || [];
 
     const todayStr = new Date().toLocaleDateString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires",
@@ -383,7 +397,8 @@ export async function POST(req: NextRequest) {
       packs,
       transactions,
       balance,
-      session
+      session,
+      documents
     );
 
     const systemPrompt = `Eres un asistente de aviación inteligente integrado en Vector, una aplicación de bitácora de vuelo.
