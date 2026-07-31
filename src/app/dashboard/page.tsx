@@ -1,9 +1,10 @@
 import { TrendingUp, MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { buildActivityHeatmap } from "@/lib/utils";
-import { Flight, Aircraft, Profile, FlightPack } from "@/types";
+import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardChartsLazy";
 import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
+import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import PCATracker from "@/components/dashboard/PCATracker";
 import WeatherWidget from "@/components/dashboard/WeatherWidget";
@@ -18,8 +19,10 @@ async function getDashboardData() {
     redirect("/api/auth/logout?redirect=/?expired=true");
   }
 
+  const emptyAudit: AuditSummary = { critical: 0, warning: 0, suppressed: 0, open_total: 0, by_rule: {} };
+
   if (!response.ok) {
-    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [] };
+    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [] };
   }
 
   const data = await response.json();
@@ -28,7 +31,9 @@ async function getDashboardData() {
     aircraft: data.aircraft || [],
     profile: data.profile || null,
     session: data.session || { active: false },
-    packs: data.packs || []
+    packs: data.packs || [],
+    audit: (data.audit as AuditSummary) || emptyAudit,
+    documents: (data.documents as PilotDocument[]) || []
   };
 }
 
@@ -42,7 +47,7 @@ function splitRoute(route: string): [string, string] {
 }
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs } = await getDashboardData();
+  const { flights, aircraft, profile, session, packs, audit, documents } = await getDashboardData();
 
   const totalFlights = flights.length;
   const totalHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
@@ -226,6 +231,10 @@ export default async function Dashboard() {
 
       {/* METAR/TAF Weather Widget - Full width horizontal card */}
       <WeatherWidget defaultAirport={mostVisited} />
+
+      {/* Logbook health + expiries — both answer "is anything wrong that the
+          flight list won't show me", so they sit together above the PCA tracker. */}
+      <LogbookHealthCard audit={audit} documents={documents} />
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (

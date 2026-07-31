@@ -8,9 +8,18 @@ import { motion } from "framer-motion";
 
 interface ProfileFormProps {
   profile: Profile | null;
+  /**
+   * Expiry of the CMA document, for the ID card preview only.
+   *
+   * The medical is no longer a column on the profile — it's a row in
+   * `documents` like every other expiry, edited in the Vencimientos section of
+   * this same page. The card still shows it because it's the one date a pilot
+   * checks constantly.
+   */
+  cmaExpiry?: string | null;
 }
 
-export default function ProfileForm({ profile }: ProfileFormProps) {
+export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -45,8 +54,8 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
 
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}` || "--";
   const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
-  const cmaLabel = profile?.cma_expiry
-    ? new Date(profile.cma_expiry + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
+  const cmaLabel = cmaExpiry
+    ? new Date(cmaExpiry + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })
     : "—";
 
   return (
@@ -85,10 +94,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
 
         <EditField label="Licencia (ANAC)">
           <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
-        </EditField>
-
-        <EditField label="Vencimiento CMA">
-          <input name="cma_expiry" type="date" defaultValue={profile?.cma_expiry || ""} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
         </EditField>
 
         <EditField label="WhatsApp (para Copiloto IA)">
