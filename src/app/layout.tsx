@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
 
-const inter = Inter({ 
+// Single unified typeface across the app — Nunito for both body text and display/headline roles.
+const nunitoSans = Nunito({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const nunitoDisplay = Nunito({
   subsets: ["latin"],
+  weight: ["700", "800", "900"],
   variable: "--font-space-grotesk",
 });
 
@@ -29,8 +32,8 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body
         className={cn(
-          inter.variable,
-          spaceGrotesk.variable,
+          nunitoSans.variable,
+          nunitoDisplay.variable,
           "min-h-screen bg-white dark:bg-black text-charcoal dark:text-white antialiased overflow-x-hidden font-sans"
         )}
       >

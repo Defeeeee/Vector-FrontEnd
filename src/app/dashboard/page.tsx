@@ -1,7 +1,9 @@
-import { TrendingUp, Calendar, MapPin, Award, Zap, Compass, History, Clock, Plus, Activity, Navigation2, Plane } from "lucide-react";
+import { TrendingUp, MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { buildActivityHeatmap } from "@/lib/utils";
 import { Flight, Aircraft, Profile, FlightPack } from "@/types";
-import DashboardCharts from "@/components/dashboard/DashboardCharts";
+import DashboardCharts from "@/components/dashboard/DashboardChartsLazy";
+import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import PCATracker from "@/components/dashboard/PCATracker";
 import WeatherWidget from "@/components/dashboard/WeatherWidget";
@@ -41,12 +43,11 @@ function splitRoute(route: string): [string, string] {
 
 export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs } = await getDashboardData();
-  const hasActivePacks = packs && packs.filter((p: FlightPack) => p.is_active).length > 0;
 
   const totalFlights = flights.length;
   const totalHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
   const totalLandings = flights.reduce((acc: number, f: Flight) => acc + f.landings, 0);
-  
+
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const lastMonthFlights = flights.filter((f: Flight) => new Date(f.date + 'T00:00:00') >= thirtyDaysAgo);
@@ -136,160 +137,179 @@ export default async function Dashboard() {
   const sortedAirports = Array.from(airportFreq.entries()).sort((a, b) => b[1] - a[1]);
   const mostVisited = sortedAirports[0]?.[0] || "---";
   const airports = new Set(airportFreq.keys());
-  
+
+  // Laid out here rather than in the client component so SSR and hydration
+  // agree on which day is "today" regardless of the browser's timezone.
+  const heatmapData = buildActivityHeatmap(flights as Flight[]);
+
   const longestFlight = flights.length > 0 ? Math.max(...flights.map((f: Flight) => f.duration)) : 0;
   const avgFlightTime = totalFlights > 0 ? totalHours / totalFlights : 0;
 
   return (
-    <div className="space-y-6 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
-      {/* Dynamic Header */}
+    <div className="space-y-10 md:space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
+      {/* Header */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-8 pt-4">
         <div className="space-y-2 md:space-y-3">
-          <p className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase tracking-[0.4em] flex items-center space-x-2">
-             <Activity className="w-3 h-3" />
-             <span>Centro de Operaciones</span>
+          <p className="text-aviation-blue-dark dark:text-aviation-cyan font-semibold text-xs flex items-center gap-2">
+             <Activity className="w-3.5 h-3.5" />
+             <span>Centro de operaciones</span>
           </p>
-          <h2 className="text-5xl md:text-5xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
         </div>
+
+        {session.active && (
+          <Link
+            href="/dashboard/log-flight"
+            className="inline-flex items-center gap-3 pl-3 pr-4 py-2.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors self-start md:self-auto"
+          >
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 animate-blip" />
+            </span>
+            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+              Vuelo en curso · {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+          </Link>
+        )}
       </section>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 items-stretch">
-        
-        {/* Live Session - Spans full width if active */}
-        {session.active && (
-          <div className="md:col-span-4 lg:col-span-6 animate-in zoom-in-95 duration-500 mb-2">
-            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-green-500/20 dark:border-green-500/10 rounded-[2rem] p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500" />
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center animate-pulse flex-shrink-0">
-                  <Compass className="w-5 h-5" />
-                </div>
-                <div className="space-y-0.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-widest leading-none">Vuelo en Curso</p>
-                  </div>
-                  <h3 className="text-lg font-bold font-space-grotesk tracking-tight text-zinc-900 dark:text-white uppercase mt-0.5">
-                    {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
-                  </h3>
-                </div>
-              </div>
-              <div className="flex items-center space-x-6 md:text-right">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Desde (UTC)</span>
-                  <span className="text-sm font-bold font-space-grotesk text-zinc-900 dark:text-white mt-1">
-                    {new Date(session.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
-                  </span>
-                </div>
-                <Link 
-                  href="/dashboard/log-flight"
-                  className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[9px] uppercase tracking-widest px-5 py-3 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-sm border border-zinc-200 dark:border-white/10"
-                >
-                  Ver Vuelo
-                </Link>
-              </div>
+      {/* Flight Deck Hero — split-flap total experience + real monthly trend + core stats */}
+      <div className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 shadow-2xl p-8 md:p-14">
+        <div className="absolute top-0 right-0 w-[320px] md:w-[480px] h-[320px] md:h-[480px] bg-aviation-blue/10 rounded-full blur-[100px] pointer-events-none -mr-20 -mt-20" />
+
+        <div className="relative z-10 grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+          {/* Left: Total experience, departure-board style */}
+          <div className="space-y-6">
+            <p className="text-sm font-medium text-aviation-cyan/80">Experiencia total · horas de vuelo</p>
+            <SplitFlapNumber value={totalHours.toFixed(1)} />
+            <div className="flex items-center gap-2 text-sm text-white/50">
+              <TrendingUp className="w-4 h-4 text-aviation-cyan" />
+              <span>+{lastMonthHours.toFixed(1)} hs en los últimos 30 días</span>
+            </div>
+            <Link
+              href="/dashboard/history"
+              className="inline-flex items-center gap-2 text-white text-sm font-semibold border-b border-white/20 hover:border-white pb-1 transition-colors"
+            >
+              Ver bitácora completa
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Right: real monthly trend + inline stat trio (ticket-stub dividers) */}
+          <div className="space-y-8">
+            <div>
+              <p className="text-sm font-medium text-zinc-500 mb-4">Horas por mes</p>
+              <MonthlyTrend data={chartData} />
+            </div>
+
+            <div className="grid grid-cols-3 border-t border-dashed border-white/15 pt-6">
+              <HeroStat value={totalFlights} label="Vuelos" />
+              <HeroStat value={airports.size} label="Aeródromos" divider />
+              <HeroStat value={`${longestFlight.toFixed(1)}h`} label="Récord" divider />
             </div>
           </div>
-        )}
-
-        {/* Main Experience Card - High Contrast */}
-        <div className="md:col-span-4 lg:col-span-3 p-6 md:p-10 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-2xl relative overflow-hidden flex flex-col justify-between group transition-all h-full">
-          <div className="absolute top-0 right-0 w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-white/5 dark:bg-white/5 rounded-full blur-3xl -mr-10 md:-mr-20 -mt-10 md:-mt-20 pointer-events-none transition-transform group-hover:scale-110" />
-          <div className="relative z-10">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 dark:bg-white/10 text-white dark:text-white rounded-lg md:rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm border border-white/10 dark:border-white/5">
-                 <Award className="w-5 h-5 md:w-6 md:h-6" />
-              </div>
-              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Experiencia Total</p>
-              <div className="flex items-baseline space-x-2 mt-1 md:mt-2">
-                <p className="text-6xl md:text-8xl font-space-grotesk font-bold text-white dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</p>
-                <p className="text-base md:text-lg font-bold text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">Hs</p>
-              </div>
-          </div>
-          <div className="relative z-10 flex items-center justify-between border-t border-white/10 dark:border-white/10 pt-4 md:pt-6">
-             <div className="flex flex-col">
-                <span className="text-xl md:text-2xl font-bold text-white dark:text-white">{totalFlights}</span>
-                <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">Vuelos</span>
-             </div>
-             <Link href="/dashboard/history" className="w-10 h-10 bg-white dark:bg-white/10 text-zinc-900 dark:text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                <Navigation2 className="w-4 h-4 rotate-45" />
-             </Link>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="md:col-span-2 lg:col-span-2 p-6 md:p-10 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 md:space-y-8 shadow-cal dark:shadow-none flex flex-col justify-between hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all group h-full">
-          <div>
-              <div className="w-10 h-10 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-lg md:rounded-xl flex items-center justify-center mb-4 md:mb-6 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
-                 <TrendingUp className="w-5 h-5" />
-              </div>
-              <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Últimos 30 Días</p>
-              <p className="text-5xl md:text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter mt-1 md:mt-2">{lastMonthHours.toFixed(1)}</p>
-          </div>
-          <div className="bg-zinc-50 dark:bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-zinc-100 dark:border-transparent flex items-center space-x-2 md:space-x-3 transition-colors">
-             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-             <span className="text-[9px] md:text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest truncate">+{lastMonthFlights.length} Registros Nuevos</span>
-          </div>
-        </div>
-
-        {/* Mini Detail Metrics - Stacked */}
-        <div className="md:col-span-2 lg:col-span-1 grid grid-cols-2 md:flex md:flex-col gap-4 md:gap-6 h-full">
-           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all min-h-[140px] md:min-h-0">
-               <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><MapPin className="w-4 h-4" /></div>
-               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{airports.size}</p>
-               <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Aeródromos</p>
-           </div>
-           <div className="flex-1 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] shadow-cal dark:shadow-none p-4 md:p-6 flex flex-col items-center justify-center text-center space-y-2 hover:shadow-md dark:hover:bg-[#1a1a1a] transition-all min-h-[140px] md:min-h-0">
-               <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-xl text-zinc-900 dark:text-white border border-zinc-100 dark:border-transparent"><Clock className="w-4 h-4" /></div>
-               <p className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{longestFlight.toFixed(1)}h</p>
-               <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Récord</p>
-           </div>
         </div>
       </div>
 
-      {/* Detail Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        <MetricItem label="Promedio Vuelo" value={`${avgFlightTime.toFixed(1)}h`} icon={<Zap className="w-4 h-4" />} />
-        <MetricItem label="Aterrizajes" value={totalLandings.toString()} icon={<Compass className="w-4 h-4" />} />
-        <MetricItem label="Destino" value={mostVisited} icon={<MapPin className="w-4 h-4" />} />
-        <MetricItem label="Aeronaves" value={aircraft.length.toString()} icon={<Plane className="w-4 h-4" />} />
+      {/* Secondary stat strip — one bordered instrument cluster, not four separate boxes */}
+      <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none grid grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 divide-x-0 md:divide-x divide-zinc-100 dark:divide-white/10 overflow-hidden">
+        <StatCell icon={<Zap className="w-4 h-4" />} label="Promedio Vuelo" value={`${avgFlightTime.toFixed(1)}h`} />
+        <StatCell icon={<Compass className="w-4 h-4" />} label="Aterrizajes" value={totalLandings.toString()} />
+        <StatCell icon={<MapPin className="w-4 h-4" />} label="Destino" value={mostVisited} />
+        <StatCell icon={<Plane className="w-4 h-4" />} label="Aeronaves" value={aircraft.length.toString()} />
       </div>
 
       {/* Flight Hours Packs */}
       <FlightPackWidget packs={packs} />
 
       {/* METAR/TAF Weather Widget - Full width horizontal card */}
-      <div className="pt-4">
-        <WeatherWidget defaultAirport={mostVisited} />
-      </div>
+      <WeatherWidget defaultAirport={mostVisited} />
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <div className="pt-6">
-          <PCATracker flights={flights} />
-        </div>
+        <PCATracker flights={flights} />
       )}
 
       {/* Analytics */}
-      <div className="pt-4">
-        <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} cumulativeData={cumulativeData} />
-      </div>
+      <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} cumulativeData={cumulativeData} />
+
+      {/* Activity grid — sits right under "Horas acumuladas": that card answers
+          "how much", this one answers "how regularly". */}
+      <ActivityHeatmap data={heatmapData} />
 
     </div>
   );
 }
 
-function MetricItem({ label, value, icon }: any) {
+function HeroStat({ value, label, divider }: { value: string | number; label: string; divider?: boolean }) {
   return (
-    <div className="px-4 md:px-8 py-5 md:py-6 rounded-2xl md:rounded-[2rem] bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md dark:hover:bg-white/[0.04] transition-all group flex flex-col items-start md:items-center md:flex-row space-y-3 md:space-y-0 md:space-x-4">
-      <div className="text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-white/[0.05] p-2 md:p-3 rounded-xl border border-zinc-100 dark:border-white/10 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:border-zinc-300 dark:group-hover:border-white/20 transition-colors">
+    <div className={`flex flex-col items-center text-center px-2 ${divider ? "border-l border-dashed border-white/15" : ""}`}>
+      <span className="text-2xl md:text-3xl font-space-grotesk font-bold text-white tracking-tighter leading-none">{value}</span>
+      <span className="text-xs font-medium text-zinc-500 mt-1.5">{label}</span>
+    </div>
+  );
+}
+
+function SplitFlapNumber({ value }: { value: string }) {
+  return (
+    <div className="flex items-end gap-4">
+      <div className="flex gap-1 md:gap-1.5">
+        {value.split("").map((ch, i) =>
+          ch === "." ? (
+            <div key={i} className="w-3 md:w-4 flex items-end justify-center pb-2 md:pb-3">
+              <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white" />
+            </div>
+          ) : (
+            <div
+              key={i}
+              className="relative w-10 md:w-14 h-16 md:h-20 bg-black rounded-lg md:rounded-xl border border-white/10 flex items-center justify-center shadow-inner overflow-hidden"
+            >
+              <span className="text-4xl md:text-6xl font-space-grotesk font-bold text-white tabular-nums leading-none">{ch}</span>
+              <div className="absolute left-0 right-0 top-1/2 h-px bg-black/60" />
+              <div className="absolute inset-x-0 top-0 h-1/2 bg-white/[0.03]" />
+            </div>
+          )
+        )}
+      </div>
+      <span className="text-base md:text-lg font-medium text-zinc-500 pb-2 md:pb-3">hs</span>
+    </div>
+  );
+}
+
+function MonthlyTrend({ data }: { data: { name: string; hours: number }[] }) {
+  const max = Math.max(...data.map((d) => d.hours), 1);
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-end gap-2.5 h-20">
+        {data.map((d, i) => (
+          <div key={i} className="flex-1 h-full flex items-end">
+            <div
+              className="w-full rounded-t-md bg-gradient-to-t from-aviation-blue to-aviation-cyan transition-all"
+              style={{ height: `${Math.max((d.hours / max) * 100, d.hours > 0 ? 8 : 2)}%`, opacity: d.hours > 0 ? 1 : 0.15 }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2.5">
+        {data.map((d, i) => (
+          <span key={i} className="flex-1 text-center text-xs font-medium text-zinc-500">{d.name}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StatCell({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <div className="px-6 py-6 md:py-8 flex flex-col items-start md:items-center md:text-center gap-3 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors">
+      <div className="text-aviation-blue-dark dark:text-aviation-cyan bg-aviation-blue/10 p-2.5 rounded-xl">
         {icon}
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col md:items-center">
         <p className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
-        <p className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] mt-1 md:mt-1.5 line-clamp-1">{label}</p>
+        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1.5 line-clamp-1">{label}</p>
       </div>
     </div>
   );

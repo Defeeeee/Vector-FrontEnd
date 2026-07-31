@@ -40,14 +40,14 @@ export default function RecoverPage() {
           </motion.div>
           
           <div className="space-y-4">
-            <h1 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900 dark:text-white">Email Enviado</h1>
-            <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
-              Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
+            <h1 className="text-4xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white">Email enviado</h1>
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed">
+              Si el email existe en nuestro sistema, vas a recibir un enlace para restablecer tu contraseña.
             </p>
           </div>
 
-          <Link href="/" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95">
-            Volver al Inicio
+          <Link href="/" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 px-12 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95">
+            Volver al inicio
           </Link>
         </div>
       </div>
@@ -79,8 +79,8 @@ export default function RecoverPage() {
             <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
           </div>
           <div className="space-y-1">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase transition-colors">Recuperar</h1>
-            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Acceso a la Red Vector</p>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk transition-colors">Recuperar acceso</h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Te ayudamos a volver a entrar</p>
           </div>
         </motion.div>
 
@@ -110,7 +110,7 @@ export default function RecoverPage() {
                   type="email" 
                   placeholder="name@airline.com" 
                   required
-                  className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
+                  className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
                 />
               </div>
             </div>
@@ -119,19 +119,19 @@ export default function RecoverPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               disabled={isPending}
-              className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
+              className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
             >
               {isPending ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
-                <span>Enviar Instrucciones</span>
+                <span>Enviar instrucciones</span>
               )}
             </motion.button>
           </form>
 
           <div className="flex flex-col items-center pt-6 border-t border-zinc-200 dark:border-white/10 transition-colors">
-            <Link href="/login" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
-              Volver al Login
+            <Link href="/login" className="text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+              Volver al login
             </Link>
           </div>
         </motion.div>

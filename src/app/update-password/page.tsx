@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Lock, ArrowRight, Loader2, Compass, CheckCircle, AlertCircle } from "lucide-react";
+import { Lock, Loader2, Compass, CheckCircle, AlertCircle } from "lucide-react";
 import { updatePassword, setSession } from "@/actions/auth";
 import { useState, useEffect, useTransition, Suspense } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function UpdatePasswordForm() {
   const [isPending, startTransition] = useTransition();
@@ -24,7 +24,7 @@ function UpdatePasswordForm() {
         const params = new URLSearchParams(hash.substring(1));
         token = token || params.get("access_token");
       }
-      
+
       if (token) {
         try {
           await setSession(token, undefined, 3600);
@@ -66,106 +66,132 @@ function UpdatePasswordForm() {
     });
   }
 
-  if (isSuccess) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10 text-center space-y-8">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl"
-        >
-          <CheckCircle className="w-10 h-10" />
-        </motion.div>
-        
-        <div className="space-y-4">
-          <h1 className="text-4xl font-black uppercase tracking-tighter">Éxito</h1>
-          <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
-            Tu contraseña ha sido actualizada correctamente. Ya puedes iniciar sesión.
-          </p>
-        </div>
-
-        <Link href="/" className="bg-white text-black font-black text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95">
-          Ir al Login
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-md mx-auto px-6 py-12 relative z-10">
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center space-y-2 mb-12"
-      >
-        <Compass className="w-12 h-12 text-white/20 mx-auto mb-6" />
-        <h1 className="text-4xl font-black tracking-tighter uppercase tracking-[0.1em]">Nueva Clave</h1>
-        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Restablecer acceso de piloto</p>
-      </motion.div>
+    <div className="flex min-h-screen w-full bg-zinc-100 dark:bg-black relative overflow-hidden transition-colors duration-300">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-64 -mt-64 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-32 -mb-32 pointer-events-none" />
 
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full space-y-8"
-      >
-        <form action={handleSubmit} className="space-y-4">
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-red-500 text-xs font-bold text-center uppercase tracking-wider flex items-center justify-center space-x-2"
+      {/* Minimal Top Bar */}
+      <div className="absolute top-6 left-0 w-full px-6 flex justify-end items-center z-20">
+        <ThemeToggle />
+      </div>
+
+      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto px-4 md:px-6 py-12 md:py-20 relative z-10">
+        {isSuccess ? (
+          <div className="flex flex-col items-center text-center space-y-8">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl"
             >
-              <AlertCircle className="w-4 h-4" />
-              <span>{error}</span>
+              <CheckCircle className="w-10 h-10" />
             </motion.div>
-          )}
 
-          {!error && !isSessionReady && (
-             <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest text-center animate-pulse mb-4">
-               Validando sesión de seguridad...
-             </div>
-          )}
-
-          <div className="space-y-3">
-            <div className="relative group">
-              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-white transition-colors" />
-              <input 
-                name="password"
-                type="password" 
-                placeholder="NUEVA CONTRASEÑA" 
-                required
-                className="w-full bg-white/[0.03] border border-white/[0.05] rounded-2xl py-5 pl-14 pr-6 outline-none focus:bg-white/[0.05] focus:border-white/20 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-600 uppercase"
-              />
+            <div className="space-y-2">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk">Contraseña actualizada</h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+                Tu contraseña se actualizó correctamente. Ya podés iniciar sesión.
+              </p>
             </div>
 
-            <div className="relative group">
-              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-white transition-colors" />
-              <input 
-                name="confirm_password"
-                type="password" 
-                placeholder="CONFIRMAR CONTRASEÑA" 
-                required
-                className="w-full bg-white/[0.03] border border-white/[0.05] rounded-2xl py-5 pl-14 pr-6 outline-none focus:bg-white/[0.05] focus:border-white/20 transition-all text-xs font-bold tracking-wide placeholder:text-zinc-600 uppercase"
-              />
-            </div>
+            <Link href="/login" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 px-12 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95">
+              Ir al login
+            </Link>
           </div>
+        ) : (
+          <>
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center space-y-4 mb-8 md:mb-10 text-center"
+            >
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center shadow-2xl">
+                <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk transition-colors">Nueva contraseña</h1>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Restablecé tu acceso de piloto</p>
+              </div>
+            </motion.div>
 
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            disabled={isPending || (!isSessionReady && !error)}
-            className="w-full bg-white text-black font-black text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-xl transition-all disabled:opacity-50"
-          >
-            {isPending ? (
-              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-            ) : (
-              <span>Actualizar Credenciales</span>
-            )}
-          </motion.button>
-        </form>
-      </motion.div>
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="w-full p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-200 dark:border-white/10 shadow-2xl dark:shadow-none bg-white dark:bg-[#0a0a0a] space-y-10 transition-all"
+            >
+              <form action={handleSubmit} className="space-y-6">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl p-4 text-red-600 dark:text-red-500 text-xs font-bold text-center flex items-center justify-center space-x-2"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+
+                {!error && !isSessionReady && (
+                  <div className="text-xs font-semibold text-aviation-blue-dark dark:text-aviation-cyan text-center animate-pulse mb-2">
+                    Validando sesión de seguridad...
+                  </div>
+                )}
+
+                <div className="space-y-5">
+                  <div className="space-y-2 text-left group">
+                    <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Nueva contraseña</label>
+                    <div className="relative">
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                      <input
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        required
+                        className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-left group">
+                    <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Confirmar contraseña</label>
+                    <div className="relative">
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                      <input
+                        name="confirm_password"
+                        type="password"
+                        placeholder="••••••••"
+                        required
+                        className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isPending || (!isSessionReady && !error)}
+                  className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
+                >
+                  {isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                  ) : (
+                    <span>Actualizar contraseña</span>
+                  )}
+                </motion.button>
+              </form>
+            </motion.div>
+
+            {/* Version Tag */}
+            <div className="mt-12 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.5em]">
+              Vector Aviation v2.0.1
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -173,8 +199,8 @@ function UpdatePasswordForm() {
 export default function UpdatePasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-white/20" />
+      <div className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-black transition-colors duration-300">
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-400 dark:text-white/20" />
       </div>
     }>
       <UpdatePasswordForm />

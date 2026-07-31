@@ -20,9 +20,14 @@
   --shadow-cal: 0px 1px 5px -4px rgba(19, 19, 22, 0.7), 0px 0px 0px 1px rgba(34, 42, 53, 0.08), 0px 4px 8px 0px rgba(34, 42, 53, 0.05);
   --shadow-cal-inset: rgba(0, 0, 0, 0.16) 0px 1px 1.9px 0px inset;
   --shadow-cal-highlight: rgba(255, 255, 255, 0.15) 0px 2px 0px inset;
-  
+
   --font-sans: var(--font-inter);
   --font-space-grotesk: var(--font-space-grotesk);
+
+  /* Landing page accent — monochrome base with an aviation-blue detail color */
+  --color-aviation-blue: #2563eb;
+  --color-aviation-blue-dark: #1d4ed8;
+  --color-aviation-cyan: #38bdf8;
 }
 
 @layer base {
@@ -35,6 +40,105 @@
     @apply font-semibold tracking-tighter;
     line-height: 1.1;
   }
+
+  /* iOS Safari auto-zooms the page on focus of any input under 16px — this locks it at 1x without changing the visual size on larger breakpoints. */
+  @media (max-width: 767px) {
+    input, select, textarea {
+      font-size: 16px;
+    }
+  }
+}
+
+/* Range slider for the ANAC time breakdown (TimeAllocator). Track and thumb
+   have to be styled per-engine; --fill is set inline to the assigned
+   percentage so the used portion of the track reads as solid accent. */
+.anac-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 24px;
+  cursor: pointer;
+  touch-action: none; /* drag moves the thumb instead of scrolling the page */
+}
+
+.anac-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-aviation-blue) var(--fill, 0%),
+    rgb(228 228 231) var(--fill, 0%)
+  );
+}
+
+.anac-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid var(--color-aviation-blue);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  transition: transform 0.12s ease;
+}
+
+.anac-slider:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.anac-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-aviation-blue);
+  outline-offset: 2px;
+}
+
+.anac-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(228 228 231);
+}
+
+.anac-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-aviation-blue);
+}
+
+.anac-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid var(--color-aviation-blue);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+
+.dark .anac-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    to right,
+    var(--color-aviation-cyan) var(--fill, 0%),
+    rgb(255 255 255 / 0.12) var(--fill, 0%)
+  );
+}
+
+.dark .anac-slider::-webkit-slider-thumb {
+  background: #18181b;
+  border-color: var(--color-aviation-cyan);
+}
+
+.dark .anac-slider::-moz-range-track {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.dark .anac-slider::-moz-range-progress {
+  background: var(--color-aviation-cyan);
+}
+
+.dark .anac-slider::-moz-range-thumb {
+  background: #18181b;
+  border-color: var(--color-aviation-cyan);
 }
 
 @layer utilities {
@@ -56,5 +160,34 @@
 
   .section-padding {
     @apply py-20 md:py-24;
+  }
+
+  @keyframes dash-flow {
+    to {
+      stroke-dashoffset: -1000;
+    }
+  }
+
+  .animate-dash-flow {
+    stroke-dasharray: 6 8;
+    animation: dash-flow 60s linear infinite;
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-16px); }
+  }
+
+  .animate-float-slow {
+    animation: float-slow 7s ease-in-out infinite;
+  }
+
+  @keyframes blip {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+
+  .animate-blip {
+    animation: blip 2.4s ease-in-out infinite;
   }
 }

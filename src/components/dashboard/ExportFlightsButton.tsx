@@ -63,7 +63,7 @@ export default function ExportFlightsButton({ flights, aircraft }: ExportFlights
       title="Exportar a CSV"
     >
       <Download className="w-4 h-4 md:w-5 md:h-5" />
-      <span className="hidden md:inline font-bold text-[10px] uppercase tracking-widest">Exportar</span>
+      <span className="hidden md:inline font-semibold text-sm">Exportar</span>
     </motion.button>
   );
 }

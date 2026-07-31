@@ -76,18 +76,18 @@ export default function AuthCallback() {
         </div>
         
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-black tracking-tighter uppercase italic tracking-[0.1em]">
-            {error ? "Error de Autenticación" : "Autenticando"}
+          <h1 className="text-2xl font-bold tracking-tight">
+            {error ? "Error de autenticación" : "Autenticando"}
           </h1>
-          
+
           {error ? (
             <div className="space-y-6">
-              <p className="text-red-500 text-xs font-bold uppercase tracking-widest max-w-xs mx-auto">
+              <p className="text-red-500 text-sm font-medium max-w-xs mx-auto">
                 {error}
               </p>
-              <button 
+              <button
                 onClick={() => router.push("/")}
-                className="text-[10px] font-black text-zinc-500 hover:text-white transition-colors uppercase tracking-[0.3em] border-b border-white/10 pb-1"
+                className="text-sm font-semibold text-zinc-500 hover:text-white transition-colors border-b border-white/10 pb-1"
               >
                 Volver al inicio
               </button>
@@ -95,7 +95,7 @@ export default function AuthCallback() {
           ) : (
             <div className="flex flex-col items-center space-y-4">
               <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">
+              <p className="text-sm font-medium text-zinc-500">
                 Preparando tu bitácora digital...
               </p>
             </div>

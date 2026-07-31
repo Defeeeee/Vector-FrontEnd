@@ -31,26 +31,26 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="fixed inset-0 z-[100] flex items-center justify-center px-6"
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-md" />
+        <div className="absolute inset-0 bg-zinc-900/40 dark:bg-black/70 backdrop-blur-md" />
 
         {/* Content */}
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
-          className="relative w-full max-w-xl bg-white border border-zinc-200 rounded-[3rem] p-10 shadow-cal space-y-10"
+          className="relative w-full max-w-xl bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-white/10 rounded-[3rem] p-10 shadow-cal dark:shadow-none space-y-10"
         >
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-lg mb-4">
+            <div className="w-16 h-16 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center shadow-lg mb-4">
               <Compass className="w-8 h-8" strokeWidth={1.5} />
             </div>
-            <h2 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900">Bienvenido a Vector</h2>
-            <p className="text-zinc-500 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed max-w-sm">
+            <h2 className="text-4xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white">Bienvenido a Vector</h2>
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed max-w-sm">
               Para comenzar a operar, necesitamos configurar los datos de tu licencia y certificado médico.
             </p>
           </div>
@@ -62,29 +62,29 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 ml-1">Licencia Inicial</label>
+                <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1">Licencia inicial</label>
                 <div className="relative group">
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-                  <input 
+                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                  <input
                     name="license_type"
                     required
                     defaultValue="PPA"
                     placeholder="PPA, PCA, TLA..."
-                    className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-zinc-900 transition-all text-zinc-900 font-bold uppercase tracking-widest placeholder:text-zinc-400"
+                    className="w-full bg-transparent border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-zinc-900 dark:focus:border-white/50 transition-all text-zinc-900 dark:text-white font-semibold uppercase placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                   />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 ml-1">Vencimiento CMA</label>
+                <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1">Vencimiento CMA</label>
                 <div className="relative group">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" />
-                  <input 
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                  <input
                     name="cma_expiry"
                     type="date"
                     required
                     defaultValue="2027-12-31"
-                    className="w-full bg-transparent border border-zinc-200 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-zinc-900 transition-all text-zinc-900 font-bold"
+                    className="w-full bg-transparent border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-zinc-900 dark:focus:border-white/50 transition-all text-zinc-900 dark:text-white font-semibold [color-scheme:light] dark:[color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -95,13 +95,13 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
               whileTap={{ scale: 0.98 }}
               disabled={isPending}
               type="submit"
-              className="w-full bg-zinc-900 text-white font-bold text-xs uppercase tracking-[0.3em] py-6 rounded-2xl shadow-cal-highlight transition-all disabled:opacity-50 flex items-center justify-center space-x-3"
+              className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-6 rounded-2xl shadow-cal-highlight dark:shadow-none transition-all disabled:opacity-50 flex items-center justify-center space-x-3"
             >
               {isPending ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  <span>Finalizar Configuración</span>
+                  <span>Finalizar configuración</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

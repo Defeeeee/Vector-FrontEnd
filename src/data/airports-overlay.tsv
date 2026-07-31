@@ -1,0 +1,13 @@
+# Hand-maintained corrections applied on top of the OurAirports import.
+# Use this for aerodromes upstream is missing, or where the upstream name is
+# wrong/unhelpful for an Argentine pilot (MADHEL is the authority for SA*).
+# Regenerate with: node scripts/build-airports.mjs
+#
+# ICAO	name	municipality	country	size (L|M|S|H)	IATA
+SADM	Aeródromo Morón	Morón	AR	M
+SADF	Aeródromo San Fernando	San Fernando	AR	M
+SADP	Aeródromo El Palomar	El Palomar	AR	M
+SADL	Aeródromo La Plata	La Plata	AR	M
+SAEZ	Aeropuerto Internacional Ministro Pistarini	Ezeiza	AR	L	EZE
+SABE	Aeroparque Jorge Newbery	Buenos Aires	AR	L	AEP
+SAAK	Aeródromo Isla Martín García	Isla Martín García	AR	S

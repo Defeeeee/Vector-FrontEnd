@@ -1,7 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Compass, Check, ArrowRight, Layout, TrendingUp, Award, Clock, Database, Target, MapPin, X, Menu, MessageCircle } from "lucide-react";
+import {
+  Compass,
+  Check,
+  ArrowRight,
+  Gauge,
+  Target,
+  MessageCircle,
+  CloudSun,
+  Menu,
+  X,
+  Plane,
+  ArrowUpRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -9,7 +21,52 @@ import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "Características", href: "#features" },
-  { name: "Flujo de Trabajo", href: "#workflow" },
+  { name: "Cómo funciona", href: "#workflow" },
+];
+
+const features = [
+  {
+    eyebrow: "Registro",
+    title: "Cargá un vuelo antes de que arranque el motor de tu auto.",
+    description:
+      "Un formulario enfocado, sin campos de más. Aeronave, ruta y horas quedan guardados en segundos, incluso desde la cabecera de pista.",
+    icon: Gauge,
+  },
+  {
+    eyebrow: "PCA · Reg. 61.620",
+    title: "Mirá tu progreso comercial sin sacar la cuenta a mano.",
+    description:
+      "Vector cruza cada vuelo contra los requisitos de tu licencia y te muestra, en tiempo real, cuánto te falta para cada casillero.",
+    icon: Target,
+  },
+  {
+    eyebrow: "Copiloto IA",
+    title: "Registrá vuelos y hacé preguntas por WhatsApp.",
+    description:
+      "Mandá un audio después de aterrizar y Vector lo transcribe, lo carga y te devuelve un resumen para confirmar. Sin abrir la app.",
+    icon: MessageCircle,
+  },
+  {
+    eyebrow: "Meteorología",
+    title: "METAR y TAF decodificados, no en código de la OACI.",
+    description:
+      "Consultá el clima de tu ruta en lenguaje claro, con alertas visuales de las condiciones que realmente afectan tu vuelo.",
+    icon: CloudSun,
+  },
+];
+
+const workflow = [
+  { title: "Despegás", detail: "Registrás el vuelo por app, WhatsApp o nota de voz." },
+  { title: "Vector decodifica", detail: "Calcula horas día, noche e IFR y actualiza tu progreso PCA." },
+  { title: "Controlás el rumbo", detail: "Balances, packs de horas y vencimientos, en un solo panel." },
+  { title: "Aterrizás con datos", detail: "Exportá tu bitácora oficial en PDF cuando la necesites." },
+];
+
+const highlights = [
+  { t: "Día · Noche · IFR", d: "Cálculo automático por vuelo" },
+  { t: "App · WhatsApp · Voz", d: "Tres formas de registrar" },
+  { t: "Reg. 61.620", d: "Seguimiento PCA integrado" },
+  { t: "PDF oficial", d: "Exportación cuando la necesites" },
 ];
 
 export default function LandingPage() {
@@ -20,7 +77,7 @@ export default function LandingPage() {
     // Detect if we landed here with auth tokens (common on mobile or direct redirects)
     const hash = window.location.hash;
     const searchParams = new URLSearchParams(window.location.search);
-    
+
     if (hash.includes("access_token") || searchParams.has("access_token") || searchParams.has("code")) {
       console.log("LandingPage: Auth tokens detected, redirecting to callback...");
       router.replace(`/auth/callback${window.location.search}${window.location.hash}`);
@@ -28,18 +85,24 @@ export default function LandingPage() {
   }, [router]);
 
   return (
-    <div className="w-full flex flex-col min-h-screen bg-zinc-50 dark:bg-black overflow-hidden transition-colors duration-300">
-      {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+    <div className="w-full flex flex-col min-h-screen bg-zinc-50 dark:bg-black overflow-hidden transition-colors duration-300 relative">
+      {/* Ambient background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-aviation-blue/5 dark:bg-aviation-blue/[0.06] rounded-full blur-[140px]" />
+        <div
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]"
+          style={{ backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)", backgroundSize: "44px 44px" }}
+        />
+      </div>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-zinc-200 dark:border-white/10 transition-colors duration-300">
-        <div className="container-wide flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center space-x-2 text-zinc-900 dark:text-white group">
-            <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <Compass className="w-5 h-5" />
+      <nav className="fixed top-4 md:top-6 w-full z-50 px-4">
+        <div className="container-wide flex items-center justify-between h-16 px-4 md:px-6 rounded-2xl bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none transition-colors">
+          <Link href="/" className="flex items-center space-x-2.5 text-zinc-900 dark:text-white group">
+            <div className="w-9 h-9 bg-zinc-900 dark:bg-white rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
             </div>
-            <span className="font-space-grotesk font-bold text-xl tracking-tighter uppercase">Vector</span>
+            <span className="font-space-grotesk font-bold text-lg tracking-tight">Vector</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -48,7 +111,7 @@ export default function LandingPage() {
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest"
+                className="text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
               >
                 {link.name}
               </Link>
@@ -57,15 +120,16 @@ export default function LandingPage() {
             <div className="w-40 scale-90 origin-right"><ThemeToggle /></div>
             <Link
               href="/login"
-              className="text-sm font-bold text-zinc-900 dark:text-white hover:opacity-70 transition-opacity uppercase tracking-widest"
+              className="text-sm font-medium text-zinc-900 dark:text-white hover:opacity-70 transition-opacity"
             >
               Ingresar
             </Link>
             <Link
               href="/register"
-              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[10px] uppercase tracking-[0.2em] font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-cal-highlight dark:shadow-none"
+              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-cal-highlight dark:shadow-none flex items-center gap-1.5"
             >
               Empezar
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -80,13 +144,13 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-[#111111] border-b border-zinc-200 dark:border-white/10 p-6 flex flex-col space-y-4 shadow-cal dark:shadow-none"
+            className="md:hidden mt-2 mx-4 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 flex flex-col space-y-4 shadow-cal dark:shadow-none"
           >
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest"
+                className="text-sm font-medium text-zinc-900 dark:text-white"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {link.name}
@@ -94,12 +158,12 @@ export default function LandingPage() {
             ))}
             <hr className="border-zinc-100 dark:border-white/10" />
             <div className="w-full"><ThemeToggle /></div>
-            <Link href="/login" className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest mt-4">
+            <Link href="/login" className="text-sm font-medium text-zinc-900 dark:text-white mt-2">
               Ingresar
             </Link>
             <Link
               href="/register"
-              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-center font-bold text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg"
+              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-center font-semibold text-sm py-3.5 rounded-xl shadow-lg"
             >
               Empezar
             </Link>
@@ -108,140 +172,211 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 md:pt-56 pb-20 relative z-10 px-4 md:px-0">
-        <div className="container-wide flex flex-col items-center text-center">
+      <section className="pt-40 md:pt-48 pb-20 relative z-10 px-4 md:px-0">
+        <div className="container-wide grid lg:grid-cols-2 gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="space-y-6 md:space-y-8 max-w-5xl"
+            className="space-y-8"
           >
-            <span className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 shadow-sm transition-colors">
-              <span className="w-2 h-2 rounded-full bg-zinc-900 dark:bg-white animate-pulse" />
-              <span>Bitácora de Grado Aeronáutico</span>
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/10 text-xs font-semibold text-zinc-500 dark:text-zinc-400 shadow-sm">
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-aviation-blue animate-blip" />
+              </span>
+              Copiloto digital para pilotos exigentes
             </span>
-            <h1 className="text-5xl md:text-7xl lg:text-9xl font-space-grotesk font-bold text-zinc-900 dark:text-white leading-[1.0] md:leading-[0.95] tracking-tighter uppercase transition-colors">
-              Registros precisos. <br className="hidden md:block" /> Cero fricción.
+
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-space-grotesk font-bold text-zinc-900 dark:text-white leading-[1.05] tracking-tight">
+              Trazá tu rumbo.
+              <br />
+              <span className="text-aviation-blue-dark dark:text-aviation-cyan">Vector</span> lleva el registro.
             </h1>
-            <p className="text-base md:text-xl lg:text-2xl text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto font-medium leading-relaxed transition-colors px-4 md:px-0">
-              Vector es un logbook digital monocromático de alto contraste, diseñado para pilotos que exigen datos limpios y herramientas confiables.
+
+            <p className="text-lg md:text-xl text-zinc-500 dark:text-zinc-400 max-w-xl leading-relaxed">
+              La bitácora digital que convierte cada vuelo, cada hora y cada trámite de licencia en datos claros
+              — sin hojas de cálculo, sin fricción.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
               <Link
                 href="/register"
-                className="w-full sm:w-auto bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 md:px-10 py-4 md:py-5 rounded-2xl font-bold text-[10px] uppercase tracking-[0.2em] hover:opacity-90 transition-opacity shadow-cal-highlight dark:shadow-none flex items-center justify-center space-x-3 hover:scale-105 active:scale-95"
+                className="w-full sm:w-auto bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-8 py-4 rounded-2xl font-semibold text-sm hover:opacity-90 transition-opacity shadow-cal-highlight dark:shadow-none flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
               >
-                <span>Registra tu primer vuelo</span>
+                Registrá tu primer vuelo
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="#features"
-                className="w-full sm:w-auto bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 px-8 md:px-10 py-4 md:py-5 rounded-2xl font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-zinc-50 dark:hover:bg-white/[0.04] transition-colors flex items-center justify-center text-zinc-900 dark:text-white shadow-sm dark:shadow-none"
+                className="w-full sm:w-auto bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 px-8 py-4 rounded-2xl font-semibold text-sm hover:bg-zinc-50 dark:hover:bg-white/[0.06] transition-colors flex items-center justify-center text-zinc-900 dark:text-white"
               >
-                Ver características
+                Ver cómo funciona
               </Link>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 text-sm text-zinc-500 dark:text-zinc-400">
+              <span>App · WhatsApp · Voz</span>
+              <span className="text-zinc-300 dark:text-zinc-700">·</span>
+              <span>Seguimiento PCA Reg. 61.620</span>
+              <span className="text-zinc-300 dark:text-zinc-700">·</span>
+              <span>Modo oscuro nativo</span>
             </div>
           </motion.div>
 
-          {/* Interface Mockup - Bento Box Style */}
+          {/* HUD Panel */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="mt-16 md:mt-24 w-full max-w-6xl rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none bg-white dark:bg-[#111111] p-2 md:p-4 overflow-hidden relative transition-colors"
+            className="relative"
           >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full md:w-[800px] h-[400px] bg-zinc-100 dark:bg-white/5 rounded-full blur-[100px] opacity-50 pointer-events-none transition-colors" />
-            <div className="w-full bg-zinc-50 dark:bg-black rounded-2xl md:rounded-[2rem] border border-zinc-200 dark:border-white/10 overflow-hidden shadow-inner flex flex-col relative z-10 transition-colors">
-                {/* Mock Header */}
-                <div className="h-10 md:h-12 bg-white dark:bg-[#111111] border-b border-zinc-200 dark:border-white/10 flex items-center px-4 md:px-6 space-x-2 transition-colors">
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 transition-colors" />
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 transition-colors" />
-                    <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 transition-colors" />
+            <div className="relative rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111111] shadow-cal dark:shadow-none p-8 md:p-10 overflow-hidden">
+              <div className="flex items-center justify-between mb-8">
+                <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">Plan de vuelo</span>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-blip" /> En ruta
+                </span>
+              </div>
+
+              {/* Flight path */}
+              <svg viewBox="0 0 400 160" className="w-full h-auto text-zinc-200 dark:text-white/10">
+                <path d="M20 130 Q 140 20, 200 80 T 380 40" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path
+                  d="M20 130 Q 140 20, 200 80 T 380 40"
+                  fill="none"
+                  stroke="url(#routeGradient)"
+                  strokeWidth="2.5"
+                  className="animate-dash-flow"
+                />
+                <defs>
+                  <linearGradient id="routeGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#2563eb" />
+                    <stop offset="100%" stopColor="#38bdf8" />
+                  </linearGradient>
+                </defs>
+                <circle cx="20" cy="130" r="5" fill="#2563eb" />
+                <circle cx="200" cy="80" r="5" fill="#2563eb" />
+                <circle cx="380" cy="40" r="6" fill="#38bdf8" />
+              </svg>
+
+              <div className="flex items-center justify-between mt-2">
+                <div className="text-center">
+                  <div className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">SAEZ</div>
                 </div>
-                {/* Mock Content */}
-                <div className="flex flex-col md:flex-row p-4 md:p-6 gap-4 md:gap-6 h-auto md:h-[600px]">
-                    {/* Mock Sidebar */}
-                    <div className="hidden md:flex w-64 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] flex-col p-6 space-y-8 shadow-sm dark:shadow-none transition-colors">
-                        <div className="flex items-center space-x-3 mb-4">
-                            <div className="w-10 h-10 bg-zinc-900 dark:bg-white rounded-xl transition-colors" />
-                            <div className="h-4 w-20 bg-zinc-200 dark:bg-zinc-800 rounded transition-colors" />
-                        </div>
-                        <div className="space-y-4">
-                            <div className="h-12 w-full bg-zinc-100 dark:bg-white/5 rounded-xl transition-colors" />
-                            <div className="h-12 w-full bg-zinc-50 dark:bg-white/[0.02] rounded-xl transition-colors" />
-                            <div className="h-12 w-full bg-zinc-50 dark:bg-white/[0.02] rounded-xl transition-colors" />
-                        </div>
-                    </div>
-                    {/* Mock Main Area (Bento Grid) */}
-                    <div className="flex-1 flex flex-col gap-4 md:gap-6">
-                        {/* Header Area */}
-                        <div className="flex items-center justify-between">
-                            <div className="h-8 md:h-10 w-32 md:w-48 bg-zinc-200 dark:bg-zinc-800 rounded-xl transition-colors" />
-                            <div className="hidden md:block h-10 w-32 bg-zinc-900 dark:bg-white rounded-xl transition-colors" />
-                        </div>
-                        {/* Bento Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 flex-1">
-                            <div className="md:col-span-2 h-40 md:h-auto bg-zinc-900 dark:bg-[#111111] rounded-2xl md:rounded-[2rem] p-6 md:p-8 flex flex-col justify-between shadow-lg relative overflow-hidden group border border-transparent dark:border-white/10 transition-colors">
-                                <div className="w-10 md:w-12 h-10 md:h-12 bg-white/10 dark:bg-white/5 rounded-xl flex items-center justify-center transition-colors"><Award className="w-5 md:w-6 h-5 md:h-6 text-white" /></div>
-                                <div className="space-y-2">
-                                    <div className="h-3 md:h-4 w-24 md:w-32 bg-white/20 dark:bg-white/10 rounded transition-colors" />
-                                    <div className="h-12 md:h-16 w-32 md:w-48 bg-white rounded-xl transition-colors" />
-                                </div>
-                            </div>
-                            <div className="hidden md:flex bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] p-8 flex-col justify-between shadow-sm dark:shadow-none transition-colors">
-                                <div className="w-12 h-12 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-transparent rounded-xl flex items-center justify-center transition-colors"><TrendingUp className="w-6 h-6 text-zinc-900 dark:text-white" /></div>
-                                <div className="h-12 w-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl transition-colors" />
-                            </div>
-                            <div className="md:col-span-3 h-48 md:h-auto bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl md:rounded-[2rem] p-6 md:p-8 flex flex-col space-y-4 shadow-sm dark:shadow-none transition-colors">
-                                <div className="h-4 md:h-6 w-24 md:w-32 bg-zinc-200 dark:bg-zinc-800 rounded transition-colors" />
-                                <div className="space-y-2 md:space-y-3">
-                                    <div className="h-10 md:h-12 w-full bg-zinc-50 dark:bg-white/5 rounded-xl transition-colors" />
-                                    <div className="h-10 md:h-12 w-full bg-zinc-50 dark:bg-white/5 rounded-xl transition-colors" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div className="text-center">
+                  <div className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">ENRUTA</div>
                 </div>
+                <div className="flex items-center gap-1.5 text-center">
+                  <Plane className="w-3.5 h-3.5 text-aviation-cyan" />
+                  <div className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">SABE</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-8">
+                <div className="p-5 bg-zinc-900 dark:bg-white/[0.04] border border-transparent dark:border-white/10 rounded-2xl">
+                  <div className="text-[11px] font-semibold uppercase tracking-widest text-white/40">Total PIC</div>
+                  <div className="text-3xl font-space-grotesk font-bold text-white tracking-tight mt-1">485.5</div>
+                </div>
+                <div className="p-5 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-100 dark:border-white/10 rounded-2xl">
+                  <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Nocturno</div>
+                  <div className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight mt-1">42.2</div>
+                </div>
+              </div>
             </div>
+
+            {/* Floating mini card */}
+            <motion.div
+              className="hidden md:flex absolute -bottom-6 -left-8 items-center gap-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl px-5 py-4 shadow-cal dark:shadow-none animate-float-slow"
+            >
+              <div className="w-9 h-9 rounded-xl bg-aviation-blue/10 flex items-center justify-center">
+                <Target className="w-4.5 h-4.5 text-aviation-blue-dark dark:text-aviation-cyan" />
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">PCA 61.620</div>
+                <div className="text-sm font-bold text-zinc-900 dark:text-white">78% completo</div>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="section-padding bg-zinc-50 dark:bg-black relative z-10 transition-colors duration-300">
+      <section id="features" className="section-padding relative z-10">
         <div className="container-wide">
-          <div className="max-w-3xl mb-12 md:mb-16">
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mb-4 md:mb-6 tracking-tighter uppercase transition-colors">
-              Herramientas de Precisión.
+          <div className="max-w-2xl mb-16 md:mb-20">
+            <span className="text-xs font-semibold uppercase tracking-widest text-aviation-blue-dark dark:text-aviation-cyan">Características</span>
+            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
+              Herramientas de precisión para tu día a día en el aire.
             </h2>
-            <p className="text-base md:text-xl text-zinc-500 dark:text-zinc-400 font-medium transition-colors">
-              Reimaginamos la bitácora de vuelo digital para ser rápida, clara y focalizada en lo que importa: tus datos, sin distracciones.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {[
-              { t: "Registro Rápido", d: "Diseñado para entornos de alta tensión. Interfaces enfocadas tipo Bento que minimizan el tiempo de carga de datos.", i: <Layout className="w-6 h-6" /> },
-              { t: "Seguimiento PCA", d: "Visualiza automáticamente tu progreso hacia los requisitos comerciales (Reg. 61.620) con gráficos de avance claros.", i: <Target className="w-6 h-6" /> },
-              { t: "Copiloto IA", d: "Consulta tu bitácora, analiza tu carrera, calcula horas y registra vuelos conversando con tu propio asistente inteligente de aviación.", i: <Compass className="w-6 h-6" /> },
-              { t: "Integración WhatsApp", d: "Registra tus vuelos enviando textos o notas de voz (audio) en segundos. Recibe resúmenes de confirmación y consulta el clima METAR/TAF en vivo.", i: <MessageCircle className="w-6 h-6" /> },
-              { t: "Gestión de Packs", d: "Controla horas prepagadas en aeronaves o simuladores con alertas visuales cuando el paquete está por agotarse.", i: <Database className="w-6 h-6" /> },
-              { t: "Balances y Finanzas", d: "Lleva el control de tu saldo en cuenta de piloto, depósitos, gastos de alquiler de aeronaves y consumos detallados.", i: <TrendingUp className="w-6 h-6" /> }
-            ].map((feature, i) => (
+          <div className="space-y-20 md:space-y-28">
+            {features.map((feature, i) => {
+              const Icon = feature.icon;
+              const reversed = i % 2 === 1;
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6 }}
+                  className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${reversed ? "md:[direction:rtl]" : ""}`}
+                >
+                  <div className={reversed ? "md:[direction:ltr]" : ""}>
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-white/[0.06] flex items-center justify-center mb-6">
+                      <Icon className="w-5 h-5 text-aviation-cyan" />
+                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-widest text-aviation-blue-dark dark:text-aviation-cyan">{feature.eyebrow}</span>
+                    <h3 className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 mb-4 tracking-tight leading-snug">
+                      {feature.title}
+                    </h3>
+                    <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                  <div className={reversed ? "md:[direction:ltr]" : ""}>
+                    <div className="aspect-[4/3] rounded-[2rem] bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none flex items-center justify-center overflow-hidden relative">
+                      <div className="absolute w-64 h-64 bg-aviation-blue/5 dark:bg-aviation-blue/10 rounded-full blur-3xl" />
+                      <Icon className="w-16 h-16 text-zinc-200 dark:text-white/10 relative z-10" strokeWidth={1} />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow / Route Timeline */}
+      <section id="workflow" className="section-padding relative z-10 border-t border-zinc-200 dark:border-white/10">
+        <div className="container-wide">
+          <div className="max-w-2xl mb-16 md:mb-20">
+            <span className="text-xs font-semibold uppercase tracking-widest text-aviation-blue-dark dark:text-aviation-cyan">Cómo funciona</span>
+            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
+              De la cabecera de pista a tu bitácora, en cuatro pasos.
+            </h2>
+          </div>
+
+          <div className="relative grid md:grid-cols-4 gap-10 md:gap-6">
+            <div className="hidden md:block absolute top-6 left-[12.5%] right-[12.5%] h-px border-t-2 border-dashed border-zinc-200 dark:border-white/15" />
+            {workflow.map((step, i) => (
               <motion.div
-                key={feature.t}
+                key={step.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="p-6 md:p-10 rounded-2xl md:rounded-[2.5rem] bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-cal dark:shadow-none dark:hover:bg-[#151515] transition-all space-y-4 md:space-y-6 group"
+                transition={{ delay: i * 0.1 }}
+                className="relative"
               >
-                <div className="w-12 md:w-14 h-12 md:h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
-                  {feature.i}
+                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-space-grotesk font-bold relative z-10 shadow-lg">
+                  {i + 1}
                 </div>
-                <h3 className="text-xl md:text-2xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight uppercase">{feature.t}</h3>
-                <p className="text-sm md:text-base text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
-                  {feature.d}
+                <h3 className="text-lg font-space-grotesk font-bold text-zinc-900 dark:text-white mt-5 mb-2 tracking-tight">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  {step.detail}
                 </p>
               </motion.div>
             ))}
@@ -249,78 +384,76 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Benefits List */}
-      <section id="workflow" className="section-padding bg-white dark:bg-black border-t border-zinc-200 dark:border-white/10 relative z-10 transition-colors duration-300">
-        <div className="container-wide flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
-          <div className="flex-1 space-y-6 md:space-y-8">
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] transition-colors">
-              Tu carrera aeronáutica bajo control.
-            </h2>
-            <div className="space-y-4">
-              {[
-                "Estadísticas automáticas de horas de vuelo (Día, Noche, IFR)",
-                "Carga unificada de información detallada de la aeronave",
-                "Copiloto de IA por WhatsApp con transcripción de notas de voz",
-                "Clima METAR/TAF decodificado e interactivo en tiempo real",
-                "Monitoreo de vencimientos médicos y licencias",
-                "Control financiero integrado de depósitos y alquileres",
-                "Interfaz Modo Oscuro nativa para planeamientos nocturnos"
-              ].map((item) => (
-                <div key={item} className="flex items-start md:items-center space-x-3 md:space-x-4">
-                  <div className="w-5 md:w-6 h-5 md:h-6 mt-0.5 md:mt-0 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/20 flex items-center justify-center flex-shrink-0 shadow-sm transition-colors">
-                    <Check className="w-3 h-3" strokeWidth={3} />
-                  </div>
-                  <span className="text-sm md:text-base text-zinc-900 dark:text-zinc-300 font-bold transition-colors">{item}</span>
+      {/* Highlights band */}
+      <section className="relative z-10">
+        <div className="container-wide">
+          <div className="bg-zinc-900 dark:bg-white/[0.03] dark:border dark:border-white/10 rounded-[2.5rem] py-16 px-8 md:px-16 relative overflow-hidden">
+            <div className="absolute -top-20 -right-20 w-72 h-72 bg-aviation-blue/10 rounded-full blur-[100px]" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
+              {highlights.map((s) => (
+                <div key={s.t}>
+                  <div className="text-xl md:text-2xl font-space-grotesk font-bold text-white dark:text-white tracking-tight">{s.t}</div>
+                  <div className="text-sm text-white/40 dark:text-white/40 mt-1">{s.d}</div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex-1 w-full max-w-lg aspect-square bg-zinc-50 dark:bg-[#111111] rounded-3xl md:rounded-[3rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none p-4 md:p-8 relative overflow-hidden flex items-center justify-center transition-colors mt-8 lg:mt-0">
-             <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-zinc-200/50 dark:bg-white/5 blur-3xl -mr-24 md:-mr-32 -mt-24 md:-mt-32 rounded-full transition-colors" />
-             <div className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 shadow-sm space-y-6 md:space-y-8 relative z-10 transition-colors">
-                <div className="flex items-baseline space-x-2">
-                    <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Total PIC</div>
-                    <div className="text-4xl md:text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter">485.5</div>
+        </div>
+      </section>
+
+      {/* Feature checklist */}
+      <section className="section-padding relative z-10">
+        <div className="container-wide grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-3">
+            {[
+              "Estadísticas automáticas de horas de vuelo (Día, Noche, IFR)",
+              "Carga unificada de información detallada de la aeronave",
+              "Copiloto de IA por WhatsApp con transcripción de notas de voz",
+              "Clima METAR/TAF decodificado e interactivo en tiempo real",
+              "Monitoreo de vencimientos médicos y licencias",
+              "Control financiero integrado de depósitos y alquileres",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-white dark:hover:bg-white/[0.03] transition-colors">
+                <div className="w-6 h-6 rounded-full bg-aviation-blue/10 text-aviation-blue-dark dark:text-aviation-cyan flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
                 </div>
-                <div className="h-3 md:h-4 w-full bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden transition-colors">
-                    <div className="h-full w-2/3 bg-zinc-900 dark:bg-white transition-colors" />
-                </div>
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                     <div className="p-4 md:p-5 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-100 dark:border-white/5 rounded-xl md:rounded-2xl space-y-1 md:space-y-2 transition-colors">
-                        <div className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Nocturno</div>
-                        <div className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white tracking-tighter">42.2</div>
-                     </div>
-                     <div className="p-4 md:p-5 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-100 dark:border-white/5 rounded-xl md:rounded-2xl space-y-1 md:space-y-2 transition-colors">
-                        <div className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Inst</div>
-                        <div className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white tracking-tighter">80.0</div>
-                     </div>
-                </div>
-             </div>
+                <span className="text-base text-zinc-900 dark:text-white/80 font-medium">{item}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight leading-tight mb-6">
+              Tu carrera aeronáutica, siempre a la vista.
+            </h2>
+            <p className="text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Modo oscuro nativo para planeamientos nocturnos, exportación a PDF cuando lo necesitás, y un solo
+              lugar donde vive todo lo que hoy repartís entre planillas, WhatsApp y notas sueltas.
+            </p>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="section-padding bg-zinc-50 dark:bg-black border-t border-zinc-200 dark:border-white/10 relative z-10 pb-32 md:pb-40 transition-colors duration-300">
+      <section className="section-padding relative z-10 pb-32 md:pb-40">
         <div className="container-wide">
-          <div className="bg-zinc-900 dark:bg-white rounded-3xl md:rounded-[3.5rem] p-8 md:p-32 text-center space-y-8 md:space-y-10 relative overflow-hidden shadow-2xl transition-colors">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent)] dark:bg-[radial-gradient(circle_at_top_right,rgba(0,0,0,0.05),transparent)] pointer-events-none transition-colors" />
-            <h2 className="text-4xl md:text-7xl font-space-grotesk font-bold text-white dark:text-zinc-900 tracking-tighter uppercase relative z-10 transition-colors">
-              ¿Listo para empezar?
+          <div className="rounded-[2.5rem] p-8 md:p-24 text-center relative overflow-hidden border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111111] shadow-cal dark:shadow-none">
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-aviation-blue/10 rounded-full blur-[100px] pointer-events-none" />
+            <h2 className="text-4xl md:text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight relative z-10">
+              ¿Listo para despegar?
             </h2>
-            <p className="text-zinc-400 dark:text-zinc-600 text-sm md:text-xl max-w-xl mx-auto font-bold relative z-10 transition-colors">
-              Únete a miles de pilotos profesionales que ya han modernizado su bitácora.
+            <p className="text-zinc-500 dark:text-zinc-400 text-base md:text-xl max-w-xl mx-auto mt-5 relative z-10">
+              Sumate a los pilotos que ya dejaron las planillas en tierra.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 pt-4 relative z-10">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 relative z-10">
               <Link
                 href="/register"
-                className="w-full sm:w-auto bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white px-8 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-cal-highlight dark:shadow-none hover:scale-105 active:scale-95 transition-all"
+                className="w-full sm:w-auto bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-10 py-4 rounded-2xl font-semibold text-sm shadow-cal-highlight dark:shadow-none hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 Crear tu cuenta
               </Link>
               <Link
                 href="/login"
-                className="w-full sm:w-auto text-white dark:text-zinc-900 px-8 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 dark:hover:bg-black/5 transition-colors border border-white/20 dark:border-black/10"
+                className="w-full sm:w-auto text-zinc-900 dark:text-white px-10 py-4 rounded-2xl font-semibold text-sm hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border border-zinc-200 dark:border-white/15"
               >
                 Ingresar
               </Link>
@@ -330,22 +463,22 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111111] relative z-10 transition-colors duration-300">
+      <footer className="py-12 border-t border-zinc-200 dark:border-white/10 relative z-10">
         <div className="container-wide">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-            <div className="flex items-center space-x-2 text-zinc-900 dark:text-white">
-              <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg flex items-center justify-center shadow-lg transition-colors">
-                <Compass className="w-5 h-5" />
+            <div className="flex items-center space-x-2.5 text-zinc-900 dark:text-white">
+              <div className="w-8 h-8 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
+                <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
               </div>
-              <span className="font-space-grotesk font-bold text-xl tracking-tighter uppercase">Vector</span>
+              <span className="font-space-grotesk font-bold text-xl tracking-tight">Vector</span>
             </div>
-            <div className="flex space-x-8 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+            <div className="flex space-x-8 text-sm font-medium text-zinc-500 dark:text-zinc-400">
               <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Twitter</Link>
               <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">GitHub</Link>
               <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link>
               <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link>
             </div>
-            <p className="text-xs text-zinc-400 dark:text-zinc-600 font-bold">
+            <p className="text-sm text-zinc-400 dark:text-zinc-600">
               &copy; 2026 Vector Aviation.
             </p>
           </div>

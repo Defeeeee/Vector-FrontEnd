@@ -23,7 +23,7 @@ export default async function ImportLogbookPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-2 md:space-y-4">
-          <div className="h-px w-8 md:w-12 bg-zinc-200 dark:bg-white/20" />
+          <div className="h-1 w-8 md:w-12 rounded-full bg-aviation-blue dark:bg-aviation-cyan" />
           <div className="flex items-center space-x-3 md:space-x-4">
             <Link 
               href="/dashboard/log-flight" 
@@ -35,8 +35,8 @@ export default async function ImportLogbookPage() {
               Importar PDF
             </h2>
           </div>
-          <p className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] md:text-xs uppercase tracking-[0.4em] ml-14 md:ml-16">
-            Libro de Vuelo Digital / Escaneado
+          <p className="text-aviation-blue-dark dark:text-aviation-cyan font-semibold text-sm ml-14 md:ml-16">
+            Libro de vuelo digital / escaneado
           </p>
         </div>
       </div>

@@ -1,9 +1,9 @@
-import { LogOut, Compass, Menu } from "lucide-react";
+import { Compass, Plus } from "lucide-react";
 import Link from "next/link";
-import { logout } from "@/actions/auth";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
 import { Profile } from "@/types";
@@ -28,39 +28,41 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const profile = await getProfile();
+  const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
+  const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 dark:bg-black w-full relative text-zinc-900 dark:text-white antialiased overflow-hidden transition-colors duration-300">
+    <div className="flex min-h-screen bg-zinc-50 dark:bg-black w-full relative text-zinc-900 dark:text-white antialiased transition-colors duration-300">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
-      {/* Desktop Sidebar Navigation */}
-      <aside className="hidden lg:flex flex-col w-[280px] bg-white dark:bg-[#0a0a0a] border-r border-zinc-200 dark:border-white/10 relative z-20 h-screen sticky top-0 shrink-0 transition-colors duration-300 shadow-sm">
-        <div className="p-8 border-b border-zinc-100 dark:border-white/10 flex items-center space-x-3">
-          <div className="w-10 h-10 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl flex items-center justify-center shadow-lg transition-transform duration-500 hover:scale-105">
-            <Compass className="w-5 h-5" strokeWidth={2} />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-xl font-bold font-space-grotesk tracking-tighter uppercase dark:text-white">Vector</span>
-            <span className="text-[8px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] mt-1">Pilot Hub</span>
-          </div>
+      {/* Icon Rail — always dark, independent of app theme */}
+      <aside className="hidden lg:flex flex-col items-center w-20 bg-zinc-950 border-r border-white/5 h-screen sticky top-0 z-30 py-6 shrink-0">
+        <Link href="/dashboard" className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-8 shrink-0">
+          <Compass className="w-5 h-5 text-zinc-950" strokeWidth={2} />
+        </Link>
+
+        <div className="flex-1 flex flex-col justify-center">
+          <DashboardNav variant="rail" />
         </div>
 
-        <div className="flex-1 overflow-y-auto py-8 px-4">
-            <DashboardNav isDesktop={true} />
-        </div>
-
-        <div className="p-6 border-t border-zinc-100 dark:border-white/10 space-y-4">
-            <div className="flex items-center justify-between bg-zinc-50 dark:bg-white/[0.02] rounded-2xl p-2 border border-zinc-200 dark:border-white/10 transition-all">
-                <div className="flex items-center space-x-3 px-2">
-                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase flex-shrink-0">
-                        {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
-                    </div>
-                    <span className="text-xs font-bold text-zinc-900 dark:text-white truncate max-w-[80px]">{profile?.first_name}</span>
-                </div>
-                <ThemeToggle />
-            </div>
-            <LogoutButton />
+        <div className="flex flex-col items-center gap-1 mt-auto">
+          <Link
+            href="/dashboard/log-flight"
+            title="Nuevo vuelo"
+            className="group relative flex items-center justify-center w-12 h-12 rounded-2xl bg-aviation-blue text-white hover:bg-aviation-blue-dark transition-colors mb-2"
+          >
+            <Plus className="w-5 h-5" strokeWidth={2.5} />
+            <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg bg-zinc-900 text-white text-xs font-semibold px-3 py-1.5 opacity-0 scale-95 origin-left group-hover:opacity-100 group-hover:scale-100 transition-all z-50 shadow-xl border border-white/10">
+              Nuevo vuelo
+            </span>
+          </Link>
+          <RailThemeToggle />
+          <LogoutButton variant="rail" />
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-300 mt-2">
+            {initials}
+          </div>
         </div>
       </aside>
 
@@ -70,7 +72,7 @@ export default async function DashboardLayout({
           <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg flex items-center justify-center shadow-md">
             <Compass className="w-4 h-4" strokeWidth={2} />
           </div>
-          <span className="text-lg font-bold font-space-grotesk tracking-tighter uppercase dark:text-white">Vector</span>
+          <span className="text-lg font-bold font-space-grotesk tracking-tight dark:text-white">Vector</span>
         </Link>
         <div className="flex items-center space-x-3">
             <ThemeToggle />
@@ -78,17 +80,34 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-         <DashboardNav isDesktop={false} />
+      {/* Main column */}
+      <div className="flex-1 flex flex-col min-w-0 lg:h-screen">
+        {/* Desktop Top Bar */}
+        <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl z-20 shrink-0">
+          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wide">{todayCapitalized}</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300">
+              {initials}
+            </div>
+            <span className="text-sm font-semibold text-zinc-900 dark:text-white">{profile?.first_name}</span>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12 overflow-y-auto custom-scrollbar transition-colors">
+          <div className="w-full max-w-6xl mx-auto">
+            {children}
+          </div>
+        </main>
       </div>
 
-      {/* Main Content Area */}
-      <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-32 lg:pb-12 overflow-y-auto h-screen custom-scrollbar flex justify-center transition-colors">
-        <div className="w-full max-w-5xl">
-          {children}
-        </div>
-      </main>
+      {/* Mobile Bottom Navigation — fills the space left of the segregated action pill, no fixed/cramped width */}
+      <div
+        className="lg:hidden fixed left-4 right-[9.5rem] z-50 pointer-events-auto"
+        style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
+        <DashboardNav variant="mobile" />
+      </div>
 
       {/* Onboarding Logic */}
       <OnboardingOverlay profile={profile} />

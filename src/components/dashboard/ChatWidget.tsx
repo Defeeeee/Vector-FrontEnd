@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Loader2, Bot, User, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { MessageCircle, X, Send, Loader2, Bot, User, ChevronDown, Plus } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -122,13 +123,13 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Desktop floating trigger */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`fixed bottom-24 lg:bottom-8 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 ${
+        className={`hidden lg:flex fixed bottom-8 right-6 z-50 w-14 h-14 rounded-2xl items-center justify-center shadow-2xl shadow-aviation-blue/30 transition-all duration-300 ${
           open
-            ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rotate-0 scale-95"
-            : "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:scale-110 hover:shadow-zinc-900/30"
+            ? "bg-aviation-blue-dark text-white rotate-0 scale-95"
+            : "bg-aviation-blue text-white hover:bg-aviation-blue-dark hover:scale-110"
         }`}
         aria-label="Abrir chat IA"
       >
@@ -138,9 +139,33 @@ export default function ChatWidget() {
         )}
       </button>
 
+      {/* Mobile action pill — AI copilot + Nuevo vuelo, segregated from the nav pill */}
+      <div
+        className="lg:hidden fixed right-6 z-50 flex items-center bg-aviation-blue rounded-full shadow-lg shadow-aviation-blue/30 divide-x divide-white/25 pointer-events-auto"
+        style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="relative w-14 h-14 flex items-center justify-center text-white transition-transform active:scale-95"
+          aria-label="Abrir chat IA"
+        >
+          {open ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
+          {!open && (
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-green-400 border-2 border-aviation-blue animate-pulse" />
+          )}
+        </button>
+        <Link
+          href="/dashboard/log-flight"
+          aria-label="Nuevo vuelo"
+          className="w-14 h-14 flex items-center justify-center text-white transition-transform active:scale-95"
+        >
+          <Plus className="w-6 h-6" strokeWidth={2.5} />
+        </Link>
+      </div>
+
       {/* Chat panel */}
       <div
-        className={`fixed bottom-24 lg:bottom-28 right-6 z-50 w-[min(420px,calc(100vw-3rem))] transition-all duration-300 origin-bottom-right ${
+        className={`fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] lg:bottom-28 right-6 z-50 w-[min(420px,calc(100vw-3rem))] transition-all duration-300 origin-bottom-right ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
         }`}
       >
@@ -150,11 +175,11 @@ export default function ChatWidget() {
           <div className="px-6 py-5 border-b border-zinc-100 dark:border-white/10 flex items-center justify-between bg-zinc-900 dark:bg-black">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+                <Bot className="w-5 h-5 text-aviation-cyan" />
               </div>
               <div>
                 <p className="text-sm font-bold text-white tracking-tight">Copiloto IA</p>
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                <p className="text-xs font-medium text-zinc-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                   Gemini · Bitácora en tiempo real
                 </p>
@@ -172,7 +197,7 @@ export default function ChatWidget() {
                 <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
                   msg.role === "user"
                     ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
-                    : "bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300"
+                    : "bg-aviation-blue/10 text-aviation-blue-dark dark:text-aviation-cyan"
                 }`}>
                   {msg.role === "user" ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                 </div>
@@ -188,8 +213,8 @@ export default function ChatWidget() {
 
             {loading && (
               <div className="flex gap-3">
-                <div className="w-7 h-7 rounded-xl bg-zinc-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300" />
+                <div className="w-7 h-7 rounded-xl bg-aviation-blue/10 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-3.5 h-3.5 text-aviation-blue-dark dark:text-aviation-cyan" />
                 </div>
                 <div className="bg-zinc-50 dark:bg-white/[0.06] border border-zinc-100 dark:border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
@@ -207,7 +232,7 @@ export default function ChatWidget() {
             {/* Suggested questions */}
             {showSuggestions && (
               <div className="space-y-2 pt-1">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-1">Preguntas sugeridas</p>
+                <p className="text-xs font-medium text-zinc-400 px-1">Preguntas sugeridas</p>
                 {SUGGESTED_QUESTIONS.map((q, i) => (
                   <button
                     key={i}
