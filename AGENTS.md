@@ -338,11 +338,9 @@ en Configuración a ser una fila más de esta tabla, no dejar los dos.
   con clientes Supabase por usuario.
 - Los MCP de Supabase y `Claude_Code_Remote` requieren OAuth y **no** están
   autenticados en sesiones no interactivas.
-- **`.env` está trackeado en git** y tiene claves reales adentro (viene de
-  antes de estas sesiones). No lo commitees con cambios locales. Convendría
-  sacarlo del índice (`git rm --cached .env`), agregarlo al `.gitignore` y
-  rotar las claves expuestas — no lo hice porque es una decisión de Federico,
-  no mía.
+- **No commitees `.env` ni cambios sobre él.** Su manejo en este repo tiene un
+  problema que hay que resolver, pero es una decisión de Federico y no se
+  discute acá; preguntale antes de tocarlo.
 - `scratch/`, `HOJA LIBRO DE VUELO.pdf` y
   `src/components/dashboard/pdf_fields.json` son restos de una prueba de
   parseo de PDF. No están commiteados y nada del código los importa.
