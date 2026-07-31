@@ -66,7 +66,7 @@ export default function ExportPdfButton({ flights, aircraft, profile }: ExportPd
       ) : (
         <FileText className="w-4 h-4 md:w-5 md:h-5" />
       )}
-      <span className="hidden md:inline font-bold text-[10px] uppercase tracking-widest">
+      <span className="hidden md:inline font-semibold text-sm">
         {isGenerating ? "Generando..." : "Libro (PDF)"}
       </span>
     </motion.button>

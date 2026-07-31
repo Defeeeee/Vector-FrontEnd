@@ -112,15 +112,15 @@ function LoginContent() {
                     <Lock className="w-8 h-8" />
                 </div>
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight font-space-grotesk uppercase">Sesión Expirada</h2>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-widest leading-relaxed font-bold">Tu sesión ha terminado por seguridad. Por favor, vuelve a ingresar.</p>
+                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight font-space-grotesk">Sesión Expirada</h2>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">Tu sesión ha terminado por seguridad. Por favor, vuelve a ingresar.</p>
                 </div>
-                <button 
+                <button
                     onClick={() => {
                     setExpired(false);
                     router.replace("/login");
                     }}
-                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-lg transition-all active:scale-95 hover:opacity-90"
+                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 rounded-2xl shadow-lg transition-all active:scale-95 hover:opacity-90"
                 >
                     Entendido
                 </button>
@@ -140,8 +140,8 @@ function LoginContent() {
                 <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase transition-colors">Bienvenido</h1>
-                <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Accede a tu logbook</p>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk transition-colors">Bienvenido</h1>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Accedé a tu logbook</p>
             </div>
         </motion.div>
 
@@ -173,7 +173,7 @@ function LoginContent() {
                                 type="email" 
                                 placeholder="name@airline.com" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>
@@ -187,7 +187,7 @@ function LoginContent() {
                                 type="password" 
                                 placeholder="••••••••" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>
@@ -197,12 +197,12 @@ function LoginContent() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isPending || isGooglePending}
-                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
+                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-6 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50 mt-2 hover:opacity-90"
                 >
                     {isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                     ) : (
-                    <span>Iniciar Sesión</span>
+                    <span>Iniciar sesión</span>
                     )}
                 </motion.button>
             </form>
@@ -221,7 +221,7 @@ function LoginContent() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isPending || isGooglePending}
-                className="w-full bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.08] disabled:opacity-50 flex items-center justify-center space-x-3 shadow-sm dark:shadow-none"
+                className="w-full bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white font-semibold text-sm py-5 rounded-2xl transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.08] disabled:opacity-50 flex items-center justify-center space-x-3 shadow-sm dark:shadow-none"
             >
                 {isGooglePending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -239,14 +239,14 @@ function LoginContent() {
             </motion.button>
 
             <div className="flex flex-col items-center space-y-6 pt-6 border-t border-zinc-200 dark:border-white/10 transition-colors">
-                <Link href="/recover" className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
+                <Link href="/recover" className="text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
                     ¿Olvidaste tu contraseña?
                 </Link>
-                
-                <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest">
+
+                <div className="flex items-center space-x-2 text-sm font-medium">
                     <span className="text-zinc-500 dark:text-zinc-400">¿Nuevo en Vector?</span>
                     <Link href="/register" className="text-zinc-900 dark:text-white hover:opacity-70 transition-opacity border-b border-zinc-200 dark:border-white/20 pb-0.5">
-                        Crear Cuenta
+                        Crear cuenta
                     </Link>
                 </div>
             </div>
@@ -263,7 +263,7 @@ function LoginContent() {
 
 export default function Login() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold uppercase tracking-widest animate-pulse bg-zinc-100 dark:bg-black transition-colors duration-300">Cargando Vector...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold animate-pulse bg-zinc-100 dark:bg-black transition-colors duration-300">Cargando Vector...</div>}>
       <LoginContent />
     </Suspense>
   );

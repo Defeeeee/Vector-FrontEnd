@@ -1,11 +1,10 @@
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile } from "@/types";
-import { Plus, Search, Plane } from "lucide-react";
+import { Plus, Clock, LandPlot, Plane } from "lucide-react";
 import Link from "next/link";
-import FlightCard from "@/components/dashboard/FlightCard";
 import ExportFlightsButton from "@/components/dashboard/ExportFlightsButton";
-import ExportPdfButton from "@/components/dashboard/ExportPdfButton";
 import FlightListClient from "@/components/dashboard/FlightListClient";
+import PageHeader from "@/components/dashboard/PageHeader";
 
 import { redirect } from "next/navigation";
 
@@ -31,37 +30,36 @@ async function getHistoryData() {
 
 export default async function HistoryPage() {
   const { flights, aircraft, profile } = await getHistoryData();
-  const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
 
   const sortedFlights = [...flights].sort(
     (a, b) => new Date(b.takeoff).getTime() - new Date(a.takeoff).getTime()
   );
 
-  return (
-    <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-8 px-2 pt-4 md:pt-8">
-        <div className="space-y-2 md:space-y-4">
-          <div className="h-px w-8 md:w-12 bg-zinc-200 dark:bg-white/20" />
-          <h2 className="text-5xl md:text-6xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">Bitácora</h2>
-          <div className="flex items-center space-x-2 md:space-x-3 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">
-            <span>{sortedFlights.length} Vuelos Registrados</span>
-            <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">•</span>
-            <span className="hidden sm:inline">Historial Completo</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* <ExportPdfButton flights={sortedFlights} aircraft={aircraft} profile={profile} /> */}
-          <ExportFlightsButton flights={sortedFlights} aircraft={aircraft} />
-          
-          <Link href="/dashboard/log-flight" className="flex-1 md:flex-none bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-[10px] uppercase tracking-[0.2em] px-8 md:px-10 py-4 md:py-5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center space-x-3">
-            <span>Nuevo Registro</span>
-            <Plus className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
+  const totalHours = sortedFlights.reduce((acc, f) => acc + f.duration, 0);
+  const totalLandings = sortedFlights.reduce((acc, f) => acc + f.landings, 0);
 
-      {/* Search/Filter Mockup (Visual only) */}
+  return (
+    <div className="space-y-8 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
+      <PageHeader
+        eyebrow="Historial completo"
+        title="Bitácora"
+        action={
+          <>
+            <ExportFlightsButton flights={sortedFlights} aircraft={aircraft} />
+            <Link href="/dashboard/log-flight" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm px-6 py-3.5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center gap-2">
+              <span>Nuevo registro</span>
+              <Plus className="w-4 h-4" />
+            </Link>
+          </>
+        }
+      >
+        <div className="flex items-center gap-5 pt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <span className="flex items-center gap-1.5"><Plane className="w-3.5 h-3.5" /> {sortedFlights.length} vuelos</span>
+          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {totalHours.toFixed(1)} hs</span>
+          <span className="flex items-center gap-1.5"><LandPlot className="w-3.5 h-3.5" /> {totalLandings} aterrizajes</span>
+        </div>
+      </PageHeader>
+
       <FlightListClient flights={sortedFlights} aircraft={aircraft} />
     </div>
   );

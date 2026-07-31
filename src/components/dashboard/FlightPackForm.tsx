@@ -32,18 +32,18 @@ export default function FlightPackForm({ aircraft }: FlightPackFormProps) {
         <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
           <Plus className="w-4 h-4 text-white dark:text-zinc-900" />
         </div>
-        <h4 className="text-xs md:text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-widest">Cargar Nuevo Pack</h4>
+        <h4 className="text-sm md:text-base font-semibold text-zinc-900 dark:text-white">Cargar nuevo pack</h4>
       </div>
       
       <form action={handleSubmit} className="space-y-6">
         {error && (
-            <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 text-red-600 dark:text-red-500 text-xs font-bold uppercase tracking-wider">
+            <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 text-red-600 dark:text-red-500 text-sm font-medium">
                 {error}
             </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Nombre del Pack</label>
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Nombre del pack</label>
             <input 
               name="name" 
               placeholder="ej. Pack 50h Cessna" 
@@ -52,7 +52,7 @@ export default function FlightPackForm({ aircraft }: FlightPackFormProps) {
             />
           </div>
           <div className="space-y-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Total de Horas</label>
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Total de horas</label>
             <input 
               name="total_hours" 
               type="number"
@@ -63,7 +63,7 @@ export default function FlightPackForm({ aircraft }: FlightPackFormProps) {
             />
           </div>
           <div className="space-y-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Fecha de Inicio</label>
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Fecha de inicio</label>
             <input 
               name="start_date" 
               type="date"
@@ -73,7 +73,7 @@ export default function FlightPackForm({ aircraft }: FlightPackFormProps) {
             />
           </div>
           <div className="space-y-2 md:col-span-2 group">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 ml-1">Aeronaves Válidas</label>
+            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1">Aeronaves válidas</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
               {aircraft.map(ac => (
                 <label key={ac.id} className="flex items-center space-x-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 p-4 rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-all">
@@ -81,9 +81,9 @@ export default function FlightPackForm({ aircraft }: FlightPackFormProps) {
                     type="checkbox" 
                     name="aircraft_ids" 
                     value={ac.id} 
-                    className="w-5 h-5 rounded border-zinc-300 dark:border-white/10 bg-white dark:bg-white/5 text-zinc-900 dark:text-purple-500 focus:ring-0 focus:ring-offset-0"
+                    className="w-5 h-5 rounded border-zinc-300 dark:border-white/10 bg-white dark:bg-white/5 text-zinc-900 dark:text-aviation-cyan focus:ring-0 focus:ring-offset-0"
                   />
-                  <span className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-tight">{ac.registration}</span>
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-white uppercase">{ac.registration}</span>
                 </label>
               ))}
             </div>
@@ -93,9 +93,9 @@ export default function FlightPackForm({ aircraft }: FlightPackFormProps) {
         <LoadingButton 
           isLoading={isPending}
           type="submit" 
-          className="w-full md:w-auto bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-bold text-[10px] uppercase tracking-[0.2em] py-5 px-10 rounded-2xl transition-all shadow-cal-highlight dark:shadow-xl"
+          className="w-full md:w-auto bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-semibold text-sm py-5 px-10 rounded-2xl transition-all shadow-cal-highlight dark:shadow-xl"
         >
-          Cargar Pack
+          Cargar pack
         </LoadingButton>
       </form>
     </div>

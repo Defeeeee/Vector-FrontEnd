@@ -36,14 +36,14 @@ export default function RegisterPage() {
         </motion.div>
         
         <div className="space-y-4">
-          <h1 className="text-4xl font-space-grotesk font-bold uppercase tracking-tighter text-zinc-900 dark:text-white">Verifica tu Email</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed">
-            Hemos enviado un enlace de confirmación a tu correo electrónico. Por favor, verifícalo para activar tu cuenta Vector.
+          <h1 className="text-4xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white">Verificá tu email</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed">
+            Te enviamos un enlace de confirmación a tu correo electrónico. Verificalo para activar tu cuenta Vector.
           </p>
         </div>
 
-        <Link href="/" className="bg-white dark:bg-white/[0.02] text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/10 font-bold text-[10px] uppercase tracking-[0.3em] py-5 px-12 rounded-[2rem] shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:scale-95">
-          Volver al Inicio
+        <Link href="/" className="bg-white dark:bg-white/[0.02] text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/10 font-semibold text-sm py-5 px-12 rounded-[2rem] shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-white/[0.04] active:scale-95">
+          Volver al inicio
         </Link>
       </div>
     );
@@ -76,8 +76,8 @@ export default function RegisterPage() {
                 <Compass className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tighter text-zinc-900 dark:text-white font-space-grotesk uppercase">Crear Cuenta</h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em]">Únete a 45,000+ pilotos</p>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk">Crear cuenta</h1>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Empezá a registrar tus vuelos hoy</p>
             </div>
         </motion.div>
 
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                                 type="text" 
                                 placeholder="Julian" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
                             />
                         </div>
                     </div>
@@ -123,7 +123,7 @@ export default function RegisterPage() {
                                 type="text" 
                                 placeholder="Rossi" 
                                 required
-                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
                             />
                         </div>
                     </div>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                             type="email" 
                             placeholder="name@airline.com" 
                             required
-                            className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                            className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
                         />
                     </div>
                 </div>
@@ -152,7 +152,7 @@ export default function RegisterPage() {
                             type="password" 
                             placeholder="••••••••" 
                             required
-                            className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
+                            className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:ring-2 focus:ring-aviation-blue/20 dark:focus:ring-aviation-cyan/20 focus:border-aviation-blue dark:focus:border-aviation-cyan transition-all text-sm font-bold tracking-wide placeholder:text-zinc-400 dark:placeholder:text-zinc-600 dark:text-white"
                         />
                     </div>
                 </div>
@@ -162,25 +162,25 @@ export default function RegisterPage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         disabled={isPending}
-                        className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs uppercase tracking-[0.2em] py-5 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50"
+                        className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 rounded-2xl shadow-xl dark:shadow-none transition-all disabled:opacity-50"
                     >
                         {isPending ? (
                         <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                         ) : (
-                        <span>Iniciar Prueba Gratuita</span>
+                        <span>Crear mi cuenta</span>
                         )}
                     </motion.button>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center mt-6 px-4 leading-relaxed font-bold uppercase tracking-widest">
-                        Al continuar, aceptas nuestros <span className="underline decoration-zinc-200 dark:decoration-zinc-700 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</span> y <span className="underline decoration-zinc-200 dark:decoration-zinc-700 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</span>.
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center mt-6 px-4 leading-relaxed font-medium">
+                        Al continuar, aceptás nuestros <span className="underline decoration-zinc-200 dark:decoration-zinc-700 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</span> y <span className="underline decoration-zinc-200 dark:decoration-zinc-700 cursor-pointer hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</span>.
                     </p>
                 </div>
             </form>
 
             <div className="flex flex-col items-center space-y-6 pt-6 border-t border-zinc-200 dark:border-white/10 transition-colors">
-                <div className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest">
-                    <span className="text-zinc-500 dark:text-zinc-400">¿Ya tienes una cuenta?</span>
+                <div className="flex items-center space-x-2 text-sm font-medium">
+                    <span className="text-zinc-500 dark:text-zinc-400">¿Ya tenés una cuenta?</span>
                     <Link href="/login" className="text-zinc-900 dark:text-white hover:opacity-70 transition-opacity border-b border-zinc-200 dark:border-white/20 pb-0.5">
-                        Inicia Sesión
+                        Iniciá sesión
                     </Link>
                 </div>
             </div>

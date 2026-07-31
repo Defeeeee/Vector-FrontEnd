@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CloudRain, Wind, Thermometer, Search, RefreshCw, ShieldAlert, BookOpen, Copy, Check } from "lucide-react";
+import { CloudRain, Wind, Thermometer, Search, RefreshCw, ShieldAlert, BookOpen, Copy, Check, Sun, CloudSun, Cloud, CloudLightning } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface WeatherWidgetProps {
@@ -64,77 +64,89 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
     }
   };
 
-  const categoryColors: Record<string, { bg: string; text: string; dot: string; label: string; desc: string; glow: string }> = {
-    VFR: { 
-      bg: "bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/5 dark:border-emerald-500/10", 
-      text: "text-emerald-600 dark:text-emerald-400", 
-      dot: "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]", 
-      label: "VFR", 
+  const categoryColors: Record<string, { bg: string; text: string; dot: string; label: string; desc: string; glow: string; sky: string; Icon: any }> = {
+    VFR: {
+      bg: "bg-emerald-500/10 border-emerald-500/20 dark:bg-emerald-500/5 dark:border-emerald-500/10",
+      text: "text-emerald-600 dark:text-emerald-400",
+      dot: "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]",
+      label: "VFR",
       desc: "Reglas de Vuelo Visual (Cielo despejado)",
-      glow: "from-emerald-500/15 via-emerald-500/5 to-transparent"
+      glow: "from-emerald-500/15 via-emerald-500/5 to-transparent",
+      sky: "from-sky-300 via-sky-400 to-sky-500",
+      Icon: Sun,
     },
-    MVFR: { 
-      bg: "bg-blue-500/10 border-blue-500/20 dark:bg-blue-500/5 dark:border-blue-500/10", 
-      text: "text-blue-600 dark:text-blue-400", 
-      dot: "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]", 
-      label: "MVFR", 
+    MVFR: {
+      bg: "bg-blue-500/10 border-blue-500/20 dark:bg-blue-500/5 dark:border-blue-500/10",
+      text: "text-blue-600 dark:text-blue-400",
+      dot: "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]",
+      label: "MVFR",
       desc: "VFR Marginal (Techo o visibilidad reducida)",
-      glow: "from-blue-500/15 via-blue-500/5 to-transparent"
+      glow: "from-blue-500/15 via-blue-500/5 to-transparent",
+      sky: "from-slate-300 via-sky-400 to-slate-500",
+      Icon: CloudSun,
     },
-    IFR: { 
-      bg: "bg-red-500/10 border-red-500/20 dark:bg-red-500/5 dark:border-red-500/10", 
-      text: "text-red-600 dark:text-red-400", 
-      dot: "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]", 
-      label: "IFR", 
+    IFR: {
+      bg: "bg-red-500/10 border-red-500/20 dark:bg-red-500/5 dark:border-red-500/10",
+      text: "text-red-600 dark:text-red-400",
+      dot: "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]",
+      label: "IFR",
       desc: "Reglas de Vuelo Instrumental (Obligatorio plan IFR)",
-      glow: "from-red-500/15 via-red-500/5 to-transparent"
+      glow: "from-red-500/15 via-red-500/5 to-transparent",
+      sky: "from-slate-400 via-slate-500 to-slate-600",
+      Icon: Cloud,
     },
-    LIFR: { 
-      bg: "bg-fuchsia-500/10 border-fuchsia-500/20 dark:bg-fuchsia-500/5 dark:border-fuchsia-500/10", 
-      text: "text-fuchsia-600 dark:text-fuchsia-400", 
-      dot: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]", 
-      label: "LIFR", 
+    LIFR: {
+      bg: "bg-fuchsia-500/10 border-fuchsia-500/20 dark:bg-fuchsia-500/5 dark:border-fuchsia-500/10",
+      text: "text-fuchsia-600 dark:text-fuchsia-400",
+      dot: "bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.5)]",
+      label: "LIFR",
       desc: "Instrumental Bajo (Poca o nula visibilidad)",
-      glow: "from-fuchsia-500/15 via-fuchsia-500/5 to-transparent"
+      glow: "from-fuchsia-500/15 via-fuchsia-500/5 to-transparent",
+      sky: "from-slate-700 via-slate-800 to-indigo-950",
+      Icon: CloudLightning,
     },
-    UNK: { 
-      bg: "bg-zinc-500/10 border-zinc-500/20 dark:bg-white/5 dark:border-white/5", 
-      text: "text-zinc-500 dark:text-zinc-400", 
-      dot: "bg-zinc-500", 
-      label: "Categoría Desconocida", 
+    UNK: {
+      bg: "bg-zinc-500/10 border-zinc-500/20 dark:bg-white/5 dark:border-white/5",
+      text: "text-zinc-500 dark:text-zinc-400",
+      dot: "bg-zinc-500",
+      label: "Categoría Desconocida",
       desc: "Sin datos de reglas de vuelo",
-      glow: "from-zinc-500/10 via-transparent to-transparent"
+      glow: "from-zinc-500/10 via-transparent to-transparent",
+      sky: "from-zinc-300 via-zinc-400 to-zinc-500",
+      Icon: Cloud,
     }
   };
 
   const currentCat = categoryColors[data?.category || "UNK"] || categoryColors.UNK;
 
   return (
-    <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-cal dark:shadow-none flex flex-col md:flex-row gap-6 md:gap-8 items-stretch w-full justify-between group transition-all duration-500 relative overflow-hidden">
-      
-      {/* Ambient background glow reflecting current category */}
-      <div className={`absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl ${currentCat.glow} rounded-full blur-[60px] pointer-events-none transition-all duration-700 opacity-60 dark:opacity-40 -mr-20 -mt-20`} />
+    <div className="relative">
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-lg px-8 md:px-10 py-6 md:py-8 shadow-cal dark:shadow-none flex flex-col gap-6 w-full group transition-all duration-500 relative overflow-hidden">
 
-      {/* Left Column: Station, Category, Wind and Temp */}
-      <div className="flex-1 flex flex-col justify-between space-y-6 relative z-10">
-        
-        {/* Header and Search Form */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Sprocket holes — continuous-feed teleprinter paper, punched into the card edge */}
+        <SprocketRail side="left" />
+        <SprocketRail side="right" />
+
+        {/* Ambient background glow reflecting current category */}
+        <div className={`absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl ${currentCat.glow} rounded-full blur-[60px] pointer-events-none transition-all duration-700 opacity-60 dark:opacity-40 -mr-20 -mt-20`} />
+
+        {/* Letterhead — teleprinter transmission header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-dashed border-zinc-300 dark:border-white/15 relative z-10">
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-50 dark:bg-white/5 text-zinc-900 dark:text-white rounded-2xl flex items-center justify-center border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-aviation-blue/10 text-aviation-blue-dark dark:text-aviation-cyan rounded-2xl flex items-center justify-center border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
               <CloudRain className="w-5 h-5" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em] leading-none">Meteorología</p>
-              <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter text-lg md:text-xl leading-none">Estación {data?.icao || airport}</h3>
+              <p className="text-[10px] font-mono font-bold text-aviation-blue-dark dark:text-aviation-cyan leading-none uppercase tracking-widest">AWOS/ATIS · Transmisión automática</p>
+              <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight text-lg md:text-xl leading-none mt-1.5">Estación {data?.icao || airport}</h3>
             </div>
           </div>
 
           <form onSubmit={handleSearch} className="flex items-center bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-3.5 py-2.5 focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-white/20 transition-all w-full sm:max-w-[130px] group/form">
-            <input 
+            <input
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
-              placeholder="ICAO (Ej. SAEZ)..." 
+              placeholder="ICAO (Ej. SAEZ)..."
               className="bg-transparent text-xs font-bold uppercase w-full outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
             <button type="submit" className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
@@ -142,6 +154,11 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
             </button>
           </form>
         </div>
+
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-stretch justify-between relative z-10">
+
+        {/* Left Column: Station, Category, Wind and Temp */}
+        <div className="flex-1 flex flex-col justify-between space-y-6 relative z-10">
 
         {/* Loading and Data */}
         {loading ? (
@@ -158,18 +175,19 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
         ) : data ? (
           <div className="space-y-5 flex-1 flex flex-col justify-end pt-4">
             
-            {/* Category Banner */}
-            <div className={`border rounded-2xl p-4 md:p-5 flex items-center justify-between gap-3 ${currentCat.bg} transition-all duration-500`}>
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${currentCat.dot} animate-pulse`} />
-                  <p className={`text-[10px] font-extrabold uppercase tracking-[0.25em] leading-none ${currentCat.text}`}>
-                    Condición {currentCat.label}
-                  </p>
-                </div>
-                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed mt-1 max-w-[260px]">{currentCat.desc}</p>
+            {/* Category Banner — sky mood swatch reflects real METAR category */}
+            <div className={`border rounded-2xl p-4 md:p-5 flex items-center gap-4 ${currentCat.bg} transition-all duration-500`}>
+              <div className={`relative w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden bg-gradient-to-b ${currentCat.sky} flex items-center justify-center flex-shrink-0 shadow-inner`}>
+                <currentCat.Icon className="w-7 h-7 md:w-8 md:h-8 text-white drop-shadow" strokeWidth={1.75} />
+                <span className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${currentCat.dot} animate-pulse`} />
               </div>
-              <span className={`text-3xl font-black font-space-grotesk tracking-tight ${currentCat.text}`}>
+              <div className="space-y-1 flex-1 min-w-0">
+                <p className={`text-sm font-bold leading-none ${currentCat.text}`}>
+                  Condición {currentCat.label}
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed mt-1.5 max-w-[260px]">{currentCat.desc}</p>
+              </div>
+              <span className={`text-3xl font-black font-space-grotesk tracking-tight flex-shrink-0 ${currentCat.text}`}>
                 {data.category}
               </span>
             </div>
@@ -181,8 +199,8 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
                   <Wind className="w-4.5 h-4.5 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Viento</p>
-                  <p className="text-sm font-bold font-space-grotesk text-zinc-900 dark:text-white mt-1.5 leading-none">
+                  <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 leading-none">Viento</p>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-1.5 leading-none">
                     {data.windSpeed !== null && data.windSpeed > 0
                       ? `${data.windDir !== null ? `${data.windDir}°` : "VRB"} / ${data.windSpeed} KT`
                       : "Calma"}
@@ -194,8 +212,8 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
                   <Thermometer className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">Temperatura</p>
-                  <p className="text-sm font-bold font-space-grotesk text-zinc-950 dark:text-white mt-1.5 leading-none">
+                  <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 leading-none">Temperatura</p>
+                  <p className="text-sm font-semibold text-zinc-950 dark:text-white mt-1.5 leading-none">
                     {data.temp !== null ? `${data.temp} °C` : "---"}
                   </p>
                 </div>
@@ -245,7 +263,7 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
               <button 
                 type="button" 
                 onClick={() => setShowTaf(!showTaf)}
-                className="w-full flex items-center justify-between text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors py-2"
+                className="w-full flex items-center justify-between text-sm font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors py-2"
               >
                 <span className="flex items-center space-x-2">
                   <BookOpen className="w-4 h-4" />
@@ -279,13 +297,42 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
         {!loading && data && (
           <button 
             onClick={() => fetchWeather(airport)}
-            className="w-full flex items-center justify-center space-x-2 bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-bold text-[8px] uppercase tracking-widest py-3.5 rounded-xl transition-all active:scale-[0.98] mt-2 shadow-sm dark:shadow-none"
+            className="w-full flex items-center justify-center space-x-2 bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-semibold text-sm py-3.5 rounded-xl transition-all active:scale-[0.98] mt-2 shadow-sm dark:shadow-none"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Actualizar Clima</span>
+            <span>Actualizar clima</span>
           </button>
         )}
+        </div>
+
+        </div>
       </div>
+    </div>
+  );
+}
+
+function SprocketRail({ side }: { side: "left" | "right" }) {
+  const position = side === "left" ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2";
+  return (
+    <div
+      aria-hidden
+      className={`absolute top-0 bottom-0 w-4 z-20 pointer-events-none ${position}`}
+      style={{
+        backgroundImage:
+          "radial-gradient(circle, rgba(0,0,0,0.15) 2.6px, transparent 3px)",
+        backgroundSize: "100% 16px",
+        backgroundRepeat: "repeat-y",
+      }}
+    >
+      <div
+        className="absolute inset-0 hidden dark:block"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(255,255,255,0.18) 2.6px, transparent 3px)",
+          backgroundSize: "100% 16px",
+          backgroundRepeat: "repeat-y",
+        }}
+      />
     </div>
   );
 }

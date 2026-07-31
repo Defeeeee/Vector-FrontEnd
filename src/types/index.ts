@@ -74,3 +74,17 @@ export interface Transaction {
 }
 
 
+
+/** An aerodrome resolved by /api/airports/search. Mirrors `Airport` in
+ *  src/lib/airports.ts, declared here so client components can type the
+ *  response without importing the server-only (fs-backed) module. */
+export interface AirportRef {
+  icao: string;
+  name: string;
+  city: string;
+  country: string;
+  size: "L" | "M" | "S" | "H";
+  iata: string;
+  /** Short display label, e.g. SADM -> "Morón". */
+  label: string;
+}

@@ -254,10 +254,10 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
-                Cargar Archivo de Bitácora
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                Cargar archivo de bitácora
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-bold tracking-wide uppercase">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
                 Arrastra y suelta tu PDF aquí, o haz clic en el botón para buscar en tu dispositivo.
               </p>
             </div>
@@ -274,16 +274,16 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
               <button
                 type="button"
                 onClick={onButtonClick}
-                className="flex-1 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-bold text-xs uppercase tracking-wider py-4 rounded-2xl transition-all active:scale-[0.98]"
+                className="flex-1 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm py-4 rounded-2xl transition-all active:scale-[0.98]"
               >
-                Buscar Archivo
+                Buscar archivo
               </button>
 
               {file && (
                 <button
                   type="button"
                   onClick={handleUploadAndParse}
-                  className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 font-bold text-xs uppercase tracking-wider py-4 rounded-2xl transition-all active:scale-[0.98]"
+                  className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 font-semibold text-sm py-4 rounded-2xl transition-all active:scale-[0.98]"
                 >
                   Analizar con Gemini
                 </button>
@@ -298,10 +298,10 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
         <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] p-10 md:p-16 flex flex-col items-center justify-center space-y-6 text-center shadow-cal dark:shadow-none min-h-[300px]">
           <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
           <div className="space-y-2">
-            <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest">
-              Procesando Libro de Vuelo
+            <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">
+              Procesando libro de vuelo
             </h4>
-            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
               {loadingStep}
             </p>
           </div>
@@ -322,10 +322,10 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                 <CheckCircle className="w-6 h-6" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="text-sm font-black uppercase tracking-wider text-zinc-900 dark:text-white leading-none">
-                  Vuelos Extraídos ({parsedFlights.length})
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-white leading-none">
+                  Vuelos extraídos ({parsedFlights.length})
                 </h4>
-                <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">
+                <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 leading-none">
                   Revisa los datos y asocia las aeronaves desconocidas
                 </p>
               </div>
@@ -339,7 +339,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                   setFile(null);
                   setError(null);
                 }}
-                className="flex-1 md:flex-none border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all active:scale-[0.98]"
+                className="flex-1 md:flex-none border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm px-6 py-3.5 rounded-xl transition-all active:scale-[0.98]"
               >
                 Volver a subir
               </button>
@@ -348,7 +348,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleConfirmImport}
-                className="flex-1 md:flex-none bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:pointer-events-none font-bold text-xs uppercase tracking-wider px-8 py-3.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center space-x-2"
+                className="flex-1 md:flex-none bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:pointer-events-none font-semibold text-sm px-8 py-3.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center space-x-2"
               >
                 {isSubmitting ? (
                   <>
@@ -357,7 +357,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                   </>
                 ) : (
                   <>
-                    <span>Confirmar e Importar</span>
+                    <span>Confirmar e importar</span>
                     <ChevronRight className="w-4 h-4" />
                   </>
                 )}
@@ -370,7 +370,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-black/20 text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+                  <tr className="border-b border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-black/20 text-xs font-medium text-zinc-400 dark:text-zinc-500">
                     <th className="px-6 py-4.5"><span className="flex items-center space-x-1.5"><Calendar className="w-3.5 h-3.5" /><span>Fecha</span></span></th>
                     <th className="px-6 py-4.5"><span className="flex items-center space-x-1.5"><Plane className="w-3.5 h-3.5" /><span>Aeronave (Matrícula)</span></span></th>
                     <th className="px-6 py-4.5"><span className="flex items-center space-x-1.5"><Route className="w-3.5 h-3.5" /><span>Ruta</span></span></th>

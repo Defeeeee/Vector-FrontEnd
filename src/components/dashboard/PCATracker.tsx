@@ -1,7 +1,7 @@
 "use client";
 
 import { Flight } from "@/types";
-import { Award, CheckCircle2, Circle, Clock, Compass, Navigation, Moon, Target, Activity } from "lucide-react";
+import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Target } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface PCATrackerProps {
@@ -48,12 +48,12 @@ export default function PCATracker({ flights }: PCATrackerProps) {
     <section className="space-y-6">
       <div className="flex items-center justify-between px-2">
         <div className="space-y-1">
-          <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase transition-colors">Tracker PCA</h3>
-          <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Reg. 61.620</p>
+          <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight transition-colors">Tracker PCA</h3>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Reg. 61.620</p>
         </div>
         <div className="px-3 md:px-4 py-1.5 md:py-2 bg-zinc-900 dark:bg-white rounded-full shadow-cal-highlight flex items-center space-x-2 transition-colors">
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <p className="text-[8px] font-bold text-white dark:text-zinc-900 uppercase tracking-widest">En Progreso</p>
+          <p className="text-xs font-semibold text-white dark:text-zinc-900">En progreso</p>
         </div>
       </div>
 
@@ -64,10 +64,10 @@ export default function PCATracker({ flights }: PCATrackerProps) {
           <div className="relative w-32 h-32 md:w-48 md:h-48 flex items-center justify-center">
              <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-zinc-200 dark:text-white/5" />
-                <motion.circle 
+                <motion.circle
                   cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8"
                   strokeDasharray={`${totalProgress * 2.83} 283`}
-                  className="text-zinc-900 dark:text-white"
+                  className="text-aviation-blue-dark dark:text-aviation-cyan"
                   initial={{ strokeDasharray: "0 283" }}
                   animate={{ strokeDasharray: `${totalProgress * 2.83} 283` }}
                   transition={{ duration: 1.5, ease: "easeOut" }}
@@ -77,49 +77,61 @@ export default function PCATracker({ flights }: PCATrackerProps) {
              <div className="absolute flex flex-col items-center justify-center space-y-0.5 md:space-y-1">
                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 dark:text-zinc-500 mb-0.5 md:mb-1" />
                 <span className="text-2xl md:text-4xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</span>
-                <span className="text-[8px] md:text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">/ 200 HS</span>
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">/ 200 hs</span>
              </div>
           </div>
           <div className="space-y-1">
-             <h4 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white tracking-tight">Experiencia Total</h4>
-             <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em] leading-relaxed">Progreso hacia la meta <br className="hidden md:block"/> (Reducido: 150hs)</p>
+             <h4 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white tracking-tight">Experiencia total</h4>
+             <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed">Progreso hacia la meta <br className="hidden md:block"/> (reducido: 150 hs)</p>
           </div>
         </div>
 
-        {/* Detailed Requirements List */}
-        <div className="flex-1 p-6 md:p-10 flex flex-col justify-center space-y-5 md:space-y-6">
+        {/* Requirements — license stamps instead of progress bars: each requirement is an official stamp waiting to be earned */}
+        <div className="flex-1 p-6 md:p-10 grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6 place-items-center">
           {requirements.map((req, i) => {
-            const progress = Math.min((req.current / req.target) * 100, 100);
             const isComplete = req.current >= req.target;
             const isSubComplete = req.subTarget ? req.current >= req.subTarget : false;
+            const rotation = i % 3 === 0 ? -4 : i % 3 === 1 ? 3 : -2;
 
             return (
-              <div key={i} className="flex items-center gap-4 md:gap-6 group">
-                <div className={`p-2.5 md:p-3 rounded-xl transition-colors ${isComplete ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-500' : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white'}`}>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1, rotate: isComplete ? rotation : 0 }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="flex flex-col items-center text-center gap-2.5"
+              >
+                <div
+                  className={`relative w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center border-2 transition-colors ${
+                    isComplete
+                      ? "border-green-500 text-green-600 dark:text-green-500"
+                      : isSubComplete
+                        ? "border-amber-500 border-dashed text-amber-600 dark:text-amber-500"
+                        : "border-zinc-300 dark:border-white/15 border-dashed text-zinc-400 dark:text-zinc-500"
+                  }`}
+                >
                   {req.icon}
+                  {isComplete && (
+                    <span className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-500 text-white flex items-center justify-center border-2 border-white dark:border-[#111111]">
+                      <CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                    </span>
+                  )}
                 </div>
-                
-                <div className="flex-1 flex flex-col space-y-1.5 md:space-y-2">
-                  <div className="flex justify-between items-end">
-                    <p className="text-[10px] md:text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">{req.label}</p>
-                    <div className="flex items-center space-x-1.5 md:space-x-2">
-                      <p className="text-xs md:text-sm font-bold text-zinc-900 dark:text-white">
-                        {req.current.toFixed(1)} <span className="text-[9px] md:text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold">{req.unit}</span>
-                      </p>
-                      {isComplete && <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-500" />}
-                    </div>
-                  </div>
-                  
-                  <div className="h-1 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 1, delay: i * 0.1 }}
-                      className={`h-full rounded-full ${isComplete ? 'bg-green-500' : isSubComplete ? 'bg-amber-500' : 'bg-zinc-900 dark:bg-white'}`}
-                    />
-                  </div>
+                <div>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-white leading-tight">{req.label}</p>
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {req.current.toFixed(1)} / {req.target} {req.unit}
+                  </p>
                 </div>
-              </div>
+                {isComplete && (
+                  <span
+                    className="text-[7px] font-black uppercase tracking-widest text-green-600 dark:text-green-500 border-2 border-green-500/50 rounded px-1.5 py-0.5"
+                    style={{ transform: `rotate(${-rotation}deg)` }}
+                  >
+                    Cumplido
+                  </span>
+                )}
+              </motion.div>
             );
           })}
         </div>

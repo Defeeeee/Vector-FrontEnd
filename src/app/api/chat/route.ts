@@ -6,6 +6,25 @@ import { calculateFlightDuration } from "@/lib/utils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+const UUID = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
+
+/**
+ * Scrubs internal database IDs out of anything the pilot will read. The model
+ * needs the UUIDs in its context to call update_flight/delete_flight, and it
+ * used to echo them back ("... [ID: d8342011-...]"), which is an implementation
+ * detail leaking into the product.
+ */
+function stripInternalIds(text: string): string {
+  return text
+    // "[ID: uuid]", "(ID: uuid)" and bare "ID: uuid" — with any surrounding space.
+    .replace(new RegExp(`\\s*[\\[(]\\s*ID:\\s*${UUID}\\s*[\\])]`, "gi"), "")
+    .replace(new RegExp(`\\s*\\bID:\\s*${UUID}\\b`, "gi"), "")
+    // Anything that still slipped through as a naked UUID.
+    .replace(new RegExp(UUID, "gi"), "")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 function buildFlightContext(
   flights: Flight[],
   aircraft: Aircraft[],
@@ -388,6 +407,9 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
 3. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
 4. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
 
+## NUNCA MUESTRES IDENTIFICADORES INTERNOS:
+Los UUID que aparecen como [ID: ...] en tu contexto son EXCLUSIVAMENTE para pasárselos como argumento a las funciones. JAMÁS los escribas en el texto que ve el piloto: ni entre corchetes, ni como referencia, ni "por las dudas", ni aunque el usuario te los pida. Para identificar un vuelo ante el piloto usá siempre datos humanos: fecha, ruta, matrícula y duración (ej: "el vuelo del 12/03 SADM–SAEZ con LV-ABC, 1.4 h"). Lo mismo aplica a cualquier otro identificador interno de aeronaves, packs o transacciones.
+
 ## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
 Para determinar la duración de un vuelo o validarla, resta la hora de despegue de la de aterrizaje para obtener horas y minutos. Los minutos deben convertirse a decimales con precisión según la siguiente tabla exacta:
 - 0 a 2 minutos: .0
@@ -757,7 +779,9 @@ ${flightContext}`;
       functionCalls = result.response.functionCalls();
     }
 
-    const text = result.response.text();
+    // Belt and braces on the "never show internal IDs" rule above: a system
+    // prompt is guidance, not a guarantee, and a leaked UUID is user-visible.
+    const text = stripInternalIds(result.response.text());
     return NextResponse.json({ reply: text });
   } catch (err: any) {
     console.error("Chat API error:", err);

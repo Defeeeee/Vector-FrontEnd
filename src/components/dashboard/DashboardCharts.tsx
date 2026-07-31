@@ -49,11 +49,11 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
 
   const isDark = mounted && theme === "dark";
   const textColor = isDark ? "#a1a1aa" : "#71717a";
-  const barColor = isDark ? "#ffffff" : "#18181b";
+  const barColor = isDark ? "#38bdf8" : "#2563eb";
   const tooltipBg = isDark ? "#0a0a0a" : "#ffffff";
   const tooltipBorder = isDark ? "#27272a" : "#e4e4e7";
   const tooltipTextColor = isDark ? "#ffffff" : "#18181b";
-  const areaColor = isDark ? "#ffffff" : "#18181b";
+  const areaColor = isDark ? "#38bdf8" : "#2563eb";
   const gridColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(24,24,27,0.05)";
 
   // Milestone reference lines at round hour thresholds
@@ -65,9 +65,9 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
     const d = payload[0].payload;
     return (
       <div style={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 12, padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-        <p style={{ color: textColor, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 6 }}>{d.date}</p>
-        <p style={{ color: tooltipTextColor, fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{d.total.toFixed(1)}<span style={{ fontSize: 11, fontWeight: 700, marginLeft: 4, color: textColor }}>hs acum.</span></p>
-        {d.monthHours > 0 && <p style={{ color: textColor, fontSize: 10, fontWeight: 700, marginTop: 4 }}>+{d.monthHours.toFixed(1)} este mes</p>}
+        <p style={{ color: textColor, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>{d.date}</p>
+        <p style={{ color: tooltipTextColor, fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{d.total.toFixed(1)}<span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4, color: textColor }}>hs acum.</span></p>
+        {d.monthHours > 0 && <p style={{ color: textColor, fontSize: 12, fontWeight: 500, marginTop: 4 }}>+{d.monthHours.toFixed(1)} este mes</p>}
       </div>
     );
   };
@@ -90,8 +90,8 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
       {/* Bar Chart: Flight Hours by Month */}
       <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[450px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
         <div className="flex flex-col space-y-1">
-          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter">Horas por Mes</h3>
-          <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Tendencia Temporal</p>
+          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Horas por mes</h3>
+          <p className="text-sm font-semibold text-aviation-blue-dark dark:text-aviation-cyan">Tendencia temporal</p>
         </div>
         <div className="flex-1 w-full -ml-4 min-h-0">
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -100,25 +100,25 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: textColor, fontSize: 10, fontWeight: 700 }}
+                tick={{ fill: textColor, fontSize: 12, fontWeight: 500 }}
                 dy={10}
               />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: textColor, fontSize: 10, fontWeight: 700 }}
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: textColor, fontSize: 12, fontWeight: 500 }}
               />
-              <Tooltip 
+              <Tooltip
                 cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(24,24,27,0.03)' }}
-                contentStyle={{ 
-                  backgroundColor: tooltipBg, 
-                  border: `1px solid ${tooltipBorder}`, 
+                contentStyle={{
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
                   borderRadius: '12px',
                   padding: '12px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
                 }}
-                itemStyle={{ color: tooltipTextColor, fontWeight: 800, fontSize: '12px' }}
-                labelStyle={{ color: textColor, marginBottom: '4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }}
+                itemStyle={{ color: tooltipTextColor, fontWeight: 700, fontSize: '13px' }}
+                labelStyle={{ color: textColor, marginBottom: '4px', fontSize: '12px', fontWeight: 600 }}
               />
               <Bar 
                 dataKey="hours" 
@@ -134,8 +134,8 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
       {/* Pie Chart: Hours by Aircraft */}
       <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[450px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
         <div className="flex flex-col space-y-1">
-          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter">Horas por Aeronave</h3>
-          <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.3em]">Distribución de Flota</p>
+          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Horas por aeronave</h3>
+          <p className="text-sm font-semibold text-aviation-blue-dark dark:text-aviation-cyan">Distribución de flota</p>
         </div>
         <div className="flex-1 w-full relative min-h-0">
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -152,7 +152,7 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
                 cornerRadius={4}
               >
                 {aircraftData.map((entry, index) => {
-                  const colors = isDark ? ["#ffffff", "#a1a1aa", "#52525b", "#27272a"] : ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"];
+                  const colors = isDark ? ["#38bdf8", "#a1a1aa", "#52525b", "#27272a"] : ["#2563eb", "#71717a", "#e4e4e7", "#f9fafb"];
                   return <Cell key={`cell-${index}`} fill={colors[index % 4]} />;
                 })}
               </Pie>
@@ -163,7 +163,7 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
                   borderRadius: '12px',
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
                 }}
-                itemStyle={{ color: tooltipTextColor, fontWeight: 800, fontSize: '12px' }}
+                itemStyle={{ color: tooltipTextColor, fontWeight: 700, fontSize: '13px' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -171,11 +171,11 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
           {/* Minimal Legend */}
           <div className="absolute bottom-0 left-0 right-0 flex flex-wrap justify-center gap-4">
             {aircraftData.slice(0, 4).map((item, i) => {
-              const colors = isDark ? ["#ffffff", "#a1a1aa", "#52525b", "#27272a"] : ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"];
+              const colors = isDark ? ["#38bdf8", "#a1a1aa", "#52525b", "#27272a"] : ["#2563eb", "#71717a", "#e4e4e7", "#f9fafb"];
               return (
                 <div key={i} className="flex items-center space-x-2">
                   <div className="w-2 h-2 rounded-full border border-zinc-200 dark:border-zinc-700" style={{ backgroundColor: colors[i % 4] }} />
-                  <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{item.name}</span>
+                  <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{item.name}</span>
                 </div>
               );
             })}
@@ -187,15 +187,15 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
       {/* Cumulative Hours Area Chart */}
       {cumulativeData.length > 1 && (
         <div className="p-8 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[420px] shadow-2xl hover:shadow-lg transition-all group relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/[0.03] rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-aviation-blue/10 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 relative z-10">
             <div className="flex flex-col space-y-1">
-              <h3 className="text-2xl font-bold font-space-grotesk text-white tracking-tighter">Horas Acumuladas</h3>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Progresión Total de Experiencia</p>
+              <h3 className="text-2xl font-bold font-space-grotesk text-white tracking-tight">Horas acumuladas</h3>
+              <p className="text-sm font-semibold text-aviation-cyan/80">Progresión total de experiencia</p>
             </div>
             <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-space-grotesk font-bold text-white tracking-tighter leading-none">{maxTotal.toFixed(1)}</span>
-              <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">hs totales</span>
+              <span className="text-4xl font-space-grotesk font-bold text-white tracking-tight leading-none">{maxTotal.toFixed(1)}</span>
+              <span className="text-sm font-medium text-zinc-500">hs totales</span>
             </div>
           </div>
           <div className="flex-1 w-full -ml-2 min-h-0 relative z-10">
@@ -212,14 +212,14 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
                   dataKey="date"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#52525b", fontSize: 9, fontWeight: 700 }}
+                  tick={{ fill: "#71717a", fontSize: 11, fontWeight: 500 }}
                   dy={10}
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#52525b", fontSize: 9, fontWeight: 700 }}
+                  tick={{ fill: "#71717a", fontSize: 11, fontWeight: 500 }}
                   tickFormatter={(v) => `${v}h`}
                   width={40}
                 />
@@ -229,7 +229,7 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
                     y={m}
                     stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(24,24,27,0.1)"}
                     strokeDasharray="4 4"
-                    label={{ value: `${m}h`, fill: "#52525b", fontSize: 9, fontWeight: 700, position: 'insideTopRight', dy: -6 }}
+                    label={{ value: `${m}h`, fill: "#71717a", fontSize: 11, fontWeight: 500, position: 'insideTopRight', dy: -6 }}
                   />
                 ))}
                 <Tooltip content={<CustomCumulativeTooltip />} cursor={{ stroke: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(24,24,27,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
