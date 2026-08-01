@@ -58,7 +58,7 @@ export default function UnitConverter() {
       inputs={
         <>
           <div>
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+            <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
               Magnitud
             </span>
             <StyledSelect name="unit-category" value={category} onChange={pickCategory} options={CATEGORY_OPTIONS} />
@@ -68,7 +68,7 @@ export default function UnitConverter() {
 
           <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
             <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+              <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
                 De
               </span>
               <StyledSelect name="unit-from" value={from} onChange={setFrom} options={unitOptions} />
@@ -84,7 +84,7 @@ export default function UnitConverter() {
             </button>
 
             <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+              <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
                 A
               </span>
               <StyledSelect name="unit-to" value={to} onChange={setTo} options={unitOptions} />

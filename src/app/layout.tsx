@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { Nunito, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -18,6 +18,16 @@ const nunitoDisplay = Nunito({
   variable: "--font-space-grotesk",
 });
 
+// Instrument face for anything that reads as an *instrument reading* rather than
+// prose: hours, ICAO codes, registrations, UTC times, METAR, eyebrow labels.
+// IBM Plex Mono is picked for its slashed zero — in a logbook the difference
+// between 0 and O is not a stylistic detail.
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono-data",
+});
+
 export const metadata: Metadata = {
   title: "Vector | Digital Logbook",
   description: "Advanced flight tracking for modern pilots",
@@ -29,14 +39,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body
-        className={cn(
-          nunitoSans.variable,
-          nunitoDisplay.variable,
-          "min-h-screen bg-white dark:bg-black text-charcoal dark:text-white antialiased overflow-x-hidden font-sans"
-        )}
-      >
+    /* The font variables have to live on <html>, not <body>: `@theme` emits its
+       tokens on :root, so a `--font-sans: var(--font-inter)` there resolves
+       against :root — and with the variable declared on <body> it resolved
+       against nothing and came out invalid. That silently broke the `font-sans`
+       and `font-mono` utilities app-wide (only the custom `font-space-grotesk`
+       worked, because it reads the variable at the element that uses it). */
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={cn(nunitoSans.variable, nunitoDisplay.variable, plexMono.variable)}
+    >
+      <body className="min-h-screen bg-white dark:bg-black text-charcoal dark:text-white antialiased overflow-x-hidden font-sans">
         <NextTopLoader
           color="#18181b"
           initialPosition={0.08}

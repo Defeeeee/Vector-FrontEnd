@@ -696,6 +696,248 @@ claro/oscuro × 1500 px/iPhone 13 contra un harness:
 entorno no tiene credenciales, así que lo comprobado es que ambas rutas
 compilan y registran, y el comportamiento de interceptación es estándar de Next.
 
+### 2026-08-01 19:42 UTC — Claude (Opus 5, vía Claude Code) — Tipografía de instrumento y reducción del azul
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/layout.tsx` — se carga IBM Plex Mono como `--font-mono-data`.
+- `src/app/globals.css` — `--font-mono` apunta a Plex; tokens `--color-eyebrow`
+  y `--color-eyebrow-dark`; clases `.data`, `.eyebrow` y `.eyebrow-invert`.
+- `src/components/dashboard/PageHeader.tsx` — el eyebrow pasa arriba del título
+  y se fue la barra de acento.
+- 24 componentes y páginas más: eyebrows a `.eyebrow`, readouts numéricos a
+  `.data`, tiles de ícono a neutro.
+
+**Por qué:** Comparando Vector contra FlightDeck pantalla por pantalla (Nuevo
+Vuelo, dashboard, landing y login), la diferencia de "sensación" no venía del
+layout sino de dos cosas transversales:
+
+1. **FlightDeck usa mono para todo lo que es una lectura de instrumento** —
+   horas, ICAO, matrículas, horas UTC, QNH, METAR, los números del stepper. Vector
+   usaba Nunito para todo. Se eligió **IBM Plex Mono por el cero barrado**: en un
+   libro de vuelo la diferencia entre `0` y `O` no es un detalle estético. El
+   ancla para el pase fue `tabular-nums`, que ya marcaba de forma fiable todos los
+   readouts numéricos del repo — por eso el cambio tocó 27 archivos sin necesidad
+   de revisarlos uno por uno.
+
+2. **El azul estaba en todos lados y por eso no significaba nada.** De los 127
+   usos de `aviation-blue`, la mayoría eran *labels de sección* y *tintes de
+   íconos* — no acentos. FlightDeck pinta esos dos en gris y se guarda el color
+   para un elemento por pantalla. Se neutralizaron esos dos usos y **se dejó el
+   azul a propósito** donde sí es el acento: el número de Tiempo ANAC, la escala
+   del heatmap, los estados activos del nav, el `focus` de los inputs, y la
+   palabra "Vector" del hero. No es "sacar el azul", es gastarlo una vez.
+
+Los glows de fondo (`blur-3xl`) se dejaron: son atmósfera de muy baja saturación,
+no compiten con el acento, y FlightDeck tiene los suyos.
+
+**Hallazgo que conviene saber:** `layout.tsx` importa **Nunito** para los dos
+roles, pero las variables siguen llamándose `--font-inter` y
+`--font-space-grotesk`. O sea que `font-space-grotesk` en el markup **no aplica
+Space Grotesk** — es Nunito en negrita. No se renombró (tocaría decenas de
+archivos sin cambio visual), pero el próximo que lea esas clases va a asumir mal.
+Cambiar la sans de Nunito a una grotesque más neutra es la palanca tipográfica
+que queda, y **es decisión de marca**, por eso no se tomó acá.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` limpio y `npm run build` OK (25 rutas). En el dev
+server se confirmó por `getComputedStyle` que `.eyebrow` y `.data` resuelven a
+IBM Plex Mono —con los pesos 500 y 700 efectivamente `loaded`, no en fallback— y
+que el eyebrow sale en `#71717a`. **El dashboard no se pudo mirar con datos
+reales**: la sesión vive en el dominio de producción y el server local no la
+tiene, así que de esa pantalla lo verificado es que compila, no cómo se ve.
+
+**Bug preexistente encontrado de paso (no se tocó):** la nav de la landing se
+apelmaza cerca de los 800 px de ancho — el wordmark y "Características" se pegan
+y "Cómo funciona" parte en dos líneas. Está fuera del alcance de esta tanda y las
+líneas que cambié en `page.tsx` arrancan bastante más abajo que la nav.
+
+### 2026-08-01 20:01 UTC — Claude (Opus 5, vía Claude Code) — Login split, mockups de landing y últimos vuelos
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/layout.tsx` — **fix**: las variables de next/font pasaron de `<body>` a
+  `<html>`.
+- `src/app/login/page.tsx` — split screen con panel de contexto a la derecha;
+  labels al castellano.
+- `src/components/landing/FeatureMock.tsx` (nuevo) — cuatro mockups de producto.
+- `src/app/page.tsx` — las secciones de feature muestran los mockups.
+- `src/components/dashboard/RecentFlights.tsx` (nuevo) + `dashboard/page.tsx`.
+- `src/components/dashboard/ActivityHeatmap.tsx` — badge de racha.
+- `src/components/dashboard/FlightLogForm.tsx` — `LedgerField` en mono.
+- `docs/brief/00-README.md` y `02-estado-actual-vector.md` — dominio corregido.
+
+**Por qué:**
+
+1. **El fix de las fuentes es el más importante de esta tanda y es un bug viejo.**
+   `@theme` emite sus tokens en `:root`, pero las variables de next/font estaban
+   declaradas en `<body>`. O sea que `--font-sans: var(--font-inter)` se resolvía
+   contra un `:root` donde `--font-inter` no existe: quedaba inválida, y con ella
+   **las utilidades `font-sans` y `font-mono` de toda la app**. Andaba sólo
+   `font-space-grotesk`, porque es una utilidad custom que lee la variable en el
+   elemento que la usa, no en `:root`. Se comprobó en producción antes de tocar
+   nada: `--font-inter` vacío en `:root`, y el `<body>` cayendo a la sans del
+   sistema. Efecto colateral: los `font-mono` que ya existían (METAR, ledger de
+   saldo, importación de PDF) recién ahora renderizan en mono de verdad.
+
+2. **Los mockups de la landing se construyen en markup, no son capturas.** Siguen
+   el tema claro/oscuro sin mantener dos juegos de imágenes, quedan nítidos a
+   cualquier densidad, y no envejecen mal cuando la UI cambia. Todos los números
+   son ilustrativos y **ninguno lee de la API**: la landing la ve gente
+   deslogueada, no hay cuenta de dónde leer.
+
+3. **El panel del login no lleva números personales**, por lo mismo: renderiza
+   antes de que nadie se autentique, así que cualquier cosa con pinta de dato del
+   libro sería mentira disfrazada de dashboard.
+
+4. **La racha del heatmap se cuenta en semanas, no en días.** El badge equivalente
+   de FlightDeck cuenta días seguidos, que en aviación general da 0 para
+   cualquiera — nadie vuela 365 días al año, así que la métrica sólo sabe decir
+   que no. Semanas es la cadencia real, y el número informa. La semana en curso
+   puede estar vacía sin cortar la racha: suele estar empezando.
+
+5. **`RecentFlights` no reusa `FlightCard` a propósito.** El card del logbook trae
+   editar y borrar; ponerlos en la pantalla de entrada de la app es poner acciones
+   destructivas donde uno sólo quería mirar.
+
+**Estado:** Terminado lo de arriba. **No** se hizo la reestructuración del
+dashboard que se había propuesto (bajar el hero, deltas y sparklines en las stat
+cards, repackagear la card AWOS al formato "Tu base"). El hero es un elemento de
+identidad y sacarlo es decisión de producto, así que quedó para consultar.
+
+**Verificación:** `tsc --noEmit` limpio y `npm run build` OK. Con el dev server:
+- **Login**: claro y oscuro a 1440 px y a 375 px. Sin desborde horizontal, panel
+  de contexto oculto en móvil, botón de submit visible. Confirmado por
+  `getComputedStyle` que `font-sans`→Nunito, `font-mono`→IBM Plex Mono y los
+  labels en Plex.
+- **Dashboard**: contra los 39 vuelos reales de Federico. Los eyebrows salen en
+  mono gris, los tiles de ícono neutros, el badge dice "1 SEMANA SEGUIDA" (último
+  vuelo 25 Jul, hoy 1 Ago — correcto) y "Últimos vuelos" lista los 5 últimos con
+  fecha, ruta, matrícula y horas en mono.
+- **Landing**: los cuatro mockups se verificaron **sólo por DOM** —entran en la
+  caja 4:3 sin recorte (116–168 px de contenido sobre 366 px disponibles) y con el
+  contenido correcto—. **No se vieron renderizados**: el panel de navegador de la
+  sesión devolvía capturas en blanco después de scrollear, y en Chrome la raíz
+  redirige al dashboard por middleware al estar logueado. Queda por mirar a ojo.
+
+### 2026-08-01 20:19 UTC — Claude (Opus 5, vía Claude Code) — Página "Resumen de horas"
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/lib/summary.ts` (nuevo) — toda la agregación, pura y sin React.
+- `src/components/dashboard/SummaryClient.tsx` (nuevo) — la pantalla.
+- `src/app/dashboard/summary/page.tsx` (nuevo) — el server component.
+- `src/components/dashboard/DashboardNav.tsx` — destino "Resumen".
+
+**Por qué:** Es el equivalente de `/logbook/resumen` de FlightDeck, que `05`
+señalaba como la pantalla con más ideas aprovechables. Se estudió en vivo antes
+de construirla, no de memoria. Decisiones que no se deducen del código:
+
+1. **No hace falta ningún endpoint nuevo.** `/dashboard` ya devuelve todos los
+   vuelos con las ocho columnas ANAC, `takeoff`, `landings` y `aircraft_id`.
+   Todo lo de esta página es aritmética sobre eso. Cero migraciones, cero backend.
+
+2. **`todayIso` baja del server.** Los cortes de período (28D/90D/6M/1A) dependen
+   de qué día es hoy; si el cliente lo calculara, el server en UTC y el navegador
+   en UTC-3 discreparían de día cada noche. Es la misma regla que ya costó dos
+   bugs de hidratación.
+
+3. **La hora del día se agrupa en UTC.** `takeoff` guarda el valor UTC que tipeó
+   el piloto; reinterpretarlo en zona local correría cada vuelo tres horas y
+   movería el pico sin avisar.
+
+4. **La matriz deja IMC, capota y simulador afuera de la grilla.** Se solapan con
+   el tiempo PIC en vez de particionarlo — la misma razón por la que la sección
+   03 del formulario no comparte pool con la 02. Van en una tira aparte abajo.
+
+5. **Los insights son reglas, no IA.** Son tres hechos aritméticos con una frase
+   colgada: porcentaje de fin de semana, mejor mes, aeronave más usada. Meter un
+   modelo agregaría latencia y factura para algo que un porcentaje ya contesta, y
+   encima podría equivocar el número.
+
+6. **Sin mapa.** El "Dónde volé" de FlightDeck usa Leaflet; acá es una lista
+   rankeada con barras, que da la misma información sin sumar una dependencia de
+   mapas. Si se quiere el mapa, las coordenadas ya están en `airports.tsv`.
+
+7. **El destino se agregó al final del nav, no al lado de "Bitácora"** —que es
+   donde correspondería por tema—. Los primeros cinco ítems son los visibles en
+   la barra del teléfono, y reordenarlos empujaría Herramientas a la hoja "Más".
+
+**Bug propio, encontrado y corregido:** el gráfico radial generaba el `path` del
+SVG con floats crudos, y **`Math.sin`/`Math.cos` son implementation-defined en
+ECMAScript**: Node y Chrome difieren en los últimos dígitos, así que el markup
+del server y el del cliente no coincidían. Lo detectó el overlay de Next, no la
+lectura del código. Se redondea a 2 decimales antes de armar el string. Conviene
+sumarlo a la regla del repo: **no sólo las fechas — cualquier float que termine
+en el markup se redondea antes de serializar.**
+
+**Segundo bug propio:** el subtítulo decía "6 aeródromos · 4 rutas únicas" porque
+contaba la lista ya recortada al top-N en vez del total (el dashboard decía 11).
+Se separaron `allAirports`/`allRoutes` de `topAirports`/`topRoutes`.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` limpio y `npm run build` OK; la ruta
+`/dashboard/summary` figura en el build. Probado contra los **39 vuelos reales**
+de Federico en el dev server, claro y oscuro:
+- Los totales cierran: matriz Local 13.1 + Travesía 33.2 = 46.3 = el odómetro = el
+  total del dashboard. Con el filtro en 90D: 7.1 + 2.4 = 9.5, 9 vuelos.
+- Las franjas horarias suman el total (1.0 + 34.2 + 11.1 + 0.0 = 46.3), pico 15:00.
+- "11 aeródromos · 21 rutas únicas" coincide con los 11 del dashboard.
+- 0 errores de consola tras el fix del redondeo (antes, 1 mismatch de hidratación).
+
+**No verificado:** el **layout en móvil**. La ventana de Chrome de esta sesión no
+baja de ~1514 px, así que no se pudo mirar a 390 px. La tabla de la matriz va
+dentro de un `overflow-x-auto` con márgenes negativos —el mismo tratamiento que
+ya usa el heatmap— y las grillas son responsivas, pero **está sin comprobar**.
+
+### 2026-08-01 20:30 UTC — Claude (Opus 5, vía Claude Code) — Se bajó el hero split-flap del dashboard
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/dashboard/page.tsx` — se eliminó la tarjeta negra del hero con el
+  `SplitFlapNumber`, el mini gráfico `MonthlyTrend` y los `HeroStat`. En su lugar
+  va una fila de cuatro tiles (`HeadlineStat`), la primera negra y linkeada a la
+  bitácora. Se borraron los tres componentes que quedaron sin uso.
+
+**Por qué:** Pedido explícito de Federico, con el commit anterior como punto de
+retorno. El motivo no era que estuviera mal hecho —el split-flap imitaba la aleta
+de un tablero de aeropuerto y era el elemento más distintivo de la pantalla—
+sino que **repetía**: el mismo `46.3` aparece además en "Horas acumuladas" y en
+la grilla de actividad, y su gráfico "Horas por mes" es la misma serie que
+"Tendencia temporal" más abajo. La tarjeta gastaba ~340 px de la primera pantalla
+en un número que aparece dos veces más al scrollear.
+
+El patrón nuevo es el de FlightDeck: **una tile negra entre hermanas blancas**.
+Conserva el total como lo más fuerte de la pantalla sin quedarse con el tercio
+superior. La tile negra es un `<Link>` a la bitácora, que era lo que hacía el
+"Ver bitácora completa" del hero viejo.
+
+**Nada de información se perdió**: horas totales, delta de 30 días, vuelos,
+aeródromos y récord siguen estando; la tira de cuatro celdas de abajo (Promedio,
+Aterrizajes, Destino, Aeronaves) quedó intacta. Lo único que se fue del todo es
+el gráfico duplicado.
+
+**Si se quiere revertir**, el commit anterior a este tiene el hero completo.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` limpio y `npm run build` OK. En el dev server,
+contra los 39 vuelos reales: 0 dígitos del split-flap en el DOM, la fila nueva
+muestra "Horas totales 46.3 hs / +1.3 hs en 30 días" (como `<a>` a
+`/dashboard/history`), "Vuelos 39", "Aeródromos 11" y "Récord 3.8h"; sin desborde
+horizontal y 0 errores de consola.
+
+**No verificado:** **no se pudo ver renderizado**. Las capturas de pantalla del
+navegador de esta sesión empezaron a fallar por CDP y no se recuperaron, así que
+lo comprobado es estructura y datos por DOM, no el aspecto. Tampoco se miró en
+móvil, por la misma limitación que la entrada del Resumen de horas.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
@@ -788,10 +1030,16 @@ código. Tres precisiones que cambian el alcance de esos ítems:
   Coincide con la decisión que está documentada en la entrada de la Fase 5.
   **No lo "arregles" copiando el patrón de FlightDeck.**
 
-El ítem 8 de `05` (matriz ANAC de solo lectura) es el de mejor relación
-valor/esfuerzo: las ocho columnas PIC/SIC ya se calculan y se guardan por
-vuelo, y `PCATracker.tsx` ya hace agregaciones parecidas. Es sumar, no derivar
-nada nuevo.
+**Estado del backlog de `05` al 2026-08-01:** los ítems **8** (matriz ANAC), **9**
+(gráfico radial de hora del día) y **10** (insights auto-generados) están hechos,
+dentro de la página `/dashboard/summary`. Del ítem **7** (mapa "dónde volé") se
+hizo la mitad informativa —el ranking de aeródromos con barras— pero **no el mapa
+geográfico**: eso requiere Leaflet o similar. Las coordenadas ya están en
+`airports.tsv`, así que es trabajo de frontend solamente.
+
+Del backlog de `04` sigue pendiente el ítem **6** (ficha de aeródromo), y el **2**
+(paleta) se resolvió parcialmente en el pase de tipografía y monocromo — lo que
+queda es la decisión de marca sobre la tipografía sans (ver esa entrada).
 
 ### Antes de tocar nada
 

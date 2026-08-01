@@ -206,7 +206,7 @@ export default function BalanceClient({
             <section className="space-y-6">
               <div className="flex items-center space-x-3 px-2">
                 <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-md">
-                  <Package className="w-4 h-4 text-aviation-cyan dark:text-aviation-blue-dark" />
+                  <Package className="w-4 h-4 text-white dark:text-zinc-900" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Packs activos</h3>
               </div>
@@ -383,7 +383,7 @@ export default function BalanceClient({
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 px-2">
                   <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-md">
-                    <Coins className="w-4 h-4 text-aviation-cyan dark:text-aviation-blue-dark" />
+                    <Coins className="w-4 h-4 text-white dark:text-zinc-900" />
                   </div>
                   <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Historial de movimientos</h3>
                 </div>
@@ -459,7 +459,7 @@ export default function BalanceClient({
         <section className="space-y-6">
           <div className="flex items-center space-x-3 px-2">
             <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-md">
-              <Plane className="w-4 h-4 text-aviation-cyan dark:text-aviation-blue-dark" />
+              <Plane className="w-4 h-4 text-white dark:text-zinc-900" />
             </div>
             <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Costos aeronaves</h3>
           </div>

@@ -214,7 +214,7 @@ export default function ChatWidget() {
             {loading && (
               <div className="flex gap-3">
                 <div className="w-7 h-7 rounded-xl bg-aviation-blue/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-3.5 h-3.5 text-aviation-blue-dark dark:text-aviation-cyan" />
+                  <Bot className="w-3.5 h-3.5 text-zinc-900 dark:text-white" />
                 </div>
                 <div className="bg-zinc-50 dark:bg-white/[0.06] border border-zinc-100 dark:border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />

@@ -25,7 +25,7 @@ Leé los documentos en este orden:
 
 ## Restricción importante
 
-Vector-FrontEnd es solo el frontend (Next.js 16, App Router, Tailwind v4, Framer Motion). Los datos reales viven en un backend separado (`api.flightlog.fdiaznemeth.com.ar`) y la autenticación en otro servicio (`auth.flightlog.fdiaznemeth.com.ar`). El frontend habla con ambos vía `apiFetch` (`src/lib/api.ts`) con Bearer token. Cualquier cambio de modelo de datos (auditoría, documentación, aeródromos) requiere tocar ese backend, no solo este repo — coordinarlo antes de asumir que es un cambio solo-frontend.
+Vector-FrontEnd es solo el frontend (Next.js 16, App Router, Tailwind v4, Framer Motion). Los datos reales viven en un backend separado (`api.flightlog.fdiaznem.com.ar`) y la autenticación en otro servicio (`auth.flightlog.fdiaznem.com.ar`). El frontend habla con ambos vía `apiFetch` (`src/lib/api.ts`) con Bearer token. Cualquier cambio de modelo de datos (auditoría, documentación, aeródromos) requiere tocar ese backend, no solo este repo — coordinarlo antes de asumir que es un cambio solo-frontend.
 
 ## Filosofía del pedido de Federico
 

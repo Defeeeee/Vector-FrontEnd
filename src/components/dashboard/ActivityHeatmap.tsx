@@ -44,6 +44,25 @@ export default function ActivityHeatmap({ data }: { data: HeatmapData }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { weeks, months, max, totalDays, totalHours } = data;
 
+  // Streak, counted in *weeks* rather than in days.
+  //
+  // FlightDeck's equivalent badge counts consecutive days, which for general
+  // aviation reads 0 for essentially everybody — nobody flies 365 days a year,
+  // so the metric only ever says "no". Weeks is the cadence pilots actually fly
+  // at, so the number carries information.
+  //
+  // The most recent week is allowed to be empty without breaking the streak:
+  // it is usually still in progress, and a streak that resets every Monday
+  // morning would be noise.
+  const weekStreak = (() => {
+    const active = weeks.map((w) => w.some((d) => d && d.hours > 0));
+    let i = active.length - 1;
+    if (i >= 0 && !active[i]) i--; // grace for the week in progress
+    let n = 0;
+    for (; i >= 0 && active[i]; i--) n++;
+    return n;
+  })();
+
   // On a phone only a third of the year fits. Start at the right edge: the
   // question a pilot opens this to answer is about recent weeks, not about
   // last August.
@@ -81,16 +100,21 @@ export default function ActivityHeatmap({ data }: { data: HeatmapData }) {
           <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">
             Actividad
           </h3>
-          <p className="text-sm font-semibold text-aviation-blue-dark dark:text-aviation-cyan">
+          <p className="eyebrow">
             Últimos 12 meses
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          <CalendarDays className="w-4 h-4 text-aviation-blue-dark dark:text-aviation-cyan" />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          {weekStreak > 0 && (
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300">
+              {weekStreak} {weekStreak === 1 ? "semana seguida" : "semanas seguidas"}
+            </span>
+          )}
+          <CalendarDays className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
           <span>
-            <span className="font-bold text-zinc-900 dark:text-white tabular-nums">{totalDays}</span>{" "}
+            <span className="font-bold text-zinc-900 dark:text-white data">{totalDays}</span>{" "}
             {totalDays === 1 ? "día volado" : "días volados"} ·{" "}
-            <span className="font-bold text-zinc-900 dark:text-white tabular-nums">{totalHours.toFixed(1)}</span> hs
+            <span className="font-bold text-zinc-900 dark:text-white data">{totalHours.toFixed(1)}</span> hs
           </span>
         </div>
       </div>

@@ -80,7 +80,7 @@ export default function LiveSessionController({ aircraft, activeSession }: LiveS
       <div className="p-10 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none hover:shadow-lg dark:hover:bg-white/[0.04] transition-all rounded-[2.5rem] space-y-8">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-aviation-blue-dark dark:text-aviation-cyan">Modo operativo</p>
+            <p className="eyebrow">Modo operativo</p>
             <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Vuelo en vivo</h3>
           </div>
           <div className={`w-3 h-3 rounded-full ${activeSession?.active ? 'bg-green-500 animate-pulse' : 'bg-zinc-200 dark:bg-zinc-800'}`} />
@@ -160,7 +160,7 @@ export default function LiveSessionController({ aircraft, activeSession }: LiveS
                 </svg>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 pointer-events-none">
-                  <span className="text-2xl md:text-3xl font-space-grotesk font-bold text-white tabular-nums tracking-tight">
+                  <span className="text-2xl md:text-3xl font-bold text-white data tracking-tight">
                     {String(hh).padStart(2, "0")}:{String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
                   </span>
                   <span className="text-xs font-medium text-zinc-500 mt-1">Tiempo de vuelo</span>

@@ -32,7 +32,7 @@ export default function LogbookHealthCard({
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
       <Card
         href="/dashboard/audit"
-        icon={<ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-aviation-cyan dark:text-aviation-blue-dark" />}
+        icon={<ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />}
         title="Salud del logbook"
         cta="Ver auditoría"
       >
@@ -57,7 +57,7 @@ export default function LogbookHealthCard({
 
       <Card
         href="/dashboard/settings"
-        icon={<CalendarClock className="w-4 h-4 md:w-5 md:h-5 text-aviation-cyan dark:text-aviation-blue-dark" />}
+        icon={<CalendarClock className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />}
         title="Vencimientos"
         cta="Gestionar"
       >
@@ -69,7 +69,7 @@ export default function LogbookHealthCard({
           <div className="space-y-3">
             <div className="flex items-baseline gap-2">
               <span
-                className={`font-space-grotesk text-3xl md:text-4xl font-bold tabular-nums leading-none ${
+                className={`text-3xl md:text-4xl font-bold data leading-none ${
                   next.status.tone === "ok"
                     ? "text-zinc-900 dark:text-white"
                     : next.status.tone === "warning"
@@ -147,7 +147,7 @@ function Metric({ value, label, tone }: { value: number; label: string; tone: "b
 
   return (
     <div>
-      <p className={`font-space-grotesk text-3xl md:text-4xl font-bold tabular-nums leading-none ${toneClasses}`}>
+      <p className={`text-3xl md:text-4xl font-bold data leading-none ${toneClasses}`}>
         {value}
       </p>
       <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{label}</p>

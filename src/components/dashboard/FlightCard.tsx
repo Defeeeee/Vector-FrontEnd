@@ -167,12 +167,12 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
         className="grid grid-cols-[52px_1fr_auto] md:grid-cols-[80px_130px_1fr_100px_72px] items-center gap-3 md:gap-4 px-4 md:px-6 py-3.5 md:py-4 cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
       >
         {/* Date */}
-        <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 tabular-nums leading-tight">
+        <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 data leading-tight">
           {new Date(flight.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', timeZone: 'UTC' })}
         </div>
 
         {/* Route (desktop column) */}
-        <div className="hidden md:flex items-center gap-1.5 font-space-grotesk font-bold text-zinc-900 dark:text-white text-sm">
+        <div className="hidden md:flex items-center gap-1.5 data font-bold text-zinc-900 dark:text-white text-sm">
           <span>{origin}</span>
           <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
           <span>{dest}</span>
@@ -180,13 +180,13 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
 
         {/* Aircraft / purpose (+ route on mobile) */}
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 md:hidden font-space-grotesk font-bold text-zinc-900 dark:text-white text-sm mb-0.5">
+          <div className="flex items-center gap-1.5 md:hidden data font-bold text-zinc-900 dark:text-white text-sm mb-0.5">
             <span>{origin}</span>
             <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
             <span>{dest}</span>
           </div>
           <div className="flex items-center gap-2 text-xs md:text-sm text-zinc-500 dark:text-zinc-400 truncate">
-            <span className="font-semibold text-zinc-700 dark:text-zinc-300 uppercase">{aircraft?.registration}</span>
+            <span className="data font-semibold text-zinc-700 dark:text-zinc-300 uppercase">{aircraft?.registration}</span>
             <span className="hidden sm:inline truncate">{aircraft?.type}</span>
             {flight.purpose && (
               <span className="text-[10px] font-bold bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 px-1.5 py-0.5 rounded uppercase flex-shrink-0">
@@ -197,7 +197,7 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
         </div>
 
         {/* Duration */}
-        <div className="text-right font-space-grotesk font-bold text-base md:text-lg text-zinc-900 dark:text-white tabular-nums">
+        <div className="text-right font-bold text-base md:text-lg text-zinc-900 dark:text-white data">
           {flight.duration.toFixed(1)}<span className="text-xs font-medium text-zinc-400 dark:text-zinc-600 ml-0.5">h</span>
         </div>
 
@@ -232,7 +232,7 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
                       <div key={i} className="flex items-center space-x-2 bg-white dark:bg-white/[0.05] px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm">
                         <span className="text-zinc-500 dark:text-zinc-400">{log.icon}</span>
                         <span className="text-xs font-semibold text-zinc-900 dark:text-white">{log.label}:</span>
-                        <span className="text-xs font-semibold text-aviation-blue-dark dark:text-aviation-cyan">{log.value?.toFixed(1)}h</span>
+                        <span className="eyebrow">{log.value?.toFixed(1)}h</span>
                       </div>
                     ))}
                   </div>

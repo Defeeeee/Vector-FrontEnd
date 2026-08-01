@@ -55,7 +55,7 @@ export function NumberField({
 }) {
   return (
     <label className="block">
-      <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+      <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
         {label}
       </span>
       <div className="flex items-baseline gap-2 border-b-2 border-zinc-200 dark:border-white/10 focus-within:border-zinc-900 dark:focus-within:border-white transition-colors">
@@ -68,7 +68,7 @@ export function NumberField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent py-2 text-lg font-bold tabular-nums text-zinc-900 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-full bg-transparent py-2 text-lg font-bold data text-zinc-900 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         {suffix && (
           <span className="shrink-0 text-xs font-bold text-zinc-400 dark:text-zinc-500">{suffix}</span>
@@ -104,7 +104,7 @@ export function ResultTile({
   return (
     <div className="bg-zinc-50 dark:bg-white/[0.03] rounded-2xl p-4 border border-zinc-100 dark:border-white/5">
       <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{label}</p>
-      <p className={`mt-1 font-space-grotesk font-bold tabular-nums leading-none ${large ? "text-3xl md:text-4xl" : "text-2xl"} ${toneClasses}`}>
+      <p className={`mt-1 font-bold data leading-none ${large ? "text-3xl md:text-4xl" : "text-2xl"} ${toneClasses}`}>
         {value}
         {unit && <span className="ml-1 text-sm font-bold text-zinc-400 dark:text-zinc-500">{unit}</span>}
       </p>

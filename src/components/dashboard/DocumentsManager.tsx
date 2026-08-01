@@ -276,14 +276,14 @@ function DocumentForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
             Tipo
           </label>
           <StyledSelect name="kind" value={kind} onChange={setKind} options={KIND_OPTIONS} />
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
             Nombre
           </label>
           <input
@@ -296,7 +296,7 @@ function DocumentForm({
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
             Vence el
           </label>
           <input
@@ -309,7 +309,7 @@ function DocumentForm({
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
             Avisar a los (días)
           </label>
           <input
@@ -322,7 +322,7 @@ function DocumentForm({
       </div>
 
       <div>
-        <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+        <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
           Nota (opcional)
         </label>
         <input
