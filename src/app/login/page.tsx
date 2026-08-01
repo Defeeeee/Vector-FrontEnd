@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Mail, Loader2, Compass, ChevronLeft } from "lucide-react";
+import { Lock, Mail, Loader2, Compass, ChevronLeft, Plane } from "lucide-react";
 import { login, getGoogleLoginUrl, setSession } from "@/actions/auth";
 import { useState, useTransition, useEffect, Suspense } from "react";
 import Link from "next/link";
@@ -81,21 +81,55 @@ function LoginContent() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-zinc-100 dark:bg-black relative overflow-hidden transition-colors duration-300">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -mr-64 -mt-64 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-[0.4] -ml-32 -mb-32 pointer-events-none" />
-
-      {/* Minimal Top Bar */}
-      <div className="absolute top-6 left-0 w-full px-6 flex justify-between items-center z-20">
+    <div className="flex min-h-screen w-full bg-white dark:bg-black relative transition-colors duration-300">
+      {/* Minimal Top Bar — constrained to the form half so it does not float
+          over the context panel on wide screens. */}
+      <div className="absolute top-6 left-0 w-full lg:w-1/2 px-6 flex justify-between items-center z-20">
         <Link href="/" className="p-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-full shadow-md hover:bg-zinc-50 dark:hover:bg-white/5 transition-all group">
             <ChevronLeft className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
         </Link>
         <ThemeToggle />
       </div>
 
+      {/* Context panel — right half, desktop only. A centered card on an empty
+          page gives the eye nothing to rest on; this fills the other half with
+          product rather than with decoration, which is what FlightDeck does.
+          Deliberately carries no personal numbers: it renders before anyone is
+          authenticated, so anything that looked like logbook data would be a
+          lie dressed as a dashboard. */}
+      <div className="hidden lg:flex lg:w-1/2 order-2 bg-zinc-100 dark:bg-[#0a0a0a] border-l border-zinc-200 dark:border-white/5 items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full border border-zinc-200 dark:border-white/5 opacity-40 -mr-64 -mt-64 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full border border-zinc-200 dark:border-white/5 opacity-40 -ml-32 -mb-32 pointer-events-none" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="relative z-10 w-full max-w-md bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] p-10 shadow-xl dark:shadow-none space-y-8"
+        >
+          <p className="eyebrow">Bienvenido de vuelta</p>
+
+          <h2 className="text-3xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
+            Tu bitácora te está esperando.
+          </h2>
+
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            Cada vuelo, cada hora y cada vencimiento en un solo lugar — con el
+            desglose ANAC ya calculado.
+          </p>
+
+          <div className="flex items-center gap-3 pt-2">
+            <span className="data text-sm font-bold text-zinc-900 dark:text-white">SADM</span>
+            <span className="flex-1 border-t border-dashed border-zinc-300 dark:border-white/15" />
+            <Plane className="w-4 h-4 text-zinc-400 dark:text-zinc-600 shrink-0" />
+            <span className="flex-1 border-t border-dashed border-zinc-300 dark:border-white/15" />
+            <span className="data text-sm font-bold text-zinc-900 dark:text-white">SAEZ</span>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Content Area */}
-      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto px-4 md:px-6 py-12 md:py-20 relative z-10">
+      <div className="flex flex-col items-center justify-center w-full lg:w-1/2 order-1 max-w-md lg:max-w-none mx-auto lg:mx-0 px-4 md:px-6 lg:px-16 xl:px-24 py-12 md:py-20 relative z-10">
         {/* Session Expired Alert */}
         <AnimatePresence>
             {expired && (
@@ -134,7 +168,7 @@ function LoginContent() {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col items-center space-y-4 mb-8 md:mb-10 text-center"
+            className="w-full max-w-md flex flex-col items-center lg:items-start space-y-4 mb-8 md:mb-10 text-center lg:text-left"
         >
             <div className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center shadow-2xl">
                 <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
@@ -150,7 +184,11 @@ function LoginContent() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-200 dark:border-white/10 shadow-2xl dark:shadow-none bg-white dark:bg-[#0a0a0a] space-y-10 transition-all"
+            /* On desktop the two-panel split already supplies the structure, so
+               the card sheds its border and shadow — a white card floating on a
+               white half just draws a box around nothing. Below lg it keeps
+               them, because there it *is* the only structure on the page. */
+            className="w-full max-w-md p-8 md:p-10 lg:p-0 rounded-[2.5rem] md:rounded-[3rem] lg:rounded-none border border-zinc-200 dark:border-white/10 lg:border-0 shadow-2xl dark:shadow-none lg:shadow-none bg-white dark:bg-[#0a0a0a] lg:bg-transparent dark:lg:bg-transparent space-y-10 transition-all"
         >
             <form action={handleSubmit} className="space-y-6">
                 {error && (
@@ -165,7 +203,7 @@ function LoginContent() {
 
                 <div className="space-y-5">
                     <div className="space-y-2 text-left group">
-                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Email Address</label>
+                        <label className="font-mono text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Correo electrónico</label>
                         <div className="relative">
                             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                             <input 
@@ -179,7 +217,7 @@ function LoginContent() {
                     </div>
                     
                     <div className="space-y-2 text-left group">
-                        <label className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Password</label>
+                        <label className="font-mono text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">Contraseña</label>
                         <div className="relative">
                             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                             <input 
@@ -212,7 +250,7 @@ function LoginContent() {
                     <div className="w-full border-t border-zinc-200 dark:border-white/10"></div>
                 </div>
                 <div className="relative flex justify-center text-[8px] font-bold uppercase tracking-[0.3em]">
-                    <span className="bg-white dark:bg-[#0a0a0a] px-4 text-zinc-400 dark:text-zinc-500 transition-colors">O continuar con</span>
+                    <span className="bg-white dark:bg-black px-4 text-zinc-400 dark:text-zinc-500 transition-colors">O continuar con</span>
                 </div>
             </div>
 

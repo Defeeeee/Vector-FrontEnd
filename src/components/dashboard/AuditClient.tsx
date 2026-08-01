@@ -199,7 +199,7 @@ function StatCard({
         </span>
         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{label}</p>
       </div>
-      <p className={`mt-3 font-space-grotesk text-4xl font-bold tabular-nums leading-none ${valueClasses}`}>{value}</p>
+      <p className={`mt-3 text-4xl font-bold data leading-none ${valueClasses}`}>{value}</p>
     </button>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Settings, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal } from "lucide-react";
+import { LayoutDashboard, History, Settings, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,11 @@ const navItems = [
   { href: "/dashboard/tools", icon: Ruler, label: "Herramientas" },
   { href: "/dashboard/audit", icon: ShieldCheck, label: "Auditoría" },
   { href: "/dashboard/settings", icon: Settings, label: "Hangar" },
+  // Appended rather than slotted next to "Bitácora", where it belongs
+  // thematically: the first five entries are the ones visible on the phone bar,
+  // and reordering them would push Herramientas into the "Más" sheet. Muscle
+  // memory beats taxonomy — see the nav redesign entry in AGENTS.md.
+  { href: "/dashboard/summary", icon: PieChart, label: "Resumen" },
 ];
 
 const AUDIT_HREF = "/dashboard/audit";
@@ -150,7 +155,7 @@ function MobileNav({ pathname, auditCount }: { pathname: string; auditCount: num
                   <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
                   <span className="text-sm font-semibold">{item.label}</span>
                   {flagged && (
-                    <span className="ml-auto text-[11px] font-bold tabular-nums text-red-500">{auditCount}</span>
+                    <span className="ml-auto text-[11px] font-bold data text-red-500">{auditCount}</span>
                   )}
                 </Link>
               );

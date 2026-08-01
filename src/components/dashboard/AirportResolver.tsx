@@ -185,7 +185,7 @@ export default function AirportResolver({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.15 }}
-              className="text-xs font-semibold text-aviation-blue-dark dark:text-aviation-cyan truncate"
+              className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 truncate"
               title={resolved.name}
             >
               {resolved.label}

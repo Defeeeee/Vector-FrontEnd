@@ -18,7 +18,7 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
     <div className="space-y-6">
       <div className="space-y-1">
         <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Packs de horas</h3>
-        <p className="text-sm font-semibold text-aviation-blue-dark dark:text-aviation-cyan">Estado de saldo</p>
+        <p className="eyebrow">Estado de saldo</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {activePacks.map((pack) => {
@@ -36,7 +36,7 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
               {/* Main stub — like the body of a boarding pass */}
               <div className="flex-1 p-6 md:p-8 space-y-5 min-w-0">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 ${isDebt ? 'bg-red-500 text-white shadow-lg' : isLow ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500' : 'bg-zinc-900 dark:bg-white text-aviation-cyan dark:text-aviation-blue-dark shadow-lg'}`}>
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center flex-shrink-0 ${isDebt ? 'bg-red-500 text-white shadow-lg' : isLow ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg'}`}>
                     {isDebt ? <AlertCircle className="w-5 h-5 animate-pulse" /> : isLow ? <AlertCircle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                   </div>
                   <div className="space-y-1 min-w-0">

@@ -8,6 +8,7 @@ import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import PCATracker from "@/components/dashboard/PCATracker";
 import WeatherWidget from "@/components/dashboard/WeatherWidget";
+import RecentFlights from "@/components/dashboard/RecentFlights";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -155,7 +156,7 @@ export default async function Dashboard() {
       {/* Header */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-8 pt-4">
         <div className="space-y-2 md:space-y-3">
-          <p className="text-aviation-blue-dark dark:text-aviation-cyan font-semibold text-xs flex items-center gap-2">
+          <p className="eyebrow flex items-center gap-2">
              <Activity className="w-3.5 h-3.5" />
              <span>Centro de operaciones</span>
           </p>
@@ -187,10 +188,10 @@ export default async function Dashboard() {
         <div className="relative z-10 grid md:grid-cols-2 gap-10 md:gap-16 items-center">
           {/* Left: Total experience, departure-board style */}
           <div className="space-y-6">
-            <p className="text-sm font-medium text-aviation-cyan/80">Experiencia total · horas de vuelo</p>
+            <p className="eyebrow eyebrow-invert">Experiencia total · horas de vuelo</p>
             <SplitFlapNumber value={totalHours.toFixed(1)} />
             <div className="flex items-center gap-2 text-sm text-white/50">
-              <TrendingUp className="w-4 h-4 text-aviation-cyan" />
+              <TrendingUp className="w-4 h-4 text-white/50" />
               <span>+{lastMonthHours.toFixed(1)} hs en los últimos 30 días</span>
             </div>
             <Link
@@ -248,6 +249,10 @@ export default async function Dashboard() {
           "how much", this one answers "how regularly". */}
       <ActivityHeatmap data={heatmapData} />
 
+      {/* Closes the dashboard on the logbook itself. Everything above is
+          aggregate; this is the last thing that actually happened. */}
+      <RecentFlights flights={flights as Flight[]} aircraft={aircraft as Aircraft[]} />
+
     </div>
   );
 }
@@ -255,7 +260,7 @@ export default async function Dashboard() {
 function HeroStat({ value, label, divider }: { value: string | number; label: string; divider?: boolean }) {
   return (
     <div className={`flex flex-col items-center text-center px-2 ${divider ? "border-l border-dashed border-white/15" : ""}`}>
-      <span className="text-2xl md:text-3xl font-space-grotesk font-bold text-white tracking-tighter leading-none">{value}</span>
+      <span className="text-2xl md:text-3xl data font-bold text-white tracking-tighter leading-none">{value}</span>
       <span className="text-xs font-medium text-zinc-500 mt-1.5">{label}</span>
     </div>
   );
@@ -275,7 +280,7 @@ function SplitFlapNumber({ value }: { value: string }) {
               key={i}
               className="relative w-10 md:w-14 h-16 md:h-20 bg-black rounded-lg md:rounded-xl border border-white/10 flex items-center justify-center shadow-inner overflow-hidden"
             >
-              <span className="text-4xl md:text-6xl font-space-grotesk font-bold text-white tabular-nums leading-none">{ch}</span>
+              <span className="text-4xl md:text-6xl font-bold text-white data leading-none">{ch}</span>
               <div className="absolute left-0 right-0 top-1/2 h-px bg-black/60" />
               <div className="absolute inset-x-0 top-0 h-1/2 bg-white/[0.03]" />
             </div>
@@ -313,11 +318,11 @@ function MonthlyTrend({ data }: { data: { name: string; hours: number }[] }) {
 function StatCell({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="px-6 py-6 md:py-8 flex flex-col items-start md:items-center md:text-center gap-3 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors">
-      <div className="text-aviation-blue-dark dark:text-aviation-cyan bg-aviation-blue/10 p-2.5 rounded-xl">
+      <div className="text-zinc-900 dark:text-white bg-zinc-100 dark:bg-white/10 p-2.5 rounded-xl">
         {icon}
       </div>
       <div className="flex flex-col md:items-center">
-        <p className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
+        <p className="text-xl md:text-2xl font-bold data text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
         <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1.5 line-clamp-1">{label}</p>
       </div>
     </div>

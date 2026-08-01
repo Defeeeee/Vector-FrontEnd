@@ -1,6 +1,6 @@
 # Estado actual de Vector (probado en cuenta real de producción)
 
-Esto se probó navegando la cuenta real de Federico en vector.fdiaznemeth.com.ar. **No se creó ni modificó ningún dato** — el formulario de "Nuevo vuelo" se llenó a modo de prueba y se descartó sin guardar. Los números de referencia (39 vuelos, 46.3 hs totales) son reales y no cambiaron durante la sesión.
+Esto se probó navegando la cuenta real de Federico en vector.fdiaznem.com.ar. **No se creó ni modificó ningún dato** — el formulario de "Nuevo vuelo" se llenó a modo de prueba y se descartó sin guardar. Los números de referencia (39 vuelos, 46.3 hs totales) son reales y no cambiaron durante la sesión.
 
 ## Navegación actual
 

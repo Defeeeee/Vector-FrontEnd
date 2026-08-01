@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import FeatureMock from "@/components/landing/FeatureMock";
 import { useRouter } from "next/navigation";
 
 const navLinks = [
@@ -267,7 +268,7 @@ export default function LandingPage() {
                   <div className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">ENRUTA</div>
                 </div>
                 <div className="flex items-center gap-1.5 text-center">
-                  <Plane className="w-3.5 h-3.5 text-aviation-cyan" />
+                  <Plane className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600" />
                   <div className="text-xs font-semibold text-zinc-400 dark:text-zinc-600">SABE</div>
                 </div>
               </div>
@@ -275,11 +276,11 @@ export default function LandingPage() {
               <div className="grid grid-cols-2 gap-4 mt-8">
                 <div className="p-5 bg-zinc-900 dark:bg-white/[0.04] border border-transparent dark:border-white/10 rounded-2xl">
                   <div className="text-[11px] font-semibold uppercase tracking-widest text-white/40">Total PIC</div>
-                  <div className="text-3xl font-space-grotesk font-bold text-white tracking-tight mt-1">485.5</div>
+                  <div className="text-3xl data font-bold text-white tracking-tight mt-1">485.5</div>
                 </div>
                 <div className="p-5 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-100 dark:border-white/10 rounded-2xl">
                   <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Nocturno</div>
-                  <div className="text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight mt-1">42.2</div>
+                  <div className="text-3xl data font-bold text-zinc-900 dark:text-white tracking-tight mt-1">42.2</div>
                 </div>
               </div>
             </div>
@@ -288,8 +289,8 @@ export default function LandingPage() {
             <motion.div
               className="hidden md:flex absolute -bottom-6 -left-8 items-center gap-3 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl px-5 py-4 shadow-cal dark:shadow-none animate-float-slow"
             >
-              <div className="w-9 h-9 rounded-xl bg-aviation-blue/10 flex items-center justify-center">
-                <Target className="w-4.5 h-4.5 text-aviation-blue-dark dark:text-aviation-cyan" />
+              <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-white/10 flex items-center justify-center">
+                <Target className="w-4.5 h-4.5 text-zinc-900 dark:text-white" />
               </div>
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">PCA 61.620</div>
@@ -304,7 +305,7 @@ export default function LandingPage() {
       <section id="features" className="section-padding relative z-10">
         <div className="container-wide">
           <div className="max-w-2xl mb-16 md:mb-20">
-            <span className="text-xs font-semibold uppercase tracking-widest text-aviation-blue-dark dark:text-aviation-cyan">Características</span>
+            <span className="eyebrow">Características</span>
             <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
               Herramientas de precisión para tu día a día en el aire.
             </h2>
@@ -325,9 +326,9 @@ export default function LandingPage() {
                 >
                   <div className={reversed ? "md:[direction:ltr]" : ""}>
                     <div className="w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-white/[0.06] flex items-center justify-center mb-6">
-                      <Icon className="w-5 h-5 text-aviation-cyan" />
+                      <Icon className="w-5 h-5 text-white dark:text-white" />
                     </div>
-                    <span className="text-xs font-semibold uppercase tracking-widest text-aviation-blue-dark dark:text-aviation-cyan">{feature.eyebrow}</span>
+                    <span className="eyebrow">{feature.eyebrow}</span>
                     <h3 className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 mb-4 tracking-tight leading-snug">
                       {feature.title}
                     </h3>
@@ -336,9 +337,11 @@ export default function LandingPage() {
                     </p>
                   </div>
                   <div className={reversed ? "md:[direction:ltr]" : ""}>
-                    <div className="aspect-[4/3] rounded-[2rem] bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none flex items-center justify-center overflow-hidden relative">
-                      <div className="absolute w-64 h-64 bg-aviation-blue/5 dark:bg-aviation-blue/10 rounded-full blur-3xl" />
-                      <Icon className="w-16 h-16 text-zinc-200 dark:text-white/10 relative z-10" strokeWidth={1} />
+                    {/* Was a blurred blob behind an outsized copy of the section
+                        icon — decoration standing in for the product. Showing the
+                        actual screen is what makes the claim above it credible. */}
+                    <div className="aspect-[4/3] rounded-[2rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none overflow-hidden">
+                      <FeatureMock index={i} />
                     </div>
                   </div>
                 </motion.div>
@@ -352,7 +355,7 @@ export default function LandingPage() {
       <section id="workflow" className="section-padding relative z-10 border-t border-zinc-200 dark:border-white/10">
         <div className="container-wide">
           <div className="max-w-2xl mb-16 md:mb-20">
-            <span className="text-xs font-semibold uppercase tracking-widest text-aviation-blue-dark dark:text-aviation-cyan">Cómo funciona</span>
+            <span className="eyebrow">Cómo funciona</span>
             <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
               De la cabecera de pista a tu bitácora, en cuatro pasos.
             </h2>
@@ -414,7 +417,7 @@ export default function LandingPage() {
               "Control financiero integrado de depósitos y alquileres",
             ].map((item) => (
               <div key={item} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-white dark:hover:bg-white/[0.03] transition-colors">
-                <div className="w-6 h-6 rounded-full bg-aviation-blue/10 text-aviation-blue-dark dark:text-aviation-cyan flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center flex-shrink-0">
                   <Check className="w-3.5 h-3.5" strokeWidth={3} />
                 </div>
                 <span className="text-base text-zinc-900 dark:text-white/80 font-medium">{item}</span>

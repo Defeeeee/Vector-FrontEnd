@@ -69,7 +69,7 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] md:text-[11px] font-semibold text-aviation-cyan uppercase tracking-widest">Licencia de piloto</p>
+            <p className="eyebrow eyebrow-invert">Licencia de piloto</p>
             <h3 className="text-xl md:text-3xl font-bold font-space-grotesk text-white tracking-tight truncate">{fullName || "Piloto sin nombre"}</h3>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-zinc-400">
               <span>Licencia <strong className="text-white">{profile?.license_type || "—"}</strong></span>

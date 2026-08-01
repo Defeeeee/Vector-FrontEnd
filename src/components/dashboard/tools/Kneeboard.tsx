@@ -196,7 +196,7 @@ export default function Kneeboard() {
                   </button>
                 </div>
 
-                <p className="mt-1 font-space-grotesk text-3xl font-bold tabular-nums text-zinc-900 dark:text-white leading-none">
+                <p className="mt-1 text-3xl font-bold data text-zinc-900 dark:text-white leading-none">
                   {formatElapsed(ms)}
                 </p>
 
@@ -223,7 +223,7 @@ export default function Kneeboard() {
                     Cero
                   </button>
 
-                  <span className="ml-auto text-[11px] font-bold tabular-nums text-zinc-400 dark:text-zinc-500">
+                  <span className="ml-auto text-[11px] font-bold data text-zinc-400 dark:text-zinc-500">
                     {toDecimalHours(ms)} h
                   </span>
                 </div>

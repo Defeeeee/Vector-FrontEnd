@@ -382,7 +382,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className="text-[10px] font-bold uppercase tracking-wide text-aviation-blue-dark dark:text-aviation-cyan bg-aviation-blue/10 dark:bg-aviation-cyan/10 px-2.5 py-1 rounded-full whitespace-nowrap"
+                      className="text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/10 px-2.5 py-1 rounded-full whitespace-nowrap"
                     >
                       {breakdown.values[breakdown.lastTouched!].toFixed(1)} {lastLabel}
                     </motion.span>
@@ -396,7 +396,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
               <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                 Asignado
               </span>
-              <span className="text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
+              <span className="text-sm font-bold data text-zinc-900 dark:text-white">
                 {breakdown.assigned.toFixed(1)} / {total.toFixed(1)} h
               </span>
               {breakdown.unassigned > 0 && (
@@ -527,7 +527,7 @@ function TimeSummary({
         <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
           Block time
         </p>
-        <p className="text-2xl font-bold tabular-nums text-white leading-tight">
+        <p className="text-2xl font-bold data text-white leading-tight">
           {hasTimes ? formatBlockTime(blockMinutes) : "—:—"}
         </p>
       </div>
@@ -547,14 +547,14 @@ function TimeSummary({
             value={manualDuration || total.toFixed(1)}
             onChange={(e) => onManualDuration(e.target.value)}
             onBlur={() => setEditing(false)}
-            className="w-20 bg-transparent border-b border-aviation-cyan text-2xl font-bold tabular-nums text-aviation-cyan outline-none leading-tight"
+            className="w-20 bg-transparent border-b border-aviation-cyan text-2xl font-bold data text-aviation-cyan outline-none leading-tight"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
             title="Editar el tiempo redondeado"
-            className="text-2xl font-bold tabular-nums text-aviation-cyan leading-tight hover:opacity-80 transition-opacity"
+            className="text-2xl font-bold data text-aviation-cyan leading-tight hover:opacity-80 transition-opacity"
           >
             {total > 0 ? total.toFixed(1) : "0.0"}
           </button>
@@ -597,7 +597,7 @@ function SegmentToggle({ active, onClick, label }: { active: boolean; onClick: (
 function LedgerField({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <label className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide block">
+      <label className="font-mono text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide block">
         {label}
       </label>
       {children}
@@ -640,7 +640,7 @@ function LandingsStepper({ value, onChange }: { value: string; onChange: (value:
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Aterrizajes"
-        className="w-full min-w-0 bg-transparent text-center text-lg font-bold tabular-nums text-zinc-900 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-full min-w-0 bg-transparent text-center text-lg font-bold data text-zinc-900 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
 
       <button type="button" onClick={() => step(1)} aria-label="Un aterrizaje más" className={buttonClass}>

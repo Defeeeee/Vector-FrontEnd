@@ -44,7 +44,7 @@ export default async function SettingsPage() {
       <section className="space-y-4 md:space-y-6">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
-            <User className="w-4 h-4 md:w-5 md:h-5 text-aviation-cyan dark:text-aviation-blue-dark" />
+            <User className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
           </div>
           <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Perfil del piloto</h3>
         </div>
@@ -59,7 +59,7 @@ export default async function SettingsPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
-              <CalendarClock className="w-4 h-4 md:w-5 md:h-5 text-aviation-cyan dark:text-aviation-blue-dark" />
+              <CalendarClock className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
             </div>
             <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Vencimientos</h3>
           </div>
@@ -78,7 +78,7 @@ export default async function SettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
-                <Plane className="w-4 h-4 md:w-5 md:h-5 text-aviation-cyan dark:text-aviation-blue-dark" />
+                <Plane className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
               </div>
               <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Mis aeronaves</h3>
             </div>
@@ -107,7 +107,7 @@ export default async function SettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
-                <Package className="w-4 h-4 md:w-5 md:h-5 text-aviation-cyan dark:text-aviation-blue-dark" />
+                <Package className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
               </div>
               <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Packs de horas</h3>
             </div>

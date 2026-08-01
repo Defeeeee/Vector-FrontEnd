@@ -23,11 +23,19 @@
 
   --font-sans: var(--font-inter);
   --font-space-grotesk: var(--font-space-grotesk);
+  --font-mono: var(--font-mono-data), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Landing page accent — monochrome base with an aviation-blue detail color */
   --color-aviation-blue: #2563eb;
   --color-aviation-blue-dark: #1d4ed8;
   --color-aviation-cyan: #38bdf8;
+
+  /* Section labels and icon tiles used to be painted with the brand accent,
+     which meant every screen had a dozen blue elements competing with the one
+     that mattered. They are neutral now; the accent is spent on a single
+     element per screen (primary CTA, active state, the value being tracked). */
+  --color-eyebrow: #71717a;
+  --color-eyebrow-dark: #a1a1aa;
 }
 
 @layer base {
@@ -47,6 +55,38 @@
       font-size: 16px;
     }
   }
+}
+
+/* Instrument readout. Anything the pilot reads as a *measurement* — hours, ICAO
+   codes, registrations, UTC times, QNH, raw METAR — is set in mono so it reads
+   as an instrument rather than as prose. Prose stays in the sans. */
+.data {
+  font-family: var(--font-mono-data), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Section label sitting above a heading ("CENTRO DE OPERACIONES", "ESTADO DE
+   SALDO"). Neutral by design — see the --color-eyebrow note in @theme. */
+.eyebrow {
+  font-family: var(--font-mono-data), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-eyebrow);
+}
+
+.dark .eyebrow {
+  color: var(--color-eyebrow-dark);
+}
+
+/* The same label sitting on one of the black cards, which stay black in both
+   themes — the neutral grey would sink into the background there. */
+.eyebrow-invert,
+.dark .eyebrow-invert {
+  color: rgba(255, 255, 255, 0.55);
 }
 
 /* Range slider for the ANAC time breakdown (TimeAllocator). Track and thumb

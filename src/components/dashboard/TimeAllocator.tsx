@@ -45,13 +45,13 @@ function AllocatorRow({
         </span>
 
         {isRemainder && on && (
-          <span className="text-[9px] font-bold uppercase tracking-wider text-aviation-blue-dark dark:text-aviation-cyan bg-aviation-blue/10 dark:bg-aviation-cyan/10 px-2 py-0.5 rounded-full">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/10 px-2 py-0.5 rounded-full">
             Resto
           </span>
         )}
 
         <span
-          className={`text-base font-bold tabular-nums w-10 text-right transition-colors ${
+          className={`text-base font-bold data w-10 text-right transition-colors ${
             on ? "text-zinc-900 dark:text-white" : "text-zinc-300 dark:text-zinc-600"
           }`}
         >
@@ -90,7 +90,7 @@ function AllocatorRow({
                   ["--fill" as string]: `${max > 0 ? (value / max) * 100 : 0}%`,
                 }}
               />
-              <div className="flex justify-between mt-1 text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 tabular-nums">
+              <div className="flex justify-between mt-1 text-[10px] font-semibold text-zinc-400 dark:text-zinc-600 data">
                 <span>0.0</span>
                 <span>máx {max.toFixed(1)}</span>
               </div>

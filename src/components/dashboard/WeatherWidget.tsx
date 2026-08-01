@@ -133,11 +133,11 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
         {/* Letterhead — teleprinter transmission header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-dashed border-zinc-300 dark:border-white/15 relative z-10">
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-aviation-blue/10 text-aviation-blue-dark dark:text-aviation-cyan rounded-2xl flex items-center justify-center border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-100 dark:bg-white/10 text-zinc-900 dark:text-white rounded-2xl flex items-center justify-center border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
               <CloudRain className="w-5 h-5" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-[10px] font-mono font-bold text-aviation-blue-dark dark:text-aviation-cyan leading-none uppercase tracking-widest">AWOS/ATIS · Transmisión automática</p>
+              <p className="eyebrow">AWOS/ATIS · Transmisión automática</p>
               <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight text-lg md:text-xl leading-none mt-1.5">Estación {data?.icao || airport}</h3>
             </div>
           </div>

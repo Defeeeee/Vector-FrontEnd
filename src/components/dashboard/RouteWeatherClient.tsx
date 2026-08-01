@@ -285,7 +285,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
 
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 items-stretch">
             <div className="flex-1 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-3.5 focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-white/20 transition-all flex items-center space-x-3">
-              <Compass className="w-5 h-5 text-aviation-blue-dark dark:text-aviation-cyan" />
+              <Compass className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
               <input 
                 value={routeInput}
                 onChange={(e) => setRouteInput(e.target.value)}

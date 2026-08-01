@@ -100,7 +100,7 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
   return (
     <div className="relative bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-5 hover:border-zinc-300 dark:hover:border-white/20 hover:shadow-md dark:hover:bg-white/[0.04] transition-all group flex flex-col gap-4">
       <div className="flex items-start justify-between">
-        <div className="w-11 h-11 rounded-xl bg-zinc-900 dark:bg-white text-aviation-cyan dark:text-aviation-blue-dark flex items-center justify-center shadow-lg transition-transform group-hover:scale-105 duration-500">
+        <div className="w-11 h-11 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center shadow-lg transition-transform group-hover:scale-105 duration-500">
           <Plane className="w-5 h-5" strokeWidth={1.5} />
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -43,7 +43,7 @@ export default function FuelCalculator() {
       inputs={
         <>
           <div>
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+            <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
               Unidad de combustible
             </span>
             <StyledSelect name="fuel-unit" value={unit} onChange={setUnit} options={UNIT_OPTIONS} />
@@ -55,7 +55,7 @@ export default function FuelCalculator() {
           </div>
 
           <div>
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+            <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
               Reserva
             </span>
             <StyledSelect name="fuel-reserve" value={reserve} onChange={setReserve} options={RESERVE_OPTIONS} />
