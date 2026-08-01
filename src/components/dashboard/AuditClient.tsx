@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { AlertTriangle, BellOff, CheckCircle2, Copy, Loader2, Plane, RefreshCw, Scale, Undo2 } from "lucide-react";
+import { AlertTriangle, BellOff, CheckCircle2, Copy, EyeOff, Loader2, Plane, RefreshCw, Scale, ShieldAlert, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { AuditFinding, AuditRuleType, AuditSummary, Flight } from "@/types";
 import { recalculateAudit, suppressFinding, unsuppressFinding } from "@/actions/audit";
@@ -81,9 +81,9 @@ export default function AuditClient({
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Críticas" value={summary.critical} tone="critical" active={tab === "critical"} onClick={() => setTab("critical")} />
-        <StatCard label="Advertencias" value={summary.warning} tone="warning" active={tab === "warning"} onClick={() => setTab("warning")} />
-        <StatCard label="Suprimidas" value={summary.suppressed} tone="muted" active={tab === "suppressed"} onClick={() => setTab("suppressed")} />
+        <StatCard label="Críticas" value={summary.critical} tone="critical" icon={ShieldAlert} active={tab === "critical"} onClick={() => setTab("critical")} />
+        <StatCard label="Advertencias" value={summary.warning} tone="warning" icon={AlertTriangle} active={tab === "warning"} onClick={() => setTab("warning")} />
+        <StatCard label="Suprimidas" value={summary.suppressed} tone="muted" icon={EyeOff} active={tab === "suppressed"} onClick={() => setTab("suppressed")} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -142,37 +142,64 @@ export default function AuditClient({
   );
 }
 
+/**
+ * A counter that also says *what kind* of problem it counts.
+ *
+ * The icon carries the severity on its own, so the three cards stay
+ * distinguishable at a glance instead of reading as three identical numbers —
+ * and it keeps working for anyone who can't separate the red from the amber.
+ * Muted whenever the count is zero: a red shield over a "0" reads as alarm
+ * where there is none.
+ */
 function StatCard({
   label,
   value,
   tone,
+  icon: Icon,
   active,
   onClick,
 }: {
   label: string;
   value: number;
   tone: "critical" | "warning" | "muted";
+  icon: typeof ShieldAlert;
   active: boolean;
   onClick: () => void;
 }) {
-  const toneClasses = {
-    critical: value > 0 ? "text-red-600 dark:text-red-400" : "text-zinc-900 dark:text-white",
-    warning: value > 0 ? "text-amber-600 dark:text-amber-400" : "text-zinc-900 dark:text-white",
+  const lit = tone !== "muted" && value > 0;
+
+  const valueClasses = {
+    critical: lit ? "text-red-600 dark:text-red-400" : "text-zinc-900 dark:text-white",
+    warning: lit ? "text-amber-600 dark:text-amber-400" : "text-zinc-900 dark:text-white",
     muted: "text-zinc-400 dark:text-zinc-500",
   }[tone];
+
+  const badgeClasses = lit
+    ? {
+        critical: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+        warning: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
+        muted: "",
+      }[tone]
+    : "bg-zinc-100 dark:bg-white/5 text-zinc-400 dark:text-zinc-500";
 
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`text-left bg-white dark:bg-white/[0.02] p-6 rounded-[2rem] border shadow-cal dark:shadow-none transition-all ${
         active
           ? "border-zinc-900 dark:border-white"
           : "border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20"
       }`}
     >
-      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{label}</p>
-      <p className={`mt-2 font-space-grotesk text-4xl font-bold tabular-nums leading-none ${toneClasses}`}>{value}</p>
+      <div className="flex items-center gap-3">
+        <span className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${badgeClasses}`}>
+          <Icon className="w-[18px] h-[18px]" strokeWidth={2} />
+        </span>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{label}</p>
+      </div>
+      <p className={`mt-3 font-space-grotesk text-4xl font-bold tabular-nums leading-none ${valueClasses}`}>{value}</p>
     </button>
   );
 }

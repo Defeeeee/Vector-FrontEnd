@@ -16,6 +16,21 @@ const KIND_OPTIONS: { value: DocumentKind; label: string }[] = [
   { value: "otro", label: "Otro" },
 ];
 
+/**
+ * The categories worth a one-tap shortcut, with the name they prefill.
+ *
+ * Deliberately not all six kinds: "otro" has no useful default name, and the
+ * point of a chip row is to be scannable. Everything else stays reachable
+ * through "Otro documento".
+ */
+const QUICK_ADD: { kind: DocumentKind; label: string; name: string }[] = [
+  { kind: "cma", label: "CMA", name: "Certificado Médico Aeronáutico" },
+  { kind: "licencia", label: "Licencia", name: "Licencia" },
+  { kind: "habilitacion", label: "Habilitación", name: "Habilitación" },
+  { kind: "seguro", label: "Seguro", name: "Seguro" },
+  { kind: "aeronavegabilidad", label: "Aeronavegabilidad", name: "Certificado de aeronavegabilidad" },
+];
+
 const KIND_LABEL = Object.fromEntries(KIND_OPTIONS.map((k) => [k.value, k.label])) as Record<DocumentKind, string>;
 
 const TONE_STYLES = {
@@ -43,9 +58,23 @@ export default function DocumentsManager({
   const today = new Date(`${todayIso}T00:00:00Z`);
   const [editing, setEditing] = useState<PilotDocument | null>(null);
   const [adding, setAdding] = useState(false);
+  /** Category a quick-add chip preselected, if the form was opened by one. */
+  const [presetKind, setPresetKind] = useState<DocumentKind | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const openQuickAdd = (kind: DocumentKind | null) => {
+    setPresetKind(kind);
+    setEditing(null);
+    setAdding(true);
+    setError(null);
+  };
+
+  const closeForm = () => {
+    setAdding(false);
+    setPresetKind(null);
+  };
 
   const remove = (doc: PilotDocument) => {
     if (!confirm(`¿Borrar "${doc.name}"?`)) return;
@@ -92,14 +121,18 @@ export default function DocumentsManager({
           }
 
           return (
+            // Stacks below `sm`: on a 390 px phone the pill plus the two icon
+            // buttons take ~140 px of a 342 px row, which squeezed the name to
+            // "Certifi…" and broke the date across three lines. Side by side
+            // only works once there's room for both halves.
             <div
               key={doc.id}
-              className="bg-white dark:bg-white/[0.02] rounded-[2rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none p-5 flex items-center gap-4"
+              className="bg-white dark:bg-white/[0.02] rounded-[2rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
             >
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-bold text-zinc-900 dark:text-white truncate">{doc.name}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400">
+                  <span className="text-sm font-bold text-zinc-900 dark:text-white">{doc.name}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
                     {KIND_LABEL[doc.kind] ?? doc.kind}
                   </span>
                 </div>
@@ -113,8 +146,9 @@ export default function DocumentsManager({
                 </p>
               </div>
 
+              <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 shrink-0">
               <span
-                className={`shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-full border ${TONE_STYLES[status.tone]}`}
+                className={`shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-full border whitespace-nowrap ${TONE_STYLES[status.tone]}`}
               >
                 {status.label}
               </span>
@@ -142,22 +176,50 @@ export default function DocumentsManager({
                   )}
                 </button>
               </div>
+              </div>
             </div>
           );
         })}
       </div>
 
       {adding ? (
-        <DocumentForm onCancel={() => setAdding(false)} onDone={() => setAdding(false)} onError={setError} />
+        <DocumentForm
+          presetKind={presetKind}
+          onCancel={closeForm}
+          onDone={closeForm}
+          onError={setError}
+        />
       ) : (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-dashed border-zinc-300 dark:border-white/15 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-white/30 hover:text-zinc-900 dark:hover:text-white transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar documento
-        </button>
+        <div className="space-y-3">
+          {/* Quick-add chips. Most documents a pilot loads are the same handful,
+              and picking the category from a six-entry listbox every time is the
+              slow half of the job. A chip opens the form with the category —
+              and a sensible default name — already filled in. */}
+          <div className="-mx-4 px-4 md:mx-0 md:px-0 overflow-x-auto custom-scrollbar">
+            <div className="flex items-center gap-2 w-max pb-1">
+              {QUICK_ADD.map((quick) => (
+                <button
+                  key={quick.name}
+                  type="button"
+                  onClick={() => openQuickAdd(quick.kind)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap bg-white dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
+                  {quick.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openQuickAdd(null)}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-dashed border-zinc-300 dark:border-white/15 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-white/30 hover:text-zinc-900 dark:hover:text-white transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Otro documento
+          </button>
+        </div>
       )}
     </div>
   );
@@ -165,16 +227,20 @@ export default function DocumentsManager({
 
 function DocumentForm({
   document: doc,
+  presetKind,
   onCancel,
   onDone,
   onError,
 }: {
   document?: PilotDocument;
+  /** Set when a quick-add chip opened this form. */
+  presetKind?: DocumentKind | null;
   onCancel: () => void;
   onDone: () => void;
   onError: (message: string | null) => void;
 }) {
-  const [kind, setKind] = useState<string>(doc?.kind ?? "otro");
+  const [kind, setKind] = useState<string>(doc?.kind ?? presetKind ?? "otro");
+  const presetName = presetKind ? QUICK_ADD.find((q) => q.kind === presetKind)?.name : undefined;
   const [pending, startTransition] = useTransition();
 
   const submit = (formData: FormData) => {
@@ -223,7 +289,7 @@ function DocumentForm({
           <input
             name="name"
             required
-            defaultValue={doc?.name ?? ""}
+            defaultValue={doc?.name ?? presetName ?? ""}
             placeholder="ej. Certificado Médico Aeronáutico"
             className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
           />

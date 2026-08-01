@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Aircraft, AirportRef } from "@/types";
 import { logFlight } from "@/actions/flight";
-import { ArrowRight, Loader2, Compass, User, Cloud, AlertCircle, Percent } from "lucide-react";
+import { ArrowRight, Loader2, Compass, User, Cloud, AlertCircle, Percent, Minus, Plus } from "lucide-react";
 import {
   calculateBlockMinutes,
   calculateFlightDuration,
@@ -85,6 +85,22 @@ interface FlightLogFormProps {
   };
   onSuccess?: () => void;
   inModal?: boolean;
+  /**
+   * Renders a "Cancelar" next to the submit. Only passed by the new-flight
+   * dialog — the live-session modal has its own way out and doesn't want a
+   * second dismiss control competing with it.
+   */
+  onCancel?: () => void;
+  /**
+   * Pins the actions to the bottom of the scroller instead of letting them sit
+   * at the end of the form.
+   *
+   * Opt-in rather than implied by `inModal`, because it bleeds past the
+   * horizontal padding to cover the full dialog width — a measurement that only
+   * matches the new-flight dialog. The live-session modal uses different
+   * padding and keeps the actions inline.
+   */
+  stickyActions?: boolean;
 }
 
 /** "SAEZ SACO" / "SAEZ-SACO" -> ["SAEZ", "SACO"]. */
@@ -93,7 +109,7 @@ function splitRoute(route?: string): [string, string] {
   return [parts[0] ?? "", parts[1] ?? parts[0] ?? ""];
 }
 
-export default function FlightLogForm({ aircraft, initialData, onSuccess, inModal = false }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, initialData, onSuccess, inModal = false, onCancel, stickyActions = false }: FlightLogFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -198,12 +214,17 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
         )}
       </AnimatePresence>
 
+      {/* `overflow-hidden` clips the card's rounded corners on the page, but
+          inside a dialog it would also make this box the sticky footer's scroll
+          context — pinning the actions to a 1400 px-tall element instead of to
+          the visible scroller, i.e. not pinning them at all. The modal draws
+          its own rounding, so here the clip is pure downside. */}
       <div
         className={`${
           inModal
             ? ""
-            : "bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-cal dark:shadow-none"
-        } overflow-hidden flex flex-col transition-colors`}
+            : "bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-cal dark:shadow-none overflow-hidden"
+        } flex flex-col transition-colors`}
       >
         {!inModal && (
           <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 flex items-center justify-between">
@@ -313,16 +334,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
               </LedgerField>
 
               <LedgerField label="Aterrizajes">
-                <input
-                  type="number"
-                  name="landings"
-                  min="1"
-                  placeholder="1"
-                  value={landings}
-                  onChange={(e) => setLandings(e.target.value)}
-                  required
-                  className={ledgerInput}
-                />
+                <LandingsStepper value={landings} onChange={setLandings} />
               </LedgerField>
 
               <LedgerField label="Despegue (UTC)">
@@ -449,17 +461,35 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
           </div>
         </div>
 
+        {/* Inside a dialog the actions stick to the bottom of the scroller so
+            they're reachable without scrolling to the end of the form — the
+            form is long, and burying "Registrar" under it is what made the
+            page version feel like paperwork rather than a quick action. */}
         <div
           className={`${
-            inModal ? "p-0 pt-6" : "p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5"
+            stickyActions
+              ? "sticky bottom-0 z-20 -mx-6 md:-mx-10 px-6 md:px-10 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:pb-8 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-zinc-200 dark:border-white/10 flex items-center gap-3"
+              : inModal
+                ? "p-0 pt-6 flex items-center gap-3"
+                : "p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5"
           }`}
         >
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isPending}
+              className="shrink-0 px-6 py-5 md:py-6 rounded-xl md:rounded-[1.5rem] text-sm font-semibold text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          )}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             disabled={isPending}
             type="submit"
-            className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 md:py-6 rounded-xl md:rounded-[1.5rem] shadow-cal-highlight dark:shadow-none flex items-center justify-center space-x-3 transition-all disabled:opacity-50"
+            className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 md:py-6 rounded-xl md:rounded-[1.5rem] shadow-cal-highlight dark:shadow-none flex items-center justify-center space-x-3 transition-all disabled:opacity-50"
           >
             {isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -571,6 +601,51 @@ function LedgerField({ label, children, className = "" }: { label: string; child
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+/**
+ * −/+ stepper for the landings count.
+ *
+ * Replaces a bare number input. Landings are almost always adjusted by one at a
+ * time — a circuit session is "three, no wait, four" — and on a phone a tap
+ * beats selecting the field and retyping. The value still posts through a
+ * hidden input under the same `landings` name, so the server action is
+ * untouched.
+ *
+ * Typing stays available: the middle is a real input, not a label, for the
+ * pilot who did eleven touch-and-goes and doesn't want to press + eleven times.
+ */
+function LandingsStepper({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const current = parseInt(value, 10);
+  const safe = Number.isFinite(current) ? current : 1;
+
+  const step = (delta: number) => onChange(String(Math.max(0, safe + delta)));
+
+  const buttonClass =
+    "w-9 h-9 shrink-0 rounded-xl border border-zinc-200 dark:border-white/10 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-40 disabled:hover:bg-transparent";
+
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <button type="button" onClick={() => step(-1)} disabled={safe <= 0} aria-label="Un aterrizaje menos" className={buttonClass}>
+        <Minus className="w-4 h-4" strokeWidth={2.5} />
+      </button>
+
+      <input
+        type="number"
+        name="landings"
+        min="0"
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="Aterrizajes"
+        className="w-full min-w-0 bg-transparent text-center text-lg font-bold tabular-nums text-zinc-900 dark:text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+
+      <button type="button" onClick={() => step(1)} aria-label="Un aterrizaje más" className={buttonClass}>
+        <Plus className="w-4 h-4" strokeWidth={2.5} />
+      </button>
     </div>
   );
 }

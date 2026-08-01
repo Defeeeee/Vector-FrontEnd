@@ -583,12 +583,134 @@ miden 34×54 px —por encima del mínimo táctil— el chip activo se lee sin
 ambigüedad, y la hoja de "Más" muestra nombres completos y el conteo. 0 errores
 de consola (queda el 404 de `/favicon.ico`, preexistente).
 
+### 2026-08-01 00:46 UTC — Claude (Opus 5, vía Claude Code) — Versionar el research posterior a la implementación
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/04-hallazgos-adicionales-fase1.5.md` y
+  `05-resumen-de-horas-y-hallazgos-finales.md` — dos documentos nuevos que
+  Federico pasó en un zip y que no estaban versionados.
+- `docs/brief/00-README.md` — orden de lectura actualizado y nota de estado
+  reescrita: ahora aclara que `01`, `02` y `03` describen un estado que ya no
+  existe.
+- `AGENTS.md` — "Pasos a seguir" apunta al backlog nuevo, más una subsección
+  que contrasta ese research contra el código.
+
+**Por qué:** Los documentos `04` y `05` son research hecho **después** de que
+estas fases estuvieran desplegadas: se probó Vector ya con estos cambios contra
+FlightDeck, pantalla por pantalla. Eso los convierte en el backlog vigente y
+deja a los tres originales como registro histórico — pero el repo solo tenía
+los tres viejos, así que un agente que clonara iba a trabajar contra un mapa
+desactualizado, que es exactamente el problema que la entrada de las 18:06
+había venido a resolver.
+
+Se agregó además el contraste con el código, porque el research se hizo
+probando la UI sin leer el repo y eso deja tres imprecisiones que cambian el
+alcance: la fila de hallazgo de auditoría **ya está implementada** (se verificó
+con datos ficticios; lo que falta es agrupar por regla y el "Expandir todo"),
+la taxonomía de documentos **ya existe** en el `CHECK` de la tabla, y las
+Herramientas de Vector están mejor resueltas que las de FlightDeck — conviene
+que quede escrito para que nadie las "corrija".
+
+**Estado:** Terminado. Los 10 ítems del backlog nuevo **no** se implementaron:
+esto es solo versionar el conocimiento y dejarlo contrastado.
+
+**Verificación:** Se diffearon los seis archivos del zip contra los cuatro del
+repo: `01`, `02` y `03` son idénticos, `00-README` difiere solo en el orden de
+lectura, y `04` y `05` son nuevos. Sin cambios de código, así que no hay build
+que correr.
+
+### 2026-08-01 01:08 UTC — Claude (Opus 5, vía Claude Code) — Backlog de FlightDeck: ítems 1, 3, 4 y 5
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/dashboard/@modal/(.)log-flight/page.tsx` y `@modal/default.tsx` —
+  ruta interceptada para "Nuevo Vuelo".
+- `src/components/dashboard/NewFlightModal.tsx` — el diálogo.
+- `src/app/dashboard/layout.tsx` — slot `modal`.
+- `src/components/dashboard/FlightLogForm.tsx` — props `onCancel` y
+  `stickyActions`, stepper `LandingsStepper`, y se corrigió el
+  `overflow-hidden` del contenedor.
+- `src/components/dashboard/AuditClient.tsx` — íconos de severidad.
+- `src/components/dashboard/DocumentsManager.tsx` — chips de alta rápida y
+  arreglo de la fila en móvil.
+
+**Por qué:**
+
+1. **Ruta interceptada en vez de estado local.** El brief pedía el modal
+   "manteniendo la ruta como fallback para deep-linking". Con
+   `@modal/(.)log-flight` la **misma URL** es dos cosas: diálogo si llegás desde
+   adentro de la app, página completa si recargás o entrás por link. De yapa, el
+   diálogo **es** una entrada del historial, así que el gesto de "atrás" del
+   teléfono lo cierra como cualquier sheet nativa — con estado local eso había
+   que falsearlo.
+
+2. **El `sticky` del footer no funcionaba y el motivo no era obvio.** El
+   contenedor del form tiene `overflow-hidden` para recortar las esquinas
+   redondeadas de la card, y eso lo convierte en el **contexto de scroll** del
+   sticky: los botones quedaban clavados a un elemento de 1382 px en vez de al
+   scroller visible, o sea sin fijarse. Dentro del diálogo ese recorte no aporta
+   nada (el modal dibuja su propio redondeo), así que se limitó al caso de
+   página. **Lo detectó una medición con Playwright**, no la lectura del CSS.
+
+3. **`stickyActions` es un prop aparte y no se deduce de `inModal`.** El footer
+   sangra fuera del padding horizontal para cubrir el ancho del diálogo, y esa
+   medida solo coincide con este modal. El de "Finalizar vuelo"
+   (`LiveSessionController`) usa otro padding y quedó intacto.
+
+4. **El stepper de aterrizajes sigue aceptando tipeo.** Reemplazarlo por dos
+   botones y una etiqueta hubiera obligado a apretar "+" once veces después de
+   una sesión de circuitos. El del medio es un input real; el valor se sigue
+   posteando con el mismo `name`, así que el server action no se tocó.
+
+5. **Los íconos de severidad se apagan en cero.** Un escudo rojo sobre un "0"
+   comunica alarma donde no la hay.
+
+6. **Los chips no cubren las seis categorías**, solo cinco: "otro" no tiene
+   nombre por defecto útil y una fila de chips vale por lo escaneable.
+
+**Bug encontrado de paso:** la fila de documentos en móvil estaba rota —el pill
+más los dos botones se comen ~140 px de 342, y el nombre se truncaba a
+"Certifi…" con la fecha partida en tres líneas—. Venía de la Fase 4, se ve solo
+a 390 px. Ahora apila debajo de `sm`.
+
+**Estado:** Terminado los ítems 1, 3, 4 y 5 de
+`docs/brief/04-hallazgos-adicionales-fase1.5.md`. **No** se hicieron: el 2
+(paleta) porque el propio brief lo plantea como decisión de producto y no de
+código, ni el 6 (ficha de aeródromo) ni los cuatro de `05`, que son features
+nuevas y no ajustes.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios; el build lista las
+dos rutas (`/dashboard/(.)log-flight` y `/dashboard/log-flight`). Playwright en
+claro/oscuro × 1500 px/iPhone 13 contra un harness:
+- Diálogo de **930 px** exactos, igual que FlightDeck.
+- Botones visibles **sin scrollear** y también tras scrollear al final, en las 4
+  combinaciones. Footer a 0 px del fondo del scroller y a ancho completo
+  (928 = 928).
+- El chip "CMA" abre el form con `kind=cma` y el nombre ya cargado.
+- Sin desborde horizontal en ninguna vista. 0 errores de consola.
+
+**No verificado:** la interceptación en sí contra la app real logueada — el
+entorno no tiene credenciales, así que lo comprobado es que ambas rutas
+compilan y registran, y el comportamiento de interceptación es estándar de Next.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
 
-El plan del brief, ahora versionado en `docs/brief/03-plan-implementacion.md`, está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el
-fix del copiloto. Lo que queda no es una fase nueva sino deuda concreta:
+El plan del brief, ahora versionado en `docs/brief/03-plan-implementacion.md`,
+está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el fix del copiloto.
+
+Pero el brief creció: `docs/brief/04-hallazgos-adicionales-fase1.5.md` y
+`05-resumen-de-horas-y-hallazgos-finales.md` son **research posterior a esa
+implementación** —se probó Vector ya con estos cambios contra FlightDeck— y
+traen 10 ítems nuevos priorizados. **Ese es el backlog vigente**; los tres
+documentos originales describen un estado que ya no existe.
+
+Lo de acá abajo es la deuda técnica que dejó la implementación, que conviene
+saldar antes de agarrar lo nuevo:
 
 ### 1. Borrar `profiles.cma_expiry` — pendiente de despliegue
 
@@ -643,6 +765,33 @@ correcto, no es que esté rota.
 - **`Libro Digital.pdf` y `extract_pdf.js` están commiteados** en la raíz y nada
   del código los importa (son restos de la prueba de parseo de PDF). No los borré
   porque borrar archivos es decisión de Federico, pero se pueden sacar.
+
+### Sobre el backlog nuevo, contrastado con el código
+
+El research de `04` y `05` se hizo probando la UI desplegada, sin leer el
+código. Tres precisiones que cambian el alcance de esos ítems:
+
+- **`04` §5 dice que no se pudo ver cómo renderiza un hallazgo porque el libro
+  de Federico da limpio.** Sí se vio: se verificó con datos ficticios en un
+  harness de Playwright. La fila ya existe con pill de severidad, nombre de
+  regla, mensaje y acción de silenciar (`AuditClient.tsx` → `FindingCard`). Lo
+  que **falta de verdad** frente a FlightDeck es más chico de lo que sugiere el
+  documento: agrupar por regla con conteo de vuelos afectados, y el control de
+  "Expandir todo". Los íconos de severidad en los tres cards de conteo sí
+  faltan, eso es correcto.
+- **`04` §6 supone que "Agregar documento" abre un selector desde cero.**
+  Confirmado leyendo `DocumentsManager.tsx`: el `StyledSelect` de tipo arranca
+  en "otro". Los chips de alta rápida aplican tal cual, y la taxonomía ya está
+  definida en el `CHECK` de la tabla `documents` — no hay que inventarla.
+- **`05` §2 concluye que las Herramientas de Vector están mejor resueltas que
+  las de FlightDeck** (una página con tab-bar contra siete páginas separadas).
+  Coincide con la decisión que está documentada en la entrada de la Fase 5.
+  **No lo "arregles" copiando el patrón de FlightDeck.**
+
+El ítem 8 de `05` (matriz ANAC de solo lectura) es el de mejor relación
+valor/esfuerzo: las ocho columnas PIC/SIC ya se calculan y se guardan por
+vuelo, y `PCATracker.tsx` ya hace agregaciones parecidas. Es sumar, no derivar
+nada nuevo.
 
 ### Antes de tocar nada
 
