@@ -621,6 +621,81 @@ repo: `01`, `02` y `03` son idénticos, `00-README` difiere solo en el orden de
 lectura, y `04` y `05` son nuevos. Sin cambios de código, así que no hay build
 que correr.
 
+### 2026-08-01 01:08 UTC — Claude (Opus 5, vía Claude Code) — Backlog de FlightDeck: ítems 1, 3, 4 y 5
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/dashboard/@modal/(.)log-flight/page.tsx` y `@modal/default.tsx` —
+  ruta interceptada para "Nuevo Vuelo".
+- `src/components/dashboard/NewFlightModal.tsx` — el diálogo.
+- `src/app/dashboard/layout.tsx` — slot `modal`.
+- `src/components/dashboard/FlightLogForm.tsx` — props `onCancel` y
+  `stickyActions`, stepper `LandingsStepper`, y se corrigió el
+  `overflow-hidden` del contenedor.
+- `src/components/dashboard/AuditClient.tsx` — íconos de severidad.
+- `src/components/dashboard/DocumentsManager.tsx` — chips de alta rápida y
+  arreglo de la fila en móvil.
+
+**Por qué:**
+
+1. **Ruta interceptada en vez de estado local.** El brief pedía el modal
+   "manteniendo la ruta como fallback para deep-linking". Con
+   `@modal/(.)log-flight` la **misma URL** es dos cosas: diálogo si llegás desde
+   adentro de la app, página completa si recargás o entrás por link. De yapa, el
+   diálogo **es** una entrada del historial, así que el gesto de "atrás" del
+   teléfono lo cierra como cualquier sheet nativa — con estado local eso había
+   que falsearlo.
+
+2. **El `sticky` del footer no funcionaba y el motivo no era obvio.** El
+   contenedor del form tiene `overflow-hidden` para recortar las esquinas
+   redondeadas de la card, y eso lo convierte en el **contexto de scroll** del
+   sticky: los botones quedaban clavados a un elemento de 1382 px en vez de al
+   scroller visible, o sea sin fijarse. Dentro del diálogo ese recorte no aporta
+   nada (el modal dibuja su propio redondeo), así que se limitó al caso de
+   página. **Lo detectó una medición con Playwright**, no la lectura del CSS.
+
+3. **`stickyActions` es un prop aparte y no se deduce de `inModal`.** El footer
+   sangra fuera del padding horizontal para cubrir el ancho del diálogo, y esa
+   medida solo coincide con este modal. El de "Finalizar vuelo"
+   (`LiveSessionController`) usa otro padding y quedó intacto.
+
+4. **El stepper de aterrizajes sigue aceptando tipeo.** Reemplazarlo por dos
+   botones y una etiqueta hubiera obligado a apretar "+" once veces después de
+   una sesión de circuitos. El del medio es un input real; el valor se sigue
+   posteando con el mismo `name`, así que el server action no se tocó.
+
+5. **Los íconos de severidad se apagan en cero.** Un escudo rojo sobre un "0"
+   comunica alarma donde no la hay.
+
+6. **Los chips no cubren las seis categorías**, solo cinco: "otro" no tiene
+   nombre por defecto útil y una fila de chips vale por lo escaneable.
+
+**Bug encontrado de paso:** la fila de documentos en móvil estaba rota —el pill
+más los dos botones se comen ~140 px de 342, y el nombre se truncaba a
+"Certifi…" con la fecha partida en tres líneas—. Venía de la Fase 4, se ve solo
+a 390 px. Ahora apila debajo de `sm`.
+
+**Estado:** Terminado los ítems 1, 3, 4 y 5 de
+`docs/brief/04-hallazgos-adicionales-fase1.5.md`. **No** se hicieron: el 2
+(paleta) porque el propio brief lo plantea como decisión de producto y no de
+código, ni el 6 (ficha de aeródromo) ni los cuatro de `05`, que son features
+nuevas y no ajustes.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios; el build lista las
+dos rutas (`/dashboard/(.)log-flight` y `/dashboard/log-flight`). Playwright en
+claro/oscuro × 1500 px/iPhone 13 contra un harness:
+- Diálogo de **930 px** exactos, igual que FlightDeck.
+- Botones visibles **sin scrollear** y también tras scrollear al final, en las 4
+  combinaciones. Footer a 0 px del fondo del scroller y a ancho completo
+  (928 = 928).
+- El chip "CMA" abre el form con `kind=cma` y el nombre ya cargado.
+- Sin desborde horizontal en ninguna vista. 0 errores de consola.
+
+**No verificado:** la interceptación en sí contra la app real logueada — el
+entorno no tiene credenciales, así que lo comprobado es que ambas rutas
+compilan y registran, y el comportamiento de interceptación es estándar de Next.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

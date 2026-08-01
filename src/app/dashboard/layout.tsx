@@ -42,8 +42,11 @@ async function getAuditCount(): Promise<number> {
 
 export default async function DashboardLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  /** Intercepting-route slot — see dashboard/@modal. Empty on most routes. */
+  modal: React.ReactNode;
 }) {
   const [profile, auditCount] = await Promise.all([getProfile(), getAuditCount()]);
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
@@ -126,6 +129,9 @@ export default async function DashboardLayout({
       >
         <DashboardNav variant="mobile" auditCount={auditCount} />
       </div>
+
+      {/* Intercepted routes that render over the current page (Nuevo Vuelo). */}
+      {modal}
 
       {/* Onboarding Logic */}
       <OnboardingOverlay profile={profile} />
