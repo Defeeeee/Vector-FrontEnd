@@ -1,11 +1,13 @@
 # Brief para Opus 5 — Rediseño UX/UI de Vector inspirado en FlightDeck
 
-> **Estado al 2026-07-31: las Fases 0, 1 y 3 ya están implementadas**, igual
-> que la corrección del copiloto. Este documento quedó tal como fue escrito, o
-> sea que las sigue describiendo como pendientes — no las rehagas. Antes de
-> tocar nada leé `AGENTS.md` en la raíz del repo: la bitácora explica qué se
-> hizo, **en qué puntos la implementación se apartó a propósito de lo que dice
-> este brief y por qué**, y la sección "Pasos a seguir" tiene lo que queda.
+> **Estado al 2026-08-01: las Fases 0 a 5 del plan original están
+> implementadas**, igual que la corrección del copiloto. Los documentos `01`,
+> `02` y `03` quedaron **tal como fueron escritos**, o sea que siguen
+> describiendo esas fases como pendientes — no las rehagas. Lo que queda por
+> hacer está en `04` y `05`, que son research posterior a esa implementación, y
+> en la sección "Pasos a seguir" de `AGENTS.md` (raíz del repo), que además
+> explica **en qué puntos la implementación se apartó a propósito del brief y
+> por qué**. Leé eso antes de tocar nada.
 
 ## Cómo usar esta carpeta
 
@@ -16,8 +18,10 @@ Nota sobre imágenes: no pude adjuntar capturas de pantalla como archivos binari
 Leé los documentos en este orden:
 
 1. **`01-benchmark-flightdeck.md`** — Qué hace FlightDeck y cómo se siente usarlo, patrón por patrón. Es la referencia de "a dónde queremos llegar".
-2. **`02-estado-actual-vector.md`** — Qué tiene Vector hoy (probado en la cuenta real de producción de Federico, con datos reales — no se modificó nada). Es el punto de partida.
+2. **`02-estado-actual-vector.md`** — Qué tenía Vector antes de la primera pasada de implementación (probado en la cuenta real de producción de Federico, con datos reales — no se modificó nada). Es el punto de partida original.
 3. **`03-plan-implementacion.md`** — El plan de trabajo fase por fase, con lo que va en frontend vs backend, dependencias y prioridad. Prioriza explícitamente los puntos donde la brecha con FlightDeck es más grande.
+4. **`04-hallazgos-adicionales-fase1.5.md`** — Segunda pasada de research, hecha después de que Opus 5 implementó las Fases 0-5 del plan original. Confirma qué quedó bien resuelto, y detalla con mucha más precisión los gaps estéticos que quedan (modal vs página en Nuevo Vuelo, paleta, stepper de aterrizajes, íconos de severidad en Auditoría, chips de alta rápida en Documentación, y la página de ficha de aeródromo que falta del todo). Tiene una tabla de prioridad al final.
+5. **`05-resumen-de-horas-y-hallazgos-finales.md`** — Tercera pasada, centrada en una pantalla de FlightDeck no explorada antes ("Logbook → Resumen"): mapa real de aeródromos visitados, matriz ANAC de solo lectura, gráfico radial de hora del día, e insights auto-generados en lenguaje natural. También confirma que las Herramientas de Vector ya están mejor resueltas que las de FlightDeck — no tocar. Es el documento más reciente, con la tabla de prioridad más actualizada.
 
 ## Restricción importante
 

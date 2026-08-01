@@ -583,12 +583,59 @@ miden 34×54 px —por encima del mínimo táctil— el chip activo se lee sin
 ambigüedad, y la hoja de "Más" muestra nombres completos y el conteo. 0 errores
 de consola (queda el 404 de `/favicon.ico`, preexistente).
 
+### 2026-08-01 00:46 UTC — Claude (Opus 5, vía Claude Code) — Versionar el research posterior a la implementación
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/04-hallazgos-adicionales-fase1.5.md` y
+  `05-resumen-de-horas-y-hallazgos-finales.md` — dos documentos nuevos que
+  Federico pasó en un zip y que no estaban versionados.
+- `docs/brief/00-README.md` — orden de lectura actualizado y nota de estado
+  reescrita: ahora aclara que `01`, `02` y `03` describen un estado que ya no
+  existe.
+- `AGENTS.md` — "Pasos a seguir" apunta al backlog nuevo, más una subsección
+  que contrasta ese research contra el código.
+
+**Por qué:** Los documentos `04` y `05` son research hecho **después** de que
+estas fases estuvieran desplegadas: se probó Vector ya con estos cambios contra
+FlightDeck, pantalla por pantalla. Eso los convierte en el backlog vigente y
+deja a los tres originales como registro histórico — pero el repo solo tenía
+los tres viejos, así que un agente que clonara iba a trabajar contra un mapa
+desactualizado, que es exactamente el problema que la entrada de las 18:06
+había venido a resolver.
+
+Se agregó además el contraste con el código, porque el research se hizo
+probando la UI sin leer el repo y eso deja tres imprecisiones que cambian el
+alcance: la fila de hallazgo de auditoría **ya está implementada** (se verificó
+con datos ficticios; lo que falta es agrupar por regla y el "Expandir todo"),
+la taxonomía de documentos **ya existe** en el `CHECK` de la tabla, y las
+Herramientas de Vector están mejor resueltas que las de FlightDeck — conviene
+que quede escrito para que nadie las "corrija".
+
+**Estado:** Terminado. Los 10 ítems del backlog nuevo **no** se implementaron:
+esto es solo versionar el conocimiento y dejarlo contrastado.
+
+**Verificación:** Se diffearon los seis archivos del zip contra los cuatro del
+repo: `01`, `02` y `03` son idénticos, `00-README` difiere solo en el orden de
+lectura, y `04` y `05` son nuevos. Sin cambios de código, así que no hay build
+que correr.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
 
-El plan del brief, ahora versionado en `docs/brief/03-plan-implementacion.md`, está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el
-fix del copiloto. Lo que queda no es una fase nueva sino deuda concreta:
+El plan del brief, ahora versionado en `docs/brief/03-plan-implementacion.md`,
+está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el fix del copiloto.
+
+Pero el brief creció: `docs/brief/04-hallazgos-adicionales-fase1.5.md` y
+`05-resumen-de-horas-y-hallazgos-finales.md` son **research posterior a esa
+implementación** —se probó Vector ya con estos cambios contra FlightDeck— y
+traen 10 ítems nuevos priorizados. **Ese es el backlog vigente**; los tres
+documentos originales describen un estado que ya no existe.
+
+Lo de acá abajo es la deuda técnica que dejó la implementación, que conviene
+saldar antes de agarrar lo nuevo:
 
 ### 1. Borrar `profiles.cma_expiry` — pendiente de despliegue
 
@@ -643,6 +690,33 @@ correcto, no es que esté rota.
 - **`Libro Digital.pdf` y `extract_pdf.js` están commiteados** en la raíz y nada
   del código los importa (son restos de la prueba de parseo de PDF). No los borré
   porque borrar archivos es decisión de Federico, pero se pueden sacar.
+
+### Sobre el backlog nuevo, contrastado con el código
+
+El research de `04` y `05` se hizo probando la UI desplegada, sin leer el
+código. Tres precisiones que cambian el alcance de esos ítems:
+
+- **`04` §5 dice que no se pudo ver cómo renderiza un hallazgo porque el libro
+  de Federico da limpio.** Sí se vio: se verificó con datos ficticios en un
+  harness de Playwright. La fila ya existe con pill de severidad, nombre de
+  regla, mensaje y acción de silenciar (`AuditClient.tsx` → `FindingCard`). Lo
+  que **falta de verdad** frente a FlightDeck es más chico de lo que sugiere el
+  documento: agrupar por regla con conteo de vuelos afectados, y el control de
+  "Expandir todo". Los íconos de severidad en los tres cards de conteo sí
+  faltan, eso es correcto.
+- **`04` §6 supone que "Agregar documento" abre un selector desde cero.**
+  Confirmado leyendo `DocumentsManager.tsx`: el `StyledSelect` de tipo arranca
+  en "otro". Los chips de alta rápida aplican tal cual, y la taxonomía ya está
+  definida en el `CHECK` de la tabla `documents` — no hay que inventarla.
+- **`05` §2 concluye que las Herramientas de Vector están mejor resueltas que
+  las de FlightDeck** (una página con tab-bar contra siete páginas separadas).
+  Coincide con la decisión que está documentada en la entrada de la Fase 5.
+  **No lo "arregles" copiando el patrón de FlightDeck.**
+
+El ítem 8 de `05` (matriz ANAC de solo lectura) es el de mejor relación
+valor/esfuerzo: las ocho columnas PIC/SIC ya se calculan y se guardan por
+vuelo, y `PCATracker.tsx` ya hace agregaciones parecidas. Es sumar, no derivar
+nada nuevo.
 
 ### Antes de tocar nada
 
