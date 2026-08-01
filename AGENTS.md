@@ -895,6 +895,49 @@ baja de ~1514 px, así que no se pudo mirar a 390 px. La tabla de la matriz va
 dentro de un `overflow-x-auto` con márgenes negativos —el mismo tratamiento que
 ya usa el heatmap— y las grillas son responsivas, pero **está sin comprobar**.
 
+### 2026-08-01 20:30 UTC — Claude (Opus 5, vía Claude Code) — Se bajó el hero split-flap del dashboard
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/dashboard/page.tsx` — se eliminó la tarjeta negra del hero con el
+  `SplitFlapNumber`, el mini gráfico `MonthlyTrend` y los `HeroStat`. En su lugar
+  va una fila de cuatro tiles (`HeadlineStat`), la primera negra y linkeada a la
+  bitácora. Se borraron los tres componentes que quedaron sin uso.
+
+**Por qué:** Pedido explícito de Federico, con el commit anterior como punto de
+retorno. El motivo no era que estuviera mal hecho —el split-flap imitaba la aleta
+de un tablero de aeropuerto y era el elemento más distintivo de la pantalla—
+sino que **repetía**: el mismo `46.3` aparece además en "Horas acumuladas" y en
+la grilla de actividad, y su gráfico "Horas por mes" es la misma serie que
+"Tendencia temporal" más abajo. La tarjeta gastaba ~340 px de la primera pantalla
+en un número que aparece dos veces más al scrollear.
+
+El patrón nuevo es el de FlightDeck: **una tile negra entre hermanas blancas**.
+Conserva el total como lo más fuerte de la pantalla sin quedarse con el tercio
+superior. La tile negra es un `<Link>` a la bitácora, que era lo que hacía el
+"Ver bitácora completa" del hero viejo.
+
+**Nada de información se perdió**: horas totales, delta de 30 días, vuelos,
+aeródromos y récord siguen estando; la tira de cuatro celdas de abajo (Promedio,
+Aterrizajes, Destino, Aeronaves) quedó intacta. Lo único que se fue del todo es
+el gráfico duplicado.
+
+**Si se quiere revertir**, el commit anterior a este tiene el hero completo.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` limpio y `npm run build` OK. En el dev server,
+contra los 39 vuelos reales: 0 dígitos del split-flap en el DOM, la fila nueva
+muestra "Horas totales 46.3 hs / +1.3 hs en 30 días" (como `<a>` a
+`/dashboard/history`), "Vuelos 39", "Aeródromos 11" y "Récord 3.8h"; sin desborde
+horizontal y 0 errores de consola.
+
+**No verificado:** **no se pudo ver renderizado**. Las capturas de pantalla del
+navegador de esta sesión empezaron a fallar por CDP y no se recuperaron, así que
+lo comprobado es estructura y datos por DOM, no el aspecto. Tampoco se miró en
+móvil, por la misma limitación que la entrada del Resumen de horas.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

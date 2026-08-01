@@ -1,4 +1,4 @@
-import { TrendingUp, MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
+import { MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { buildActivityHeatmap } from "@/lib/utils";
 import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument } from "@/types";
@@ -181,42 +181,24 @@ export default async function Dashboard() {
         )}
       </section>
 
-      {/* Flight Deck Hero — split-flap total experience + real monthly trend + core stats */}
-      <div className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 shadow-2xl p-8 md:p-14">
-        <div className="absolute top-0 right-0 w-[320px] md:w-[480px] h-[320px] md:h-[480px] bg-aviation-blue/10 rounded-full blur-[100px] pointer-events-none -mr-20 -mt-20" />
-
-        <div className="relative z-10 grid md:grid-cols-2 gap-10 md:gap-16 items-center">
-          {/* Left: Total experience, departure-board style */}
-          <div className="space-y-6">
-            <p className="eyebrow eyebrow-invert">Experiencia total · horas de vuelo</p>
-            <SplitFlapNumber value={totalHours.toFixed(1)} />
-            <div className="flex items-center gap-2 text-sm text-white/50">
-              <TrendingUp className="w-4 h-4 text-white/50" />
-              <span>+{lastMonthHours.toFixed(1)} hs en los últimos 30 días</span>
-            </div>
-            <Link
-              href="/dashboard/history"
-              className="inline-flex items-center gap-2 text-white text-sm font-semibold border-b border-white/20 hover:border-white pb-1 transition-colors"
-            >
-              Ver bitácora completa
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {/* Right: real monthly trend + inline stat trio (ticket-stub dividers) */}
-          <div className="space-y-8">
-            <div>
-              <p className="text-sm font-medium text-zinc-500 mb-4">Horas por mes</p>
-              <MonthlyTrend data={chartData} />
-            </div>
-
-            <div className="grid grid-cols-3 border-t border-dashed border-white/15 pt-6">
-              <HeroStat value={totalFlights} label="Vuelos" />
-              <HeroStat value={airports.size} label="Aeródromos" divider />
-              <HeroStat value={`${longestFlight.toFixed(1)}h`} label="Récord" divider />
-            </div>
-          </div>
-        </div>
+      {/* Headline row. Replaces the split-flap hero card that used to sit here.
+          That card was ~340px tall and repeated itself: the same 46.3 also shows
+          up in "Horas acumuladas" and in the activity grid further down, and its
+          inline "Horas por mes" chart is the same series as "Tendencia temporal".
+          One black tile among white siblings keeps the total as the loudest thing
+          on the screen without spending a third of the fold on it. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <HeadlineStat
+          feature
+          label="Horas totales"
+          value={totalHours.toFixed(1)}
+          unit="hs"
+          caption={`+${lastMonthHours.toFixed(1)} hs en 30 días`}
+          href="/dashboard/history"
+        />
+        <HeadlineStat label="Vuelos" value={String(totalFlights)} caption="Entradas de log" />
+        <HeadlineStat label="Aeródromos" value={String(airports.size)} caption="Códigos ICAO únicos" />
+        <HeadlineStat label="Récord" value={longestFlight.toFixed(1)} unit="h" caption="Vuelo más largo" />
       </div>
 
       {/* Secondary stat strip — one bordered instrument cluster, not four separate boxes */}
@@ -257,63 +239,68 @@ export default async function Dashboard() {
   );
 }
 
-function HeroStat({ value, label, divider }: { value: string | number; label: string; divider?: boolean }) {
-  return (
-    <div className={`flex flex-col items-center text-center px-2 ${divider ? "border-l border-dashed border-white/15" : ""}`}>
-      <span className="text-2xl md:text-3xl data font-bold text-white tracking-tighter leading-none">{value}</span>
-      <span className="text-xs font-medium text-zinc-500 mt-1.5">{label}</span>
-    </div>
-  );
-}
-
-function SplitFlapNumber({ value }: { value: string }) {
-  return (
-    <div className="flex items-end gap-4">
-      <div className="flex gap-1 md:gap-1.5">
-        {value.split("").map((ch, i) =>
-          ch === "." ? (
-            <div key={i} className="w-3 md:w-4 flex items-end justify-center pb-2 md:pb-3">
-              <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white" />
-            </div>
-          ) : (
-            <div
-              key={i}
-              className="relative w-10 md:w-14 h-16 md:h-20 bg-black rounded-lg md:rounded-xl border border-white/10 flex items-center justify-center shadow-inner overflow-hidden"
-            >
-              <span className="text-4xl md:text-6xl font-bold text-white data leading-none">{ch}</span>
-              <div className="absolute left-0 right-0 top-1/2 h-px bg-black/60" />
-              <div className="absolute inset-x-0 top-0 h-1/2 bg-white/[0.03]" />
-            </div>
-          )
+/**
+ * One tile of the headline row. `feature` paints it black so the row has a
+ * single obvious entry point instead of four equal boxes competing.
+ */
+function HeadlineStat({
+  label,
+  value,
+  unit,
+  caption,
+  feature,
+  href,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  caption: string;
+  feature?: boolean;
+  href?: string;
+}) {
+  const body = (
+    <>
+      <p
+        className={`font-mono text-[10px] font-bold uppercase tracking-wider ${
+          feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"
+        }`}
+      >
+        {label}
+      </p>
+      <p
+        className={`data text-3xl md:text-4xl font-bold leading-none mt-2 ${
+          feature ? "text-white" : "text-zinc-900 dark:text-white"
+        }`}
+      >
+        {value}
+        {unit && (
+          <span className={`text-base font-medium ml-1 ${feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"}`}>
+            {unit}
+          </span>
         )}
-      </div>
-      <span className="text-base md:text-lg font-medium text-zinc-500 pb-2 md:pb-3">hs</span>
-    </div>
+      </p>
+      <p className={`text-[11px] mt-2 ${feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"}`}>
+        {caption}
+      </p>
+    </>
+  );
+
+  const className = `rounded-[1.75rem] border p-5 md:p-6 transition-colors ${
+    feature
+      ? "bg-zinc-900 dark:bg-[#111111] border-zinc-900 dark:border-white/10 shadow-xl hover:bg-zinc-800 dark:hover:bg-[#161616]"
+      : "bg-white dark:bg-white/[0.02] border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none"
+  }`;
+
+  return href ? (
+    <Link href={href} className={`${className} block`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
   );
 }
 
-function MonthlyTrend({ data }: { data: { name: string; hours: number }[] }) {
-  const max = Math.max(...data.map((d) => d.hours), 1);
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-end gap-2.5 h-20">
-        {data.map((d, i) => (
-          <div key={i} className="flex-1 h-full flex items-end">
-            <div
-              className="w-full rounded-t-md bg-gradient-to-t from-aviation-blue to-aviation-cyan transition-all"
-              style={{ height: `${Math.max((d.hours / max) * 100, d.hours > 0 ? 8 : 2)}%`, opacity: d.hours > 0 ? 1 : 0.15 }}
-            />
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-2.5">
-        {data.map((d, i) => (
-          <span key={i} className="flex-1 text-center text-xs font-medium text-zinc-500">{d.name}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
+
 
 function StatCell({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
