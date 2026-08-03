@@ -89,7 +89,7 @@ function UpdatePasswordForm() {
             </motion.div>
 
             <div className="space-y-2">
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk">Contraseña actualizada</h1>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-display">Contraseña actualizada</h1>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
                 Tu contraseña se actualizó correctamente. Ya podés iniciar sesión.
               </p>
@@ -111,7 +111,7 @@ function UpdatePasswordForm() {
                 <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
               </div>
               <div className="space-y-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk transition-colors">Nueva contraseña</h1>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-display transition-colors">Nueva contraseña</h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Restablecé tu acceso de piloto</p>
               </div>
             </motion.div>

@@ -103,7 +103,7 @@ export default function LandingPage() {
             <div className="w-9 h-9 bg-zinc-900 dark:bg-white rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
               <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
             </div>
-            <span className="font-space-grotesk font-bold text-lg tracking-tight">Vector</span>
+            <span className="font-display font-bold text-lg tracking-tight">Vector</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -188,7 +188,7 @@ export default function LandingPage() {
               Copiloto digital para pilotos exigentes
             </span>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-space-grotesk font-bold text-zinc-900 dark:text-white leading-[1.05] tracking-tight">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-zinc-900 dark:text-white leading-[1.05] tracking-tight">
               Trazá tu rumbo.
               <br />
               <span className="text-aviation-blue-dark dark:text-aviation-cyan">Vector</span> lleva el registro.
@@ -306,7 +306,7 @@ export default function LandingPage() {
         <div className="container-wide">
           <div className="max-w-2xl mb-16 md:mb-20">
             <span className="eyebrow">Características</span>
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
               Herramientas de precisión para tu día a día en el aire.
             </h2>
           </div>
@@ -329,7 +329,7 @@ export default function LandingPage() {
                       <Icon className="w-5 h-5 text-white dark:text-white" />
                     </div>
                     <span className="eyebrow">{feature.eyebrow}</span>
-                    <h3 className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 mb-4 tracking-tight leading-snug">
+                    <h3 className="text-2xl md:text-3xl font-display font-bold text-zinc-900 dark:text-white mt-3 mb-4 tracking-tight leading-snug">
                       {feature.title}
                     </h3>
                     <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -356,7 +356,7 @@ export default function LandingPage() {
         <div className="container-wide">
           <div className="max-w-2xl mb-16 md:mb-20">
             <span className="eyebrow">Cómo funciona</span>
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
               De la cabecera de pista a tu bitácora, en cuatro pasos.
             </h2>
           </div>
@@ -372,10 +372,10 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.1 }}
                 className="relative"
               >
-                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-space-grotesk font-bold relative z-10 shadow-lg">
+                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-display font-bold relative z-10 shadow-lg">
                   {i + 1}
                 </div>
-                <h3 className="text-lg font-space-grotesk font-bold text-zinc-900 dark:text-white mt-5 mb-2 tracking-tight">
+                <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white mt-5 mb-2 tracking-tight">
                   {step.title}
                 </h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -395,7 +395,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
               {highlights.map((s) => (
                 <div key={s.t}>
-                  <div className="text-xl md:text-2xl font-space-grotesk font-bold text-white dark:text-white tracking-tight">{s.t}</div>
+                  <div className="text-xl md:text-2xl font-display font-bold text-white dark:text-white tracking-tight">{s.t}</div>
                   <div className="text-sm text-white/40 dark:text-white/40 mt-1">{s.d}</div>
                 </div>
               ))}
@@ -425,7 +425,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div>
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight leading-tight mb-6">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-zinc-900 dark:text-white tracking-tight leading-tight mb-6">
               Tu carrera aeronáutica, siempre a la vista.
             </h2>
             <p className="text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -441,7 +441,7 @@ export default function LandingPage() {
         <div className="container-wide">
           <div className="rounded-[2.5rem] p-8 md:p-24 text-center relative overflow-hidden border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111111] shadow-cal dark:shadow-none">
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-aviation-blue/10 rounded-full blur-[100px] pointer-events-none" />
-            <h2 className="text-4xl md:text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight relative z-10">
+            <h2 className="text-4xl md:text-6xl font-display font-bold text-zinc-900 dark:text-white tracking-tight relative z-10">
               ¿Listo para despegar?
             </h2>
             <p className="text-zinc-500 dark:text-zinc-400 text-base md:text-xl max-w-xl mx-auto mt-5 relative z-10">
@@ -473,7 +473,7 @@ export default function LandingPage() {
               <div className="w-8 h-8 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
                 <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
               </div>
-              <span className="font-space-grotesk font-bold text-xl tracking-tight">Vector</span>
+              <span className="font-display font-bold text-xl tracking-tight">Vector</span>
             </div>
             <div className="flex space-x-8 text-sm font-medium text-zinc-500 dark:text-zinc-400">
               <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Twitter</Link>

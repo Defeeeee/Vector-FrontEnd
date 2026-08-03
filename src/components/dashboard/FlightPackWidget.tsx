@@ -17,7 +17,7 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Packs de horas</h3>
+        <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Packs de horas</h3>
         <p className="eyebrow">Estado de saldo</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -41,12 +41,12 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
                   </div>
                   <div className="space-y-1 min-w-0">
                     <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{isDebt ? 'Saldo deudor' : 'Paquete de vuelo'}</p>
-                    <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight text-lg md:text-xl leading-none truncate">{pack.name}</h3>
+                    <h3 className="font-bold font-display text-zinc-900 dark:text-white tracking-tight text-lg md:text-xl leading-none truncate">{pack.name}</h3>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <p className={`text-3xl md:text-4xl font-space-grotesk font-bold tracking-tighter leading-none ${isDebt ? 'text-red-600' : 'text-zinc-900 dark:text-white'}`}>
+                  <p className={`text-3xl md:text-4xl font-display font-bold tracking-tighter leading-none ${isDebt ? 'text-red-600' : 'text-zinc-900 dark:text-white'}`}>
                     {pack.remaining_hours.toFixed(1)}
                     <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500 ml-1">/ {pack.total_hours}h</span>
                   </p>
@@ -64,7 +64,7 @@ export default function FlightPackWidget({ packs }: FlightPackWidgetProps) {
 
               {/* Ticket stub — perforated tear line + percentage */}
               <div className="w-28 shrink-0 flex flex-col items-center justify-center gap-1.5 p-4 bg-zinc-50/70 dark:bg-white/[0.03] border-l border-dashed border-zinc-300 dark:border-white/15">
-                <p className={`text-2xl font-space-grotesk font-bold tracking-tighter ${isDebt ? 'text-red-600 animate-pulse' : isLow ? 'text-red-600 dark:text-red-500' : 'text-zinc-900 dark:text-white'}`}>
+                <p className={`text-2xl font-display font-bold tracking-tighter ${isDebt ? 'text-red-600 animate-pulse' : isLow ? 'text-red-600 dark:text-red-500' : 'text-zinc-900 dark:text-white'}`}>
                   {isDebt ? '—' : `${Math.round(percentage)}%`}
                 </p>
                 <p className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 text-center leading-tight">

@@ -44,7 +44,7 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
         className="col-span-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2rem] p-6 md:p-8 space-y-8"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Editar aeronave</h3>
+          <h3 className="text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Editar aeronave</h3>
           <button onClick={() => setIsEditing(false)} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors shadow-sm">
             <X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
           </button>
@@ -120,7 +120,7 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
       </div>
 
       <div className="min-w-0">
-        <p className="font-bold font-space-grotesk text-xl text-zinc-900 dark:text-white tracking-tight uppercase truncate">{aircraft.registration}</p>
+        <p className="font-bold font-display text-xl text-zinc-900 dark:text-white tracking-tight uppercase truncate">{aircraft.registration}</p>
         <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium truncate mt-0.5">
           {aircraft.type}
           <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">/</span>

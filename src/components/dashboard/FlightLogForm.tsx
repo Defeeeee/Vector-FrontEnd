@@ -229,7 +229,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
         {!inModal && (
           <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 flex items-center justify-between">
             <div className="space-y-1">
-              <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">
+              <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">
                 Nueva entrada
               </h3>
               <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Bitácora electrónica</p>

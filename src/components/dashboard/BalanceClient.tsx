@@ -208,7 +208,7 @@ export default function BalanceClient({
                 <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-md">
                   <Package className="w-4 h-4 text-white dark:text-zinc-900" />
                 </div>
-                <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Packs activos</h3>
+                <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Packs activos</h3>
               </div>
 
               <div className="grid grid-cols-1 gap-6">
@@ -226,7 +226,7 @@ export default function BalanceClient({
                             <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
                               Creado el {new Date(pack.created_at).toLocaleDateString("es-AR")}
                             </span>
-                            <h4 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight mt-1">
+                            <h4 className="text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight mt-1">
                               {pack.name}
                             </h4>
                           </div>
@@ -238,7 +238,7 @@ export default function BalanceClient({
                         <div className="space-y-2">
                           <div className="flex justify-between items-end">
                             <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Horas restantes</span>
-                            <span className={`text-2xl font-bold font-space-grotesk ${isNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-900 dark:text-white'}`}>
+                            <span className={`text-2xl font-bold font-display ${isNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-900 dark:text-white'}`}>
                               {pack.remaining_hours.toFixed(1)} <span className="text-xs font-bold text-zinc-400">/ {pack.total_hours.toFixed(1)} hs</span>
                             </span>
                           </div>
@@ -311,7 +311,7 @@ export default function BalanceClient({
                                                     {new Date(f.date + 'T00:00:00').toLocaleDateString("es-AR")} • {acft?.registration}
                                                   </span>
                                                 </div>
-                                                <span className="font-bold text-zinc-500 dark:text-zinc-400 font-space-grotesk">
+                                                <span className="font-bold text-zinc-500 dark:text-zinc-400 font-display">
                                                   -{f.duration.toFixed(1)} hs
                                                 </span>
                                               </div>
@@ -353,7 +353,7 @@ export default function BalanceClient({
                   <div className="space-y-1">
                     <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500 block leading-none">Saldo disponible</span>
                     <div className="flex items-center space-x-2">
-                      <h3 className={`${balanceFontSize} font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none pt-1`}>
+                      <h3 className={`${balanceFontSize} font-display font-bold text-zinc-900 dark:text-white tracking-tighter leading-none pt-1`}>
                         $ {balanceString}
                       </h3>
                       <button
@@ -385,7 +385,7 @@ export default function BalanceClient({
                   <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-md">
                     <Coins className="w-4 h-4 text-white dark:text-zinc-900" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Historial de movimientos</h3>
+                  <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Historial de movimientos</h3>
                 </div>
 
                 <div className="max-w-lg mx-auto md:mx-0">
@@ -461,7 +461,7 @@ export default function BalanceClient({
             <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-md">
               <Plane className="w-4 h-4 text-white dark:text-zinc-900" />
             </div>
-            <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Costos aeronaves</h3>
+            <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Costos aeronaves</h3>
           </div>
 
           <div className="bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2rem] p-6 space-y-4 shadow-sm">
@@ -529,7 +529,7 @@ export default function BalanceClient({
                                 </button>
                               </div>
                             ) : (
-                              <span className="text-sm font-bold text-zinc-950 dark:text-white font-space-grotesk">
+                              <span className="text-sm font-bold text-zinc-950 dark:text-white font-display">
                                 $ {(ac.cost_per_hour || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })} <span className="text-[10px] text-zinc-400">/hs</span>
                               </span>
                             )}
@@ -541,13 +541,13 @@ export default function BalanceClient({
                                 const estHours = initialBalance / ac.cost_per_hour;
                                 const isEstNegative = estHours < 0;
                                 return (
-                                  <span className={`text-sm font-bold font-space-grotesk ${isEstNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-950 dark:text-white'}`}>
+                                  <span className={`text-sm font-bold font-display ${isEstNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-950 dark:text-white'}`}>
                                     {estHours.toFixed(1)} <span className="text-[10px] text-zinc-400">hs</span>
                                   </span>
                                 );
                               })()
                             ) : (
-                              <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 font-space-grotesk">—</span>
+                              <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 font-display">—</span>
                             )}
                           </div>
                         </>
@@ -561,7 +561,7 @@ export default function BalanceClient({
                             const hasNegative = totalRemainingHoursForAc < 0;
 
                             return (
-                              <span className={`text-sm font-bold font-space-grotesk ${hasNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-950 dark:text-white'}`}>
+                              <span className={`text-sm font-bold font-display ${hasNegative ? 'text-red-600 dark:text-red-500' : 'text-zinc-950 dark:text-white'}`}>
                                 {totalRemainingHoursForAc.toFixed(1)} <span className="text-[10px] text-zinc-400">hs</span>
                               </span>
                             );
@@ -599,7 +599,7 @@ export default function BalanceClient({
               className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] w-full max-w-md p-6 md:p-8 shadow-2xl relative z-10 space-y-6"
             >
               <div className="flex justify-between items-center border-b border-zinc-100 dark:border-white/5 pb-4">
-                <h4 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">
+                <h4 className="text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">
                   {topUpType === "deposit" ? "Cargar saldo" : "Retirar saldo"}
                 </h4>
                 <button
@@ -702,7 +702,7 @@ export default function BalanceClient({
               className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-[2rem] w-full max-w-md p-6 md:p-8 shadow-2xl relative z-10 space-y-6"
             >
               <div className="flex justify-between items-center border-b border-zinc-100 dark:border-white/5 pb-4">
-                <h4 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">
+                <h4 className="text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">
                   Ajustar saldo actual
                 </h4>
                 <button

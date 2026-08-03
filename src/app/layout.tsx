@@ -5,27 +5,34 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
 
-// Single unified typeface across the app — Nunito for both body text and display/headline roles.
-const nunitoSans = Nunito({
+// Single unified typeface across the app — Nunito for both body text and
+// display/headline roles.
+//
+// The variables are named after the *role*, not the typeface: they used to be
+// called --font-inter and --font-space-grotesk while actually carrying Nunito,
+// which meant `font-display` in the markup applied something that was not
+// Space Grotesk. Role names survive a change of face (see T3.2 in
+// docs/brief/06-plan-post-flightdeck.md).
+const bodyFace = Nunito({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
+  variable: "--font-body-face",
 });
 
-const nunitoDisplay = Nunito({
+const displayFace = Nunito({
   subsets: ["latin"],
   weight: ["700", "800", "900"],
-  variable: "--font-space-grotesk",
+  variable: "--font-display-face",
 });
 
 // Instrument face for anything that reads as an *instrument reading* rather than
 // prose: hours, ICAO codes, registrations, UTC times, METAR, eyebrow labels.
 // IBM Plex Mono is picked for its slashed zero — in a logbook the difference
 // between 0 and O is not a stylistic detail.
-const plexMono = IBM_Plex_Mono({
+const monoFace = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-mono-data",
+  variable: "--font-mono-face",
 });
 
 export const metadata: Metadata = {
@@ -40,15 +47,15 @@ export default function RootLayout({
 }>) {
   return (
     /* The font variables have to live on <html>, not <body>: `@theme` emits its
-       tokens on :root, so a `--font-sans: var(--font-inter)` there resolves
+       tokens on :root, so a `--font-sans: var(--font-body-face)` there resolves
        against :root — and with the variable declared on <body> it resolved
        against nothing and came out invalid. That silently broke the `font-sans`
-       and `font-mono` utilities app-wide (only the custom `font-space-grotesk`
+       and `font-mono` utilities app-wide (only the custom `font-display`
        worked, because it reads the variable at the element that uses it). */
     <html
       lang="es"
       suppressHydrationWarning
-      className={cn(nunitoSans.variable, nunitoDisplay.variable, plexMono.variable)}
+      className={cn(bodyFace.variable, displayFace.variable, monoFace.variable)}
     >
       <body className="min-h-screen bg-white dark:bg-black text-charcoal dark:text-white antialiased overflow-x-hidden font-sans">
         <NextTopLoader

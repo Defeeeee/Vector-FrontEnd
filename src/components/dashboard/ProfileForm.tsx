@@ -65,12 +65,12 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
         <div className="absolute top-0 right-0 w-64 h-64 bg-aviation-blue/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
         <div className="relative z-10 flex items-center gap-4 md:gap-5">
-          <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl font-bold font-space-grotesk text-white flex-shrink-0 uppercase">
+          <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-xl md:text-2xl font-bold font-display text-white flex-shrink-0 uppercase">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="eyebrow eyebrow-invert">Licencia de piloto</p>
-            <h3 className="text-xl md:text-3xl font-bold font-space-grotesk text-white tracking-tight truncate">{fullName || "Piloto sin nombre"}</h3>
+            <h3 className="text-xl md:text-3xl font-bold font-display text-white tracking-tight truncate">{fullName || "Piloto sin nombre"}</h3>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-zinc-400">
               <span>Licencia <strong className="text-white">{profile?.license_type || "—"}</strong></span>
               <span className="hidden sm:inline text-zinc-600">·</span>

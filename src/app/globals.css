@@ -21,9 +21,13 @@
   --shadow-cal-inset: rgba(0, 0, 0, 0.16) 0px 1px 1.9px 0px inset;
   --shadow-cal-highlight: rgba(255, 255, 255, 0.15) 0px 2px 0px inset;
 
-  --font-sans: var(--font-inter);
-  --font-space-grotesk: var(--font-space-grotesk);
-  --font-mono: var(--font-mono-data), ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Each token points at a distinctly-named next/font variable. They used to
+     share a name (`--font-space-grotesk: var(--font-space-grotesk)`), which is a
+     self-reference: it only resolved by accident, through inheritance from the
+     element where next/font declared it. */
+  --font-sans: var(--font-body-face);
+  --font-display: var(--font-display-face);
+  --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Landing page accent — monochrome base with an aviation-blue detail color */
   --color-aviation-blue: #2563eb;
@@ -61,7 +65,7 @@
    codes, registrations, UTC times, QNH, raw METAR — is set in mono so it reads
    as an instrument rather than as prose. Prose stays in the sans. */
 .data {
-  font-family: var(--font-mono-data), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
@@ -69,7 +73,7 @@
 /* Section label sitting above a heading ("CENTRO DE OPERACIONES", "ESTADO DE
    SALDO"). Neutral by design — see the --color-eyebrow note in @theme. */
 .eyebrow {
-  font-family: var(--font-mono-data), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.2;

@@ -81,7 +81,7 @@ export default function LiveSessionController({ aircraft, activeSession }: LiveS
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="eyebrow">Modo operativo</p>
-            <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Vuelo en vivo</h3>
+            <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Vuelo en vivo</h3>
           </div>
           <div className={`w-3 h-3 rounded-full ${activeSession?.active ? 'bg-green-500 animate-pulse' : 'bg-zinc-200 dark:bg-zinc-800'}`} />
         </div>
@@ -171,13 +171,13 @@ export default function LiveSessionController({ aircraft, activeSession }: LiveS
             <div className="p-6 bg-zinc-50 dark:bg-white/[0.03] rounded-2xl border border-zinc-200 dark:border-white/10 flex items-center justify-between shadow-sm">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Aeronave activa</p>
-                <p className="text-lg font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tighter uppercase">
+                <p className="text-lg font-bold font-display text-zinc-900 dark:text-white tracking-tighter uppercase">
                   {aircraft.find(a => a.id === activeSession.session.aircraft_id)?.registration || "Unknown"}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Inicio (UTC)</p>
-                <p className="text-lg font-bold font-space-grotesk text-green-600 dark:text-green-500 tracking-tighter">
+                <p className="text-lg font-bold font-display text-green-600 dark:text-green-500 tracking-tighter">
                   {new Date(activeSession.session.start_time).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
                 </p>
               </div>

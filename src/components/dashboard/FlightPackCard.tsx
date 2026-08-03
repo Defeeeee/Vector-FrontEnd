@@ -51,7 +51,7 @@ export default function FlightPackCard({ pack, aircraft }: FlightPackCardProps) 
               </div>
               <div className="space-y-1 overflow-hidden">
                 <div className="flex items-center space-x-2 md:space-x-3">
-                  <p className="font-bold font-space-grotesk text-xl md:text-3xl text-zinc-900 dark:text-white tracking-tight truncate">{pack.name}</p>
+                  <p className="font-bold font-display text-xl md:text-3xl text-zinc-900 dark:text-white tracking-tight truncate">{pack.name}</p>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${pack.is_active ? 'bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-600 dark:text-green-500' : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/10'}`}>
                     {pack.is_active ? 'Activo' : 'Inactivo'}
                   </span>
@@ -86,7 +86,7 @@ export default function FlightPackCard({ pack, aircraft }: FlightPackCardProps) 
             className="space-y-8 md:space-y-10"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Editar pack de horas</h3>
+              <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Editar pack de horas</h3>
               <button onClick={() => setIsEditing(false)} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors shadow-sm">
                 <X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               </button>

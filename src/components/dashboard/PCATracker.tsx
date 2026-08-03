@@ -48,7 +48,7 @@ export default function PCATracker({ flights }: PCATrackerProps) {
     <section className="space-y-6">
       <div className="flex items-center justify-between px-2">
         <div className="space-y-1">
-          <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight transition-colors">Tracker PCA</h3>
+          <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight transition-colors">Tracker PCA</h3>
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Reg. 61.620</p>
         </div>
         <div className="px-3 md:px-4 py-1.5 md:py-2 bg-zinc-900 dark:bg-white rounded-full shadow-cal-highlight flex items-center space-x-2 transition-colors">
@@ -76,7 +76,7 @@ export default function PCATracker({ flights }: PCATrackerProps) {
              </svg>
              <div className="absolute flex flex-col items-center justify-center space-y-0.5 md:space-y-1">
                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-zinc-400 dark:text-zinc-500 mb-0.5 md:mb-1" />
-                <span className="text-2xl md:text-4xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</span>
+                <span className="text-2xl md:text-4xl font-display font-bold text-zinc-900 dark:text-white tracking-tighter leading-none">{totalHours.toFixed(1)}</span>
                 <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">/ 200 hs</span>
              </div>
           </div>

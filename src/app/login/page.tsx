@@ -109,7 +109,7 @@ function LoginContent() {
         >
           <p className="eyebrow">Bienvenido de vuelta</p>
 
-          <h2 className="text-3xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
+          <h2 className="text-3xl font-display font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
             Tu bitácora te está esperando.
           </h2>
 
@@ -146,7 +146,7 @@ function LoginContent() {
                     <Lock className="w-8 h-8" />
                 </div>
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight font-space-grotesk">Sesión Expirada</h2>
+                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight font-display">Sesión Expirada</h2>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">Tu sesión ha terminado por seguridad. Por favor, vuelve a ingresar.</p>
                 </div>
                 <button
@@ -174,7 +174,7 @@ function LoginContent() {
                 <Compass className="w-6 h-6 md:w-7 md:h-7" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk transition-colors">Bienvenido</h1>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-display transition-colors">Bienvenido</h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Accedé a tu logbook</p>
             </div>
         </motion.div>
@@ -301,7 +301,7 @@ function LoginContent() {
 
 export default function Login() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-space-grotesk font-bold animate-pulse bg-zinc-100 dark:bg-black transition-colors duration-300">Cargando Vector...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-zinc-900 dark:text-white font-display font-bold animate-pulse bg-zinc-100 dark:bg-black transition-colors duration-300">Cargando Vector...</div>}>
       <LoginContent />
     </Suspense>
   );

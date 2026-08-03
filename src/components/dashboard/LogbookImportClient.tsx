@@ -436,7 +436,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                             type="text" 
                             value={flight.route}
                             onChange={(e) => handleUpdateField(flight.id, "route", e.target.value)}
-                            className="bg-transparent border border-zinc-200 dark:border-white/10 focus:border-zinc-400 focus:dark:border-white/30 rounded-lg px-2 py-1.5 text-xs font-bold w-28 outline-none text-zinc-800 dark:text-zinc-200 uppercase font-space-grotesk"
+                            className="bg-transparent border border-zinc-200 dark:border-white/10 focus:border-zinc-400 focus:dark:border-white/30 rounded-lg px-2 py-1.5 text-xs font-bold w-28 outline-none text-zinc-800 dark:text-zinc-200 uppercase font-display"
                           />
                         </td>
 

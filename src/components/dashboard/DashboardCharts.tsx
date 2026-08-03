@@ -90,7 +90,7 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
       {/* Bar Chart: Flight Hours by Month */}
       <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[450px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
         <div className="flex flex-col space-y-1">
-          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Horas por mes</h3>
+          <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Horas por mes</h3>
           <p className="eyebrow">Tendencia temporal</p>
         </div>
         <div className="flex-1 w-full -ml-4 min-h-0">
@@ -134,7 +134,7 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
       {/* Pie Chart: Hours by Aircraft */}
       <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[450px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
         <div className="flex flex-col space-y-1">
-          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Horas por aeronave</h3>
+          <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Horas por aeronave</h3>
           <p className="eyebrow">Distribución de flota</p>
         </div>
         <div className="flex-1 w-full relative min-h-0">
@@ -190,11 +190,11 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
           <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-aviation-blue/10 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 relative z-10">
             <div className="flex flex-col space-y-1">
-              <h3 className="text-2xl font-bold font-space-grotesk text-white tracking-tight">Horas acumuladas</h3>
+              <h3 className="text-2xl font-bold font-display text-white tracking-tight">Horas acumuladas</h3>
               <p className="eyebrow eyebrow-invert">Progresión total de experiencia</p>
             </div>
             <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-space-grotesk font-bold text-white tracking-tight leading-none">{maxTotal.toFixed(1)}</span>
+              <span className="text-4xl font-display font-bold text-white tracking-tight leading-none">{maxTotal.toFixed(1)}</span>
               <span className="text-sm font-medium text-zinc-500">hs totales</span>
             </div>
           </div>

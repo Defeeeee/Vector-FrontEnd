@@ -97,7 +97,7 @@ export default function ActivityHeatmap({ data }: { data: HeatmapData }) {
     >
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
         <div className="flex flex-col space-y-1">
-          <h3 className="text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">
+          <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">
             Actividad
           </h3>
           <p className="eyebrow">

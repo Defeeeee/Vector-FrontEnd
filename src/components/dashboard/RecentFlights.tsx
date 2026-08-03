@@ -45,7 +45,7 @@ export default function RecentFlights({
       <div className="flex items-end justify-between gap-4">
         <div className="space-y-1">
           <p className="eyebrow">Últimos vuelos</p>
-          <h3 className="text-xl md:text-2xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight">
+          <h3 className="text-xl md:text-2xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">
             Lo último que volaste
           </h3>
         </div>

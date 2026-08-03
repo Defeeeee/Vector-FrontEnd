@@ -30,7 +30,7 @@ export default async function ImportLogbookPage() {
             >
               <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
             </Link>
-            <h2 className="text-4xl md:text-6xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
+            <h2 className="text-4xl md:text-6xl font-display font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
               Importar PDF
             </h2>
           </div>

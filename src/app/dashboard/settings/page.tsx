@@ -46,7 +46,7 @@ export default async function SettingsPage() {
           <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
             <User className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
           </div>
-          <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Perfil del piloto</h3>
+          <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Perfil del piloto</h3>
         </div>
 
         <div className="bg-white dark:bg-white/[0.02] p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none hover:shadow-lg dark:hover:bg-white/[0.04] transition-all">
@@ -61,7 +61,7 @@ export default async function SettingsPage() {
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
               <CalendarClock className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
             </div>
-            <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Vencimientos</h3>
+            <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Vencimientos</h3>
           </div>
           <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-zinc-200 dark:border-white/10 shadow-sm">
             {documents.length} cargados
@@ -80,7 +80,7 @@ export default async function SettingsPage() {
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
                 <Plane className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Mis aeronaves</h3>
+              <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Mis aeronaves</h3>
             </div>
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-zinc-200 dark:border-white/10 shadow-sm">
               {aircraft.length} registradas
@@ -109,7 +109,7 @@ export default async function SettingsPage() {
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
                 <Package className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Packs de horas</h3>
+              <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Packs de horas</h3>
             </div>
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-zinc-200 dark:border-white/10 shadow-sm">
               {packs.length} activos
