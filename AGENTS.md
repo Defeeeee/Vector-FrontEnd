@@ -938,6 +938,61 @@ navegador de esta sesión empezaron a fallar por CDP y no se recuperaron, así q
 lo comprobado es estructura y datos por DOM, no el aspecto. Tampoco se miró en
 móvil, por la misma limitación que la entrada del Resumen de horas.
 
+### 2026-08-03 23:45 UTC — Claude (Opus 5, vía Claude Code) — Plan versionado y primeras tareas (T0.2, T0.3, T3.1, T3.3, T5.1)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/06-plan-post-flightdeck.md` (nuevo) — el backlog vigente, subdividido
+  en tareas con id estable. `00-README.md` y esta bitácora lo apuntan.
+- `src/app/layout.tsx`, `src/app/globals.css` y 97 usos en el markup — T3.1.
+- `src/app/page.tsx` — T3.3.
+- `Libro Digital.pdf`, `extract_pdf.js` — borrados, T5.1.
+
+**Por qué:**
+
+1. **El plan se versiona porque `04` y `05` ya no son confiables como backlog.**
+   Se escribieron probando la UI y varias cosas que dan por ciertas dejaron de
+   serlo — sobre todo que el "Nuevo Vuelo" de FlightDeck sea una columna vertical.
+   Hoy son dos columnas sin scroll con el desglose en un panel deslizante. Un
+   agente que trabaje contra esa descripción apunta al blanco equivocado, así que
+   el `06` lleva una sección explícita de correcciones.
+
+2. **Las variables de fuente se renombraron por rol y no por tipografía** (T3.1).
+   Se llamaban `--font-inter` y `--font-space-grotesk` pero ambas cargaban Nunito.
+   Los nombres por rol (`body`/`display`/`mono`) siguen siendo correctos cuando se
+   cambie la sans. De paso se sacó una auto-referencia: el token decía
+   `--font-space-grotesk: var(--font-space-grotesk)`, que sólo resolvía por
+   accidente vía herencia.
+
+3. **El `Libro Digital.pdf` no se borró por prolijidad.** Es un libro de vuelo en
+   un repo público: son datos personales versionados sin necesidad. **Sigue en el
+   historial de git** — sacarlo de ahí requiere reescribir la historia y
+   force-push, que es decisión de Federico.
+
+4. **El nav de la landing subió de `md` a `lg`** (T3.3). El `ThemeToggle` mide
+   144 px él solo; con logo, dos links, divisor y dos CTAs el contenido no entra
+   cerca de los 800 px.
+
+**Trampa de entorno que costó tiempo y conviene saber:** tras el rename, `.data` y
+`.eyebrow` seguían resolviendo a Nunito aunque el fuente estaba bien. La CSS
+servida por el dev server contenía **las dos** variables, la vieja y la nueva:
+caché de Turbopack, que **no se limpia reiniciando el server**. Hay que borrar
+`.next`. El build de producción salió limpio; era solo dev.
+
+**Estado:** Parcial. Hechas T0.2, T0.3, T3.1, T3.3 y T5.1.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios tras cada tarea.
+- T0.2: los cuatro mockups de la landing se vieron renderizados por fin (habían
+  quedado sólo verificados por DOM en la tanda anterior).
+- T0.3: login a 375 px, labels en mono, panel de contexto oculto.
+- T3.1: por `getComputedStyle`, `font-sans`→Nunito, `font-display`→Nunito,
+  `font-mono`→IBM Plex Mono, `.data`/`.eyebrow`→Plex. Sin cambio visual.
+- T3.3: a 800 px sale el hamburguesa; a 1030 px la barra completa entra con aire.
+
+**Bloqueado:** T0.1, T0.4, T0.5 y T0.6 necesitan sesión iniciada y la de localhost
+expiró. Un agente no debe loguearse en nombre del usuario; hay que pedírselo.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

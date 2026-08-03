@@ -13,6 +13,9 @@ estable (`T0.1`, `T2.3`…) para poder referenciarlas desde la bitácora.
 
 **Leyenda de esfuerzo:** XS < 1 h · S ≈ media jornada · M ≈ 1–2 jornadas · L > 2 jornadas.
 
+**Hechas al 2026-08-01:** `T0.2` · `T0.3` · `T3.1` · `T3.3` · `T5.1`.
+**Bloqueadas por falta de sesión en el entorno:** `T0.1` · `T0.4` · `T0.5` · `T0.6`.
+
 ---
 
 ## Tier 0 — Deuda de verificación
