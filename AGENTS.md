@@ -942,6 +942,11 @@ móvil, por la misma limitación que la entrada del Resumen de horas.
 
 ## Pasos a seguir (para el próximo agente)
 
+> **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
+> tareas subdivididas e id estable (`T0.1`, `T2.3`…). Lo de abajo es la deuda
+> técnica histórica, que ese documento absorbe en su Tier 1 y Tier 5. Si hay
+> discrepancia, manda el `06`.
+
 El plan del brief, ahora versionado en `docs/brief/03-plan-implementacion.md`,
 está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el fix del copiloto.
 
