@@ -107,7 +107,7 @@ export default function LandingPage() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -135,7 +135,7 @@ export default function LandingPage() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden p-2 text-zinc-900 dark:text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button className="lg:hidden p-2 text-zinc-900 dark:text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
@@ -145,7 +145,7 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden mt-2 mx-4 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 flex flex-col space-y-4 shadow-cal dark:shadow-none"
+            className="lg:hidden mt-2 mx-4 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 flex flex-col space-y-4 shadow-cal dark:shadow-none"
           >
             {navLinks.map((link) => (
               <Link
