@@ -13,8 +13,12 @@ estable (`T0.1`, `T2.3`…) para poder referenciarlas desde la bitácora.
 
 **Leyenda de esfuerzo:** XS < 1 h · S ≈ media jornada · M ≈ 1–2 jornadas · L > 2 jornadas.
 
-**Hechas al 2026-08-01:** `T0.2` · `T0.3` · `T3.1` · `T3.3` · `T5.1`.
-**Bloqueadas por falta de sesión en el entorno:** `T0.1` · `T0.4` · `T0.5` · `T0.6`.
+**Hechas:** `T0.1` · `T0.2` · `T0.3` · `T0.6` · `T3.1` · `T3.3` · `T3.5` · `T3.6` · `T5.1`.
+**Parcial:** `T0.4` — el scroller de la matriz ANAC se verificó constriñendo la card
+a 358 px (scrollea sola, la página no desborda), pero **las media queries no se
+pudieron probar**: la ventana de Chrome del entorno no baja de ~1514 px.
+**Sin probar:** `T0.5` — con los datos reales de Federico ningún período queda
+vacío, así que el empty state no se alcanza desde la UI.
 
 ---
 
@@ -140,18 +144,35 @@ solo.**
 El wordmark y "Características" se pegan y "Cómo funciona" parte en dos líneas.
 Preexistente, no lo introdujo la tanda de tipografía.
 
-### T3.4 — Sección negra full-bleed en la landing `S`
+### T3.4 — Sección narrativa negra para el copiloto IA `S`
 
-Para el diferenciador (copiloto IA / WhatsApp). FlightDeck usa negro + dorado para
-su momento IA.
+> **Corregido el 2026-08-03.** La versión original de este documento decía "la
+> landing no tiene sección negra". **Sí tiene**: la "Highlights band" (`page.tsx`
+> ~línea 390). Pero es una **tira de stats** dentro de un contenedor redondeado,
+> no una sección narrativa full-bleed. Lo que falta es distinto: darle al copiloto
+> IA su propio momento, con historia, mock y un acento propio — que es lo que hace
+> FlightDeck con su sección de importación (negro + dorado).
 
-### T3.5 — Pasos numerados en la landing `XS`
+### T3.5 — ~~Pasos numerados~~ → Numeración en mono `XS`
 
-`01 / 02 / 03` en filas con borde. La copia ya dice "en cuatro pasos"; falta la forma.
+> **Corregido el 2026-08-03. Ya estaba hecho.** La sección "Cómo funciona" ya
+> numera los pasos con un círculo negro y el índice adentro (`page.tsx` ~línea
+> 375). Lo único que queda es cosmético: pasar el número a mono con formato `01`,
+> para que hable el mismo idioma que el resto de la app.
 
-### T3.6 — Footer de la landing `XS`
+### T3.6 — Footer en columnas + **links muertos** `S`
 
-Columnas Producto / Recursos / Empresa. Hoy la landing no tiene footer.
+> **Corregido el 2026-08-03.** La versión original decía "hoy la landing no tiene
+> footer". **Sí tiene** (`page.tsx` ~línea 468), pero es una sola fila: logo,
+> cuatro links y copyright.
+
+Dos cosas, y la segunda importa más que la estética:
+
+1. Reestructurarlo en columnas, como FlightDeck.
+2. **Los cuatro links apuntan a `href="#"`.** Twitter, GitHub, Privacidad y
+   Términos no van a ningún lado en una landing pública. Privacidad y Términos
+   además suelen ser exigibles. **No inventar destinos**: hay que crear las
+   páginas o sacar los links.
 
 ### T3.7 — Delta % y sparkline en las stat cards del dashboard `S`
 

@@ -993,6 +993,55 @@ caché de Turbopack, que **no se limpia reiniciando el server**. Hay que borrar
 **Bloqueado:** T0.1, T0.4, T0.5 y T0.6 necesitan sesión iniciada y la de localhost
 expiró. Un agente no debe loguearse en nombre del usuario; hay que pedírselo.
 
+### 2026-08-03 23:59 UTC — Claude (Opus 5, vía Claude Code) — Tier 0 verificado y footer de la landing (T3.5, T3.6)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/page.tsx` — numeración de "Cómo funciona" a mono `01…04` (T3.5); footer
+  reestructurado en columnas (T3.6).
+- `docs/brief/06-plan-post-flightdeck.md` — tres correcciones al propio plan.
+
+**Por qué:** El plan que escribí un rato antes tenía **tres afirmaciones falsas**
+sobre la landing, y las descubrí al ir a implementarlas:
+
+1. Decía "faltan pasos numerados". **Ya estaban** — círculo negro con el índice.
+   Lo único real era cosmético: pasarlos a mono con formato `01`.
+2. Decía "la landing no tiene footer". **Sí tiene.** Era de una sola fila.
+3. Decía "falta una sección negra". **Ya hay una** (la "Highlights band"), aunque
+   es una tira de stats y no una sección narrativa — T3.4 sigue en pie pero
+   reescrita.
+
+Las tres quedaron corregidas **dentro del documento**, con la nota de qué decía
+antes. Un plan con premisas falsas es peor que no tener plan, y borrar el error
+sin dejar rastro hace que el próximo lo repita.
+
+**Sobre el footer:** se reestructuró en columnas usando **sólo destinos que
+existen** (anclas de la landing, `/login`, `/register`, `/recover`). Los links de
+Privacidad y Términos **se dejaron intactos apuntando a `#`**: ya estaban muertos
+antes, y sacar un link de privacidad de una landing pública no es una decisión que
+corresponda tomar en una refactorización. Queda anotado en T3.6 — hay que crear
+las páginas o sacarlos, pero es decisión de Federico.
+
+**Estado:** Tier 0 cerrado salvo dos huecos, T3.5 y T3.6 terminadas.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios.
+- **T0.1** — el dashboard sin el hero, visto por fin: eyebrow + nombre, fila de 4
+  tiles con la negra a la izquierda, y la tira de 4 celdas debajo.
+- **T0.6** — los cinco períodos, con el odómetro siempre igual a la suma de las
+  celdas de la matriz: 1.3 / 9.5 / 24.0 / 46.3 / 46.3. 0 errores de consola.
+- **T3.5 / T3.6** — los cuatro pasos salen `01…04` en IBM Plex Mono; el footer
+  tiene tres columnas y 5 links vivos contra 2 muertos (los legales preexistentes).
+
+**No verificado, y conviene que el próximo lo cierre:**
+- **T0.4 (parcial).** El riesgo real —que la matriz ANAC arrastre la página— está
+  descartado: constriñendo la card a 358 px el scroller scrollea solo (292 visibles
+  sobre 520) y `document.scrollWidth == clientWidth`. Pero **las media queries no
+  se probaron**: la ventana de Chrome de este entorno no baja de ~1514 px por más
+  que `resize_window` reporte éxito.
+- **T0.5.** Con los 39 vuelos reales ningún período queda vacío, así que el empty
+  state de `/dashboard/summary` no se alcanza desde la UI.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

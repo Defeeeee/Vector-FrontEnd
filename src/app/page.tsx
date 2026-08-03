@@ -372,8 +372,8 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.1 }}
                 className="relative"
               >
-                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-display font-bold relative z-10 shadow-lg">
-                  {i + 1}
+                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center data font-bold relative z-10 shadow-lg">
+                  {String(i + 1).padStart(2, "0")}
                 </div>
                 <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white mt-5 mb-2 tracking-tight">
                   {step.title}
@@ -468,19 +468,53 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-200 dark:border-white/10 relative z-10">
         <div className="container-wide">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-            <div className="flex items-center space-x-2.5 text-zinc-900 dark:text-white">
-              <div className="w-8 h-8 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
-                <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
+          {/* Columns, as FlightDeck does. Every destination here is a route or an
+              anchor that actually exists — a footer full of dead links is worse
+              than a short one. The legal links below are the exception and are
+              left untouched on purpose: they already pointed nowhere, and
+              removing a privacy link is not a call to make from a refactor.
+              See T3.6 in docs/brief/06-plan-post-flightdeck.md. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            <div className="col-span-2 md:col-span-1 space-y-4">
+              <div className="flex items-center space-x-2.5 text-zinc-900 dark:text-white">
+                <div className="w-8 h-8 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
+                  <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
+                </div>
+                <span className="font-display font-bold text-xl tracking-tight">Vector</span>
               </div>
-              <span className="font-display font-bold text-xl tracking-tight">Vector</span>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
+                Bitácora digital para pilotos argentinos. Formato ANAC, desglose de
+                horas y vencimientos en un solo lugar.
+              </p>
             </div>
-            <div className="flex space-x-8 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Twitter</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">GitHub</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link>
+
+            <div className="space-y-3">
+              <p className="eyebrow">Producto</p>
+              <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                <li><Link href="#features" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Características</Link></li>
+                <li><Link href="#workflow" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Cómo funciona</Link></li>
+              </ul>
             </div>
+
+            <div className="space-y-3">
+              <p className="eyebrow">Cuenta</p>
+              <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                <li><Link href="/login" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Ingresar</Link></li>
+                <li><Link href="/register" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Crear cuenta</Link></li>
+                <li><Link href="/recover" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Recuperar contraseña</Link></li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <p className="eyebrow">Legal</p>
+              <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                <li><Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link></li>
+                <li><Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-white/10">
             <p className="text-sm text-zinc-400 dark:text-zinc-600">
               &copy; 2026 Vector Aviation.
             </p>
