@@ -244,6 +244,12 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
           <div className="space-y-6">
             <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">01. Información general</p>
 
+            {/* Two columns from `lg` up. Below that it stays a single stack:
+                on a phone side-by-side fields would each be ~150px wide, and a
+                time input does not fit in that. */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-x-10 lg:items-start space-y-6 lg:space-y-0">
+              {/* Left column — the flight itself. */}
+              <div className="space-y-6">
             {/* Route — two resolving chips joined by an arrow. */}
             <div className="space-y-4">
               <div className="flex items-start gap-3 md:gap-4">
@@ -293,8 +299,46 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 md:gap-x-10 gap-y-6">
-              <LedgerField label="Aeronave" className="col-span-2 md:col-span-2">
+              {/* Times sit with the route because together they *are* the
+                  flight: where it went and how long it took. The right column
+                  is everything that classifies it. */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                <LedgerField label="Despegue (UTC)">
+                  <input
+                    type="time"
+                    name="takeoff"
+                    required
+                    value={takeoff}
+                    onChange={(e) => setTakeoff(e.target.value)}
+                    className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                </LedgerField>
+
+                <LedgerField label="Aterrizaje (UTC)">
+                  <input
+                    type="time"
+                    name="landing"
+                    required
+                    value={landing}
+                    onChange={(e) => setLanding(e.target.value)}
+                    className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                </LedgerField>
+              </div>
+
+              {/* Block time vs. ANAC time — the distinction the old single
+                  "Tiempo (h)" field hid. */}
+              <TimeSummary
+                blockMinutes={blockMinutes}
+                total={total}
+                manualDuration={manualDuration}
+                onManualDuration={setManualDuration}
+              />
+            </div>
+
+            {/* Right column — what classifies the flight. */}
+            <div className="space-y-6">
+              <LedgerField label="Aeronave">
                 <StyledSelect
                   name="aircraft_id"
                   required
@@ -309,7 +353,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                 />
               </LedgerField>
 
-              <LedgerField label="Finalidad" className="col-span-2 md:col-span-2">
+              <LedgerField label="Finalidad">
                 <StyledSelect
                   name="purpose"
                   required
@@ -321,55 +365,32 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                 />
               </LedgerField>
 
-              <LedgerField label="Fecha">
-                <input
-                  type="date"
-                  name="date"
-                  required
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
-                />
-              </LedgerField>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                <LedgerField label="Fecha">
+                  <input
+                    type="date"
+                    name="date"
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                </LedgerField>
 
-              <LedgerField label="Aterrizajes">
-                <LandingsStepper value={landings} onChange={setLandings} />
-              </LedgerField>
-
-              <LedgerField label="Despegue (UTC)">
-                <input
-                  type="time"
-                  name="takeoff"
-                  required
-                  value={takeoff}
-                  onChange={(e) => setTakeoff(e.target.value)}
-                  className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
-                />
-              </LedgerField>
-
-              <LedgerField label="Aterrizaje (UTC)">
-                <input
-                  type="time"
-                  name="landing"
-                  required
-                  value={landing}
-                  onChange={(e) => setLanding(e.target.value)}
-                  className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
-                />
-              </LedgerField>
+                <LedgerField label="Aterrizajes">
+                  <LandingsStepper value={landings} onChange={setLandings} />
+                </LedgerField>
+              </div>
             </div>
-
-            {/* Block time vs. ANAC time — the distinction the old single
-                "Tiempo (h)" field hid. */}
-            <TimeSummary
-              blockMinutes={blockMinutes}
-              total={total}
-              manualDuration={manualDuration}
-              onManualDuration={setManualDuration}
-            />
           </div>
+        </div>
 
-          {/* 02 + 03 — now a trigger, not thirteen rows.
+          {/* 02 and 03 side by side too: both are short now, and stacking two
+              short blocks was what still forced a scroll after the breakdown
+              moved into the panel. */}
+          <div className="lg:grid lg:grid-cols-2 lg:gap-x-10 lg:items-start space-y-8 lg:space-y-0 md:space-y-10 lg:md:space-y-0">
+
+          {/* 02 — now a trigger, not thirteen rows.
               The whole breakdown lives in the slide-over below. Inline, those
               rows were ~700px of a 1400px form, so the pilot scrolled two
               screens past controls that most flights never touch; FlightDeck
@@ -420,7 +441,9 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
               <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">03. Descuento aplicado</p>
               <Percent className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 md:gap-x-10 gap-y-6">
+            {/* Stacked, not two-up: this block now lives inside a half-width
+                column, where two fields side by side would be ~150px each. */}
+            <div className="grid grid-cols-1 gap-y-6">
               <LedgerField label="Tipo de descuento">
                 <StyledSelect
                   name="discount_type"
@@ -447,6 +470,7 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                 </LedgerField>
               )}
             </div>
+          </div>
           </div>
         </div>
 
