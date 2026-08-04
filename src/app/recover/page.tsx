@@ -138,7 +138,7 @@ export default function RecoverPage() {
 
         {/* Version Tag */}
         <div className="mt-12 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.5em]">
-          Vector Aviation v2.0.1
+          Vector Aviation v2.5.0
         </div>
       </div>
     </div>
