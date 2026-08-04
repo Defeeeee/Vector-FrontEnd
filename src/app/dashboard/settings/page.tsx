@@ -1,22 +1,24 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile, FlightPack, PilotDocument } from "@/types";
-import { Plane, User, Package, CalendarClock } from "lucide-react";
+import { Aircraft, Profile, FlightPack, PilotDocument, Logbook } from "@/types";
+import { Plane, User, Package, CalendarClock, BookOpen } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
 import FlightPackCard from "@/components/dashboard/FlightPackCard";
 import AircraftForm from "@/components/dashboard/AircraftForm";
 import FlightPackForm from "@/components/dashboard/FlightPackForm";
 import DocumentsManager from "@/components/dashboard/DocumentsManager";
+import LogbooksManager from "@/components/dashboard/LogbooksManager";
 import PageHeader from "@/components/dashboard/PageHeader";
 
 import { redirect } from "next/navigation";
 
 async function getSettingsData() {
-  const [profilesRes, aircraftRes, packsRes, documentsRes] = await Promise.all([
+  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes] = await Promise.all([
     apiFetch("/profiles"),
     apiFetch("/aircraft"),
     apiFetch("/flight-packs"),
-    apiFetch("/documents")
+    apiFetch("/documents"),
+    apiFetch("/logbooks")
   ]);
 
   if (profilesRes.status === 401 || aircraftRes.status === 401 || packsRes.status === 401) {
@@ -28,17 +30,30 @@ async function getSettingsData() {
   const aircraft: Aircraft[] = aircraftRes.ok ? await aircraftRes.json() : [];
   const packs: FlightPack[] = packsRes.ok ? await packsRes.json() : [];
   const documents: PilotDocument[] = documentsRes.ok ? await documentsRes.json() : [];
+  const logbooks: Logbook[] = logbooksRes.ok ? await logbooksRes.json() : [];
 
-  return { profile: profiles[0] || null, aircraft, packs, documents };
+  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks };
 }
 
 export default async function SettingsPage() {
-  const { profile, aircraft, packs, documents } = await getSettingsData();
+  const { profile, aircraft, packs, documents, logbooks } = await getSettingsData();
   const cma = documents.find(doc => doc.kind === "cma");
 
   return (
     <div className="space-y-8 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <PageHeader eyebrow="Perfil, vencimientos, aeronaves y packs de horas" title="Configuración" />
+
+      {/* Logbooks — above aircraft and packs because a flight has to land in a
+          book before anything else about it matters. */}
+      <section className="space-y-4 md:space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+            <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
+          </div>
+          <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Libros de vuelo</h3>
+        </div>
+        <LogbooksManager logbooks={logbooks} />
+      </section>
 
       {/* Profile Section */}
       <section className="space-y-4 md:space-y-6">
