@@ -10,7 +10,7 @@ libro, ningún agente cierra una tanda de cambios sin dejar su entrada acá.
   v4 — sin `tailwind.config.js`, el tema vive en `@theme` dentro de
   `src/app/globals.css` —, Framer Motion, next-themes). Los datos reales viven
   en un backend aparte (Python + Litestar + Supabase, en
-  `/home/ubuntu/FlightLog-BackEnd`) y la autenticación en otro servicio. El
+  `/Users/defeee/Vector/FlightLog-BackEnd`) y la autenticación en otro servicio. El
   frontend habla con los dos vía `apiFetch` (`src/lib/api.ts`) con Bearer
   token. **Cualquier cambio de modelo de datos requiere tocar el backend**, no
   alcanza con este repo.
@@ -1136,6 +1136,56 @@ este entorno no baja de ~1300 px de forma confiable (a veces aplica el resize ta
 y a veces no), así que no se pudo ver por debajo de `lg`. Es un `lg:grid` con
 `space-y-6` de base, o sea el patrón estándar de Tailwind y bajo riesgo, pero está
 sin comprobar.
+
+### 2026-08-04 00:47 UTC — Claude (Opus 5, vía Claude Code) — Decisiones de Federico y plan de múltiples libros
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:** Sólo documentación — `docs/brief/06-plan-post-flightdeck.md` y la
+ruta del backend en este archivo. **No se escribió código**: Federico pidió
+explícitamente sólo el plan.
+
+**Decisiones tomadas, para que nadie las reabra por su cuenta:**
+
+1. **La tipografía sans se queda en Nunito.** T3.2 cerrada. El contraste con
+   FlightDeck lo aporta la mono de instrumento, que ya está. No reabrir sin pedido.
+2. **Se arman las páginas legales** (T3.10, nueva). Privacidad y Términos dejan de
+   ser `href="#"`.
+3. **Múltiples libros de vuelo aprobado** (T2.8 → Tier 6), con tres condiciones:
+   sólo los campos actuales, los libros llevan nombre y descripción, y **se pueden
+   cargar horas al crear el libro**.
+
+**Corrección importante de este archivo:** decía que el backend vive en
+`/home/ubuntu/FlightLog-BackEnd`. **En esta máquina está en
+`/Users/defeee/Vector/FlightLog-BackEnd` y es accesible** — verificado. Ya está
+corregido acá y en el brief. Es Litestar con controladores por recurso, modelos
+Pydantic y **sin carpeta de migraciones**: el SQL se aplica por el MCP de Supabase.
+
+**Las dos decisiones de diseño que definen la feature de libros**, y que están
+argumentadas en el plan:
+
+- **El saldo inicial no puede ser un solo número.** Guardar "500 horas" haría que
+  la matriz ANAC muestre 500 h totales y **0 de PIC**, que el PCA Tracker diga que
+  no cumplís nada, y que el Resumen mienta en todas sus tarjetas. Tiene que traer
+  el mismo desglose que un vuelo.
+- **No usar un "vuelo fantasma" de arrastre.** Es tentador porque todo agregaría
+  solo, pero aparecería en la bitácora, en Top rutas y en el heatmap, la auditoría
+  lo marcaría como `inconsistent_total` por no tener horas de despegue, y borrarlo
+  desde la lista destruiría el saldo en silencio. El saldo va en columnas de
+  `logbooks`.
+
+También quedó anotado que **la detección de superposiciones de la auditoría debe
+seguir siendo por usuario y no por libro** — un piloto no puede estar en dos
+aviones a la vez aunque los anote en libros distintos—, mientras que `duplicate` sí
+conviene que sea por libro.
+
+**Estado:** Plan escrito, sin implementar. Tier 6 tiene esquema SQL, backfill,
+tabla de archivos por repo, orden de ejecución y criterios de aceptación.
+
+**Verificación:** No hay código que verificar. Se confirmó que la ruta del backend
+existe y se leyeron `models/flight.py`, `controllers/flights.py`,
+`controllers/dashboard.py` y `app.py` para que el plan describa el patrón real del
+repo y no uno inventado.
 
 ---
 
