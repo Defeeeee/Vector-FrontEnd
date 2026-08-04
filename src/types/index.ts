@@ -137,6 +137,17 @@ export interface AirportRef {
   lon?: number;
   /** Short display label, e.g. SADM -> "Morón". */
   label: string;
+  /** ANAC's three-letter designator (GEZ, MOR). Argentine aerodromes only. */
+  local?: string;
+  /** What MADHEL publishes about it. Absent for non-Argentine aerodromes. */
+  madhel?: {
+    province: string;
+    kind: "AD" | "HEL";
+    condition: string;
+    controlled: boolean | null;
+    status: string;
+    elevationM?: number;
+  };
 }
 
 /**

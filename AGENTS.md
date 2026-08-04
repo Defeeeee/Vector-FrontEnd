@@ -1572,6 +1572,28 @@ página. El selector correcto es
 `[...document.querySelectorAll('form')].find(f => new FormData(f).has('pic_day_loc'))`.
 Con el equivocado parece que el form no postea nada, y no es cierto.
 
+### 2026-08-04 23:59 UTC — Claude (Opus 5, vía Claude Code) — Integración del dataset MADHEL de ANAC (códigos locales GEZ, SRDR, MOR...)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `scripts/build-madhel.mjs` (nuevo) — script generador que procesa los 711 aeródromos y helipuertos publicados por ANAC en MADHEL.
+- `src/data/madhel.tsv` (nuevo) — dataset procesado con los 711 campos argentinos (558 de los cuales no tienen ICAO internacional pero sí designador local ANAC de 3 letras como GEZ o SRDR).
+- `src/lib/airports.ts` — función `applyMadhel` que combina MADHEL sobre OurAirports. Permite búsqueda exacta y por prefijo tanto por código ICAO (`SADM`) como por designador ANAC (`MOR` / `GEZ`).
+- `src/types/index.ts` — campos `local` y `madhel` agregados a la interfaz `AirportRef`.
+- `src/components/dashboard/AirportResolver.tsx` — muestra el código local ANAC en el dropdown de sugerencias cuando difiere del ICAO.
+- `src/components/dashboard/FlightLogForm.tsx` — validación `isValidCode` y canonicalización `canonical` en la ruta de despegue y aterrizaje para aceptar designadores locales ANAC de 3 letras.
+- `src/components/dashboard/AirportsClient.tsx` — ficha ampliada con provincia MADHEL, condición público/privado, estado (OK/CERRADO) y tipo (AD/HEL).
+
+**Por qué:**
+1. **Los 558 aeródromos sin ICAO no existían en la app.** OurAirports solo registra los 164 campos argentinos con ICAO. Para la aviación general argentina, aeródromos emblemáticos como General Rodríguez son **GEZ** (o **SRDR**) y no tenían representación alguna en el sistema.
+2. **Prioridad del código ICAO como canónico.** Si un aeródromo tiene ICAO (ej. SADM), este se conserva como el identificador guardado en la ruta para no duplicar ni dividir el historial de vuelos previamente cargados. El designador ANAC (`MOR`) opera como alias de búsqueda y resolución instantánea.
+3. **Fábrica de coincidencias IATA vs. ANAC.** 489 de los 711 designadores de MADHEL coinciden con códigos IATA de alguna parte del mundo. La búsqueda exacta prioriza el designador local argentino antes que resolver a un aeródromo internacional lejano.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios (30 rutas). Probado con búsquedas de `GEZ` (General Rodríguez), `SRDR` y `SADM` (Morón). La ficha muestra metadatos completos de MADHEL, provincia y estado.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

@@ -116,6 +116,17 @@ function splitRoute(route?: string): [string, string] {
   return [parts[0] ?? "", parts[1] ?? parts[0] ?? ""];
 }
 
+function canonical(code: string, airport: AirportRef | null): string {
+  if (airport?.icao) return airport.icao;
+  return code.trim().toUpperCase();
+}
+
+function isValidCode(code: string, airport: AirportRef | null): boolean {
+  if (airport) return true;
+  const cleaned = code.trim().toUpperCase();
+  return cleaned.length >= 3 && cleaned.length <= 4 && /^[A-Z0-9]+$/.test(cleaned);
+}
+
 export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, inModal = false, onCancel, stickyActions = false }: FlightLogFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -200,12 +211,12 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   async function handleSubmit(formData: FormData) {
     setError(null);
 
-    if (!origin || origin.length !== 4) {
-      setError("Ingresá un aeródromo de salida válido (4 letras).");
+    if (!isValidCode(origin, originAirport)) {
+      setError("Ingresá un aeródromo de salida válido.");
       return;
     }
-    if (!destination || destination.length !== 4) {
-      setError("Ingresá un aeródromo de llegada válido (4 letras).");
+    if (!isValidCode(destination, destinationAirport)) {
+      setError("Ingresá un aeródromo de llegada válido.");
       return;
     }
     if (total <= 0) {
@@ -216,7 +227,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
     setIsPending(true);
     // The allocator can't produce an over-assigned breakdown, so there is no
     // sum check here any more — the backend still validates as a backstop.
-    formData.set("route", `${origin} ${destination}`);
+    formData.set("route", `${canonical(origin, originAirport)} ${canonical(destination, destinationAirport)}`);
     formData.set("duration", total.toFixed(1));
 
     try {

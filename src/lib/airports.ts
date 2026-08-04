@@ -11,7 +11,25 @@ import path from "node:path";
  * client component.
  */
 
+/** What ANAC publishes about an Argentine aerodrome in MADHEL. */
+export interface MadhelInfo {
+  /** Province, as MADHEL spells it (uppercase). */
+  province: string;
+  /** AD = aeródromo, HEL = helipuerto. */
+  kind: "AD" | "HEL";
+  /** PUBLICO / PRIVADO. Blank where MADHEL does not state it. */
+  condition: string;
+  /** null where MADHEL does not state it — not the same as "uncontrolled". */
+  controlled: boolean | null;
+  /** OK, CERRADO, SIN IDENTIFICACION VISUAL… verbatim, so a closed field says so. */
+  status: string;
+  /** Elevation in metres, the unit MADHEL and Argentine charts publish. */
+  elevationM?: number;
+}
+
 export interface Airport {
+  /** Canonical code: the ICAO indicator, or the ANAC designator when there is no
+   *  ICAO. This is what gets written into a flight's route — see `local`. */
   icao: string;
   name: string;
   city: string;
@@ -26,9 +44,18 @@ export interface Airport {
   /** Decimal degrees, 4dp (~11 m) — enough to plot, small enough not to bloat. */
   lat?: number;
   lon?: number;
+  /**
+   * ANAC's three-letter designator — GEZ for General Rodríguez, MOR for Morón.
+   * Argentine aerodromes only, and it is how pilots here actually refer to the
+   * field. Resolves as an alias of `icao`; it is never what gets stored.
+   */
+  local?: string;
+  madhel?: MadhelInfo;
 }
 
 interface Index {
+  /** Keyed by canonical code **and** by ANAC designator, so "GEZ" and "SRDR"
+   *  both land on the same object. */
   byIcao: Map<string, Airport>;
   /** ICAO prefix (2 chars) -> airports, so prefix search never scans all 17k. */
   byPrefix: Map<string, Airport[]>;
@@ -97,11 +124,121 @@ function load(): Index {
     else byPrefix.set(p, [airport]);
   }
 
+  applyMadhel({ byIcao, byPrefix, all, haystacks });
+
   index = { byIcao, byPrefix, all, haystacks };
   return index;
 }
 
-/** Exact ICAO lookup. Returns null for unknown codes. */
+/** Spanish title case: "GENERAL RODRÍGUEZ" -> "General Rodríguez". */
+const MINOR_WORDS = new Set(["DE", "DEL", "LA", "LAS", "LO", "LOS", "Y", "EL", "EN"]);
+
+function titleCase(s: string): string {
+  return s
+    .split(/\s+/)
+    .map((word, i) =>
+      i > 0 && MINOR_WORDS.has(word)
+        ? word.toLowerCase()
+        : word.charAt(0) + word.slice(1).toLowerCase()
+    )
+    .join(" ");
+}
+
+/**
+ * Layers ANAC's MADHEL over the OurAirports base.
+ *
+ * OurAirports only knows the 164 Argentine aerodromes that hold an ICAO code.
+ * MADHEL lists 711, and **558 of them have no ICAO at all** — General Rodríguez
+ * is GEZ, and only GEZ, to everyone who flies there. Without this pass those
+ * fields simply do not exist as far as the app is concerned.
+ *
+ * Two rules, and they are not symmetric:
+ *
+ * - For an aerodrome the base already has, MADHEL contributes **identity and
+ *   category** (designator, province, público/privado, controlado, elevation)
+ *   but leaves the name alone. The AR names in the base come from the
+ *   hand-maintained overlay in `airports-overlay.tsv`, which is curated for
+ *   exactly this purpose; overwriting "Aeródromo San Fernando" with MADHEL's
+ *   "SAN FERNANDO" would throw away the better string.
+ * - For one it does not have, MADHEL supplies everything.
+ */
+function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
+  const file = path.join(process.cwd(), "src", "data", "madhel.tsv");
+  if (!fs.existsSync(file)) return;
+
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+    if (!line) continue;
+    const [local, icao, iata, name, city, province, kind, condition, control, status, elevM, lat, lon] =
+      line.split("\t");
+    if (!local) continue;
+
+    const asNum = (v?: string) => {
+      const n = parseFloat(v ?? "");
+      return Number.isFinite(n) ? n : undefined;
+    };
+
+    // The ICAO wins as the canonical code wherever one exists. That keeps every
+    // flight already logged as SADM matching the aerodrome a pilot now reaches by
+    // typing MOR: canonicalising the other way would split one aerodrome's
+    // history in two the day this shipped.
+    const canonical = icao || local;
+    const metres = asNum(elevM);
+    const madhel: MadhelInfo = {
+      province: province || "",
+      kind: kind === "HEL" ? "HEL" : "AD",
+      condition: condition || "",
+      controlled: control === "C" ? true : control === "NC" ? false : null,
+      status: status || "",
+      elevationM: metres,
+    };
+
+    const existing = byIcao.get(canonical);
+    if (existing) {
+      existing.local = local;
+      existing.madhel = madhel;
+      if (existing.elevation === undefined && metres !== undefined) {
+        existing.elevation = Math.round(metres / 0.3048);
+      }
+      if (!existing.iata && iata) existing.iata = iata;
+      byIcao.set(local, existing);
+      continue;
+    }
+
+    const label = titleCase(name.split("/")[0].trim()) || city || local;
+    const airport: Airport = {
+      icao: canonical,
+      // Kept verbatim as MADHEL publishes it — the official designation, which
+      // the aerodrome page shows next to the friendlier `label`.
+      name,
+      city: city || "",
+      country: "AR",
+      size: kind === "HEL" ? "H" : "S",
+      iata: iata || "",
+      label,
+      elevation: metres !== undefined ? Math.round(metres / 0.3048) : undefined,
+      lat: asNum(lat),
+      lon: asNum(lon),
+      local,
+      madhel,
+    };
+
+    byIcao.set(canonical, airport);
+    if (local !== canonical) byIcao.set(local, airport);
+    all.push(airport);
+    // The designator goes in the haystack too, so a half-typed "GE" still
+    // surfaces GEZ — the exact-match path only fires on the full code.
+    haystacks.push(normalize(`${local} ${canonical} ${city} ${name} ${province}`));
+    const p = canonical.slice(0, 2);
+    const bucket = byPrefix.get(p);
+    if (bucket) bucket.push(airport);
+    else byPrefix.set(p, [airport]);
+  }
+}
+
+/**
+ * Exact code lookup. Accepts an ICAO indicator or an ANAC designator — `GEZ`
+ * and `SRDR` both return General Rodríguez. Returns null for unknown codes.
+ */
 export function getAirport(icao: string): Airport | null {
   return load().byIcao.get(normalize(icao)) ?? null;
 }
@@ -123,8 +260,14 @@ function compare(a: Airport, b: Airport, rankA: number, rankB: number): number {
 }
 
 /**
- * Prefix-first fuzzy search over ICAO, IATA, city and name.
+ * Prefix-first fuzzy search over ICAO, ANAC designator, IATA, city and name.
  * `limit` caps the response; callers typically want a handful of suggestions.
+ *
+ * The exact pass covers ANAC designators for free, because the index keys them
+ * alongside ICAO codes. That ordering matters: **489 of the 711 MADHEL
+ * designators are also somebody's IATA code** somewhere in the world, and an
+ * Argentine logbook should answer "MOR" with Morón, not with a foreign field
+ * that happens to share the letters. Exact beats IATA, so it does.
  */
 export function searchAirports(query: string, limit = 8): Airport[] {
   const q = normalize(query);

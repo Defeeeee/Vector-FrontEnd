@@ -15,6 +15,18 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const DEBOUNCE_MS = 150;
 
+/**
+ * The typed code identifies an aerodrome by either of its names.
+ *
+ * ANAC gives Argentine aerodromes a three-letter designator alongside the ICAO
+ * indicator — General Rodríguez is GEZ *and* SRDR — and pilots here overwhelmingly
+ * use the short one. Matching only on `icao` left "GEZ" showing nothing at all
+ * under the field, which is precisely the confirmation this control exists to give.
+ */
+function exactMatch(results: AirportRef[], query: string): AirportRef | null {
+  return results.find((a) => a.icao === query || a.local === query) ?? null;
+}
+
 /** Query -> results, kept for the life of the page. Codes are typed and
  *  retyped constantly (SADM out, SADM back), so re-fetching is pure latency. */
 const cache = new Map<string, AirportRef[]>();
@@ -69,7 +81,7 @@ export default function AirportResolver({
     const cached = cache.get(query);
     if (cached) {
       setSuggestions(cached);
-      notify(cached.find((a) => a.icao === query) ?? null);
+      notify(exactMatch(cached, query));
       return;
     }
 
@@ -85,7 +97,7 @@ export default function AirportResolver({
         const results: AirportRef[] = data.results ?? [];
         cache.set(query, results);
         setSuggestions(results);
-        notify(results.find((a) => a.icao === query) ?? null);
+        notify(exactMatch(results, query));
       } catch {
         // Aborted or offline — leave the last good state alone rather than
         // flashing an error at someone who is mid-keystroke.
@@ -172,7 +184,9 @@ export default function AirportResolver({
               : "border-zinc-200 dark:border-white/10 focus:border-zinc-900 dark:focus:border-white"
         }`}
       />
-      {name && <input type="hidden" name={name} value={value} />}
+      {/* Posts the canonical code, not the keystrokes: someone who typed GEZ has
+          to end up storing the same aerodrome as someone who typed SRDR. */}
+      {name && <input type="hidden" name={name} value={resolved?.icao ?? value} />}
 
       {/* Resolved name — the whole point of the control. Reserve the line so
           the layout doesn't jump as codes resolve and un-resolve. */}
@@ -229,7 +243,19 @@ export default function AirportResolver({
                   <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
                     {airport.label}
                   </span>
-                  <span className="ml-auto text-[10px] font-semibold text-zinc-300 dark:text-zinc-600 shrink-0">
+                  {/* Both codes, when the aerodrome has two. Picking the row puts
+                      the ICAO in the box, so seeing the designator that was just
+                      typed sitting next to it is what makes that make sense. */}
+                  {airport.local && airport.local !== airport.icao && (
+                    <span className="ml-auto text-[10px] font-bold data text-zinc-400 dark:text-zinc-500 shrink-0">
+                      {airport.local}
+                    </span>
+                  )}
+                  <span
+                    className={`text-[10px] font-semibold text-zinc-300 dark:text-zinc-600 shrink-0 ${
+                      airport.local && airport.local !== airport.icao ? "" : "ml-auto"
+                    }`}
+                  >
                     {airport.country}
                   </span>
                 </button>

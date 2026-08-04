@@ -199,9 +199,16 @@ export default function AirportsClient({
               {selected.icao}
             </h2>
             <div className="pb-1 min-w-0">
-              <p className="text-lg md:text-xl font-display font-bold text-zinc-900 dark:text-white tracking-tight truncate">
-                {selected.label}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-lg md:text-xl font-display font-bold text-zinc-900 dark:text-white tracking-tight truncate">
+                  {selected.label}
+                </p>
+                {selected.local && selected.local !== selected.icao && (
+                  <span className="data text-xs font-bold px-2 py-0.5 rounded-md bg-aviation-blue/10 text-aviation-blue border border-aviation-blue/20">
+                    ANAC: {selected.local}
+                  </span>
+                )}
+              </div>
               <p className="text-[13px] text-zinc-500 dark:text-zinc-400 truncate">{selected.name}</p>
             </div>
           </div>
@@ -210,16 +217,32 @@ export default function AirportsClient({
             <Fact
               icon={<Mountain className="w-3.5 h-3.5" />}
               label="Elevación"
-              value={selected.elevation !== undefined ? `${selected.elevation} ft` : "—"}
+              value={
+                selected.elevation !== undefined
+                  ? `${selected.elevation} ft${selected.madhel?.elevationM !== undefined ? ` (${selected.madhel.elevationM}m)` : ""}`
+                  : "—"
+              }
             />
-            <Fact icon={<MapPin className="w-3.5 h-3.5" />} label="Ciudad" value={selected.city || "—"} />
+            <Fact
+              icon={<MapPin className="w-3.5 h-3.5" />}
+              label="Ciudad / Prov"
+              value={
+                selected.madhel?.province
+                  ? `${selected.city || selected.label}, ${selected.madhel.province}`
+                  : selected.city || "—"
+              }
+            />
             <Fact icon={<Globe className="w-3.5 h-3.5" />} label="País" value={selected.country || "—"} />
             <Fact
               icon={<Plane className="w-3.5 h-3.5" />}
               label="Tipo"
-              value={SIZE_LABEL[selected.size] || "—"}
+              value={selected.madhel?.kind === "HEL" ? "Helipuerto" : SIZE_LABEL[selected.size] || "—"}
             />
-            <Fact icon={<Ticket className="w-3.5 h-3.5" />} label="IATA" value={selected.iata || "—"} />
+            <Fact
+              icon={<Ticket className="w-3.5 h-3.5" />}
+              label="ANAC / IATA"
+              value={[selected.local, selected.iata].filter(Boolean).join(" / ") || "—"}
+            />
             <Fact
               icon={<Navigation className="w-3.5 h-3.5" />}
               label="Coords"
@@ -230,6 +253,35 @@ export default function AirportsClient({
               }
             />
           </div>
+
+          {selected.madhel && (
+            <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.01] p-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="eyebrow text-zinc-400 dark:text-zinc-500">Ficha MADHEL ANAC:</span>
+                <span className="data text-xs font-bold text-zinc-900 dark:text-white">
+                  {selected.madhel.kind === "HEL" ? "Helipuerto" : "Aeródromo"} {selected.madhel.condition || "Público/Privado"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                {selected.madhel.controlled !== null && (
+                  <span className="data px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-zinc-700 dark:text-zinc-300 font-semibold">
+                    {selected.madhel.controlled ? "Controlado (C)" : "No controlado (NC)"}
+                  </span>
+                )}
+                {selected.madhel.status && (
+                  <span
+                    className={`data px-2.5 py-1 rounded-lg font-semibold ${
+                      selected.madhel.status === "OK"
+                        ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    {selected.madhel.status}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Meteorología */}
