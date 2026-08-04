@@ -1440,6 +1440,45 @@ un aviso en la pantalla de vencimientos explicando que sin número no hay alerta
 **Verificación:** Todo por ejecución del código real contra la base de producción,
 con limpieza posterior confirmada por SQL.
 
+### 2026-08-04 22:10 UTC — Claude (Opus 5, vía Claude Code) — Que Vector pida el WhatsApp (tercera pata de T1.1)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `ProfileForm.tsx` — el label del campo y un texto de ayuda debajo.
+- `WhatsAppMissingNotice.tsx` (nuevo) + `settings/page.tsx` — aviso contextual.
+
+**Por qué:** La entrada anterior encontró que **9 de 10 perfiles no tienen
+WhatsApp cargado**, así que el cron de vencimientos no le serviría casi a nadie
+aunque se configurara. Buscando la causa apareció algo concreto: el campo se
+llamaba **"WhatsApp (para Copiloto IA)"**. Un piloto que no usa el copiloto lo
+saltea sin motivo para pensar que ese mismo número es lo que habilita los avisos
+de vencimiento. **El label estaba causando el vacío.**
+
+Dos cambios, uno barato y uno que aparece cuando duele:
+
+1. El label pasa a **"WhatsApp"** a secas, con una línea debajo que nombra los dos
+   usos y cierra con *"Sin número no hay avisos"*.
+2. Un aviso en la sección **Vencimientos** —no en el perfil— cuando el piloto
+   tiene documentos cargados y no tiene número. Va ahí a propósito: es el momento
+   en que la falta cuesta algo. El texto dice que las fechas se siguen calculando
+   pero que **nadie va a escribir**, porque el riesgo real no es no ver la fecha,
+   es *creer que Vector te va a avisar*.
+
+El aviso **sólo aparece si hay documentos cargados**. Sin documentos sería
+molestar por una feature que el piloto todavía no empezó a usar.
+
+**Estado:** Terminado. **T1.1 sigue bloqueado** del lado de Federico: falta el
+`DOCUMENTS_ALERT_SECRET` y la entrada de cron. Esto ataca la tercera pata —los
+destinatarios—, no las otras dos.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. En el dev server
+contra la cuenta real: con número cargado el aviso **no** aparece y el texto de
+ayuda sí. Para ver el estado contrario se invirtió la condición un momento: el
+aviso renderiza correctamente arriba de la lista, justo encima del *"Vence en 514
+días"* que es la falsa tranquilidad que corrige. La condición quedó revertida y
+comprobada.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
