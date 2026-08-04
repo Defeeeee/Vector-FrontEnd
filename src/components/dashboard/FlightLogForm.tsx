@@ -145,6 +145,18 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   /** Slide-over with the ANAC breakdown (sections 02 and 03). */
   const [breakdownOpen, setBreakdownOpen] = useState(false);
 
+  const [remarks, setRemarks] = useState("");
+
+  /**
+   * Whether the two time fields are being typed in local time.
+   *
+   * `takeoff`/`landing` are stored — and read by the audit engine — as the UTC
+   * value the pilot typed. So this only shifts what is *displayed*: the hidden
+   * inputs always post UTC. Getting that backwards would move every flight by
+   * three hours and quietly break overlap detection.
+   */
+  const [localTime, setLocalTime] = useState(false);
+
   const [logbookId, setLogbookId] = useState(
     () => logbooks.find((l) => l.is_default)?.id ?? logbooks[0]?.id ?? ""
   );
@@ -162,6 +174,17 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   useEffect(() => {
     if (takeoff && landing) setManualDuration("");
   }, [takeoff, landing]);
+
+  /** Argentina is UTC-3 year round — no DST since 2009, so a constant is honest here. */
+  const UTC_OFFSET_HOURS = -3;
+  const shiftClock = (hhmm: string, hours: number) => {
+    if (!/^\d{2}:\d{2}$/.test(hhmm)) return hhmm;
+    const [h, m] = hhmm.split(":").map(Number);
+    const shifted = (((h + hours) % 24) + 24) % 24;
+    return `${String(shifted).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+  const toDisplay = (utc: string) => (localTime ? shiftClock(utc, UTC_OFFSET_HOURS) : utc);
+  const fromDisplay = (shown: string) => (localTime ? shiftClock(shown, -UTC_OFFSET_HOURS) : shown);
 
   const isCrossCountry =
     crossCountryOverride ?? (Boolean(origin) && Boolean(destination) && origin !== destination);
@@ -313,25 +336,35 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
               {/* Times sit with the route because together they *are* the
                   flight: where it went and how long it took. The right column
                   is everything that classifies it. */}
+
+              {/* The stored value is always UTC — these two hidden inputs are
+                  what actually posts. The visible fields only change what the
+                  pilot reads, so flipping the toggle can never move a flight. */}
+              <input type="hidden" name="takeoff" value={takeoff} />
+              <input type="hidden" name="landing" value={landing} />
+
+              <div className="flex items-center gap-1.5">
+                <SegmentToggle active={!localTime} onClick={() => setLocalTime(false)} label="UTC" />
+                <SegmentToggle active={localTime} onClick={() => setLocalTime(true)} label="Local (−3)" />
+              </div>
+
               <div className="grid grid-cols-2 gap-x-6 gap-y-6">
-                <LedgerField label="Despegue (UTC)">
+                <LedgerField label={localTime ? "Despegue (local)" : "Despegue (UTC)"}>
                   <input
                     type="time"
-                    name="takeoff"
                     required
-                    value={takeoff}
-                    onChange={(e) => setTakeoff(e.target.value)}
+                    value={toDisplay(takeoff)}
+                    onChange={(e) => setTakeoff(fromDisplay(e.target.value))}
                     className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
                   />
                 </LedgerField>
 
-                <LedgerField label="Aterrizaje (UTC)">
+                <LedgerField label={localTime ? "Aterrizaje (local)" : "Aterrizaje (UTC)"}>
                   <input
                     type="time"
-                    name="landing"
                     required
-                    value={landing}
-                    onChange={(e) => setLanding(e.target.value)}
+                    value={toDisplay(landing)}
+                    onChange={(e) => setLanding(fromDisplay(e.target.value))}
                     className={`${ledgerInput} [color-scheme:light] dark:[color-scheme:dark]`}
                   />
                 </LedgerField>
@@ -405,6 +438,20 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   <LandingsStepper value={landings} onChange={setLandings} />
                 </LedgerField>
               </div>
+
+              {/* The paper ANAC logbook has an observations column and Vector
+                  had nowhere to write one. Kept last and unlabelled-optional:
+                  most flights never need it. */}
+              <LedgerField label="Observaciones">
+                <textarea
+                  name="remarks"
+                  rows={2}
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Opcional — instrucción, desvío, algo para acordarte"
+                  className={`${ledgerInput} resize-none`}
+                />
+              </LedgerField>
             </div>
           </div>
         </div>
