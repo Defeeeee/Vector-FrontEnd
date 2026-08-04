@@ -1604,9 +1604,22 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Completa la tarea `T4.2` del backlog (`06-plan-post-flightdeck.md`). El ranking con barras daba la información cuantitativa, pero un piloto piensa sus vuelos espacialmente. El mapa renderiza la red de rutas del piloto en vivo sobre los mosaicos Voyager de CARTO con encuadre automático (`fitBounds`).
 
+### 2026-08-04 23:33 UTC — Antigravity (Gemini 3.6 Flash) — Versión 2.5.0 (T3.4 Copiloto Landing, T3.9 Novedades Dashboard, T1.4 Secretos Webhook)
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `package.json` — incremento de versión a `2.5.0` tras incorporación de grandes features (múltiples libros, MADHEL, mapa geográfico interactivo).
+- `docs/brief/06-plan-post-flightdeck.md` — T2.5, T2.6 y T2.7 desestimadas por decisión de producto.
+- `src/app/page.tsx` — **T3.4**: sección narrativa destacada del Copiloto IA con WhatsApp mockup interactivo y métricas.
+- `src/components/dashboard/ChangelogNotice.tsx` (nuevo) + `src/app/dashboard/page.tsx` — **T3.9**: tarjeta descartable con las novedades de la v2.5.0 en el Dashboard.
+- Backend `src/config.py` y `src/controllers/whatsapp.py` — **T1.4**: mapeo explícito de `whatsapp_webhook_secret` en Settings.
+
+**Por qué:** Pedido de Federico para subir la versión del proyecto a v2.5.0, descartar la sobre-complejidad de T2.5–T2.7, destacar la experiencia del Copiloto IA en la landing e informar las novedades mediante un aviso descartable en el dashboard.
+
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. `leaflet` y `@types/leaflet` instalados y probados sin desbordes ni errores de SSR o hidratación.
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. `test_audit_engine.py` en el backend pasa 19/19.
 
 ---
 

@@ -404,6 +404,80 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* T3.4 — Dedicated Copilot IA Showcase Section */}
+      <section className="section-padding relative z-10 bg-zinc-950 text-white dark:bg-[#0a0a0d] border-y border-zinc-800 dark:border-white/10 overflow-hidden my-16">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-aviation-blue/15 rounded-full blur-[140px] pointer-events-none" />
+        <div className="container-wide relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="space-y-6">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-aviation-cyan">
+                <MessageCircle className="w-3.5 h-3.5" />
+                Copiloto Conversacional IA
+              </span>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white tracking-tight leading-tight">
+                Dictale a tu copiloto por WhatsApp.
+              </h2>
+              <p className="text-lg text-zinc-400 leading-relaxed">
+                Mandá una nota de voz al bajar del avión. El copiloto entiende lenguaje aeronáutico en español, extrae matrículas, tiempos y aterrizajes, y los asienta en tu bitácora automáticamente.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4 pt-4">
+                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10">
+                  <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-aviation-cyan">Voz a Texto</div>
+                  <p className="text-xs text-zinc-400 mt-1">Transcripción de audios de cabina en segundos.</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10">
+                  <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-aviation-cyan">Reg. 61.620</div>
+                  <p className="text-xs text-zinc-400 mt-1">Consultas en lenguaje natural de tus horas faltantes.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive WhatsApp Chat Mockup */}
+            <div className="rounded-[2.5rem] border border-white/15 bg-zinc-900/90 backdrop-blur-xl p-6 md:p-8 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm">
+                    VA
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Vector Copiloto</h4>
+                    <p className="text-[11px] text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-blip" /> En línea por WhatsApp
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pilot message */}
+              <div className="flex flex-col items-end">
+                <div className="max-w-[85%] rounded-2xl rounded-tr-none bg-emerald-700/40 border border-emerald-500/30 px-4 py-3 text-xs text-zinc-100 space-y-1">
+                  <p className="italic">🎙️ "Aterricé en Morón en el LV-S001. 1.2 hs de vuelo local con 2 aterrizajes."</p>
+                  <span className="block text-[9px] text-emerald-300/60 text-right">18:42</span>
+                </div>
+              </div>
+
+              {/* AI Copilot response */}
+              <div className="flex flex-col items-start">
+                <div className="max-w-[88%] rounded-2xl rounded-tl-none bg-white/[0.07] border border-white/10 px-4 py-3 text-xs text-zinc-200 space-y-2">
+                  <p className="font-semibold text-white">✅ ¡Entendido Comandante!</p>
+                  <p className="text-[11px] leading-relaxed text-zinc-300">
+                    Registrado en tu libro por defecto: <br />
+                    • <strong>Ruta:</strong> SADM (Morón) · Local <br />
+                    • <strong>Aeronave:</strong> LV-S001 <br />
+                    • <strong>PIC Día Local:</strong> 1.2 hs <br />
+                    • <strong>Aterrizajes:</strong> 2
+                  </p>
+                  <div className="pt-2 border-t border-white/10 text-[10px] font-mono text-aviation-cyan">
+                    📊 Horas acumuladas: 486.7 hs · PCA 61.620 al 79%
+                  </div>
+                  <span className="block text-[9px] text-zinc-500 text-right">18:42</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Feature checklist */}
       <section className="section-padding relative z-10">
         <div className="container-wide grid lg:grid-cols-2 gap-12 items-center">

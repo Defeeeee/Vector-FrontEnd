@@ -54,6 +54,8 @@ function splitRoute(route: string): [string, string] {
   return [parts[0] || "???", parts[1] || "???"];
 }
 
+import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
+
 export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs, audit, documents, logbooks } = await getDashboardData();
 
@@ -206,6 +208,9 @@ export default async function Dashboard() {
           </Link>
         )}
       </section>
+
+      {/* Novedades de la versión */}
+      <ChangelogNotice />
 
       {/* Headline row. Replaces the split-flap hero card that used to sit here.
           That card was ~340px tall and repeated itself: the same 46.3 also shows
