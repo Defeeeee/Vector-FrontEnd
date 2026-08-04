@@ -1481,6 +1481,99 @@ comprobada.
 
 ---
 
+### 2026-08-04 23:40 UTC — Claude (Opus 5, vía Claude Code) — Pestaña Aeropuertos + cierre de Tier 2 y Tier 3 (T4.1, T2.3, T2.4, T3.7, T3.8)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `AirportsClient.tsx` + `dashboard/airports/page.tsx` (nuevos), `DashboardNav.tsx`,
+  `scripts/build-airports.mjs`, `src/data/airports.tsv` — **T4.1**.
+- `FlightLogForm.tsx` — **T2.3** (toggle UTC/Local) y **T2.4** (observaciones).
+- `dashboard/page.tsx` — **T3.7** (sparkline) y **T3.8** (AWOS al lado del heatmap).
+
+---
+
+#### T4.1 — La pestaña Aeropuertos
+
+Era lo más distintivo que le quedaba a FlightDeck y la única de las tareas grandes
+que abría una página entera. Buscador de ICAO, ficha del aeródromo, METAR en vivo y
+—esto es lo que FlightDeck no tiene— **"Tu historial acá"**: cuántas veces volaste a
+ese campo, cuántas horas, cuántos aterrizajes y cuándo fue la última.
+
+Tres decisiones que valen la pena registrar:
+
+1. **El historial se calcula en el servidor.** La lista de vuelos ya viaja para el
+   dashboard; recalcularla en el cliente la haría cruzar el cable dos veces. Además
+   la fecha de "última visita" se formatea del lado servidor **a propósito**: este
+   repo ya pagó dos bugs de hidratación por formatear fechas en componentes cliente.
+2. **Un circuito local cuenta como una visita, no como dos.** `buildHistory` detecta
+   cuando el mismo ICAO está en los dos extremos de la ruta y suma una sola vez. Sin
+   eso, el aeródromo que más volás —justo el que más importa— reportaría el doble.
+3. **El TSV creció de 755 KB a 1096 KB** porque `build-airports.mjs` ahora arrastra
+   elevación y coordenadas. El resolver de ICAO no las necesita, pero son lo único
+   que una ficha puede mostrarle a un piloto (la elevación alimenta el pensar en
+   densidad-altitud). Las coordenadas van redondeadas a 4 decimales: ~11 m, de sobra
+   para un marcador, y evita que el archivo engorde con ruido.
+
+La pestaña abre en el aeródromo que más volaste, que casi siempre es tu base.
+
+**Dos bugs propios, encontrados en vivo:**
+- El buscador nunca mostraba resultados: `/api/airports/search` devuelve
+  `{results: [...]}`, no un array pelado.
+- Al abrir un aeródromo automáticamente se borraba lo que estabas tipeando. Se le
+  pasó `{clearSearch: false}` a ese camino.
+
+---
+
+#### T2.3 — Toggle UTC / Local
+
+El riesgo acá no era la UI, era el almacenamiento: `takeoff` y `landing` se guardan
+en **UTC** y el motor de auditoría asume eso. Si el toggle cambiara lo que se
+postea, la auditoría empezaría a marcar vuelos correctos.
+
+Por eso el toggle es **puramente de presentación**. Los campos visibles muestran la
+hora corrida −3, y dos `<input type="hidden">` postean siempre el valor UTC. Los
+labels cambian a "(local)" para que no haya ambigüedad de qué estás mirando.
+
+**Verificado en vivo:** con 14:00/15:30 cargados, pasar a Local muestra 11:00/12:30,
+y `FormData` sigue conteniendo 14:00/15:30. El Block Time calcula 1:30 → ANAC 1.5.
+
+---
+
+#### T2.4 — Observaciones
+
+Campo de texto libre colapsable. `remarks` en `Flight` y `FlightCreate` del backend.
+
+---
+
+#### T3.7 y T3.8 — Los dos que quedaban de Tier 3
+
+El sparkline es SVG hecho a mano (~20 líneas, sin librería) sobre la acumulación de
+30 días. **Las coordenadas se redondean a 2 decimales a propósito**: es la misma
+defensa que salvó al dial radial, donde `Math.sin`/`Math.cos` —que son
+*implementation-defined*— diferían entre Node y Chrome en los últimos dígitos y
+rompían la hidratación. Acá la aritmética es lineal y no debería pasar, pero el
+redondeo es gratis y deja el markup idéntico en los dos lados.
+
+T3.8 junta la estación AWOS con el heatmap en un `grid lg:grid-cols-2`: son las dos
+lecturas "de hoy" del dashboard y cada una desperdiciaba media fila.
+
+**Estado:** Los cinco terminados y verificados a ojo contra la cuenta real.
+`tsc --noEmit` y `npm run build` limpios.
+
+**Verificación de T4.1:** buscar "moron" da 8 resultados; SADF muestra elevación
+10 ft, coordenadas, METAR en vivo, e historial de 31 veces / 33.7 horas / 49
+aterrizajes / última el 25 Jul 2026. SADM —donde no voló— muestra el empty state
+"Todavía no volaste acá".
+
+**Advertencia para el próximo:** al inspeccionar el form de Nuevo Vuelo desde la
+consola, `document.querySelector('form')` agarra un form vacío — hay dos en la
+página. El selector correcto es
+`[...document.querySelectorAll('form')].find(f => new FormData(f).has('pic_day_loc'))`.
+Con el equivocado parece que el form no postea nada, y no es cierto.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
