@@ -1329,6 +1329,20 @@ pestaña del navegador se colgó.
 aplicar el `NOT NULL` a `flights.logbook_id` — pero **después** de desplegar el
 backend, no antes.
 
+### 2026-08-04 12:18 UTC — Antigravity (Gemini 3.6 Flash) — Verificación de push, creación de PRs y sincronización de AGENTS.md
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `AGENTS.md` — agregado de la entrada correspondiente al push y creación de PRs de ambas ramas.
+- `FlightLog-BackEnd/AGENTS.md` — creación de bitácora espejo en el repositorio de backend con las mismas políticas.
+
+**Por qué:** Solicitud explícita de verificar estado de push en ambos repositorios, crear `AGENTS.md` en backend, commitear y pushear la rama `feat/logbooks` del backend y la rama `chore/plan-y-tier0` del frontend, dejando listos los Pull Requests.
+
+**Estado:** Terminado.
+
+**Verificación:** Repositorios verificados, `.env` confirmados como gitignored y no commiteados.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
