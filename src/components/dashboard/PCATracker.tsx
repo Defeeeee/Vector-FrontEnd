@@ -1,32 +1,57 @@
 "use client";
 
-import { Flight } from "@/types";
+import { Flight, Logbook } from "@/types";
 import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Target } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface PCATrackerProps {
   flights: Flight[];
+  /**
+   * Hours carried into the logbooks without their flights.
+   *
+   * These have to count here or the tracker under-reports a pilot who migrated
+   * from paper — and under-reporting licence progress is worse than not showing
+   * it, because it is wrong in the direction that makes someone think they are
+   * further away than they are.
+   */
+  logbooks?: Logbook[];
 }
 
-export default function PCATracker({ flights }: PCATrackerProps) {
-  const totalHours = flights.reduce((acc, f) => acc + (f.duration || 0), 0);
-  
+export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) {
+  const open = (pick: (l: Logbook) => number | undefined) =>
+    logbooks.reduce((acc, l) => acc + (Number(pick(l)) || 0), 0);
+
+  const openingPic =
+    open((l) => l.opening_pic_day_loc) + open((l) => l.opening_pic_day_tra) +
+    open((l) => l.opening_pic_night_loc) + open((l) => l.opening_pic_night_tra);
+  const openingSic =
+    open((l) => l.opening_sic_day_loc) + open((l) => l.opening_sic_day_tra) +
+    open((l) => l.opening_sic_night_loc) + open((l) => l.opening_sic_night_tra);
+
+  const totalHours =
+    flights.reduce((acc, f) => acc + (f.duration || 0), 0) + openingPic + openingSic;
+
   const picHours = flights.reduce((acc, f) => {
     return acc + (f.pic_day_loc || 0) + (f.pic_day_tra || 0) + (f.pic_night_loc || 0) + (f.pic_night_tra || 0);
-  }, 0);
+  }, 0) + openingPic;
 
   const picTravesia = flights.reduce((acc, f) => {
     return acc + (f.pic_day_tra || 0) + (f.pic_night_tra || 0);
-  }, 0);
+  }, 0) + open((l) => l.opening_pic_day_tra) + open((l) => l.opening_pic_night_tra);
 
-  const realInstrument = flights.reduce((acc, f) => acc + (f.imc_pil || 0) + (f.capota || 0), 0);
+  const realInstrument = flights.reduce((acc, f) => acc + (f.imc_pil || 0) + (f.capota || 0), 0)
+    + open((l) => l.opening_imc_pil) + open((l) => l.opening_capota);
   const simInstrumentRaw = flights.reduce((acc, f) => acc + (f.sim_pil_en_inst || 0), 0);
   const instrumentHours = realInstrument + Math.min(simInstrumentRaw, 5);
 
   const nightHours = flights.reduce((acc, f) => {
     return acc + (f.pic_night_loc || 0) + (f.pic_night_tra || 0);
-  }, 0);
+  }, 0) + open((l) => l.opening_pic_night_loc) + open((l) => l.opening_pic_night_tra);
 
+  // Opening landings are not split day/night, so they are NOT added here: a
+  // carried-forward landing count cannot be assumed to be nocturnal, and
+  // inflating a night-landing requirement is the kind of error that sends a
+  // pilot to a checkride short.
   const nightLandings = flights.reduce((acc, f) => {
     if ((f.pic_night_loc || 0) > 0 || (f.pic_night_tra || 0) > 0) {
       return acc + (f.landings || 0);

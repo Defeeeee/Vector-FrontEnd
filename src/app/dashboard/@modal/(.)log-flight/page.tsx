@@ -40,11 +40,12 @@ export default async function InterceptedLogFlight({ searchParams }: PageProps) 
       }
     : undefined;
 
-  const res = await apiFetch("/aircraft");
+  const [res, lbRes] = await Promise.all([apiFetch("/aircraft"), apiFetch("/logbooks")]);
   if (res.status === 401) {
     redirect("/api/auth/logout?redirect=/?expired=true");
   }
   const aircraft: Aircraft[] = res.ok ? await res.json() : [];
+  const logbooks = lbRes.ok ? await lbRes.json() : [];
 
-  return <NewFlightModal aircraft={aircraft} initialData={initialData} />;
+  return <NewFlightModal aircraft={aircraft} logbooks={logbooks} initialData={initialData} />;
 }

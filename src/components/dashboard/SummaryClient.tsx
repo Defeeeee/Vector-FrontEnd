@@ -13,7 +13,7 @@ import {
   Sunrise,
   Trophy,
 } from "lucide-react";
-import { Flight, Aircraft } from "@/types";
+import { Flight, Aircraft, Logbook } from "@/types";
 import {
   PERIODS,
   Period,
@@ -24,6 +24,7 @@ import {
   byAircraft,
   filterByPeriod,
   headlineStats,
+  openingTotals,
   timeOfDay,
   topAirports,
   topRoutes,
@@ -170,19 +171,58 @@ function HourDial({ byHour, peakHour }: { byHour: number[]; peakHour: number | n
 export default function SummaryClient({
   flights,
   aircraft,
+  logbooks,
   todayIso,
   airportNames,
 }: {
   flights: Flight[];
   aircraft: Aircraft[];
+  logbooks: Logbook[];
   todayIso: string;
   airportNames: Record<string, string>;
 }) {
   const [period, setPeriod] = useState<Period>("todo");
 
   const scoped = useMemo(() => filterByPeriod(flights, period, todayIso), [flights, period, todayIso]);
-  const stats = useMemo(() => headlineStats(scoped), [scoped]);
-  const matrix = useMemo(() => anacMatrix(scoped), [scoped]);
+
+  // Carried-forward hours only apply to "todo". An opening balance has no date,
+  // so folding it into "last 28 days" would invent recent flying that never
+  // happened — and the odometer would stop matching the matrix.
+  const opening = useMemo(
+    () => (period === "todo" ? openingTotals(logbooks) : null),
+    [logbooks, period]
+  );
+
+  const stats = useMemo(() => {
+    const base = headlineStats(scoped);
+    if (!opening) return base;
+    return {
+      totalHours: base.totalHours + opening.totalHours,
+      pic: base.pic + opening.pic,
+      imc: base.imc + opening.imc,
+      night: base.night + opening.night,
+      hood: base.hood + opening.hood,
+      landings: base.landings + opening.landings,
+      flights: base.flights,
+    };
+  }, [scoped, opening]);
+
+  const matrix = useMemo(() => {
+    const base = anacMatrix(scoped);
+    if (!opening) return base;
+    const merge = (cells: number[], add: number[]) => cells.map((v, i) => v + add[i]);
+    const rows = [
+      { ...base.rows[0], cells: merge(base.rows[0].cells, opening.cells.local) },
+      { ...base.rows[1], cells: merge(base.rows[1].cells, opening.cells.travesia) },
+    ].map((r) => ({ ...r, total: r.cells.reduce((a, b) => a + b, 0) }));
+    const extraAdd = [opening.cells.imcPil, opening.cells.imcCop, opening.cells.capota, 0, 0];
+    return {
+      ...base,
+      rows,
+      extras: base.extras.map((e, i) => ({ ...e, value: e.value + extraAdd[i] })),
+      total: rows.reduce((a, r) => a + r.total, 0),
+    };
+  }, [scoped, opening]);
   const airports = useMemo(() => topAirports(scoped), [scoped]);
   const routes = useMemo(() => topRoutes(scoped), [scoped]);
   // Counted unsliced: the caption reports how many exist, not how many the
@@ -191,6 +231,7 @@ export default function SummaryClient({
   const routeTotal = useMemo(() => allRoutes(scoped).length, [scoped]);
   const hours = useMemo(() => timeOfDay(scoped), [scoped]);
   const fleet = useMemo(() => byAircraft(scoped, aircraft), [scoped, aircraft]);
+  const openingHours = opening?.totalHours ?? 0;
   const insights = useMemo(() => buildInsights(scoped, aircraft), [scoped, aircraft]);
 
   const maxVisits = Math.max(...airports.map((a) => a.visits), 1);
@@ -218,7 +259,7 @@ export default function SummaryClient({
         ))}
       </div>
 
-      {scoped.length === 0 ? (
+      {scoped.length === 0 && openingHours === 0 ? (
         <Card className="text-center py-16">
           <p className="text-lg font-display font-bold text-zinc-900 dark:text-white">
             Sin vuelos en este período

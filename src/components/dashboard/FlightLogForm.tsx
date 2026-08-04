@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Aircraft, AirportRef } from "@/types";
+import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
 import { ArrowRight, Loader2, Compass, User, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import {
@@ -71,6 +71,13 @@ const CONDITION_KEYS = CONDITION_CATEGORIES.map((c) => c.key);
 
 interface FlightLogFormProps {
   aircraft: Aircraft[];
+  /**
+   * The pilot's logbooks. The picker only renders when there is more than one:
+   * with a single book the question has one possible answer, and the form just
+   * went from 2.05 screens of scroll to 1.09 — that space is not spent on a
+   * field that decides nothing.
+   */
+  logbooks?: Logbook[];
   initialData?: {
     aircraft_id?: string;
     route?: string;
@@ -109,7 +116,7 @@ function splitRoute(route?: string): [string, string] {
   return [parts[0] ?? "", parts[1] ?? parts[0] ?? ""];
 }
 
-export default function FlightLogForm({ aircraft, initialData, onSuccess, inModal = false, onCancel, stickyActions = false }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, inModal = false, onCancel, stickyActions = false }: FlightLogFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -137,6 +144,10 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
 
   /** Slide-over with the ANAC breakdown (sections 02 and 03). */
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+
+  const [logbookId, setLogbookId] = useState(
+    () => logbooks.find((l) => l.is_default)?.id ?? logbooks[0]?.id ?? ""
+  );
 
   useEffect(() => {
     if (initialData?.purpose) setPurpose(initialData.purpose);
@@ -364,6 +375,19 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                   options={PURPOSE_OPTIONS}
                 />
               </LedgerField>
+
+              {logbooks.length > 1 && (
+                <LedgerField label="Libro de vuelo">
+                  <StyledSelect
+                    name="logbook_id"
+                    required
+                    value={logbookId}
+                    onChange={setLogbookId}
+                    placeholder="Seleccionar libro..."
+                    options={logbooks.map((l) => ({ value: l.id, label: l.name }))}
+                  />
+                </LedgerField>
+              )}
 
               <div className="grid grid-cols-2 gap-x-6 gap-y-6">
                 <LedgerField label="Fecha">

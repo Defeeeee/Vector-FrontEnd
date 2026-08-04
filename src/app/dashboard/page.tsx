@@ -1,7 +1,7 @@
 import { MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { buildActivityHeatmap } from "@/lib/utils";
-import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument } from "@/types";
+import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument, Logbook } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardChartsLazy";
 import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
 import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
@@ -23,11 +23,18 @@ async function getDashboardData() {
   const emptyAudit: AuditSummary = { critical: 0, warning: 0, suppressed: 0, open_total: 0, by_rule: {} };
 
   if (!response.ok) {
-    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [] };
+    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [], logbooks: [] as Logbook[] };
   }
 
   const data = await response.json();
+
+  // Logbooks are not in the /dashboard payload yet; fetched alongside so the
+  // totals on this page can include carried-forward hours.
+  const logbooksResponse = await apiFetch("/logbooks");
+  const logbooks: Logbook[] = logbooksResponse.ok ? await logbooksResponse.json() : [];
+
   return {
+    logbooks,
     flights: data.flights || [],
     aircraft: data.aircraft || [],
     profile: data.profile || null,
@@ -48,11 +55,30 @@ function splitRoute(route: string): [string, string] {
 }
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs, audit, documents } = await getDashboardData();
+  const { flights, aircraft, profile, session, packs, audit, documents, logbooks } = await getDashboardData();
 
   const totalFlights = flights.length;
-  const totalHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
-  const totalLandings = flights.reduce((acc: number, f: Flight) => acc + f.landings, 0);
+  const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
+
+  // Hours carried into the logbooks without their flights. They belong in the
+  // headline totals — a pilot who migrated 500 h from paper should not see 46 —
+  // but NOT in anything divided by the flight count: an opening balance has no
+  // flights behind it, so folding it into the average would invent 500 h spread
+  // over 39 entries.
+  const openingHours = (logbooks as Logbook[]).reduce(
+    (acc, l) =>
+      acc + Number(l.opening_pic_day_loc || 0) + Number(l.opening_pic_day_tra || 0)
+      + Number(l.opening_pic_night_loc || 0) + Number(l.opening_pic_night_tra || 0)
+      + Number(l.opening_sic_day_loc || 0) + Number(l.opening_sic_day_tra || 0)
+      + Number(l.opening_sic_night_loc || 0) + Number(l.opening_sic_night_tra || 0),
+    0
+  );
+  const openingLandings = (logbooks as Logbook[]).reduce(
+    (acc, l) => acc + Number(l.opening_landings || 0), 0
+  );
+
+  const totalHours = flownHours + openingHours;
+  const totalLandings = flights.reduce((acc: number, f: Flight) => acc + f.landings, 0) + openingLandings;
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -149,7 +175,7 @@ export default async function Dashboard() {
   const heatmapData = buildActivityHeatmap(flights as Flight[]);
 
   const longestFlight = flights.length > 0 ? Math.max(...flights.map((f: Flight) => f.duration)) : 0;
-  const avgFlightTime = totalFlights > 0 ? totalHours / totalFlights : 0;
+  const avgFlightTime = totalFlights > 0 ? flownHours / totalFlights : 0;
 
   return (
     <div className="space-y-10 md:space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
@@ -221,7 +247,7 @@ export default async function Dashboard() {
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <PCATracker flights={flights} />
+        <PCATracker flights={flights} logbooks={logbooks as Logbook[]} />
       )}
 
       {/* Analytics */}

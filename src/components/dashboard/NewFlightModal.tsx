@@ -23,9 +23,11 @@ import FlightLogForm from "./FlightLogForm";
  */
 export default function NewFlightModal({
   aircraft,
+  logbooks,
   initialData,
 }: {
   aircraft: Aircraft[];
+  logbooks?: import("@/types").Logbook[];
   initialData?: Record<string, unknown>;
 }) {
   const router = useRouter();
@@ -94,7 +96,7 @@ export default function NewFlightModal({
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-10">
-          <FlightLogForm aircraft={aircraft} initialData={initialData} inModal stickyActions onCancel={close} />
+          <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={initialData} inModal stickyActions onCancel={close} />
         </div>
       </motion.div>
     </div>
