@@ -1343,6 +1343,43 @@ backend, no antes.
 
 **Verificación:** Repositorios verificados, `.env` confirmados como gitignored y no commiteados. Rama `chore/plan-y-tier0` pusheada a origin.
 
+### 2026-08-04 21:56 UTC — Claude (Opus 5, vía Claude Code) — `flights.logbook_id` pasa a NOT NULL
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:** Sólo base de datos — migración `flights_logbook_id_not_null`. Sin
+cambios de código en ninguno de los dos repos.
+
+**Por qué:** Es el paso 4 de `migrations/001_logbooks.sql`, que quedó comentado
+detrás de una verificación a propósito. Se aplica ahora porque Federico mergeó y
+desplegó las dos PRs, y el backend en producción ya asigna el libro por defecto al
+crear un vuelo. **Aplicarlo antes del despliegue habría roto el alta de vuelos.**
+
+**Antes de aplicarlo se comprobaron tres cosas, en este orden:**
+
+1. **Que producción corra el código nuevo, no sólo que esté desplegado** — la
+   distinción importa, porque horas antes el mismo servidor tenía el proceso
+   viejo en memoria (ver la entrada de la clave de Supabase). `GET /logbooks`
+   devuelve **401 y no 404**: la ruta existe, o sea que el build nuevo está vivo.
+2. **La precondición de datos:** 0 vuelos huérfanos, y todos los usuarios con
+   vuelos tienen su libro por defecto.
+3. **Que exista un solo camino de alta.** Se rastrearon todos los inserts a
+   `flights`: hay **exactamente uno**, `flights.py:149`, que es el que tiene el
+   fallback. `whatsapp.py` sólo lee. Del lado del frontend, los tres orígenes
+   —el formulario, el cierre de sesión en vivo y el copiloto/WhatsApp— van todos
+   a `apiFetch("/flights")`; **ningún código inserta en Supabase directamente**.
+
+**Estado:** Aplicado y confirmado (`is_nullable = NO`).
+
+**Verificación:** Lo de arriba, todo por SQL y por lectura de los dos repos.
+
+**NO verificado, y es lo único que queda:** **no se creó un vuelo de verdad
+después del cambio.** El fallback está en el camino crítico —Federico tiene un
+solo libro, así que el frontend no manda `logbook_id` y el backend tiene que
+completarlo— y si fallara, el alta de vuelos quedaría rota por completo. El
+análisis dice que funciona, pero **cargar un vuelo de prueba es la única prueba
+real**. No se hizo para no ensuciar el libro real sin permiso.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
