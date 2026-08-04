@@ -1042,6 +1042,56 @@ las páginas o sacarlos, pero es decisión de Federico.
 - **T0.5.** Con los 39 vuelos reales ningún período queda vacío, así que el empty
   state de `/dashboard/summary` no se alcanza desde la UI.
 
+### 2026-08-04 00:09 UTC — Claude (Opus 5, vía Claude Code) — Auditoría del plan y desglose ANAC a panel (T2.1)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/06-plan-post-flightdeck.md` — auditoría completa contra el código.
+- `src/components/dashboard/FlightLogForm.tsx` — T2.1.
+
+**Por qué:**
+
+1. **La auditoría salió de un pedido de Federico** después de que yo descubriera,
+   al implementar, que tres tareas describían cosas ya construidas. Se verificaron
+   **todas** las pendientes contra el repo. Resultado: **cinco de veintiocho**
+   describían trabajo hecho. Las once de Tier 2 más T3.9, T4.1 y T4.2 se
+   confirmaron nuevas — `rol`, `reglas de vuelo`, `matrícula manual`, `libro de
+   vuelo` y `observaciones` tienen **cero referencias** en `FlightLogForm.tsx` y
+   `types/index.ts`; no hay librería de mapas ni nada que mencione `sparkline`. El
+   documento quedó con una tabla de estado y la regla de verificar antes de
+   escribir una tarea.
+
+2. **El desglose pasó a panel deslizante** (T2.1). Trece filas inline eran ~700 px
+   de un formulario de 1400: dos pantallas de scroll por encima de controles que la
+   mayoría de los vuelos no toca. Medido en el diálogo a 1488 px, el scroller pasó
+   de **1415 px de contenido en 690 visibles (2.05 pantallas) a 910 en 611 (1.49)**.
+
+**La decisión no obvia, y es la que puede romper todo si alguien la revierte:** el
+panel **nunca desmonta**. `TimeAllocator` emite un `<input type="hidden">` por
+categoría y **esos son los que postean el desglose**. Desmontarlo al cerrar —que es
+exactamente lo que haría el `AnimatePresence` que uno escribiría por reflejo— los
+saca del formulario, y cada vuelo se guardaría con el desglose **vacío y en
+silencio**, porque el server action interpreta un campo ausente como cero. Cerrar
+sólo translada el panel fuera de pantalla y le quita pointer events; un input con
+`display:none` igual se envía. **Si tocás este componente, verificá que las 13
+claves sigan en el `FormData` con el panel cerrado.**
+
+La sección de descuento se renumeró de 04 a 03 y **queda inline**: es un concepto
+propio de Vector y esconderlo detrás de un botón sería perderlo.
+
+**Estado:** Terminado T2.1. Con esto, el Tier 0 queda cerrado salvo T0.4 (parcial)
+y T0.5 (inalcanzable con datos reales).
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. En el dev server contra
+la cuenta real, a 378 px y a 1488 px, claro y oscuro:
+- **13/13 claves presentes en el `FormData` con el panel cerrado** — la prueba que
+  importa. En carga fresca, `aria-hidden="true"` y las 13 siguen ahí.
+- El panel abre y cierra, con Total del vuelo fijo arriba y los dos grupos
+  separados (PIC/SIC pooled, condiciones no pooled — se conservó el flag).
+- Secciones renumeradas a 01 / 02 / 03. Sin desborde horizontal. 0 errores de
+  consola.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
