@@ -1380,6 +1380,66 @@ completarlo— y si fallara, el alta de vuelos quedaría rota por completo. El
 análisis dice que funciona, pero **cargar un vuelo de prueba es la única prueba
 real**. No se hizo para no ensuciar el libro real sin permiso.
 
+### 2026-08-04 22:04 UTC — Claude (Opus 5, vía Claude Code) — NOT NULL verificado + diagnóstico del cron de vencimientos
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:** Nada de código ni de esquema. Sólo verificación y esta entrada.
+
+---
+
+#### 1. Se cerró lo que la entrada anterior dejó sin verificar
+
+Esa entrada decía que **no se había creado un vuelo real** después del `NOT NULL`,
+y que el fallback estaba en el camino crítico. **Ya está verificado**, sin ensuciar
+el libro: se ejercitó el código real —`FlightsController._default_logbook_id` con
+el service client, contra la base de producción— y se probaron las dos
+direcciones:
+
+- Con el libro que devuelve el fallback, **el insert entra** y `logbook_id` queda
+  completo.
+- Sin `logbook_id`, **la base lo rechaza** con `23502 not-null constraint`.
+
+O sea que la restricción está activa y el fallback la satisface. La fila de prueba
+se borró; la base quedó en 39 vuelos, 0 huérfanos, 46.3 hs.
+
+---
+
+#### 2. T1.1 — el cron de vencimientos: la lógica funciona, pero configurarlo no alcanza
+
+Se corrió el barrido real contra los datos de producción. **La lógica está bien**:
+de 8 documentos detecta 1 pendiente —un CMA vencido en 1996— y arma un mensaje
+correcto. `test_audit_engine.py` ya cubría el escalonado, y esto lo confirma
+contra datos reales.
+
+**Pero hay dos cosas que hacen que configurar el cron no sea suficiente:**
+
+1. **`DOCUMENTS_ALERT_SECRET` no está en el `.env`.** Ni en el local ni en el del
+   servidor (se listaron las variables: sólo `DEBUG`, `GOOGLE_*` y `SUPABASE_*`).
+   Sin él, el endpoint **rechaza la llamada a propósito** — falla cerrado porque
+   corre con service role sobre todos los usuarios.
+2. **9 de 10 perfiles no tienen WhatsApp cargado.** Esos quedan `skipped`. Aun con
+   el cron andando, el aviso llegaría a **un solo usuario**. La feature no está
+   sólo "sin configurar": está sin destinatarios.
+
+Esto cambia el alcance de T1.1 en el plan: además del secreto y la entrada de
+cron, hace falta **pedirle el teléfono a los pilotos** — en el onboarding, o con
+un aviso en la pantalla de vencimientos explicando que sin número no hay alerta.
+
+**Dos cosas que se revisaron y NO son bugs**, para que nadie las "arregle":
+
+- **`EXPIRED_BUCKET = 0`** parece una trampa de verdad/falsedad, pero el
+  controlador usa `if threshold is None`, no `if threshold`. Está bien.
+- El mensaje sale como **"Hola Hola,"**, que parece un saludo duplicado. Es **dato
+  de prueba**: hay un perfil cuyo `first_name` es literalmente `'Hola'`. El código
+  del saludo es correcto.
+
+**Estado:** Verificación terminada. T1.1 sigue **bloqueado del lado de Federico**
+(configuración de servidor), ahora con el alcance real documentado.
+
+**Verificación:** Todo por ejecución del código real contra la base de producción,
+con limpieza posterior confirmada por SQL.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
