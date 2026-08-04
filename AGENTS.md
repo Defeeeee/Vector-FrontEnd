@@ -1092,6 +1092,51 @@ la cuenta real, a 378 px y a 1488 px, claro y oscuro:
 - Secciones renumeradas a 01 / 02 / 03. Sin desborde horizontal. 0 errores de
   consola.
 
+### 2026-08-04 00:15 UTC — Claude (Opus 5, vía Claude Code) — Nuevo Vuelo en dos columnas (T2.2)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/components/dashboard/FlightLogForm.tsx` — layout de dos columnas desde `lg`.
+
+**Por qué:** Cierra el gap estructural con FlightDeck, que entra sin scroll. La
+progresión medida en el diálogo, que es lo que importa:
+
+| | contenido / visible | pantallas |
+|---|---|---|
+| Antes de esta tanda | 1415 px / 690 px | 2.05 |
+| Tras el panel (T2.1) | 910 px / 611 px | 1.49 |
+| Tras dos columnas (T2.2) | **707 px / 646 px** | **1.09** |
+
+El corte no es arbitrario: **izquierda el vuelo** (ruta, toggle Local/Travesía,
+horas y el chip block/ANAC) y **derecha lo que lo clasifica** (aeronave, finalidad,
+fecha, aterrizajes). Las horas se fueron con la ruta porque juntas *son* el vuelo:
+a dónde fue y cuánto duró.
+
+**Desde `lg` y no desde `md`** a propósito: a 768 px dos campos de hora quedarían
+en ~150 px cada uno, y un `input[type=time]` no entra ahí. Debajo de `lg` sigue
+siendo una sola columna.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. En el diálogo a 1372 px
+sobre la cuenta real: las dos columnas se ven correctas, 02 y 03 quedan lado a
+lado, `document.scrollWidth == clientWidth`, y **13/13 claves del desglose siguen
+en el `FormData`**.
+
+**Un falso positivo que casi reporto como bug:** mi primer chequeo de los inputs
+dio 0/13 y parecía que el layout los había roto. **El chequeo estaba mal, no el
+código**: hay **dos `<form>` en la página** y `document.querySelector('form')`
+agarraba el vacío. Si escribís una prueba sobre este formulario, seleccionalo por
+contenido (`[...document.querySelectorAll('form')].find(f => new
+FormData(f).has('pic_day_loc'))`), no por posición.
+
+**No verificado:** **el fallback de una columna en móvil.** La ventana de Chrome de
+este entorno no baja de ~1300 px de forma confiable (a veces aplica el resize tarde
+y a veces no), así que no se pudo ver por debajo de `lg`. Es un `lg:grid` con
+`space-y-6` de base, o sea el patrón estándar de Tailwind y bajo riesgo, pero está
+sin comprobar.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
