@@ -123,7 +123,7 @@ function Card({
           <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg shrink-0">
             {icon}
           </div>
-          <h3 className="text-base md:text-lg font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">
+          <h3 className="text-base md:text-lg font-bold font-display text-zinc-900 dark:text-white tracking-tight">
             {title}
           </h3>
         </div>

@@ -39,7 +39,7 @@ export default function FlightLogModal({ isOpen, onClose, aircraft, initialData 
                   <Plane className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-2xl md:text-3xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white">Finalizar vuelo</h2>
+                  <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight text-zinc-900 dark:text-white">Finalizar vuelo</h2>
                   <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm">Completá el registro de tu sesión</p>
                 </div>
               </div>

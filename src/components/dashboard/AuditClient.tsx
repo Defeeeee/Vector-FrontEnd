@@ -327,7 +327,7 @@ function EmptyState({ clean, tab, hasFindings }: { clean: boolean; tab: Tab; has
         <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
           <CheckCircle2 className="w-6 h-6" />
         </div>
-        <h3 className="mt-4 text-lg font-bold font-space-grotesk text-zinc-900 dark:text-white">
+        <h3 className="mt-4 text-lg font-bold font-display text-zinc-900 dark:text-white">
           El libro cierra sin observaciones
         </h3>
         <p className="mt-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">

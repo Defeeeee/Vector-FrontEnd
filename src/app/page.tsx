@@ -103,11 +103,11 @@ export default function LandingPage() {
             <div className="w-9 h-9 bg-zinc-900 dark:bg-white rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
               <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
             </div>
-            <span className="font-space-grotesk font-bold text-lg tracking-tight">Vector</span>
+            <span className="font-display font-bold text-lg tracking-tight">Vector</span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -135,7 +135,7 @@ export default function LandingPage() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden p-2 text-zinc-900 dark:text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button className="lg:hidden p-2 text-zinc-900 dark:text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
@@ -145,7 +145,7 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden mt-2 mx-4 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 flex flex-col space-y-4 shadow-cal dark:shadow-none"
+            className="lg:hidden mt-2 mx-4 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 flex flex-col space-y-4 shadow-cal dark:shadow-none"
           >
             {navLinks.map((link) => (
               <Link
@@ -188,7 +188,7 @@ export default function LandingPage() {
               Copiloto digital para pilotos exigentes
             </span>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-space-grotesk font-bold text-zinc-900 dark:text-white leading-[1.05] tracking-tight">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-zinc-900 dark:text-white leading-[1.05] tracking-tight">
               Trazá tu rumbo.
               <br />
               <span className="text-aviation-blue-dark dark:text-aviation-cyan">Vector</span> lleva el registro.
@@ -306,7 +306,7 @@ export default function LandingPage() {
         <div className="container-wide">
           <div className="max-w-2xl mb-16 md:mb-20">
             <span className="eyebrow">Características</span>
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
               Herramientas de precisión para tu día a día en el aire.
             </h2>
           </div>
@@ -329,7 +329,7 @@ export default function LandingPage() {
                       <Icon className="w-5 h-5 text-white dark:text-white" />
                     </div>
                     <span className="eyebrow">{feature.eyebrow}</span>
-                    <h3 className="text-2xl md:text-3xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 mb-4 tracking-tight leading-snug">
+                    <h3 className="text-2xl md:text-3xl font-display font-bold text-zinc-900 dark:text-white mt-3 mb-4 tracking-tight leading-snug">
                       {feature.title}
                     </h3>
                     <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -356,7 +356,7 @@ export default function LandingPage() {
         <div className="container-wide">
           <div className="max-w-2xl mb-16 md:mb-20">
             <span className="eyebrow">Cómo funciona</span>
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-zinc-900 dark:text-white mt-3 tracking-tight leading-tight">
               De la cabecera de pista a tu bitácora, en cuatro pasos.
             </h2>
           </div>
@@ -372,10 +372,10 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.1 }}
                 className="relative"
               >
-                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-space-grotesk font-bold relative z-10 shadow-lg">
-                  {i + 1}
+                <div className="w-12 h-12 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center data font-bold relative z-10 shadow-lg">
+                  {String(i + 1).padStart(2, "0")}
                 </div>
-                <h3 className="text-lg font-space-grotesk font-bold text-zinc-900 dark:text-white mt-5 mb-2 tracking-tight">
+                <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white mt-5 mb-2 tracking-tight">
                   {step.title}
                 </h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -395,7 +395,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
               {highlights.map((s) => (
                 <div key={s.t}>
-                  <div className="text-xl md:text-2xl font-space-grotesk font-bold text-white dark:text-white tracking-tight">{s.t}</div>
+                  <div className="text-xl md:text-2xl font-display font-bold text-white dark:text-white tracking-tight">{s.t}</div>
                   <div className="text-sm text-white/40 dark:text-white/40 mt-1">{s.d}</div>
                 </div>
               ))}
@@ -425,7 +425,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div>
-            <h2 className="text-4xl md:text-5xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight leading-tight mb-6">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-zinc-900 dark:text-white tracking-tight leading-tight mb-6">
               Tu carrera aeronáutica, siempre a la vista.
             </h2>
             <p className="text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
@@ -441,7 +441,7 @@ export default function LandingPage() {
         <div className="container-wide">
           <div className="rounded-[2.5rem] p-8 md:p-24 text-center relative overflow-hidden border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111111] shadow-cal dark:shadow-none">
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-aviation-blue/10 rounded-full blur-[100px] pointer-events-none" />
-            <h2 className="text-4xl md:text-6xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight relative z-10">
+            <h2 className="text-4xl md:text-6xl font-display font-bold text-zinc-900 dark:text-white tracking-tight relative z-10">
               ¿Listo para despegar?
             </h2>
             <p className="text-zinc-500 dark:text-zinc-400 text-base md:text-xl max-w-xl mx-auto mt-5 relative z-10">
@@ -468,19 +468,53 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-12 border-t border-zinc-200 dark:border-white/10 relative z-10">
         <div className="container-wide">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-            <div className="flex items-center space-x-2.5 text-zinc-900 dark:text-white">
-              <div className="w-8 h-8 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
-                <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
+          {/* Columns, as FlightDeck does. Every destination here is a route or an
+              anchor that actually exists — a footer full of dead links is worse
+              than a short one. The legal links below are the exception and are
+              left untouched on purpose: they already pointed nowhere, and
+              removing a privacy link is not a call to make from a refactor.
+              See T3.6 in docs/brief/06-plan-post-flightdeck.md. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            <div className="col-span-2 md:col-span-1 space-y-4">
+              <div className="flex items-center space-x-2.5 text-zinc-900 dark:text-white">
+                <div className="w-8 h-8 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center shadow-lg">
+                  <Compass className="w-5 h-5 text-white dark:text-zinc-900" />
+                </div>
+                <span className="font-display font-bold text-xl tracking-tight">Vector</span>
               </div>
-              <span className="font-space-grotesk font-bold text-xl tracking-tight">Vector</span>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
+                Bitácora digital para pilotos argentinos. Formato ANAC, desglose de
+                horas y vencimientos en un solo lugar.
+              </p>
             </div>
-            <div className="flex space-x-8 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Twitter</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">GitHub</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link>
+
+            <div className="space-y-3">
+              <p className="eyebrow">Producto</p>
+              <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                <li><Link href="#features" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Características</Link></li>
+                <li><Link href="#workflow" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Cómo funciona</Link></li>
+              </ul>
             </div>
+
+            <div className="space-y-3">
+              <p className="eyebrow">Cuenta</p>
+              <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                <li><Link href="/login" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Ingresar</Link></li>
+                <li><Link href="/register" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Crear cuenta</Link></li>
+                <li><Link href="/recover" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Recuperar contraseña</Link></li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <p className="eyebrow">Legal</p>
+              <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                <li><Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link></li>
+                <li><Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-white/10">
             <p className="text-sm text-zinc-400 dark:text-zinc-600">
               &copy; 2026 Vector Aviation.
             </p>

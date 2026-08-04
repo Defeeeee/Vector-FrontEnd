@@ -93,7 +93,7 @@ export default async function DashboardLayout({
           <div className="w-8 h-8 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg flex items-center justify-center shadow-md">
             <Compass className="w-4 h-4" strokeWidth={2} />
           </div>
-          <span className="text-lg font-bold font-space-grotesk tracking-tight dark:text-white">Vector</span>
+          <span className="text-lg font-bold font-display tracking-tight dark:text-white">Vector</span>
         </Link>
         <div className="flex items-center space-x-3">
             <ThemeToggle />

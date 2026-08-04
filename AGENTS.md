@@ -10,7 +10,7 @@ libro, ningún agente cierra una tanda de cambios sin dejar su entrada acá.
   v4 — sin `tailwind.config.js`, el tema vive en `@theme` dentro de
   `src/app/globals.css` —, Framer Motion, next-themes). Los datos reales viven
   en un backend aparte (Python + Litestar + Supabase, en
-  `/home/ubuntu/FlightLog-BackEnd`) y la autenticación en otro servicio. El
+  `/Users/defeee/Vector/FlightLog-BackEnd`) y la autenticación en otro servicio. El
   frontend habla con los dos vía `apiFetch` (`src/lib/api.ts`) con Bearer
   token. **Cualquier cambio de modelo de datos requiere tocar el backend**, no
   alcanza con este repo.
@@ -938,9 +938,263 @@ navegador de esta sesión empezaron a fallar por CDP y no se recuperaron, así q
 lo comprobado es estructura y datos por DOM, no el aspecto. Tampoco se miró en
 móvil, por la misma limitación que la entrada del Resumen de horas.
 
+### 2026-08-03 23:45 UTC — Claude (Opus 5, vía Claude Code) — Plan versionado y primeras tareas (T0.2, T0.3, T3.1, T3.3, T5.1)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/06-plan-post-flightdeck.md` (nuevo) — el backlog vigente, subdividido
+  en tareas con id estable. `00-README.md` y esta bitácora lo apuntan.
+- `src/app/layout.tsx`, `src/app/globals.css` y 97 usos en el markup — T3.1.
+- `src/app/page.tsx` — T3.3.
+- `Libro Digital.pdf`, `extract_pdf.js` — borrados, T5.1.
+
+**Por qué:**
+
+1. **El plan se versiona porque `04` y `05` ya no son confiables como backlog.**
+   Se escribieron probando la UI y varias cosas que dan por ciertas dejaron de
+   serlo — sobre todo que el "Nuevo Vuelo" de FlightDeck sea una columna vertical.
+   Hoy son dos columnas sin scroll con el desglose en un panel deslizante. Un
+   agente que trabaje contra esa descripción apunta al blanco equivocado, así que
+   el `06` lleva una sección explícita de correcciones.
+
+2. **Las variables de fuente se renombraron por rol y no por tipografía** (T3.1).
+   Se llamaban `--font-inter` y `--font-space-grotesk` pero ambas cargaban Nunito.
+   Los nombres por rol (`body`/`display`/`mono`) siguen siendo correctos cuando se
+   cambie la sans. De paso se sacó una auto-referencia: el token decía
+   `--font-space-grotesk: var(--font-space-grotesk)`, que sólo resolvía por
+   accidente vía herencia.
+
+3. **El `Libro Digital.pdf` no se borró por prolijidad.** Es un libro de vuelo en
+   un repo público: son datos personales versionados sin necesidad. **Sigue en el
+   historial de git** — sacarlo de ahí requiere reescribir la historia y
+   force-push, que es decisión de Federico.
+
+4. **El nav de la landing subió de `md` a `lg`** (T3.3). El `ThemeToggle` mide
+   144 px él solo; con logo, dos links, divisor y dos CTAs el contenido no entra
+   cerca de los 800 px.
+
+**Trampa de entorno que costó tiempo y conviene saber:** tras el rename, `.data` y
+`.eyebrow` seguían resolviendo a Nunito aunque el fuente estaba bien. La CSS
+servida por el dev server contenía **las dos** variables, la vieja y la nueva:
+caché de Turbopack, que **no se limpia reiniciando el server**. Hay que borrar
+`.next`. El build de producción salió limpio; era solo dev.
+
+**Estado:** Parcial. Hechas T0.2, T0.3, T3.1, T3.3 y T5.1.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios tras cada tarea.
+- T0.2: los cuatro mockups de la landing se vieron renderizados por fin (habían
+  quedado sólo verificados por DOM en la tanda anterior).
+- T0.3: login a 375 px, labels en mono, panel de contexto oculto.
+- T3.1: por `getComputedStyle`, `font-sans`→Nunito, `font-display`→Nunito,
+  `font-mono`→IBM Plex Mono, `.data`/`.eyebrow`→Plex. Sin cambio visual.
+- T3.3: a 800 px sale el hamburguesa; a 1030 px la barra completa entra con aire.
+
+**Bloqueado:** T0.1, T0.4, T0.5 y T0.6 necesitan sesión iniciada y la de localhost
+expiró. Un agente no debe loguearse en nombre del usuario; hay que pedírselo.
+
+### 2026-08-03 23:59 UTC — Claude (Opus 5, vía Claude Code) — Tier 0 verificado y footer de la landing (T3.5, T3.6)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/page.tsx` — numeración de "Cómo funciona" a mono `01…04` (T3.5); footer
+  reestructurado en columnas (T3.6).
+- `docs/brief/06-plan-post-flightdeck.md` — tres correcciones al propio plan.
+
+**Por qué:** El plan que escribí un rato antes tenía **tres afirmaciones falsas**
+sobre la landing, y las descubrí al ir a implementarlas:
+
+1. Decía "faltan pasos numerados". **Ya estaban** — círculo negro con el índice.
+   Lo único real era cosmético: pasarlos a mono con formato `01`.
+2. Decía "la landing no tiene footer". **Sí tiene.** Era de una sola fila.
+3. Decía "falta una sección negra". **Ya hay una** (la "Highlights band"), aunque
+   es una tira de stats y no una sección narrativa — T3.4 sigue en pie pero
+   reescrita.
+
+Las tres quedaron corregidas **dentro del documento**, con la nota de qué decía
+antes. Un plan con premisas falsas es peor que no tener plan, y borrar el error
+sin dejar rastro hace que el próximo lo repita.
+
+**Sobre el footer:** se reestructuró en columnas usando **sólo destinos que
+existen** (anclas de la landing, `/login`, `/register`, `/recover`). Los links de
+Privacidad y Términos **se dejaron intactos apuntando a `#`**: ya estaban muertos
+antes, y sacar un link de privacidad de una landing pública no es una decisión que
+corresponda tomar en una refactorización. Queda anotado en T3.6 — hay que crear
+las páginas o sacarlos, pero es decisión de Federico.
+
+**Estado:** Tier 0 cerrado salvo dos huecos, T3.5 y T3.6 terminadas.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios.
+- **T0.1** — el dashboard sin el hero, visto por fin: eyebrow + nombre, fila de 4
+  tiles con la negra a la izquierda, y la tira de 4 celdas debajo.
+- **T0.6** — los cinco períodos, con el odómetro siempre igual a la suma de las
+  celdas de la matriz: 1.3 / 9.5 / 24.0 / 46.3 / 46.3. 0 errores de consola.
+- **T3.5 / T3.6** — los cuatro pasos salen `01…04` en IBM Plex Mono; el footer
+  tiene tres columnas y 5 links vivos contra 2 muertos (los legales preexistentes).
+
+**No verificado, y conviene que el próximo lo cierre:**
+- **T0.4 (parcial).** El riesgo real —que la matriz ANAC arrastre la página— está
+  descartado: constriñendo la card a 358 px el scroller scrollea solo (292 visibles
+  sobre 520) y `document.scrollWidth == clientWidth`. Pero **las media queries no
+  se probaron**: la ventana de Chrome de este entorno no baja de ~1514 px por más
+  que `resize_window` reporte éxito.
+- **T0.5.** Con los 39 vuelos reales ningún período queda vacío, así que el empty
+  state de `/dashboard/summary` no se alcanza desde la UI.
+
+### 2026-08-04 00:09 UTC — Claude (Opus 5, vía Claude Code) — Auditoría del plan y desglose ANAC a panel (T2.1)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `docs/brief/06-plan-post-flightdeck.md` — auditoría completa contra el código.
+- `src/components/dashboard/FlightLogForm.tsx` — T2.1.
+
+**Por qué:**
+
+1. **La auditoría salió de un pedido de Federico** después de que yo descubriera,
+   al implementar, que tres tareas describían cosas ya construidas. Se verificaron
+   **todas** las pendientes contra el repo. Resultado: **cinco de veintiocho**
+   describían trabajo hecho. Las once de Tier 2 más T3.9, T4.1 y T4.2 se
+   confirmaron nuevas — `rol`, `reglas de vuelo`, `matrícula manual`, `libro de
+   vuelo` y `observaciones` tienen **cero referencias** en `FlightLogForm.tsx` y
+   `types/index.ts`; no hay librería de mapas ni nada que mencione `sparkline`. El
+   documento quedó con una tabla de estado y la regla de verificar antes de
+   escribir una tarea.
+
+2. **El desglose pasó a panel deslizante** (T2.1). Trece filas inline eran ~700 px
+   de un formulario de 1400: dos pantallas de scroll por encima de controles que la
+   mayoría de los vuelos no toca. Medido en el diálogo a 1488 px, el scroller pasó
+   de **1415 px de contenido en 690 visibles (2.05 pantallas) a 910 en 611 (1.49)**.
+
+**La decisión no obvia, y es la que puede romper todo si alguien la revierte:** el
+panel **nunca desmonta**. `TimeAllocator` emite un `<input type="hidden">` por
+categoría y **esos son los que postean el desglose**. Desmontarlo al cerrar —que es
+exactamente lo que haría el `AnimatePresence` que uno escribiría por reflejo— los
+saca del formulario, y cada vuelo se guardaría con el desglose **vacío y en
+silencio**, porque el server action interpreta un campo ausente como cero. Cerrar
+sólo translada el panel fuera de pantalla y le quita pointer events; un input con
+`display:none` igual se envía. **Si tocás este componente, verificá que las 13
+claves sigan en el `FormData` con el panel cerrado.**
+
+La sección de descuento se renumeró de 04 a 03 y **queda inline**: es un concepto
+propio de Vector y esconderlo detrás de un botón sería perderlo.
+
+**Estado:** Terminado T2.1. Con esto, el Tier 0 queda cerrado salvo T0.4 (parcial)
+y T0.5 (inalcanzable con datos reales).
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. En el dev server contra
+la cuenta real, a 378 px y a 1488 px, claro y oscuro:
+- **13/13 claves presentes en el `FormData` con el panel cerrado** — la prueba que
+  importa. En carga fresca, `aria-hidden="true"` y las 13 siguen ahí.
+- El panel abre y cierra, con Total del vuelo fijo arriba y los dos grupos
+  separados (PIC/SIC pooled, condiciones no pooled — se conservó el flag).
+- Secciones renumeradas a 01 / 02 / 03. Sin desborde horizontal. 0 errores de
+  consola.
+
+### 2026-08-04 00:15 UTC — Claude (Opus 5, vía Claude Code) — Nuevo Vuelo en dos columnas (T2.2)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/components/dashboard/FlightLogForm.tsx` — layout de dos columnas desde `lg`.
+
+**Por qué:** Cierra el gap estructural con FlightDeck, que entra sin scroll. La
+progresión medida en el diálogo, que es lo que importa:
+
+| | contenido / visible | pantallas |
+|---|---|---|
+| Antes de esta tanda | 1415 px / 690 px | 2.05 |
+| Tras el panel (T2.1) | 910 px / 611 px | 1.49 |
+| Tras dos columnas (T2.2) | **707 px / 646 px** | **1.09** |
+
+El corte no es arbitrario: **izquierda el vuelo** (ruta, toggle Local/Travesía,
+horas y el chip block/ANAC) y **derecha lo que lo clasifica** (aeronave, finalidad,
+fecha, aterrizajes). Las horas se fueron con la ruta porque juntas *son* el vuelo:
+a dónde fue y cuánto duró.
+
+**Desde `lg` y no desde `md`** a propósito: a 768 px dos campos de hora quedarían
+en ~150 px cada uno, y un `input[type=time]` no entra ahí. Debajo de `lg` sigue
+siendo una sola columna.
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. En el diálogo a 1372 px
+sobre la cuenta real: las dos columnas se ven correctas, 02 y 03 quedan lado a
+lado, `document.scrollWidth == clientWidth`, y **13/13 claves del desglose siguen
+en el `FormData`**.
+
+**Un falso positivo que casi reporto como bug:** mi primer chequeo de los inputs
+dio 0/13 y parecía que el layout los había roto. **El chequeo estaba mal, no el
+código**: hay **dos `<form>` en la página** y `document.querySelector('form')`
+agarraba el vacío. Si escribís una prueba sobre este formulario, seleccionalo por
+contenido (`[...document.querySelectorAll('form')].find(f => new
+FormData(f).has('pic_day_loc'))`), no por posición.
+
+**No verificado:** **el fallback de una columna en móvil.** La ventana de Chrome de
+este entorno no baja de ~1300 px de forma confiable (a veces aplica el resize tarde
+y a veces no), así que no se pudo ver por debajo de `lg`. Es un `lg:grid` con
+`space-y-6` de base, o sea el patrón estándar de Tailwind y bajo riesgo, pero está
+sin comprobar.
+
+### 2026-08-04 00:47 UTC — Claude (Opus 5, vía Claude Code) — Decisiones de Federico y plan de múltiples libros
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:** Sólo documentación — `docs/brief/06-plan-post-flightdeck.md` y la
+ruta del backend en este archivo. **No se escribió código**: Federico pidió
+explícitamente sólo el plan.
+
+**Decisiones tomadas, para que nadie las reabra por su cuenta:**
+
+1. **La tipografía sans se queda en Nunito.** T3.2 cerrada. El contraste con
+   FlightDeck lo aporta la mono de instrumento, que ya está. No reabrir sin pedido.
+2. **Se arman las páginas legales** (T3.10, nueva). Privacidad y Términos dejan de
+   ser `href="#"`.
+3. **Múltiples libros de vuelo aprobado** (T2.8 → Tier 6), con tres condiciones:
+   sólo los campos actuales, los libros llevan nombre y descripción, y **se pueden
+   cargar horas al crear el libro**.
+
+**Corrección importante de este archivo:** decía que el backend vive en
+`/home/ubuntu/FlightLog-BackEnd`. **En esta máquina está en
+`/Users/defeee/Vector/FlightLog-BackEnd` y es accesible** — verificado. Ya está
+corregido acá y en el brief. Es Litestar con controladores por recurso, modelos
+Pydantic y **sin carpeta de migraciones**: el SQL se aplica por el MCP de Supabase.
+
+**Las dos decisiones de diseño que definen la feature de libros**, y que están
+argumentadas en el plan:
+
+- **El saldo inicial no puede ser un solo número.** Guardar "500 horas" haría que
+  la matriz ANAC muestre 500 h totales y **0 de PIC**, que el PCA Tracker diga que
+  no cumplís nada, y que el Resumen mienta en todas sus tarjetas. Tiene que traer
+  el mismo desglose que un vuelo.
+- **No usar un "vuelo fantasma" de arrastre.** Es tentador porque todo agregaría
+  solo, pero aparecería en la bitácora, en Top rutas y en el heatmap, la auditoría
+  lo marcaría como `inconsistent_total` por no tener horas de despegue, y borrarlo
+  desde la lista destruiría el saldo en silencio. El saldo va en columnas de
+  `logbooks`.
+
+También quedó anotado que **la detección de superposiciones de la auditoría debe
+seguir siendo por usuario y no por libro** — un piloto no puede estar en dos
+aviones a la vez aunque los anote en libros distintos—, mientras que `duplicate` sí
+conviene que sea por libro.
+
+**Estado:** Plan escrito, sin implementar. Tier 6 tiene esquema SQL, backfill,
+tabla de archivos por repo, orden de ejecución y criterios de aceptación.
+
+**Verificación:** No hay código que verificar. Se confirmó que la ruta del backend
+existe y se leyeron `models/flight.py`, `controllers/flights.py`,
+`controllers/dashboard.py` y `app.py` para que el plan describa el patrón real del
+repo y no uno inventado.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
+
+> **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
+> tareas subdivididas e id estable (`T0.1`, `T2.3`…). Lo de abajo es la deuda
+> técnica histórica, que ese documento absorbe en su Tier 1 y Tier 5. Si hay
+> discrepancia, manda el `06`.
 
 El plan del brief, ahora versionado en `docs/brief/03-plan-implementacion.md`,
 está **completo: Fases 0, 1, 2, 3, 4 y 5**, más el fix del copiloto.

@@ -16,7 +16,7 @@ export default function PageHeader({ eyebrow, title, action, children }: PageHea
           stack reads cleaner, and the accent is spent elsewhere on the page. */}
       <div className="space-y-2 md:space-y-3">
         <p className="eyebrow">{eyebrow}</p>
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white leading-none">{title}</h2>
+        <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight text-zinc-900 dark:text-white leading-none">{title}</h2>
         {children}
       </div>
       {action && <div className="flex items-center gap-3 self-start md:self-auto">{action}</div>}

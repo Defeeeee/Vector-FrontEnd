@@ -74,9 +74,9 @@ export default function FlightListClient({ flights, aircraft }: FlightListClient
               >
                 {/* Ledger page header */}
                 <div className="flex items-baseline justify-between px-1">
-                  <h3 className="text-lg font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight capitalize">{group.label}</h3>
+                  <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-white tracking-tight capitalize">{group.label}</h3>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold font-space-grotesk text-aviation-blue-dark dark:text-aviation-cyan">{group.hours.toFixed(1)}</span>
+                    <span className="text-sm font-bold font-display text-aviation-blue-dark dark:text-aviation-cyan">{group.hours.toFixed(1)}</span>
                     <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">hs · {group.flights.length} {group.flights.length === 1 ? "vuelo" : "vuelos"}</span>
                   </div>
                 </div>
@@ -116,7 +116,7 @@ export default function FlightListClient({ flights, aircraft }: FlightListClient
             <Plane className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Sin registros</h3>
+            <h3 className="text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Sin registros</h3>
             <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">No se encontraron vuelos que coincidan con tu búsqueda</p>
           </div>
           {searchQuery === "" && (

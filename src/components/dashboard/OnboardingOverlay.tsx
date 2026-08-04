@@ -61,7 +61,7 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
             <div className="w-16 h-16 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center shadow-lg mb-4">
               <Compass className="w-8 h-8" strokeWidth={1.5} />
             </div>
-            <h2 className="text-4xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white">Bienvenido a Vector</h2>
+            <h2 className="text-4xl font-display font-bold tracking-tight text-zinc-900 dark:text-white">Bienvenido a Vector</h2>
             <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed max-w-sm">
               Para comenzar a operar, necesitamos configurar los datos de tu licencia y certificado médico.
             </p>

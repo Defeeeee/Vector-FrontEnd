@@ -36,7 +36,7 @@ export default function RegisterPage() {
         </motion.div>
         
         <div className="space-y-4">
-          <h1 className="text-4xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white">Verificá tu email</h1>
+          <h1 className="text-4xl font-display font-bold tracking-tight text-zinc-900 dark:text-white">Verificá tu email</h1>
           <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed">
             Te enviamos un enlace de confirmación a tu correo electrónico. Verificalo para activar tu cuenta Vector.
           </p>
@@ -76,7 +76,7 @@ export default function RegisterPage() {
                 <Compass className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
             </div>
             <div className="space-y-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-space-grotesk">Crear cuenta</h1>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-white font-display">Crear cuenta</h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Empezá a registrar tus vuelos hoy</p>
             </div>
         </motion.div>

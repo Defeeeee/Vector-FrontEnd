@@ -138,7 +138,7 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
             </div>
             <div className="space-y-0.5">
               <p className="eyebrow">AWOS/ATIS · Transmisión automática</p>
-              <h3 className="font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight text-lg md:text-xl leading-none mt-1.5">Estación {data?.icao || airport}</h3>
+              <h3 className="font-bold font-display text-zinc-900 dark:text-white tracking-tight text-lg md:text-xl leading-none mt-1.5">Estación {data?.icao || airport}</h3>
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed mt-1.5 max-w-[260px]">{currentCat.desc}</p>
               </div>
-              <span className={`text-3xl font-black font-space-grotesk tracking-tight flex-shrink-0 ${currentCat.text}`}>
+              <span className={`text-3xl font-black font-display tracking-tight flex-shrink-0 ${currentCat.text}`}>
                 {data.category}
               </span>
             </div>

@@ -43,7 +43,7 @@ function SectionHead({ title, subtitle, aside }: { title: string; subtitle?: str
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
       <div className="space-y-1">
-        <h3 className="text-xl md:text-2xl font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight">
+        <h3 className="text-xl md:text-2xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">
           {title}
         </h3>
         {subtitle && <p className="eyebrow">{subtitle}</p>}
@@ -220,7 +220,7 @@ export default function SummaryClient({
 
       {scoped.length === 0 ? (
         <Card className="text-center py-16">
-          <p className="text-lg font-space-grotesk font-bold text-zinc-900 dark:text-white">
+          <p className="text-lg font-display font-bold text-zinc-900 dark:text-white">
             Sin vuelos en este período
           </p>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
@@ -447,7 +447,7 @@ export default function SummaryClient({
                           {ins.eyebrow}
                         </span>
                       </div>
-                      <h4 className="text-base md:text-lg font-space-grotesk font-bold text-zinc-900 dark:text-white leading-snug">
+                      <h4 className="text-base md:text-lg font-display font-bold text-zinc-900 dark:text-white leading-snug">
                         {ins.headline}
                       </h4>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">{ins.detail}</p>

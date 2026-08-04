@@ -307,7 +307,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
             <div className="flex flex-wrap items-center gap-3">
               {activeRoute.map((icao, idx) => (
                 <div key={icao + "-" + idx} className="flex items-center space-x-2">
-                  <div className="bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 px-4 py-2 rounded-xl text-xs font-black font-space-grotesk tracking-wide text-zinc-900 dark:text-white">
+                  <div className="bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 px-4 py-2 rounded-xl text-xs font-black font-display tracking-wide text-zinc-900 dark:text-white">
                     {icao}
                   </div>
                   {idx < activeRoute.length - 1 && (
@@ -334,7 +334,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                   onClick={() => setActiveRoute(routeArr)}
                   className="w-full flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20 rounded-xl text-left transition-all active:scale-[0.98] group"
                 >
-                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center space-x-1.5 font-space-grotesk">
+                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center space-x-1.5 font-display">
                     {routeArr.map((icao, i) => (
                       <span key={i} className="flex items-center">
                         {icao}
@@ -379,7 +379,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                 <AlertCircle className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h4 className="font-extrabold font-space-grotesk tracking-tight text-lg md:text-xl leading-none">
+                <h4 className="font-extrabold font-display tracking-tight text-lg md:text-xl leading-none">
                   {analysis.title}
                 </h4>
                 <p className="text-xs text-zinc-600 dark:text-zinc-300 font-medium leading-relaxed max-w-4xl">
@@ -426,7 +426,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                     "border-zinc-300 dark:border-white/10"
                   ) : "border-zinc-300 dark:border-white/10"
                 } transition-all duration-500`}>
-                  <span className="text-xs font-black font-space-grotesk tracking-wide text-zinc-900 dark:text-white">
+                  <span className="text-xs font-black font-display tracking-wide text-zinc-900 dark:text-white">
                     {icao}
                   </span>
                 </div>
@@ -483,7 +483,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                         <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
                           {idx === 0 ? "Despegue" : idx === activeRoute.length - 1 ? "Arribo" : "Tránsito"}
                         </p>
-                        <p className="font-bold font-space-grotesk text-zinc-900 dark:text-white text-base tracking-tight">{icao}</p>
+                        <p className="font-bold font-display text-zinc-900 dark:text-white text-base tracking-tight">{icao}</p>
                       </div>
                       <div className={`text-sm font-bold ${config.text}`}>{w.category}</div>
                       <div className="hidden md:block text-xs font-medium text-zinc-500 dark:text-zinc-400">
@@ -514,7 +514,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Estación {idx === 0 ? "despegue" : idx === activeRoute.length - 1 ? "arribo" : "tránsito"}</p>
-                        <h4 className="font-extrabold font-space-grotesk text-zinc-900 dark:text-white text-lg md:text-xl tracking-tight leading-none">
+                        <h4 className="font-extrabold font-display text-zinc-900 dark:text-white text-lg md:text-xl tracking-tight leading-none">
                           {icao} - Aeródromo
                         </h4>
                       </div>
@@ -531,7 +531,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                         </div>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-none mt-1">Estatus reglamentario de la estación</p>
                       </div>
-                      <span className={`text-2xl font-black font-space-grotesk tracking-tight ${config.text}`}>
+                      <span className={`text-2xl font-black font-display tracking-tight ${config.text}`}>
                         {w.category}
                       </span>
                     </div>
@@ -584,19 +584,19 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                         <div className="grid grid-cols-3 gap-2 text-center pt-1">
                           <div className="bg-white dark:bg-black/20 rounded-lg p-1.5 border border-zinc-200/50 dark:border-white/5">
                             <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 leading-none">Elevación</p>
-                            <p className="text-[10px] font-black font-space-grotesk text-zinc-900 dark:text-white mt-1 leading-none">
+                            <p className="text-[10px] font-black font-display text-zinc-900 dark:text-white mt-1 leading-none">
                               {madhel.elevation}m <span className="text-[8px] font-normal text-zinc-400">({Math.round(madhel.elevation * 3.28084)}ft)</span>
                             </p>
                           </div>
                           <div className="bg-white dark:bg-black/20 rounded-lg p-1.5 border border-zinc-200/50 dark:border-white/5">
                             <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 leading-none">FIR</p>
-                            <p className="text-[10px] font-black font-space-grotesk text-zinc-900 dark:text-white mt-1 leading-none">
+                            <p className="text-[10px] font-black font-display text-zinc-900 dark:text-white mt-1 leading-none">
                               {madhel.fir}
                             </p>
                           </div>
                           <div className="bg-white dark:bg-black/20 rounded-lg p-1.5 border border-zinc-200/50 dark:border-white/5">
                             <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 leading-none">Tránsito</p>
-                            <p className="text-[10px] font-black font-space-grotesk text-zinc-900 dark:text-white mt-1 leading-none">
+                            <p className="text-[10px] font-black font-display text-zinc-900 dark:text-white mt-1 leading-none">
                               {madhel.traffic === "INTL" ? "INTL" : "NAC"}
                             </p>
                           </div>
@@ -702,7 +702,7 @@ export default function RouteWeatherClient({ profile, flights }: RouteWeatherCli
                                 airportNotams.map((notam, nIdx) => (
                                   <div key={nIdx} className="bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl p-3.5 space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-[10px] font-black font-space-grotesk tracking-wide text-zinc-900 dark:text-white">{notam.code}</span>
+                                      <span className="text-[10px] font-black font-display tracking-wide text-zinc-900 dark:text-white">{notam.code}</span>
                                       <span className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500">Desde: {notam.from}</span>
                                     </div>
                                     <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-500 leading-none">Hasta: {notam.to}</p>

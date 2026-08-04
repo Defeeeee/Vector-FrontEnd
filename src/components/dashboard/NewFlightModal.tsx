@@ -84,7 +84,7 @@ export default function NewFlightModal({
           </div>
 
           <div className="min-w-0">
-            <h2 className="text-xl md:text-2xl font-space-grotesk font-bold tracking-tight text-zinc-900 dark:text-white leading-none">
+            <h2 className="text-xl md:text-2xl font-display font-bold tracking-tight text-zinc-900 dark:text-white leading-none">
               Nuevo vuelo
             </h2>
             <p className="mt-1 text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 truncate">

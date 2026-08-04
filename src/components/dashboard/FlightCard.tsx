@@ -105,7 +105,7 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 md:p-10 space-y-8 md:space-y-10 bg-zinc-50 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl md:text-2xl font-bold font-space-grotesk text-zinc-900 dark:text-white tracking-tight">Editar registro</h3>
+          <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Editar registro</h3>
           <button onClick={() => setIsEditing(false)} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors shadow-sm"><X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" /></button>
         </div>
 
@@ -250,7 +250,7 @@ function DetailItem({ label, value }: { label: string, value: string }) {
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="text-lg font-space-grotesk font-bold text-zinc-900 dark:text-white tracking-tight">{value}</p>
+      <p className="text-lg font-display font-bold text-zinc-900 dark:text-white tracking-tight">{value}</p>
     </div>
   );
 }

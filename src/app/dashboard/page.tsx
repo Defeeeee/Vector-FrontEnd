@@ -160,7 +160,7 @@ export default async function Dashboard() {
              <Activity className="w-3.5 h-3.5" />
              <span>Centro de operaciones</span>
           </p>
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-space-grotesk font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
         </div>
