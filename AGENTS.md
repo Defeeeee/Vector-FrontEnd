@@ -1272,6 +1272,63 @@ en Nuevo Vuelo, y sumar `openingTotals` dentro de `SummaryClient` y `PCATracker`
 `test_audit_engine.py` pasa entero. Frontend: `tsc --noEmit` y `npm run build`
 limpios. La migración se verificó por SQL contra los datos reales.
 
+### 2026-08-04 12:05 UTC — Claude (Opus 5, vía Claude Code) — Múltiples libros terminado (T2.8)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `LogbooksManager.tsx` (nuevo) + sección en `settings/page.tsx`.
+- `SummaryClient.tsx`, `dashboard/page.tsx`, `PCATracker.tsx` — el saldo entra en
+  las agregaciones.
+- `FlightLogForm.tsx`, `NewFlightModal.tsx`, las dos rutas de `log-flight` y
+  `actions/flight.ts` — selector de libro.
+
+**Antes de esto la feature estaba a medias de la peor manera:** se podía crear un
+libro con 500 h de saldo y **no se reflejaba en ningún lado**. Eso ya está.
+
+**Tres reglas que no son obvias, y están comentadas donde importan:**
+
+1. **El saldo se suma sólo con el período en "todo".** No tiene fecha; contarlo
+   dentro de "últimos 28 días" inventaría vuelo reciente y rompería la
+   coincidencia entre el odómetro y la matriz.
+2. **No entra en nada dividido por cantidad de vuelos.** "Promedio Vuelo" sigue
+   usando `flownHours` y no `totalHours` — 500 h repartidas entre 39 entradas
+   serían un promedio inventado. Por eso las dos variables están separadas en
+   `dashboard/page.tsx`; **no las vuelvas a unificar**.
+3. **Los aterrizajes del saldo no se suman a los nocturnos** en `PCATracker`. Un
+   conteo arrastrado no se puede asumir nocturno, e inflar ese requisito manda a
+   alguien a un checkride creyendo que cumple.
+
+**Estado:** Terminado. Frontend y backend completos.
+
+**Verificación — hecha con datos reales y limpiada después.** Se creó un libro con
+120.5 + 300 + 80 de PIC y 20 de IMC, y se comprobó en vivo:
+
+| | esperado | obtenido |
+|---|---|---|
+| Dashboard | 546.8 hs | **546.8** |
+| Odómetro del Resumen | 546.8 | **546.8** |
+| Σ de la matriz | 546.8 | **546.8** |
+| Fila Local | 13.1 + 120.5 | **133.6** |
+| Fila Travesía | 33.2 + 300 + 80 | **413.2** |
+| Aterrizajes | 65 + 250 | **315** |
+| Promedio Vuelo | sin cambio | **1.2h** |
+
+El IMC de 20 h **no** sumó al total (habría dado 566.8), que es la regla. También
+se verificó la salvaguarda de borrado: intentar borrar un libro con vuelos
+responde *"El libro tiene 39 vuelos. Movelos a otro libro antes de borrarlo"*.
+
+**La base quedó como estaba**: 1 libro, 39 vuelos, 0 huérfanos, 46.3 hs, saldo 0.
+
+**No verificado:** que el saldo se excluya con el período en 90D. La regla es
+inequívoca en el código (`openingTotals` sólo se calcula si `period === "todo"`) y
+el camino "todo" sí se probó, pero el clic en el filtro no se pudo ejecutar — la
+pestaña del navegador se colgó.
+
+**Pendiente de despliegue:** con `_default_logbook_id` ya en el backend, se puede
+aplicar el `NOT NULL` a `flights.logbook_id` — pero **después** de desplegar el
+backend, no antes.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
