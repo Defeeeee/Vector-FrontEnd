@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Aircraft, AirportRef } from "@/types";
 import { logFlight } from "@/actions/flight";
-import { ArrowRight, Loader2, Compass, User, Cloud, AlertCircle, Percent, Minus, Plus } from "lucide-react";
+import { ArrowRight, Loader2, Compass, User, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import {
   calculateBlockMinutes,
   calculateFlightDuration,
@@ -135,6 +135,9 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
   /** null = follow origin/destination; set once the pilot overrides the toggle. */
   const [crossCountryOverride, setCrossCountryOverride] = useState<boolean | null>(null);
 
+  /** Slide-over with the ANAC breakdown (sections 02 and 03). */
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
+
   useEffect(() => {
     if (initialData?.purpose) setPurpose(initialData.purpose);
   }, [initialData?.purpose]);
@@ -159,10 +162,6 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
 
   const breakdown = useAnacBreakdown({ total, keys: picSicKeys, pooled: true, remainderKey });
   const conditions = useAnacBreakdown({ total, keys: conditionKeys, pooled: false });
-
-  const lastLabel = breakdown.lastTouched
-    ? PIC_SIC_CATEGORIES.find((c) => c.key === breakdown.lastTouched)?.label
-    : null;
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -370,65 +369,55 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
             />
           </div>
 
-          {/* 02. Breakdown */}
-          <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-white/10">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">02. Desglose de tiempos</p>
-              <div className="flex items-center gap-2">
-                <AnimatePresence>
-                  {lastLabel && breakdown.values[breakdown.lastTouched!] > 0 && (
-                    <motion.span
-                      key={breakdown.lastTouched}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      className="text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/10 px-2.5 py-1 rounded-full whitespace-nowrap"
-                    >
-                      {breakdown.values[breakdown.lastTouched!].toFixed(1)} {lastLabel}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-                <User className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-              </div>
+          {/* 02 + 03 — now a trigger, not thirteen rows.
+              The whole breakdown lives in the slide-over below. Inline, those
+              rows were ~700px of a 1400px form, so the pilot scrolled two
+              screens past controls that most flights never touch; FlightDeck
+              fits its form without scrolling for exactly this reason. The
+              summary here has to carry enough state that opening the panel is a
+              choice and not an obligation — hence assigned/total and the
+              unassigned warning right on the button. */}
+          <div className="space-y-3 pt-6 border-t border-zinc-200 dark:border-white/10">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">02. Desglose ANAC</p>
+              <User className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-zinc-50 dark:bg-white/5 px-4 py-3">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                Asignado
-              </span>
-              <span className="text-sm font-bold data text-zinc-900 dark:text-white">
-                {breakdown.assigned.toFixed(1)} / {total.toFixed(1)} h
-              </span>
-              {breakdown.unassigned > 0 && (
-                <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full">
-                  {breakdown.unassigned.toFixed(1)} sin asignar
+            <button
+              type="button"
+              onClick={() => setBreakdownOpen(true)}
+              aria-expanded={breakdownOpen}
+              className="w-full flex items-center gap-4 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] px-4 py-3.5 text-left hover:border-zinc-300 dark:hover:border-white/20 transition-colors"
+            >
+              <SlidersHorizontal className="w-4 h-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-semibold text-zinc-900 dark:text-white">
+                  Ajustar valores y desglose
                 </span>
-              )}
-            </div>
-
-            <TimeAllocator
-              categories={PIC_SIC_CATEGORIES}
-              breakdown={breakdown}
-              remainderKey={remainderKey}
-            />
+                <span className="block text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                  PIC / SIC, día y noche, IMC, capota y simulador
+                </span>
+              </span>
+              <span className="shrink-0 flex items-center gap-2">
+                {breakdown.unassigned > 0 && total > 0 && (
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full whitespace-nowrap">
+                    {breakdown.unassigned.toFixed(1)} sin asignar
+                  </span>
+                )}
+                <span className="data text-sm font-bold text-zinc-900 dark:text-white whitespace-nowrap">
+                  {breakdown.assigned.toFixed(1)}
+                  <span className="text-zinc-400 dark:text-zinc-500">/{total.toFixed(1)}</span>
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600" />
+              </span>
+            </button>
           </div>
 
-          {/* 03. Conditions — capped at the total, but they overlap each other
-              rather than partitioning it, so no shared pool here. */}
+          {/* 03. Discounts — untouched, this is Vector's own concept. Renumbered from
+              04 when sections 02 and 03 merged into the slide-over. */}
           <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-white/10">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
-                03. Condiciones y simulador
-              </p>
-              <Cloud className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-            </div>
-            <TimeAllocator categories={CONDITION_CATEGORIES} breakdown={conditions} />
-          </div>
-
-          {/* 04. Discounts — untouched, this is Vector's own concept. */}
-          <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-white/10">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">04. Descuento aplicado</p>
+              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">03. Descuento aplicado</p>
               <Percent className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 md:gap-x-10 gap-y-6">
@@ -457,6 +446,93 @@ export default function FlightLogForm({ aircraft, initialData, onSuccess, inModa
                   />
                 </LedgerField>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* ANAC breakdown slide-over.
+
+            It is ALWAYS MOUNTED — closing it only translates it off-screen and
+            drops pointer events. That is load-bearing, not styling: TimeAllocator
+            emits one `<input type="hidden" name=...>` per category, and those are
+            what actually post the breakdown. Unmounting the panel (the obvious
+            AnimatePresence approach) removes them from the form, and every flight
+            saves with an empty breakdown — silently, because the server action
+            accepts a missing field as zero. `display:none` inputs still submit,
+            so hiding is safe; unmounting is not. */}
+        <div
+          className={`fixed inset-0 z-[120] ${breakdownOpen ? "" : "pointer-events-none"}`}
+          aria-hidden={!breakdownOpen}
+        >
+          <div
+            onClick={() => setBreakdownOpen(false)}
+            className={`absolute inset-0 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+              breakdownOpen ? "opacity-100" : "opacity-0"
+            }`}
+          />
+
+          <div
+            className={`absolute right-0 top-0 h-full w-full sm:max-w-md bg-white dark:bg-[#0a0a0a] border-l border-zinc-200 dark:border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
+              breakdownOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-200 dark:border-white/10 shrink-0">
+              <button
+                type="button"
+                onClick={() => setBreakdownOpen(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+                aria-label="Cerrar desglose"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <p className="font-display font-bold text-zinc-900 dark:text-white tracking-tight">
+                Ajustar valores
+              </p>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-7">
+              {/* Pinned reference: every slider below is capped against this. */}
+              <div className="flex items-center justify-between gap-3 rounded-2xl bg-zinc-900 dark:bg-white/5 px-4 py-3">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  Total del vuelo
+                </span>
+                <span className="data text-base font-bold text-white">
+                  {breakdown.assigned.toFixed(1)}
+                  <span className="text-white/40">/{total.toFixed(1)}</span>
+                </span>
+              </div>
+
+              {breakdown.unassigned > 0 && total > 0 && (
+                <p className="font-mono text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-500 bg-amber-500/10 px-3 py-2 rounded-xl">
+                  {breakdown.unassigned.toFixed(1)} h sin asignar
+                </p>
+              )}
+
+              <div className="space-y-3">
+                <p className="eyebrow">Tiempo de vuelo · PIC / SIC</p>
+                <TimeAllocator
+                  categories={PIC_SIC_CATEGORIES}
+                  breakdown={breakdown}
+                  remainderKey={remainderKey}
+                />
+              </div>
+
+              {/* Kept apart from the pool above on purpose: these overlap PIC time
+                  instead of partitioning it, so each is capped independently. */}
+              <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-white/10">
+                <p className="eyebrow">Condiciones y simulador</p>
+                <TimeAllocator categories={CONDITION_CATEGORIES} breakdown={conditions} />
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-zinc-200 dark:border-white/10 shrink-0">
+              <button
+                type="button"
+                onClick={() => setBreakdownOpen(false)}
+                className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold py-3.5 rounded-2xl hover:opacity-90 transition-opacity"
+              >
+                Listo
+              </button>
             </div>
           </div>
         </div>
