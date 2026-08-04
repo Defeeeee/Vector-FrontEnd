@@ -1,0 +1,315 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { BookOpen, Pencil, Plus, Trash2, X, Loader2 } from "lucide-react";
+import { Logbook } from "@/types";
+import {
+  createLogbook,
+  updateLogbook,
+  deleteLogbook,
+  OpeningBalanceInput,
+} from "@/actions/logbook";
+
+/** Same categories, in the same order, as the ANAC panel in the flight form. */
+const OPENING_FIELDS: { key: keyof OpeningBalanceInput; label: string }[] = [
+  { key: "pic_day_loc", label: "PIC Día Local" },
+  { key: "pic_day_tra", label: "PIC Día Travesía" },
+  { key: "pic_night_loc", label: "PIC Noche Local" },
+  { key: "pic_night_tra", label: "PIC Noche Travesía" },
+  { key: "sic_day_loc", label: "SIC Día Local" },
+  { key: "sic_day_tra", label: "SIC Día Travesía" },
+  { key: "sic_night_loc", label: "SIC Noche Local" },
+  { key: "sic_night_tra", label: "SIC Noche Travesía" },
+  { key: "imc_pil", label: "IMC Piloto" },
+  { key: "imc_cop", label: "IMC Copiloto" },
+  { key: "capota", label: "Capota" },
+];
+
+/** Only the PIC/SIC buckets — IMC and hood overlap flight time, they don't add to it. */
+const TOTAL_KEYS: (keyof OpeningBalanceInput)[] = OPENING_FIELDS.slice(0, 8).map((f) => f.key);
+
+function openingOf(book: Logbook): OpeningBalanceInput {
+  return {
+    landings: book.opening_landings,
+    pic_day_loc: book.opening_pic_day_loc,
+    pic_day_tra: book.opening_pic_day_tra,
+    pic_night_loc: book.opening_pic_night_loc,
+    pic_night_tra: book.opening_pic_night_tra,
+    sic_day_loc: book.opening_sic_day_loc,
+    sic_day_tra: book.opening_sic_day_tra,
+    sic_night_loc: book.opening_sic_night_loc,
+    sic_night_tra: book.opening_sic_night_tra,
+    imc_pil: book.opening_imc_pil,
+    imc_cop: book.opening_imc_cop,
+    capota: book.opening_capota,
+  };
+}
+
+function openingTotal(opening: OpeningBalanceInput): number {
+  return TOTAL_KEYS.reduce((acc, k) => acc + (Number(opening[k]) || 0), 0);
+}
+
+export default function LogbooksManager({ logbooks }: { logbooks: Logbook[] }) {
+  const [editing, setEditing] = useState<Logbook | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const handleDelete = (book: Logbook) => {
+    setError(null);
+    setBusyId(book.id);
+    startTransition(async () => {
+      const result = await deleteLogbook(book.id);
+      // The backend says how many flights are in the way. That number is the
+      // useful part of the message, so it is shown as-is.
+      if (result?.error) setError(result.error);
+      setBusyId(null);
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <p className="text-sm font-medium text-red-600 dark:text-red-500 bg-red-500/10 rounded-2xl px-4 py-3">
+          {error}
+        </p>
+      )}
+
+      <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden">
+        {logbooks.length === 0 && (
+          <p className="px-6 py-8 text-sm text-zinc-500 dark:text-zinc-400 text-center">
+            Todavía no tenés libros. Creá uno para empezar.
+          </p>
+        )}
+
+        {logbooks.map((book) => {
+          const total = openingTotal(openingOf(book));
+          return (
+            <div
+              key={book.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 md:px-6 py-4"
+            >
+              <span className="w-9 h-9 shrink-0 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center">
+                <BookOpen className="w-4 h-4" />
+              </span>
+
+              <div className="flex-1 min-w-0">
+                <p className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-bold text-zinc-900 dark:text-white truncate">
+                    {book.name}
+                  </span>
+                  {book.is_default && (
+                    <span className="font-mono text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400">
+                      Por defecto
+                    </span>
+                  )}
+                </p>
+                {book.description && (
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                    {book.description}
+                  </p>
+                )}
+                <p className="data text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">
+                  {book.flight_count ?? 0} {book.flight_count === 1 ? "vuelo" : "vuelos"}
+                  {total > 0 && <> · {total.toFixed(1)} hs de saldo inicial</>}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => { setError(null); setEditing(book); }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+                  aria-label={`Editar ${book.name}`}
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(book)}
+                  disabled={pending && busyId === book.id}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-500 transition-colors disabled:opacity-50"
+                  aria-label={`Borrar ${book.name}`}
+                >
+                  {pending && busyId === book.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => { setError(null); setAdding(true); }}
+        className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-white hover:opacity-70 transition-opacity"
+      >
+        <Plus className="w-4 h-4" />
+        Agregar libro
+      </button>
+
+      {(adding || editing) && (
+        <LogbookForm
+          book={editing}
+          onClose={() => { setAdding(false); setEditing(null); }}
+          onError={setError}
+        />
+      )}
+    </div>
+  );
+}
+
+function LogbookForm({
+  book,
+  onClose,
+  onError,
+}: {
+  book: Logbook | null;
+  onClose: () => void;
+  onError: (msg: string | null) => void;
+}) {
+  const [name, setName] = useState(book?.name ?? "");
+  const [description, setDescription] = useState(book?.description ?? "");
+  const [opening, setOpening] = useState<OpeningBalanceInput>(
+    book ? openingOf(book) : {}
+  );
+  const [pending, startTransition] = useTransition();
+
+  const total = openingTotal(opening);
+
+  const setField = (key: keyof OpeningBalanceInput, raw: string) => {
+    // Stored as typed and parsed on submit: keeping a number in state makes
+    // "1." or an empty field wipe itself mid-typing.
+    setOpening((prev) => ({ ...prev, [key]: raw === "" ? undefined : Number(raw) }));
+  };
+
+  const submit = () => {
+    onError(null);
+    startTransition(async () => {
+      const payload = { name: name.trim(), description: description.trim(), opening };
+      const result = book
+        ? await updateLogbook(book.id, payload)
+        : await createLogbook(payload);
+      if (result?.error) onError(result.error);
+      else onClose();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-end md:items-center justify-center p-0 md:p-6">
+      <div className="absolute inset-0 bg-zinc-900/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative z-10 w-full md:max-w-lg max-h-[92dvh] bg-white dark:bg-[#0a0a0a] border border-zinc-200 dark:border-white/10 rounded-t-[2rem] md:rounded-[2rem] flex flex-col overflow-hidden">
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+            aria-label="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <h3 className="font-display font-bold text-lg text-zinc-900 dark:text-white tracking-tight">
+            {book ? "Editar libro" : "Nuevo libro"}
+          </h3>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 space-y-6">
+          <div className="space-y-1.5">
+            <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Nombre
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Mi libro"
+              className="w-full bg-transparent border-b border-zinc-200 dark:border-white/10 py-2 text-base font-semibold text-zinc-900 dark:text-white outline-none focus:border-aviation-blue transition-colors"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Descripción
+            </label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Opcional"
+              className="w-full bg-transparent border-b border-zinc-200 dark:border-white/10 py-2 text-sm text-zinc-900 dark:text-white outline-none focus:border-aviation-blue transition-colors"
+            />
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-white/10">
+            <div>
+              <p className="eyebrow">Saldo inicial</p>
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
+                Horas que traés de antes, para no cargar vuelo por vuelo. Va por
+                categoría y no como un total suelto: es lo que permite que el
+                desglose ANAC y el seguimiento de licencia sigan siendo correctos.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between rounded-2xl bg-zinc-900 dark:bg-white/5 px-4 py-3">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/50">
+                Total del saldo
+              </span>
+              <span className="data text-base font-bold text-white">{total.toFixed(1)} hs</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {OPENING_FIELDS.map((f) => (
+                <div key={f.key} className="space-y-1">
+                  <label className="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    {f.label}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="0.0"
+                    value={opening[f.key] ?? ""}
+                    onChange={(e) => setField(f.key, e.target.value)}
+                    className="w-full data bg-transparent border-b border-zinc-200 dark:border-white/10 py-1.5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:border-aviation-blue transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              ))}
+
+              <div className="space-y-1">
+                <label className="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                  Aterrizajes
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={opening.landings ?? ""}
+                  onChange={(e) => setField("landings", e.target.value)}
+                  className="w-full data bg-transparent border-b border-zinc-200 dark:border-white/10 py-1.5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:border-aviation-blue transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-zinc-200 dark:border-white/10 shrink-0">
+          <button
+            type="button"
+            onClick={submit}
+            disabled={pending || !name.trim()}
+            className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold py-3.5 rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {pending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : book ? "Guardar" : "Crear libro"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

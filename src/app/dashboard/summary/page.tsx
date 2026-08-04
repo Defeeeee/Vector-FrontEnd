@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { Flight, Aircraft } from "@/types";
+import { Flight, Aircraft, Logbook } from "@/types";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/dashboard/PageHeader";
 import SummaryClient from "@/components/dashboard/SummaryClient";
@@ -15,18 +15,27 @@ async function getSummaryData() {
   }
 
   if (!response.ok) {
-    return { flights: [] as Flight[], aircraft: [] as Aircraft[] };
+    return { flights: [] as Flight[], aircraft: [] as Aircraft[], logbooks: [] as Logbook[] };
   }
 
   const data = await response.json();
+
+  // `/dashboard` does not carry logbooks yet, so they come from their own
+  // endpoint. One extra round trip on a page that already waits for the
+  // dashboard payload; folding it into that response is the better fix but
+  // belongs in the backend.
+  const logbooksResponse = await apiFetch("/logbooks");
+  const logbooks: Logbook[] = logbooksResponse.ok ? await logbooksResponse.json() : [];
+
   return {
     flights: (data.flights || []) as Flight[],
     aircraft: (data.aircraft || []) as Aircraft[],
+    logbooks,
   };
 }
 
 export default async function SummaryPage() {
-  const { flights, aircraft } = await getSummaryData();
+  const { flights, aircraft, logbooks } = await getSummaryData();
 
   // Resolved here rather than in the client: `getAirport` reads the in-memory
   // TSV index, which is server-only. Only the codes this pilot actually flew
@@ -54,6 +63,7 @@ export default async function SummaryPage() {
       <SummaryClient
         flights={flights}
         aircraft={aircraft}
+        logbooks={logbooks}
         todayIso={todayIso}
         airportNames={airportNames}
       />

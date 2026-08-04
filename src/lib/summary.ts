@@ -1,4 +1,4 @@
-import { Flight, Aircraft } from "@/types";
+import { Flight, Aircraft, Logbook } from "@/types";
 
 /**
  * Aggregations for the "Resumen de horas" page.
@@ -54,6 +54,56 @@ export interface HeadlineStats {
   hood: number;
   landings: number;
   flights: number;
+}
+
+/**
+ * Hours carried into the logbooks without their flights.
+ *
+ * Every aggregate on this page has to add these, or a pilot who migrated 500 h
+ * from paper sees a summary that says 0. They are added **only when the period
+ * is "todo"** — an opening balance has no date, so counting it inside "last 28
+ * days" would be inventing recent flying that never happened.
+ */
+export function openingTotals(logbooks: Logbook[]) {
+  const add = (pick: (l: Logbook) => number) =>
+    logbooks.reduce((acc, l) => acc + n(pick(l)), 0);
+
+  const pic =
+    add((l) => l.opening_pic_day_loc) + add((l) => l.opening_pic_day_tra) +
+    add((l) => l.opening_pic_night_loc) + add((l) => l.opening_pic_night_tra);
+  const sic =
+    add((l) => l.opening_sic_day_loc) + add((l) => l.opening_sic_day_tra) +
+    add((l) => l.opening_sic_night_loc) + add((l) => l.opening_sic_night_tra);
+
+  return {
+    // IMC and hood overlap flight time instead of partitioning it, so they are
+    // excluded from the total — the same rule the log form applies.
+    totalHours: pic + sic,
+    pic,
+    imc: add((l) => l.opening_imc_pil) + add((l) => l.opening_imc_cop),
+    night:
+      add((l) => l.opening_pic_night_loc) + add((l) => l.opening_pic_night_tra) +
+      add((l) => l.opening_sic_night_loc) + add((l) => l.opening_sic_night_tra),
+    hood: add((l) => l.opening_capota),
+    landings: add((l) => l.opening_landings),
+    cells: {
+      local: [
+        add((l) => l.opening_pic_day_loc),
+        add((l) => l.opening_sic_day_loc),
+        add((l) => l.opening_pic_night_loc),
+        add((l) => l.opening_sic_night_loc),
+      ],
+      travesia: [
+        add((l) => l.opening_pic_day_tra),
+        add((l) => l.opening_sic_day_tra),
+        add((l) => l.opening_pic_night_tra),
+        add((l) => l.opening_sic_night_tra),
+      ],
+      imcPil: add((l) => l.opening_imc_pil),
+      imcCop: add((l) => l.opening_imc_cop),
+      capota: add((l) => l.opening_capota),
+    },
+  };
 }
 
 export function headlineStats(flights: Flight[]): HeadlineStats {

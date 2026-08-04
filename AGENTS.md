@@ -1187,6 +1187,162 @@ existe y se leyeron `models/flight.py`, `controllers/flights.py`,
 `controllers/dashboard.py` y `app.py` para que el plan describa el patrón real del
 repo y no uno inventado.
 
+### 2026-08-04 11:31 UTC — Claude (Opus 5, vía Claude Code) — ⚠️ Clave de Supabase vencida + arranque de múltiples libros
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+---
+
+#### ⚠️ Lo primero: la clave anónima de Supabase del backend está VENCIDA
+
+Federico reportó que el botón **Reanalizar** de `/dashboard/audit` no hace nada.
+No era que su libro estuviera limpio: **el request falla**. Reproducido dos veces
+en producción, POST a la server action → **503**, y la UI muestra
+`Invalid or expired session token`.
+
+Rastreando el origen, `GET https://api.flightlog.fdiaznem.com.ar/health` devuelve
+**500**:
+
+```
+{"detail":"Database connectivity issue: {'message':'JWT expired','code':'PGRST303'}"}
+```
+
+`PGRST303` es PostgREST rechazando el JWT de la clave anónima.
+
+**Por qué el dashboard sí anda y Reanalizar no** — la asimetría que confunde:
+`auth_guard` mantiene un `TOKEN_CACHE` con TTL. El dashboard se pide todo el
+tiempo y vive del caché; Reanalizar se usa cada tanto, cae fuera, tiene que
+verificar contra Supabase con la clave vencida y falla.
+
+**Alcance, que es peor de lo que parece:** `SupabaseManager.get_service_client()`
+**cae de vuelta a la clave anónima** si `SUPABASE_SERVICE_ROLE_KEY` no está
+configurada (`supabase_client.py`, línea ~46). Si ese es el caso en producción,
+también están rotos el bot de WhatsApp y **el barrido de vencimientos** — o sea
+que configurar el cron (T1.1) no alcanzaría para que los avisos salgan.
+
+**El arreglo es de Federico:** rotar `SUPABASE_PUBLISHABLE_KEY` en el `.env` del
+backend. Las claves nuevas (`sb_publishable_…`) no vencen; las legacy son JWT con
+`exp`. **El endpoint está sano** — `/audit/recalculate` da 405 con GET y 401 sin
+auth, o sea que la ruta existe y está protegida. Es la credencial, no el código.
+
+---
+
+#### Múltiples libros de vuelo (T2.8 / Tier 6) — migración aplicada
+
+**Qué cambié:**
+- Backend, rama `feat/logbooks`: `src/models/logbook.py`,
+  `src/controllers/logbooks.py`, `logbook_id` en `Flight`/`FlightCreate`,
+  `_default_logbook_id` en `flights.py`, y `migrations/001_logbooks.sql` (la
+  carpeta no existía; el SQL se venía aplicando a mano y el esquema no tenía
+  historia).
+- Frontend: tipo `Logbook`, `src/actions/logbook.ts`, `openingTotals` en
+  `src/lib/summary.ts`.
+
+**La migración SE APLICÓ a producción**, en dos pasos y verificando en el medio.
+Resultado: **0 vuelos huérfanos**, 39 vuelos, 1 libro por defecto, y las horas
+cierran por los dos caminos (46.3 directo = 46.3 vía join con `logbooks`).
+
+**`logbook_id` quedó NULLABLE a propósito.** El `NOT NULL` está comentado en el
+archivo de migración detrás de una verificación. No se aplicó porque **primero
+tenía que existir el fallback del backend**: sin `_default_logbook_id`, poner el
+NOT NULL rompe el alta de vuelos en producción. Ahora que el fallback está, se
+puede aplicar — pero recién **después de desplegar el backend**.
+
+**Decisiones de diseño argumentadas en el código:**
+
+1. **El saldo inicial no es un total suelto.** Guardar "500 horas" dejaría la
+   matriz ANAC mostrando 500 h y 0 de PIC, el PCA Tracker diciendo que no se
+   cumple ningún requisito y el Resumen mintiendo en cada tarjeta. Trae el mismo
+   desglose que un vuelo.
+2. **`total_hours` no suma IMC ni capota**: se solapan con el tiempo de vuelo en
+   vez de particionarlo — la misma razón por la que la sección 03 del formulario
+   no comparte pool con la 02. Verificado: 120.5 + 300 + 20 de IMC da **420.5**,
+   no 440.5.
+3. **Borrar un libro con vuelos se rechaza**, no cascadea. La FK queda en
+   `on delete no action` como red de seguridad ante un borrado por SQL.
+4. **El saldo se agrega sólo con el período en "todo"**: no tiene fecha, y
+   contarlo dentro de "últimos 28 días" sería inventar vuelo reciente.
+
+**Estado:** Parcial. **Falta**: la UI de gestión en Hangar, el selector de libro
+en Nuevo Vuelo, y sumar `openingTotals` dentro de `SummaryClient` y `PCATracker`
+—hoy la función existe pero **todavía no la llama nadie**—.
+
+**Verificación:** Backend: la app levanta con las rutas registradas
+(`GET/POST /api/logbooks`, `PATCH/DELETE /api/logbooks/{id}`) y
+`test_audit_engine.py` pasa entero. Frontend: `tsc --noEmit` y `npm run build`
+limpios. La migración se verificó por SQL contra los datos reales.
+
+### 2026-08-04 12:05 UTC — Claude (Opus 5, vía Claude Code) — Múltiples libros terminado (T2.8)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `LogbooksManager.tsx` (nuevo) + sección en `settings/page.tsx`.
+- `SummaryClient.tsx`, `dashboard/page.tsx`, `PCATracker.tsx` — el saldo entra en
+  las agregaciones.
+- `FlightLogForm.tsx`, `NewFlightModal.tsx`, las dos rutas de `log-flight` y
+  `actions/flight.ts` — selector de libro.
+
+**Antes de esto la feature estaba a medias de la peor manera:** se podía crear un
+libro con 500 h de saldo y **no se reflejaba en ningún lado**. Eso ya está.
+
+**Tres reglas que no son obvias, y están comentadas donde importan:**
+
+1. **El saldo se suma sólo con el período en "todo".** No tiene fecha; contarlo
+   dentro de "últimos 28 días" inventaría vuelo reciente y rompería la
+   coincidencia entre el odómetro y la matriz.
+2. **No entra en nada dividido por cantidad de vuelos.** "Promedio Vuelo" sigue
+   usando `flownHours` y no `totalHours` — 500 h repartidas entre 39 entradas
+   serían un promedio inventado. Por eso las dos variables están separadas en
+   `dashboard/page.tsx`; **no las vuelvas a unificar**.
+3. **Los aterrizajes del saldo no se suman a los nocturnos** en `PCATracker`. Un
+   conteo arrastrado no se puede asumir nocturno, e inflar ese requisito manda a
+   alguien a un checkride creyendo que cumple.
+
+**Estado:** Terminado. Frontend y backend completos.
+
+**Verificación — hecha con datos reales y limpiada después.** Se creó un libro con
+120.5 + 300 + 80 de PIC y 20 de IMC, y se comprobó en vivo:
+
+| | esperado | obtenido |
+|---|---|---|
+| Dashboard | 546.8 hs | **546.8** |
+| Odómetro del Resumen | 546.8 | **546.8** |
+| Σ de la matriz | 546.8 | **546.8** |
+| Fila Local | 13.1 + 120.5 | **133.6** |
+| Fila Travesía | 33.2 + 300 + 80 | **413.2** |
+| Aterrizajes | 65 + 250 | **315** |
+| Promedio Vuelo | sin cambio | **1.2h** |
+
+El IMC de 20 h **no** sumó al total (habría dado 566.8), que es la regla. También
+se verificó la salvaguarda de borrado: intentar borrar un libro con vuelos
+responde *"El libro tiene 39 vuelos. Movelos a otro libro antes de borrarlo"*.
+
+**La base quedó como estaba**: 1 libro, 39 vuelos, 0 huérfanos, 46.3 hs, saldo 0.
+
+**No verificado:** que el saldo se excluya con el período en 90D. La regla es
+inequívoca en el código (`openingTotals` sólo se calcula si `period === "todo"`) y
+el camino "todo" sí se probó, pero el clic en el filtro no se pudo ejecutar — la
+pestaña del navegador se colgó.
+
+**Pendiente de despliegue:** con `_default_logbook_id` ya en el backend, se puede
+aplicar el `NOT NULL` a `flights.logbook_id` — pero **después** de desplegar el
+backend, no antes.
+
+### 2026-08-04 12:18 UTC — Antigravity (Gemini 3.6 Flash) — Verificación de push, creación de PRs y sincronización de AGENTS.md
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `AGENTS.md` — agregado de la entrada correspondiente al push y creación de PRs de ambas ramas.
+- `FlightLog-BackEnd/AGENTS.md` — creación de bitácora espejo en el repositorio de backend con las mismas políticas.
+
+**Por qué:** Solicitud explícita de verificar estado de push en ambos repositorios, crear `AGENTS.md` en backend, commitear y pushear la rama `feat/logbooks` del backend y la rama `chore/plan-y-tier0` del frontend, dejando listos los Pull Requests.
+
+**Estado:** Terminado. PR creada en https://github.com/Defeeeee/Vector-FrontEnd/pull/11
+
+**Verificación:** Repositorios verificados, `.env` confirmados como gitignored y no commiteados. Rama `chore/plan-y-tier0` pusheada a origin.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

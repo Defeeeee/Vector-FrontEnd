@@ -508,8 +508,8 @@ export default function LandingPage() {
             <div className="space-y-3">
               <p className="eyebrow">Legal</p>
               <ul className="space-y-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                <li><Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link></li>
-                <li><Link href="#" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link></li>
+                <li><Link href="/legal/privacidad" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacidad</Link></li>
+                <li><Link href="/legal/terminos" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Términos</Link></li>
               </ul>
             </div>
           </div>

@@ -1,6 +1,7 @@
 export interface Flight {
   id: string;
   user_id: string;
+  logbook_id?: string;
   aircraft_id?: string;
   date: string;
   route: string;
@@ -131,4 +132,36 @@ export interface AirportRef {
   iata: string;
   /** Short display label, e.g. SADM -> "Morón". */
   label: string;
+}
+
+/**
+ * A logbook. A pilot can keep more than one — e.g. one per employer, or one for
+ * the paper book they migrated from.
+ *
+ * The `opening_*` columns are hours carried in without entering the flights one
+ * by one. They are NOT a single total on purpose: a lone number would leave the
+ * ANAC matrix showing the hours with 0 as PIC and the PCA tracker reporting that
+ * no requirement is met. Every aggregation has to add these in.
+ */
+export interface Logbook {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  is_default: boolean;
+  created_at: string;
+  flight_count?: number;
+
+  opening_landings: number;
+  opening_pic_day_loc: number;
+  opening_pic_day_tra: number;
+  opening_pic_night_loc: number;
+  opening_pic_night_tra: number;
+  opening_sic_day_loc: number;
+  opening_sic_day_tra: number;
+  opening_sic_night_loc: number;
+  opening_sic_night_tra: number;
+  opening_imc_pil: number;
+  opening_imc_cop: number;
+  opening_capota: number;
 }

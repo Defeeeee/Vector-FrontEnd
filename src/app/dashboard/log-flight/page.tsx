@@ -8,8 +8,9 @@ import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 
 async function getData() {
-  const [acRes, sessionRes] = await Promise.all([
+  const [acRes, sessionRes, lbRes] = await Promise.all([
     apiFetch("/aircraft"),
+    apiFetch("/logbooks"),
     apiFetch("/flight-helper/session")
   ]);
 
@@ -19,9 +20,10 @@ async function getData() {
   }
   
   const aircraft: Aircraft[] = acRes.ok ? await acRes.json() : [];
+  const logbooks = lbRes.ok ? await lbRes.json() : [];
   const session = sessionRes.ok ? await sessionRes.json() : { active: false };
   
-  return { aircraft, session };
+  return { aircraft, session, logbooks };
 }
 
 interface PageProps {
@@ -41,7 +43,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
     duration: resolvedParams.duration as string,
   } : undefined;
 
-  const { aircraft, session } = await getData();
+  const { aircraft, session, logbooks } = await getData();
 
   return (
     <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full pb-20">
@@ -66,7 +68,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2 order-2 lg:order-1">
-          <FlightLogForm aircraft={aircraft} initialData={prefillData} />
+          <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={prefillData} />
         </div>
         
         <div className="lg:col-span-1 order-1 lg:order-2 space-y-6 md:space-y-8">
