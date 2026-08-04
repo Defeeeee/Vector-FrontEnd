@@ -21,6 +21,11 @@ export interface Airport {
   iata: string;
   /** Short label to show under an input, FlightDeck-style: SADM -> "Morón". */
   label: string;
+  /** Field elevation in feet. Missing upstream for a handful of entries. */
+  elevation?: number;
+  /** Decimal degrees, 4dp (~11 m) — enough to plot, small enough not to bloat. */
+  lat?: number;
+  lon?: number;
 }
 
 interface Index {
@@ -65,7 +70,11 @@ function load(): Index {
 
   for (const line of raw.split("\n")) {
     if (!line) continue;
-    const [icao, name, city, country, size, iata] = line.split("\t");
+    const [icao, name, city, country, size, iata, elev, lat, lon] = line.split("\t");
+    const asNum = (v?: string) => {
+      const n = parseFloat(v ?? "");
+      return Number.isFinite(n) ? n : undefined;
+    };
     if (!icao) continue;
     const airport: Airport = {
       icao,
@@ -75,6 +84,9 @@ function load(): Index {
       size: (size as Airport["size"]) || "S",
       iata: iata || "",
       label: shortLabel(name, city || ""),
+      elevation: asNum(elev),
+      lat: asNum(lat),
+      lon: asNum(lon),
     };
     byIcao.set(icao, airport);
     all.push(airport);

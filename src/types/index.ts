@@ -130,6 +130,9 @@ export interface AirportRef {
   country: string;
   size: "L" | "M" | "S" | "H";
   iata: string;
+  elevation?: number;
+  lat?: number;
+  lon?: number;
   /** Short display label, e.g. SADM -> "Morón". */
   label: string;
 }
