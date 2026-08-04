@@ -1187,6 +1187,91 @@ existe y se leyeron `models/flight.py`, `controllers/flights.py`,
 `controllers/dashboard.py` y `app.py` para que el plan describa el patrón real del
 repo y no uno inventado.
 
+### 2026-08-04 11:31 UTC — Claude (Opus 5, vía Claude Code) — ⚠️ Clave de Supabase vencida + arranque de múltiples libros
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+---
+
+#### ⚠️ Lo primero: la clave anónima de Supabase del backend está VENCIDA
+
+Federico reportó que el botón **Reanalizar** de `/dashboard/audit` no hace nada.
+No era que su libro estuviera limpio: **el request falla**. Reproducido dos veces
+en producción, POST a la server action → **503**, y la UI muestra
+`Invalid or expired session token`.
+
+Rastreando el origen, `GET https://api.flightlog.fdiaznem.com.ar/health` devuelve
+**500**:
+
+```
+{"detail":"Database connectivity issue: {'message':'JWT expired','code':'PGRST303'}"}
+```
+
+`PGRST303` es PostgREST rechazando el JWT de la clave anónima.
+
+**Por qué el dashboard sí anda y Reanalizar no** — la asimetría que confunde:
+`auth_guard` mantiene un `TOKEN_CACHE` con TTL. El dashboard se pide todo el
+tiempo y vive del caché; Reanalizar se usa cada tanto, cae fuera, tiene que
+verificar contra Supabase con la clave vencida y falla.
+
+**Alcance, que es peor de lo que parece:** `SupabaseManager.get_service_client()`
+**cae de vuelta a la clave anónima** si `SUPABASE_SERVICE_ROLE_KEY` no está
+configurada (`supabase_client.py`, línea ~46). Si ese es el caso en producción,
+también están rotos el bot de WhatsApp y **el barrido de vencimientos** — o sea
+que configurar el cron (T1.1) no alcanzaría para que los avisos salgan.
+
+**El arreglo es de Federico:** rotar `SUPABASE_PUBLISHABLE_KEY` en el `.env` del
+backend. Las claves nuevas (`sb_publishable_…`) no vencen; las legacy son JWT con
+`exp`. **El endpoint está sano** — `/audit/recalculate` da 405 con GET y 401 sin
+auth, o sea que la ruta existe y está protegida. Es la credencial, no el código.
+
+---
+
+#### Múltiples libros de vuelo (T2.8 / Tier 6) — migración aplicada
+
+**Qué cambié:**
+- Backend, rama `feat/logbooks`: `src/models/logbook.py`,
+  `src/controllers/logbooks.py`, `logbook_id` en `Flight`/`FlightCreate`,
+  `_default_logbook_id` en `flights.py`, y `migrations/001_logbooks.sql` (la
+  carpeta no existía; el SQL se venía aplicando a mano y el esquema no tenía
+  historia).
+- Frontend: tipo `Logbook`, `src/actions/logbook.ts`, `openingTotals` en
+  `src/lib/summary.ts`.
+
+**La migración SE APLICÓ a producción**, en dos pasos y verificando en el medio.
+Resultado: **0 vuelos huérfanos**, 39 vuelos, 1 libro por defecto, y las horas
+cierran por los dos caminos (46.3 directo = 46.3 vía join con `logbooks`).
+
+**`logbook_id` quedó NULLABLE a propósito.** El `NOT NULL` está comentado en el
+archivo de migración detrás de una verificación. No se aplicó porque **primero
+tenía que existir el fallback del backend**: sin `_default_logbook_id`, poner el
+NOT NULL rompe el alta de vuelos en producción. Ahora que el fallback está, se
+puede aplicar — pero recién **después de desplegar el backend**.
+
+**Decisiones de diseño argumentadas en el código:**
+
+1. **El saldo inicial no es un total suelto.** Guardar "500 horas" dejaría la
+   matriz ANAC mostrando 500 h y 0 de PIC, el PCA Tracker diciendo que no se
+   cumple ningún requisito y el Resumen mintiendo en cada tarjeta. Trae el mismo
+   desglose que un vuelo.
+2. **`total_hours` no suma IMC ni capota**: se solapan con el tiempo de vuelo en
+   vez de particionarlo — la misma razón por la que la sección 03 del formulario
+   no comparte pool con la 02. Verificado: 120.5 + 300 + 20 de IMC da **420.5**,
+   no 440.5.
+3. **Borrar un libro con vuelos se rechaza**, no cascadea. La FK queda en
+   `on delete no action` como red de seguridad ante un borrado por SQL.
+4. **El saldo se agrega sólo con el período en "todo"**: no tiene fecha, y
+   contarlo dentro de "últimos 28 días" sería inventar vuelo reciente.
+
+**Estado:** Parcial. **Falta**: la UI de gestión en Hangar, el selector de libro
+en Nuevo Vuelo, y sumar `openingTotals` dentro de `SummaryClient` y `PCATracker`
+—hoy la función existe pero **todavía no la llama nadie**—.
+
+**Verificación:** Backend: la app levanta con las rutas registradas
+(`GET/POST /api/logbooks`, `PATCH/DELETE /api/logbooks/{id}`) y
+`test_audit_engine.py` pasa entero. Frontend: `tsc --noEmit` y `npm run build`
+limpios. La migración se verificó por SQL contra los datos reales.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
