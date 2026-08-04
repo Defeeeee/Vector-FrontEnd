@@ -20,6 +20,30 @@ pudieron probar**: la ventana de Chrome del entorno no baja de ~1514 px.
 **Sin probar:** `T0.5` — con los datos reales de Federico ningún período queda
 vacío, así que el empty state no se alcanza desde la UI.
 
+### Auditoría del 2026-08-03 — qué es realmente nuevo
+
+Este documento nació con **cinco tareas que describían cosas que ya existían**.
+Todas las pendientes se verificaron contra el código; el resultado está anotado en
+cada una. Resumen:
+
+| Estado | Tareas |
+|---|---|
+| **Nuevo de verdad, confirmado** | `T2.1` `T2.2` `T2.3` `T2.4` `T2.5` `T2.6` `T2.7` `T2.8` `T3.9` `T4.1` `T4.2` |
+| **Ya existía, se reescribió el alcance** | `T3.4` `T3.5` `T3.6` `T3.7` `T3.8` |
+| **No es código, es configuración o una acción** | `T1.1` `T1.2` `T1.3` `T1.4` `T5.2`–`T5.4` |
+
+Comprobaciones concretas: `Rol`, `Reglas de vuelo`, `matrícula manual`, `libro de
+vuelo` y `observaciones` tienen **cero referencias** en `FlightLogForm.tsx` y en
+`types/index.ts`. `UTC` aparece sólo como texto de dos labels, no como toggle. No
+hay ninguna librería de mapas en `package.json`, ni ningún archivo que mencione
+`sparkline` o `novedades`. De aeródromos existe `/api/airports/search` pero
+**ninguna página**.
+
+**Regla para el próximo que edite este documento:** verificá contra el código
+antes de escribir una tarea. Cinco de las primeras veintiocho describían trabajo ya
+hecho, y una tarea falsa cuesta más que una tarea faltante — manda a alguien a
+construir algo que ya está.
+
 ---
 
 ## Tier 0 — Deuda de verificación
@@ -174,14 +198,29 @@ Dos cosas, y la segunda importa más que la estética:
    además suelen ser exigibles. **No inventar destinos**: hay que crear las
    páginas o sacar los links.
 
-### T3.7 — Delta % y sparkline en las stat cards del dashboard `S`
+### T3.7 — Sparklines en las stat cards `S`
 
-Hoy son ícono + número + label, planas.
+> **Corregido el 2026-08-03 tras auditar el código.** Decía "hoy son planas". La
+> tile negra **ya tiene un delta** ("+1.3 hs en 30 días"), agregado al bajar el
+> hero. Lo que falta de verdad:
+> - **Sparklines: no existe ninguna en el repo.** Eso sí es nuevo.
+> - El delta actual es **absoluto** (horas), no porcentual como el de FlightDeck.
+> - La **tira secundaria** (Promedio / Aterrizajes / Destino / Aeronaves) no tiene
+>   delta de ningún tipo.
 
-### T3.8 — Repackagear la card AWOS al formato "Tu base" `S`
+### T3.8 — Pasar la card AWOS a media columna con tabs `S`
 
-Misma idea que FlightDeck pero hoy ocupa el ancho completo y suele estar vacía.
-Pasarla a media columna con tabs Clima/NOTAMs y el METAR crudo abajo.
+> **Corregido el 2026-08-03 tras auditar el código.** Decía "suele estar vacía",
+> lo que sugería que había poco construido. **No es así:** `WeatherWidget` ya trae
+> banner de condición con color por categoría METAR, buscador de ICAO, grilla de
+> métricas, METAR crudo, TAF colapsable y botón de refresco.
+
+Lo que falta es sólo el **empaque**, y es más chico de lo que parecía:
+
+1. Hoy ocupa el **ancho completo** del dashboard; en FlightDeck es media columna,
+   al lado del heatmap.
+2. No tiene **tabs Clima / NOTAMs** — hay endpoint de NOTAMs (`/api/notams`) pero
+   la card no los muestra.
 
 ### T3.9 — Fila NOVEDADES de changelog `M` — *opcional*
 
