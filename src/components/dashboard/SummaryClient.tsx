@@ -12,8 +12,11 @@ import {
   Plane,
   Sunrise,
   Trophy,
+  Map as MapIcon,
+  List as ListIcon,
 } from "lucide-react";
 import { Flight, Aircraft, Logbook } from "@/types";
+import FlightMap from "./FlightMap";
 import {
   PERIODS,
   Period,
@@ -174,14 +177,17 @@ export default function SummaryClient({
   logbooks,
   todayIso,
   airportNames,
+  airportDetails = {},
 }: {
   flights: Flight[];
   aircraft: Aircraft[];
   logbooks: Logbook[];
   todayIso: string;
   airportNames: Record<string, string>;
+  airportDetails?: Record<string, { name: string; label: string; lat?: number; lon?: number; city?: string }>;
 }) {
   const [period, setPeriod] = useState<Period>("todo");
+  const [viewMode, setViewMode] = useState<"map" | "list">("map");
 
   const scoped = useMemo(() => filterByPeriod(flights, period, todayIso), [flights, period, todayIso]);
 
@@ -378,31 +384,66 @@ export default function SummaryClient({
               <SectionHead
                 title="Dónde volaste"
                 subtitle={`${airportTotal} ${airportTotal === 1 ? "aeródromo" : "aeródromos"} · ${routeTotal} ${routeTotal === 1 ? "ruta única" : "rutas únicas"}`}
-              />
-              <div className="space-y-3">
-                {airports.map((a, i) => (
-                  <div key={a.icao} className="flex items-center gap-3">
-                    <span className="data text-[11px] text-zinc-300 dark:text-zinc-600 w-5 shrink-0">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div className="w-16 shrink-0">
-                      <span className="data text-sm font-bold text-zinc-900 dark:text-white">{a.icao}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="h-1.5 rounded-full bg-zinc-100 dark:bg-white/10 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-aviation-blue dark:bg-aviation-cyan"
-                          style={{ width: `${(a.visits / maxVisits) * 100}%` }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate mt-1">
-                        {airportNames[a.icao] || "—"}
-                      </p>
-                    </div>
-                    <span className="data text-sm font-bold text-zinc-900 dark:text-white shrink-0">{a.visits}</span>
+                aside={
+                  <div className="flex items-center gap-1 bg-zinc-100 dark:bg-white/10 p-1 rounded-xl shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("map")}
+                      className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold uppercase transition-colors flex items-center gap-1.5 ${
+                        viewMode === "map"
+                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
+                          : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <MapIcon className="w-3 h-3" /> Mapa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold uppercase transition-colors flex items-center gap-1.5 ${
+                        viewMode === "list"
+                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
+                          : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <ListIcon className="w-3 h-3" /> Lista
+                    </button>
                   </div>
-                ))}
-              </div>
+                }
+              />
+
+              {viewMode === "map" ? (
+                <FlightMap
+                  airports={allAirports(scoped)}
+                  routes={allRoutes(scoped)}
+                  airportDetails={airportDetails}
+                />
+              ) : (
+                <div className="space-y-3">
+                  {airports.map((a, i) => (
+                    <div key={a.icao} className="flex items-center gap-3">
+                      <span className="data text-[11px] text-zinc-300 dark:text-zinc-600 w-5 shrink-0">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <div className="w-16 shrink-0">
+                        <span className="data text-sm font-bold text-zinc-900 dark:text-white">{a.icao}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="h-1.5 rounded-full bg-zinc-100 dark:bg-white/10 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-aviation-blue dark:bg-aviation-cyan"
+                            style={{ width: `${(a.visits / maxVisits) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate mt-1">
+                          {airportNames[a.icao] || "—"}
+                        </p>
+                      </div>
+                      <span className="data text-sm font-bold text-zinc-900 dark:text-white shrink-0">{a.visits}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
 
             <Card>

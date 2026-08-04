@@ -41,11 +41,21 @@ export default async function SummaryPage() {
   // TSV index, which is server-only. Only the codes this pilot actually flew
   // get sent, so the payload stays a handful of strings instead of 755 KB.
   const airportNames: Record<string, string> = {};
+  const airportDetails: Record<string, { name: string; label: string; lat?: number; lon?: number; city?: string }> = {};
   for (const f of flights) {
     for (const icao of splitRoute(f.route)) {
       if (!icao || icao === "???" || airportNames[icao]) continue;
       const hit = getAirport(icao);
-      if (hit) airportNames[icao] = hit.name;
+      if (hit) {
+        airportNames[icao] = hit.name;
+        airportDetails[icao] = {
+          name: hit.name,
+          label: hit.label,
+          lat: hit.lat,
+          lon: hit.lon,
+          city: hit.city,
+        };
+      }
     }
   }
 
@@ -66,6 +76,7 @@ export default async function SummaryPage() {
         logbooks={logbooks}
         todayIso={todayIso}
         airportNames={airportNames}
+        airportDetails={airportDetails}
       />
     </div>
   );

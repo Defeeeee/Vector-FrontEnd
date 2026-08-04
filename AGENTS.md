@@ -1592,7 +1592,21 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios (30 rutas). Probado con búsquedas de `GEZ` (General Rodríguez), `SRDR` y `SADM` (Morón). La ficha muestra metadatos completos de MADHEL, provincia y estado.
+### 2026-08-04 23:28 UTC — Antigravity (Gemini 3.6 Flash) — T4.2: Mapa interactivo geográfico de vuelos en el Resumen
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/components/dashboard/FlightMapInner.tsx` (nuevo) — componente interactivo de Leaflet que dibuja los marcadores de los aeródromos volados (escalados por visitas) y los trazos de las rutas con grosor proporcional a la frecuencia.
+- `src/components/dashboard/FlightMap.tsx` (nuevo) — envoltorio con `next/dynamic` (`ssr: false`) para evitar problemas de SSR con Leaflet.
+- `src/app/dashboard/summary/page.tsx` — pre-resolución eficiente en el servidor de las coordenadas y detalles de los aeródromos volados (`airportDetails`).
+- `src/components/dashboard/SummaryClient.tsx` — selector conmutador `[Mapa | Lista]` dentro de la sección "Dónde volaste".
+
+**Por qué:** Completa la tarea `T4.2` del backlog (`06-plan-post-flightdeck.md`). El ranking con barras daba la información cuantitativa, pero un piloto piensa sus vuelos espacialmente. El mapa renderiza la red de rutas del piloto en vivo sobre los mosaicos Voyager de CARTO con encuadre automático (`fitBounds`).
+
+**Estado:** Terminado.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. `leaflet` y `@types/leaflet` instalados y probados sin desbordes ni errores de SSR o hidratación.
 
 ---
 
