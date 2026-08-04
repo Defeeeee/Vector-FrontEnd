@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Settings, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart } from "lucide-react";
+import { LayoutDashboard, History, Settings, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,6 +19,7 @@ const navItems = [
   // and reordering them would push Herramientas into the "Más" sheet. Muscle
   // memory beats taxonomy — see the nav redesign entry in AGENTS.md.
   { href: "/dashboard/summary", icon: PieChart, label: "Resumen" },
+  { href: "/dashboard/airports", icon: Building2, label: "Aeropuertos" },
 ];
 
 const AUDIT_HREF = "/dashboard/audit";

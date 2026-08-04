@@ -57,8 +57,23 @@ const col = Object.fromEntries(head.map((h, i) => [h, i]));
 /** ICAO -> tuple. Later writes win, so recovery and overlay override the base pass. */
 const airports = new Map();
 
-const put = (icao, name, muni, country, type, iata) =>
-  airports.set(icao, [icao, name, muni || "", country, SIZE[type] || "S", iata || ""]);
+/**
+ * Elevation and coordinates are carried through even though the ICAO resolver
+ * does not need them: they are what an aerodrome page can actually show a pilot
+ * (field elevation feeds density-altitude thinking) and what a map would plot.
+ * Rounding the degrees to 4 decimals is ~11 m of precision — far more than
+ * enough to place a marker, and it keeps the file from growing on noise.
+ */
+const num = (v, dp) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? String(dp === 0 ? Math.round(n) : Number(n.toFixed(dp))) : "";
+};
+
+const put = (icao, name, muni, country, type, iata, elev, lat, lon) =>
+  airports.set(icao, [
+    icao, name, muni || "", country, SIZE[type] || "S", iata || "",
+    num(elev, 0), num(lat, 4), num(lon, 4),
+  ]);
 
 // Pass 1 — rows whose ident already is an ICAO code.
 for (const r of rows.slice(1)) {
@@ -70,7 +85,8 @@ for (const r of rows.slice(1)) {
   // since small aeroclub strips are exactly what a local logbook references.
   const isAr = icao.startsWith("SA");
   if (!isAr && !(type in SIZE && SIZE[type] !== "H")) continue;
-  put(icao, r[col.name], r[col.municipality], r[col.iso_country], type, r[col.iata_code]);
+  put(icao, r[col.name], r[col.municipality], r[col.iso_country], type, r[col.iata_code],
+      r[col.elevation_ft], r[col.latitude_deg], r[col.longitude_deg]);
 }
 
 // Pass 2 — OurAirports files many Argentine aerodromes under a placeholder ident
@@ -85,7 +101,8 @@ for (const r of rows.slice(1)) {
   const blob = [r[col.gps_code], r[col.local_code], r[col.keywords]].join(" ").toUpperCase();
   for (const icao of new Set(blob.match(/\bSA[A-Z]{2}\b/g) || [])) {
     if (airports.has(icao)) continue;
-    put(icao, r[col.name], r[col.municipality], "AR", r[col.type], "");
+    put(icao, r[col.name], r[col.municipality], "AR", r[col.type], "",
+        r[col.elevation_ft], r[col.latitude_deg], r[col.longitude_deg]);
     recovered++;
   }
 }
@@ -95,9 +112,16 @@ let overlaid = 0;
 if (fs.existsSync(OVERLAY)) {
   for (const line of fs.readFileSync(OVERLAY, "utf8").split("\n")) {
     if (!line.trim() || line.startsWith("#")) continue;
-    const [icao, name, muni, country, size, iata] = line.split("\t");
+    const [icao, name, muni, country, size, iata, elev, lat, lon] = line.split("\t");
     if (!/^[A-Z]{4}$/.test(icao || "")) continue;
-    airports.set(icao, [icao, name, muni || "", country || "AR", size || "S", iata || ""]);
+    // The overlay keeps its original 6-column shape: the extra three are
+    // optional, so existing hand-written rows stay valid and simply carry no
+    // elevation or coordinates rather than breaking the parse.
+    const prev = airports.get(icao);
+    airports.set(icao, [
+      icao, name, muni || "", country || "AR", size || "S", iata || "",
+      elev ?? prev?.[6] ?? "", lat ?? prev?.[7] ?? "", lon ?? prev?.[8] ?? "",
+    ]);
     overlaid++;
   }
 }

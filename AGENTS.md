@@ -1343,6 +1343,235 @@ backend, no antes.
 
 **Verificación:** Repositorios verificados, `.env` confirmados como gitignored y no commiteados. Rama `chore/plan-y-tier0` pusheada a origin.
 
+### 2026-08-04 21:56 UTC — Claude (Opus 5, vía Claude Code) — `flights.logbook_id` pasa a NOT NULL
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:** Sólo base de datos — migración `flights_logbook_id_not_null`. Sin
+cambios de código en ninguno de los dos repos.
+
+**Por qué:** Es el paso 4 de `migrations/001_logbooks.sql`, que quedó comentado
+detrás de una verificación a propósito. Se aplica ahora porque Federico mergeó y
+desplegó las dos PRs, y el backend en producción ya asigna el libro por defecto al
+crear un vuelo. **Aplicarlo antes del despliegue habría roto el alta de vuelos.**
+
+**Antes de aplicarlo se comprobaron tres cosas, en este orden:**
+
+1. **Que producción corra el código nuevo, no sólo que esté desplegado** — la
+   distinción importa, porque horas antes el mismo servidor tenía el proceso
+   viejo en memoria (ver la entrada de la clave de Supabase). `GET /logbooks`
+   devuelve **401 y no 404**: la ruta existe, o sea que el build nuevo está vivo.
+2. **La precondición de datos:** 0 vuelos huérfanos, y todos los usuarios con
+   vuelos tienen su libro por defecto.
+3. **Que exista un solo camino de alta.** Se rastrearon todos los inserts a
+   `flights`: hay **exactamente uno**, `flights.py:149`, que es el que tiene el
+   fallback. `whatsapp.py` sólo lee. Del lado del frontend, los tres orígenes
+   —el formulario, el cierre de sesión en vivo y el copiloto/WhatsApp— van todos
+   a `apiFetch("/flights")`; **ningún código inserta en Supabase directamente**.
+
+**Estado:** Aplicado y confirmado (`is_nullable = NO`).
+
+**Verificación:** Lo de arriba, todo por SQL y por lectura de los dos repos.
+
+**NO verificado, y es lo único que queda:** **no se creó un vuelo de verdad
+después del cambio.** El fallback está en el camino crítico —Federico tiene un
+solo libro, así que el frontend no manda `logbook_id` y el backend tiene que
+completarlo— y si fallara, el alta de vuelos quedaría rota por completo. El
+análisis dice que funciona, pero **cargar un vuelo de prueba es la única prueba
+real**. No se hizo para no ensuciar el libro real sin permiso.
+
+### 2026-08-04 22:04 UTC — Claude (Opus 5, vía Claude Code) — NOT NULL verificado + diagnóstico del cron de vencimientos
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:** Nada de código ni de esquema. Sólo verificación y esta entrada.
+
+---
+
+#### 1. Se cerró lo que la entrada anterior dejó sin verificar
+
+Esa entrada decía que **no se había creado un vuelo real** después del `NOT NULL`,
+y que el fallback estaba en el camino crítico. **Ya está verificado**, sin ensuciar
+el libro: se ejercitó el código real —`FlightsController._default_logbook_id` con
+el service client, contra la base de producción— y se probaron las dos
+direcciones:
+
+- Con el libro que devuelve el fallback, **el insert entra** y `logbook_id` queda
+  completo.
+- Sin `logbook_id`, **la base lo rechaza** con `23502 not-null constraint`.
+
+O sea que la restricción está activa y el fallback la satisface. La fila de prueba
+se borró; la base quedó en 39 vuelos, 0 huérfanos, 46.3 hs.
+
+---
+
+#### 2. T1.1 — el cron de vencimientos: la lógica funciona, pero configurarlo no alcanza
+
+Se corrió el barrido real contra los datos de producción. **La lógica está bien**:
+de 8 documentos detecta 1 pendiente —un CMA vencido en 1996— y arma un mensaje
+correcto. `test_audit_engine.py` ya cubría el escalonado, y esto lo confirma
+contra datos reales.
+
+**Pero hay dos cosas que hacen que configurar el cron no sea suficiente:**
+
+1. **`DOCUMENTS_ALERT_SECRET` no está en el `.env`.** Ni en el local ni en el del
+   servidor (se listaron las variables: sólo `DEBUG`, `GOOGLE_*` y `SUPABASE_*`).
+   Sin él, el endpoint **rechaza la llamada a propósito** — falla cerrado porque
+   corre con service role sobre todos los usuarios.
+2. **9 de 10 perfiles no tienen WhatsApp cargado.** Esos quedan `skipped`. Aun con
+   el cron andando, el aviso llegaría a **un solo usuario**. La feature no está
+   sólo "sin configurar": está sin destinatarios.
+
+Esto cambia el alcance de T1.1 en el plan: además del secreto y la entrada de
+cron, hace falta **pedirle el teléfono a los pilotos** — en el onboarding, o con
+un aviso en la pantalla de vencimientos explicando que sin número no hay alerta.
+
+**Dos cosas que se revisaron y NO son bugs**, para que nadie las "arregle":
+
+- **`EXPIRED_BUCKET = 0`** parece una trampa de verdad/falsedad, pero el
+  controlador usa `if threshold is None`, no `if threshold`. Está bien.
+- El mensaje sale como **"Hola Hola,"**, que parece un saludo duplicado. Es **dato
+  de prueba**: hay un perfil cuyo `first_name` es literalmente `'Hola'`. El código
+  del saludo es correcto.
+
+**Estado:** Verificación terminada. T1.1 sigue **bloqueado del lado de Federico**
+(configuración de servidor), ahora con el alcance real documentado.
+
+**Verificación:** Todo por ejecución del código real contra la base de producción,
+con limpieza posterior confirmada por SQL.
+
+### 2026-08-04 22:10 UTC — Claude (Opus 5, vía Claude Code) — Que Vector pida el WhatsApp (tercera pata de T1.1)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `ProfileForm.tsx` — el label del campo y un texto de ayuda debajo.
+- `WhatsAppMissingNotice.tsx` (nuevo) + `settings/page.tsx` — aviso contextual.
+
+**Por qué:** La entrada anterior encontró que **9 de 10 perfiles no tienen
+WhatsApp cargado**, así que el cron de vencimientos no le serviría casi a nadie
+aunque se configurara. Buscando la causa apareció algo concreto: el campo se
+llamaba **"WhatsApp (para Copiloto IA)"**. Un piloto que no usa el copiloto lo
+saltea sin motivo para pensar que ese mismo número es lo que habilita los avisos
+de vencimiento. **El label estaba causando el vacío.**
+
+Dos cambios, uno barato y uno que aparece cuando duele:
+
+1. El label pasa a **"WhatsApp"** a secas, con una línea debajo que nombra los dos
+   usos y cierra con *"Sin número no hay avisos"*.
+2. Un aviso en la sección **Vencimientos** —no en el perfil— cuando el piloto
+   tiene documentos cargados y no tiene número. Va ahí a propósito: es el momento
+   en que la falta cuesta algo. El texto dice que las fechas se siguen calculando
+   pero que **nadie va a escribir**, porque el riesgo real no es no ver la fecha,
+   es *creer que Vector te va a avisar*.
+
+El aviso **sólo aparece si hay documentos cargados**. Sin documentos sería
+molestar por una feature que el piloto todavía no empezó a usar.
+
+**Estado:** Terminado. **T1.1 sigue bloqueado** del lado de Federico: falta el
+`DOCUMENTS_ALERT_SECRET` y la entrada de cron. Esto ataca la tercera pata —los
+destinatarios—, no las otras dos.
+
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. En el dev server
+contra la cuenta real: con número cargado el aviso **no** aparece y el texto de
+ayuda sí. Para ver el estado contrario se invirtió la condición un momento: el
+aviso renderiza correctamente arriba de la lista, justo encima del *"Vence en 514
+días"* que es la falsa tranquilidad que corrige. La condición quedó revertida y
+comprobada.
+
+---
+
+### 2026-08-04 23:40 UTC — Claude (Opus 5, vía Claude Code) — Pestaña Aeropuertos + cierre de Tier 2 y Tier 3 (T4.1, T2.3, T2.4, T3.7, T3.8)
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `AirportsClient.tsx` + `dashboard/airports/page.tsx` (nuevos), `DashboardNav.tsx`,
+  `scripts/build-airports.mjs`, `src/data/airports.tsv` — **T4.1**.
+- `FlightLogForm.tsx` — **T2.3** (toggle UTC/Local) y **T2.4** (observaciones).
+- `dashboard/page.tsx` — **T3.7** (sparkline) y **T3.8** (AWOS al lado del heatmap).
+
+---
+
+#### T4.1 — La pestaña Aeropuertos
+
+Era lo más distintivo que le quedaba a FlightDeck y la única de las tareas grandes
+que abría una página entera. Buscador de ICAO, ficha del aeródromo, METAR en vivo y
+—esto es lo que FlightDeck no tiene— **"Tu historial acá"**: cuántas veces volaste a
+ese campo, cuántas horas, cuántos aterrizajes y cuándo fue la última.
+
+Tres decisiones que valen la pena registrar:
+
+1. **El historial se calcula en el servidor.** La lista de vuelos ya viaja para el
+   dashboard; recalcularla en el cliente la haría cruzar el cable dos veces. Además
+   la fecha de "última visita" se formatea del lado servidor **a propósito**: este
+   repo ya pagó dos bugs de hidratación por formatear fechas en componentes cliente.
+2. **Un circuito local cuenta como una visita, no como dos.** `buildHistory` detecta
+   cuando el mismo ICAO está en los dos extremos de la ruta y suma una sola vez. Sin
+   eso, el aeródromo que más volás —justo el que más importa— reportaría el doble.
+3. **El TSV creció de 755 KB a 1096 KB** porque `build-airports.mjs` ahora arrastra
+   elevación y coordenadas. El resolver de ICAO no las necesita, pero son lo único
+   que una ficha puede mostrarle a un piloto (la elevación alimenta el pensar en
+   densidad-altitud). Las coordenadas van redondeadas a 4 decimales: ~11 m, de sobra
+   para un marcador, y evita que el archivo engorde con ruido.
+
+La pestaña abre en el aeródromo que más volaste, que casi siempre es tu base.
+
+**Dos bugs propios, encontrados en vivo:**
+- El buscador nunca mostraba resultados: `/api/airports/search` devuelve
+  `{results: [...]}`, no un array pelado.
+- Al abrir un aeródromo automáticamente se borraba lo que estabas tipeando. Se le
+  pasó `{clearSearch: false}` a ese camino.
+
+---
+
+#### T2.3 — Toggle UTC / Local
+
+El riesgo acá no era la UI, era el almacenamiento: `takeoff` y `landing` se guardan
+en **UTC** y el motor de auditoría asume eso. Si el toggle cambiara lo que se
+postea, la auditoría empezaría a marcar vuelos correctos.
+
+Por eso el toggle es **puramente de presentación**. Los campos visibles muestran la
+hora corrida −3, y dos `<input type="hidden">` postean siempre el valor UTC. Los
+labels cambian a "(local)" para que no haya ambigüedad de qué estás mirando.
+
+**Verificado en vivo:** con 14:00/15:30 cargados, pasar a Local muestra 11:00/12:30,
+y `FormData` sigue conteniendo 14:00/15:30. El Block Time calcula 1:30 → ANAC 1.5.
+
+---
+
+#### T2.4 — Observaciones
+
+Campo de texto libre colapsable. `remarks` en `Flight` y `FlightCreate` del backend.
+
+---
+
+#### T3.7 y T3.8 — Los dos que quedaban de Tier 3
+
+El sparkline es SVG hecho a mano (~20 líneas, sin librería) sobre la acumulación de
+30 días. **Las coordenadas se redondean a 2 decimales a propósito**: es la misma
+defensa que salvó al dial radial, donde `Math.sin`/`Math.cos` —que son
+*implementation-defined*— diferían entre Node y Chrome en los últimos dígitos y
+rompían la hidratación. Acá la aritmética es lineal y no debería pasar, pero el
+redondeo es gratis y deja el markup idéntico en los dos lados.
+
+T3.8 junta la estación AWOS con el heatmap en un `grid lg:grid-cols-2`: son las dos
+lecturas "de hoy" del dashboard y cada una desperdiciaba media fila.
+
+**Estado:** Los cinco terminados y verificados a ojo contra la cuenta real.
+`tsc --noEmit` y `npm run build` limpios.
+
+**Verificación de T4.1:** buscar "moron" da 8 resultados; SADF muestra elevación
+10 ft, coordenadas, METAR en vivo, e historial de 31 veces / 33.7 horas / 49
+aterrizajes / última el 25 Jul 2026. SADM —donde no voló— muestra el empty state
+"Todavía no volaste acá".
+
+**Advertencia para el próximo:** al inspeccionar el form de Nuevo Vuelo desde la
+consola, `document.querySelector('form')` agarra un form vacío — hay dos en la
+página. El selector correcto es
+`[...document.querySelectorAll('form')].find(f => new FormData(f).has('pic_day_loc'))`.
+Con el equivocado parece que el form no postea nada, y no es cierto.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

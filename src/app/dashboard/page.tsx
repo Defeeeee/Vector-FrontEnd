@@ -221,6 +221,7 @@ export default async function Dashboard() {
           unit="hs"
           caption={`+${lastMonthHours.toFixed(1)} hs en 30 días`}
           href="/dashboard/history"
+          spark={chartData.map((d) => d.hours)}
         />
         <HeadlineStat label="Vuelos" value={String(totalFlights)} caption="Entradas de log" />
         <HeadlineStat label="Aeródromos" value={String(airports.size)} caption="Códigos ICAO únicos" />
@@ -239,7 +240,6 @@ export default async function Dashboard() {
       <FlightPackWidget packs={packs} />
 
       {/* METAR/TAF Weather Widget - Full width horizontal card */}
-      <WeatherWidget defaultAirport={mostVisited} />
 
       {/* Logbook health + expiries — both answer "is anything wrong that the
           flight list won't show me", so they sit together above the PCA tracker. */}
@@ -255,13 +255,56 @@ export default async function Dashboard() {
 
       {/* Activity grid — sits right under "Horas acumuladas": that card answers
           "how much", this one answers "how regularly". */}
-      <ActivityHeatmap data={heatmapData} />
+      {/* Heatmap y estación juntos, como en FlightDeck: uno responde "cómo vengo
+          volando" y el otro "cómo está mi base ahora". A ancho completo la
+          estación ocupaba una franja entera para cuatro números, y el heatmap
+          quedaba lejos del resto del contexto. */}
+      <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
+        <ActivityHeatmap data={heatmapData} />
+        <WeatherWidget defaultAirport={mostVisited} />
+      </div>
 
       {/* Closes the dashboard on the logbook itself. Everything above is
           aggregate; this is the last thing that actually happened. */}
       <RecentFlights flights={flights as Flight[]} aircraft={aircraft as Aircraft[]} />
 
     </div>
+  );
+}
+
+/**
+ * Six months of hours as a bare polyline.
+ *
+ * Hand-rolled SVG rather than pulling the chart library into this row: the
+ * charts bundle is lazy-loaded further down the page, and importing it here to
+ * draw seven points would drag it into the first paint.
+ *
+ * Coordinates are rounded before they reach the path — Math on floats
+ * serializes differently in Node and Chrome, which is a hydration mismatch. The
+ * radial dial on the summary page already got caught by exactly this.
+ */
+function Sparkline({ points, feature }: { points: number[]; feature?: boolean }) {
+  if (points.length < 2 || points.every((p) => p === 0)) return null;
+
+  const max = Math.max(...points, 1);
+  const w = 72;
+  const h = 20;
+  const step = w / (points.length - 1);
+  const d = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${(i * step).toFixed(1)} ${(h - (p / max) * h).toFixed(1)}`)
+    .join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-[72px] h-5 overflow-visible" aria-hidden="true">
+      <path
+        d={d}
+        fill="none"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={feature ? "stroke-white/45" : "stroke-zinc-300 dark:stroke-zinc-600"}
+      />
+    </svg>
   );
 }
 
@@ -276,6 +319,7 @@ function HeadlineStat({
   caption,
   feature,
   href,
+  spark,
 }: {
   label: string;
   value: string;
@@ -283,6 +327,8 @@ function HeadlineStat({
   caption: string;
   feature?: boolean;
   href?: string;
+  /** Six-month series for the sparkline. Omit to render none. */
+  spark?: number[];
 }) {
   const body = (
     <>
@@ -305,9 +351,12 @@ function HeadlineStat({
           </span>
         )}
       </p>
-      <p className={`text-[11px] mt-2 ${feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"}`}>
-        {caption}
-      </p>
+      <div className="flex items-end justify-between gap-3 mt-2">
+        <p className={`text-[11px] ${feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"}`}>
+          {caption}
+        </p>
+        {spark && <Sparkline points={spark} feature={feature} />}
+      </div>
     </>
   );
 

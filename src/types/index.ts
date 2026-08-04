@@ -29,6 +29,8 @@ export interface Flight {
   discount_type?: 'value' | 'percent';
   discount_amount?: number;
   purpose: string;
+  /** Free-text note, as the paper ANAC logbook's observations column. */
+  remarks?: string;
 }
 
 export interface Aircraft {
@@ -130,6 +132,9 @@ export interface AirportRef {
   country: string;
   size: "L" | "M" | "S" | "H";
   iata: string;
+  elevation?: number;
+  lat?: number;
+  lon?: number;
   /** Short display label, e.g. SADM -> "Morón". */
   label: string;
 }

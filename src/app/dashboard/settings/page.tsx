@@ -8,6 +8,7 @@ import AircraftForm from "@/components/dashboard/AircraftForm";
 import FlightPackForm from "@/components/dashboard/FlightPackForm";
 import DocumentsManager from "@/components/dashboard/DocumentsManager";
 import LogbooksManager from "@/components/dashboard/LogbooksManager";
+import WhatsAppMissingNotice from "@/components/dashboard/WhatsAppMissingNotice";
 import PageHeader from "@/components/dashboard/PageHeader";
 
 import { redirect } from "next/navigation";
@@ -82,6 +83,11 @@ export default async function SettingsPage() {
             {documents.length} cargados
           </span>
         </div>
+
+        {/* Only when there is something to be warned about: with no documents
+            loaded the notice would be nagging about a feature the pilot has not
+            started using. */}
+        {documents.length > 0 && !profile?.whatsapp_phone && <WhatsAppMissingNotice />}
 
         <DocumentsManager documents={documents} todayIso={new Date().toISOString().slice(0, 10)} />
       </section>

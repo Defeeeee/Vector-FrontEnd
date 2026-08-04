@@ -14,6 +14,7 @@ export async function logFlight(formData: FormData) {
   // Optional: the picker only renders with more than one logbook, and the
   // backend files the flight in the pilot's default when this is absent.
   const logbook_id = (formData.get("logbook_id") as string) || undefined;
+  const remarks = ((formData.get("remarks") as string) || "").trim() || undefined;
   const date = formData.get("date") as string;
   const rawRoute = formData.get("route") as string;
   const landings = parseInt(formData.get("landings") as string, 10);
@@ -43,6 +44,7 @@ export async function logFlight(formData: FormData) {
   const payload = {
     aircraft_id,
     logbook_id,
+    remarks,
     date,
     route,
     landings: Number(landings),
@@ -88,6 +90,7 @@ export async function updateFlight(formData: FormData) {
   // Optional: the picker only renders with more than one logbook, and the
   // backend files the flight in the pilot's default when this is absent.
   const logbook_id = (formData.get("logbook_id") as string) || undefined;
+  const remarks = ((formData.get("remarks") as string) || "").trim() || undefined;
   const date = formData.get("date") as string;
   const rawRoute = formData.get("route") as string;
   const landings = parseInt(formData.get("landings") as string, 10);
@@ -121,6 +124,7 @@ export async function updateFlight(formData: FormData) {
   }
 
   const payload = {
+    remarks,
     aircraft_id: String(aircraft_id),
     date: String(date),
     route: String(route),
@@ -255,9 +259,6 @@ export async function deleteAircraft(id: string) {
 
 export async function toggleFlightSession(formData: FormData) {
   const aircraft_id = formData.get("aircraft_id") as string;
-  // Optional: the picker only renders with more than one logbook, and the
-  // backend files the flight in the pilot's default when this is absent.
-  const logbook_id = (formData.get("logbook_id") as string) || undefined;
   const route = formData.get("route") as string;
   const landings = parseInt(formData.get("landings") as string, 10) || 0;
 

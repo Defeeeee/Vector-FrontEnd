@@ -13,7 +13,8 @@ estable (`T0.1`, `T2.3`…) para poder referenciarlas desde la bitácora.
 
 **Leyenda de esfuerzo:** XS < 1 h · S ≈ media jornada · M ≈ 1–2 jornadas · L > 2 jornadas.
 
-**Hechas:** `T2.8` · `T3.10` · `T2.1` · `T2.2` · `T0.1` · `T0.2` · `T0.3` · `T0.6` · `T3.1` · `T3.3` · `T3.5` · `T3.6` · `T5.1`.
+**Hechas:** `T2.8` · `T3.10` · `T2.1` · `T2.2` · `T2.3` · `T2.4` · `T3.7` · `T3.8` ·
+`T4.1` · `T0.1` · `T0.2` · `T0.3` · `T0.6` · `T3.1` · `T3.3` · `T3.5` · `T3.6` · `T5.1`.
 **Parcial:** `T0.4` — el scroller de la matriz ANAC se verificó constriñendo la card
 a 358 px (scrollea sola, la página no desborda), pero **las media queries no se
 pudieron probar**: la ventana de Chrome del entorno no baja de ~1514 px.
