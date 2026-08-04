@@ -1339,9 +1339,9 @@ backend, no antes.
 
 **Por qué:** Solicitud explícita de verificar estado de push en ambos repositorios, crear `AGENTS.md` en backend, commitear y pushear la rama `feat/logbooks` del backend y la rama `chore/plan-y-tier0` del frontend, dejando listos los Pull Requests.
 
-**Estado:** Terminado.
+**Estado:** Terminado. PR creada en https://github.com/Defeeeee/Vector-FrontEnd/pull/11
 
-**Verificación:** Repositorios verificados, `.env` confirmados como gitignored y no commiteados.
+**Verificación:** Repositorios verificados, `.env` confirmados como gitignored y no commiteados. Rama `chore/plan-y-tier0` pusheada a origin.
 
 ---
 
