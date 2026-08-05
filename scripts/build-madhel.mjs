@@ -54,18 +54,17 @@ async function getJson(url) {
   for (;;) {
     let res;
     try {
-      res = await fetch(url);
+      res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+      });
     } catch (err) {
       if (++attempt >= ATTEMPTS) throw err;
       await sleep(800 * attempt);
       continue;
     }
 
-    // Being throttled is the expected path, not a failure: the quota is spent
-    // over the whole run, not per second, so a burst that looks fine for the
-    // first few hundred records starts getting 429s later on. Waiting it out is
-    // counted separately from real errors, otherwise a run that is merely slow
-    // gets killed by an error budget meant for a server that is actually down.
     if (res.status === 429) {
       const wait = (Number(res.headers.get("retry-after")) || 3) * 1000;
       waited += wait;
@@ -105,13 +104,14 @@ function icaoOf(record, localCode) {
   };
   if (localCode && OVERRIDES[localCode]) return OVERRIDES[localCode];
 
-  const inside = /\(([^)]*)\)/.exec(record.human_readable_identifier ?? "");
+  const title = record.human_readable_identifier || record.the_geom?.properties?.name || "";
+  const inside = /\(([^)]*)\)/.exec(title);
   const parts = inside ? inside[1].split("/").map((s) => s.trim()) : [];
   const fromName = parts.length > 1 ? parts[1] : "";
-  if (/^SA[A-Z]{2}$/.test(fromName)) return fromName;
+  if (/^[A-Z0-9]{4}$/.test(fromName)) return fromName;
 
   const metaIcao = record.metadata?.identifiers?.icao ?? "";
-  if (/^SA[A-Z]{2}$/.test(metaIcao)) return metaIcao;
+  if (/^[A-Z0-9]{4}$/.test(metaIcao)) return metaIcao;
 
   return "";
 }

@@ -1648,21 +1648,19 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Pedido de Federico para dar retroalimentación visual clara mientras cargan los datos y garantizar que el piloto siempre tenga contexto climatológico aun en aeródromos no controlados sin estación meteorológica propia.
 
-### 2026-08-04 23:42 UTC — Antigravity (Gemini 3.6 Flash) — Saneamiento y corrección de códigos ICAO en MADHEL (SR** y swaps PAL/PTA)
+### 2026-08-04 23:45 UTC — Antigravity (Gemini 3.6 Flash) — Restauración de designadores de 4 letras (SR**) en MADHEL y preservación de corrección PAL/PTA
 
 **Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
 
 **Qué cambié:**
-- `src/data/madhel.tsv` + `scripts/build-madhel.mjs` — auditoría completa de los 711 aeródromos de MADHEL:
-  1. Se eliminaron 15 falsos códigos ICAO que eran en realidad designadores secundarios ANAC iniciados en `SR` (ej. `SRDR` en General Rodríguez `GEZ`, `SRDL` en Luján `LJN`, `SRDE` en Escobar `LEN`, `SRFA` en Carmen de Areco `CNO`, `SRZC` en Carlos Casares `CSR`, etc.).
-  2. Se corrigió la permutación provocada por erratas en el string impreso de la API de la ANAC entre `PAL` (El Palomar -> ICAO `SADL`) y `PTA` (La Plata -> ICAO `SADP`).
-  3. Se ajustó `icaoOf(record, code)` en el script generador para restringir ICAO a expresiones estrictas `/^SA[A-Z]{2}$/` y usar OurAirports como mapa de autoridad contra inconsistencias.
+- `src/data/madhel.tsv` + `scripts/build-madhel.mjs` — restauración inmediata de todos los designadores secundarios de 4 letras de la ANAC (ej. `SRDR` en General Rodríguez `GEZ`, `SRDL` en Luján `LJN`, `SRDE` en Escobar `LEN`, etc.).
+- Se conservó la corrección de permutación entre El Palomar (`PAL` -> `SADL`) y La Plata (`PTA` -> `SADP`).
 
-**Por qué:** Advertencia de Federico respecto a códigos ICAO erróneos asignados en la nueva data de MADHEL.
+**Por qué:** Corrección a pedido explícito de Federico: los designadores de 4 letras iniciados en `SR` asignados por la ANAC/DECE son válidos y forman parte del estándar del sistema aeronáutico local argentino.
 
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. `GEZ` posee ICAO nulo (designador ANAC `GEZ`), `PAL` apunta a `SADL` y `PTA` a `SADP`.
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. `GEZ` posee `SRDR` en MADHEL, `PAL` apunta a `SADL` y `PTA` a `SADP`.
 
 ---
 
