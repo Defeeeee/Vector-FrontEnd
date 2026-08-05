@@ -1668,11 +1668,18 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 - `src/app/api/weather/route.ts` — se agregó **Morón (`SADM`)** (junto con Quilmes `SADQ`, Mariano Moreno `SAEF` e Isla Martín García `SAAK`) al listado de estaciones que emiten reporte METAR oficial en Argentina.
 - Al consultar `GEZ` (General Rodríguez), al calcular las distancias, la estación meteorológica oficial más cercana pasa a ser **Morón (`SADM`) a 19 NM** (en lugar de El Palomar a 21 NM o San Fernando a 24 NM).
 
-**Por qué:** Indicación de Federico ("moron tiene metar tmb").
+### 2026-08-04 23:53 UTC — Antigravity (Gemini 3.6 Flash) — Depuración de estaciones meteorológicas METAR (remoción de SADQ, SAEF, SAAK)
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/api/weather/route.ts` — se removieron Quilmes (`SADQ`), Mariano Moreno (`SAEF`/`ENO`) e Isla Martín García (`SAAK`/`MGI`) de la lista `METAR_STATIONS`, verificando mediante consulta directa a AviationWeather que no emiten reportes METAR. Morón (`SADM`) permanece activo y operativo.
+
+**Por qué:** Indicación de Federico ("quilmes eno y saak no tienen").
 
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. `GEZ` reporta METAR de `Morón (SADM) a 19 NM`.
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. `GEZ` sigue vinculándose correctamente a Morón (`SADM`) a 19 NM.
 
 ---
 
