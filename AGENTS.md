@@ -1736,6 +1736,88 @@ La ficha muestra los dos, así que va a parecer un bug propio.
 
 ---
 
+### 2026-08-05 17:20 UTC — Claude (Opus 5, vía Claude Code) — Tier 5, T1.3, T1.4 y el swap SADP/SADL
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+#### Lo aplicado en la base (producción)
+
+**T5.3 + T5.4 — hecho y verificado.** `handle_new_user()` y
+`handle_deleted_user()` eran `SECURITY DEFINER` expuestas como RPC
+(`/rest/v1/rpc/...`) y ejecutables por `anon`. Se revocó `EXECUTE` a `public`,
+`anon` y `authenticated`, y se le fijó `search_path` a `handle_deleted_user`.
+Se verificó antes que no hubiera una sola llamada `.rpc()` a ninguna de las dos
+en los dos repos. Confirmado por `has_function_privilege`: las dos en `false`.
+
+**T1.3, paso 1 de 4 — `alter column cma_expiry drop not null`.** La secuencia
+documentada en el plan (sacar del código → `DROP COLUMN`) estaba **incompleta**:
+la columna es `NOT NULL` **sin default** y el trigger `handle_new_user()` la
+inserta explícitamente. Sacarla del código con la columna todavía `NOT NULL`
+rompe la creación automática de perfiles de `get_profiles`. El paso 1 sólo
+ensancha, así que nada de lo que hoy escribe deja de andar.
+
+Faltan, **después de desplegar el código**:
+3. Sacar el insert de `cma_expiry` de `handle_new_user()`.
+4. `ALTER TABLE public.profiles DROP COLUMN cma_expiry;`
+
+#### `whatsapp_chats` — la advertencia del linter es correcta así
+
+Tiene RLS habilitado y ninguna policy, y el linter lo marca. **Está bien así:**
+la tabla no tiene `user_id` —se indexa por teléfono— y sólo la toca el backend
+con service role. Sin policies es deny-by-default. Agregarle una sería
+degradarlo. No tocar.
+
+#### T1.4 — la vulnerabilidad seguía abierta
+
+Figuraba como hecha porque se mapeó `whatsapp_webhook_secret` en `config.py`.
+Pero los dos lados caían a la constante `"shared-vector-secret-2026"` cuando la
+variable no estaba seteada — **y no lo estaba en ningún `.env`**, así que esa
+constante era la credencial viva. Los dos repos son públicos. El backend además
+aceptaba la **anon key** de Supabase, que es pública por diseño.
+
+Lo que protegía: `/whatsapp/user-data` corre con el service role client —saltea
+RLS— y devuelve perfil, aeronaves y todos los vuelos del piloto cuyo teléfono se
+pase. Con un número y una constante publicada se leía una bitácora entera.
+
+Está arreglado en las ramas `security/whatsapp-shared-secret` de los dos repos,
+que fallan cerrado. **No se mergean hasta que `WHATSAPP_WEBHOOK_SECRET` esté
+seteada con el mismo valor de los dos lados**, o el bot deja de responder.
+
+#### SADP y SADL estaban intercambiados en los copilotos
+
+**SADP es El Palomar, SADL es La Plata.** Los dos copilotos tenían el mapeo al
+revés y también los cuerpos de datos operativos: quien preguntaba por SADP
+recibía la pista, la torre y el teléfono de La Plata.
+
+La tabla está duplicada en **tres** archivos: `api/webhooks/whatsapp`,
+`api/chat` y `api/notams`. Sólo `notams` estaba corregida, por eso la
+corrección anterior arregló un tercio del problema. Unificarla es una tarea
+aparte y vale la pena.
+
+Esto es además la confusión que produjo el override PAL/PTA en
+`scripts/build-madhel.mjs`: **el swap era real, pero estaba acá, no en MADHEL**.
+El dataset de ANAC siempre estuvo bien — 711 de 711 filas verificadas.
+
+*Nota aparte:* esos `CONTROLLED_FALLBACKS` son datos operativos hardcodeados
+—pistas, frecuencias, teléfonos— que un piloto puede llegar a usar y que nadie
+va a revalidar contra el AIP. El swap muestra el riesgo.
+
+#### Un bug que encontré y **no** toqué
+
+`handle_deleted_user()` hace `DELETE FROM profiles WHERE user_id = OLD.id`, pero
+**`profiles` no tiene columna `user_id`** (la clave es `id`). El trigger
+`profiles_user_delete_cascade` está habilitado sobre `auth.users`, así que
+borrar un usuario debería fallar con `column "user_id" does not exist`. Y aunque
+se arregle, `flight_packs` referencia `profiles` con `ON DELETE NO ACTION`
+—todas las demás son `CASCADE`—, así que seguiría bloqueando el borrado de
+cualquier piloto con packs.
+
+No lo cambié porque arreglarlo **habilita el borrado real de datos de usuario**,
+y esa es una decisión de Federico, no mía. Es relevante para las páginas legales
+que están pendientes: hoy la app no puede borrar una cuenta.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
