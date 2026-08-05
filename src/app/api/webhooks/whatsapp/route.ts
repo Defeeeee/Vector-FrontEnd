@@ -397,30 +397,37 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   // Authenticate via Kapso's X-Webhook-Signature header (HMAC-SHA256 of raw body with our secret).
+  //
+  // Falla cerrado. Antes, sin `KAPSO_WEBHOOK_SECRET` seteada, se saltaba la
+  // validación entera y quedaba abierto: cualquiera podía postear un payload
+  // armado con el teléfono de otro piloto y hacer que el copiloto contestara con
+  // sus datos. Y no estaba seteada.
   const webhookSecret = process.env.KAPSO_WEBHOOK_SECRET;
-  let rawBodyText: string | null = null;
-  if (webhookSecret) {
-    rawBodyText = await req.text();
-    const { createHmac } = await import("crypto");
-    const expectedSig = createHmac("sha256", webhookSecret).update(rawBodyText).digest("hex");
-    const providedSig = req.headers.get("x-webhook-signature") || "";
-    // Kapso may send the signature as "sha256=<hex>" or just "<hex>"
-    const normalizedSig = providedSig.startsWith("sha256=") ? providedSig.slice(7) : providedSig;
-    if (!normalizedSig || !secretsMatch(normalizedSig, expectedSig)) {
-      console.error("Rejected WhatsApp webhook POST: invalid X-Webhook-Signature. Got:", providedSig, "Expected:", expectedSig);
-      return new Response("Forbidden", { status: 403 });
-    }
-    console.log("WhatsApp webhook POST: signature validated OK.");
-  } else {
-    console.warn("KAPSO_WEBHOOK_SECRET not set — skipping signature validation.");
+  if (!webhookSecret) {
+    console.error("KAPSO_WEBHOOK_SECRET no está configurada — se rechaza el webhook.");
+    return new Response("Service Unavailable", { status: 503 });
+  }
+
+  const rawBodyText: string = await req.text();
+  const { createHmac } = await import("crypto");
+  const expectedSig = createHmac("sha256", webhookSecret).update(rawBodyText).digest("hex");
+  const providedSig = req.headers.get("x-webhook-signature") || "";
+  // Kapso may send the signature as "sha256=<hex>" or just "<hex>"
+  const normalizedSig = providedSig.startsWith("sha256=") ? providedSig.slice(7) : providedSig;
+  if (!normalizedSig || !secretsMatch(normalizedSig, expectedSig)) {
+    // Nunca loguear `expectedSig`: es una firma válida para este cuerpo exacto,
+    // así que dejarla en los logs le regala una a quien pueda leerlos.
+    console.error("Rejected WhatsApp webhook POST: invalid X-Webhook-Signature.");
+    return new Response("Forbidden", { status: 403 });
   }
 
   let fromNumber = "";
   let payloadPhoneNumberId = "";
   try {
-    // If we already consumed the body for signature verification, use the cached text
-    const bodyText = rawBodyText !== null ? rawBodyText : await req.text();
-    const body = JSON.parse(bodyText);
+    // Ya se consumió arriba para verificar la firma, y `req.text()` no se puede
+    // llamar dos veces — el fallback que había acá quedó muerto cuando la
+    // verificación pasó a ser obligatoria.
+    const body = JSON.parse(rawBodyText);
     console.log("Incoming WhatsApp Webhook Payload:", JSON.stringify(body, null, 2));
 
     let messageId = "";
