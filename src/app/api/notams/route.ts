@@ -147,7 +147,8 @@ interface MadhelData {
   localization: string;
   fuel: string;
   telephone: string[];
-  norms: string;
+  particularNorms: string;
+  generalNorms: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -193,12 +194,15 @@ export async function GET(req: NextRequest) {
       if (mJson && mJson.metadata) {
         const fallback = CONTROLLED_FALLBACKS[icao];
 
+        const particularContent = mJson.data?.norms?.particular?.content || "";
+        const generalContent = mJson.data?.norms?.general?.content || "";
+
         // Parse radio frequencies from norms or helpers
         let radioList: string[] = [];
         if (mJson.data?.helpers_system?.radio && mJson.data.helpers_system.radio.length > 0) {
           radioList = mJson.data.helpers_system.radio;
-        } else if (mJson.data?.norms?.particular?.content) {
-          const freqMatch = mJson.data.norms.particular.content.match(/(?:Frecuencia|canal de llamada|Frec)\s*(\d+[\,\.]\d+)\s*MHz/i);
+        } else if (particularContent) {
+          const freqMatch = particularContent.match(/(?:Frecuencia|canal de llamada|Frec)[^0-9]*(\d+[\,\.]\d+)\s*MHz/i);
           if (freqMatch) {
             radioList = [`Frecuencia común: ${freqMatch[1]} MHz`];
           }
@@ -226,7 +230,8 @@ export async function GET(req: NextRequest) {
           localization: fallback ? fallback.localization : locStr,
           fuel: fallback ? fallback.fuel : (mJson.data?.fuel || "No especificado"),
           telephone: fallback ? fallback.telephone : (mJson.data?.telephone || []),
-          norms: mJson.data?.norms?.particular?.content || ""
+          particularNorms: particularContent,
+          generalNorms: generalContent
         };
       }
     }

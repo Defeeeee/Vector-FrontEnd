@@ -44,7 +44,8 @@ export interface MadhelFull {
   localization: string;
   fuel: string;
   telephone: string[];
-  norms: string;
+  particularNorms: string;
+  generalNorms: string;
 }
 
 /** What the pilot has flown at this aerodrome, precomputed on the server. */
@@ -423,6 +424,32 @@ export default function AirportsClient({
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                     {madhelFull.localization}
+                  </p>
+                </div>
+              )}
+
+              {/* Normas Particulares ANAC */}
+              {madhelFull?.particularNorms && (
+                <div className="pt-4 border-t border-zinc-100 dark:border-white/10 space-y-2">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    Normas Particulares y Reglas de Tránsito ANAC
+                  </p>
+                  <div className="p-4 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 text-xs font-sans text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
+                    {madhelFull.particularNorms}
+                  </div>
+                </div>
+              )}
+
+              {/* Normas Generales AIP */}
+              {madhelFull?.generalNorms && (
+                <div className="pt-2 space-y-1">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-aviation-blue" />
+                    Normas Generales AIP
+                  </p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {madhelFull.generalNorms}
                   </p>
                 </div>
               )}

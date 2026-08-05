@@ -1628,9 +1628,19 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Pedido explícito de Federico para disponer de NOTAMs vigentes e información operativa completa en la pestaña de aeródromos (`/dashboard/airports`).
 
+### 2026-08-04 23:35 UTC — Antigravity (Gemini 3.6 Flash) — Normas Particulares y Reglas de Tránsito ANAC MADHEL (GEZ y aeródromos)
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/api/notams/route.ts` — extracción mejorada de `particularNorms` y `generalNorms` de la API de MADHEL, más parseo regex flexible para capturar frecuencias de llamada común en texto libre (ej. `123,200 MHz` en General Rodríguez `GEZ`).
+- `src/components/dashboard/AirportsClient.tsx` — renderizado de la tarjeta **Normas Particulares y Reglas de Tránsito ANAC** (límites de altitud HGT MAX, circuitos de tránsito, canales de llamada general y normas AIP).
+
+**Por qué:** Pedido de Federico al notar que aeródromos como GEZ (General Rodríguez) tienen reglas particulares cruciales cargadas en MADHEL (ej. HGT MAX 1500 FT, circuito al W del RCL y frecuencia 123.200 MHz).
+
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios (30 rutas estáticas y dinámicas). Probado con aeródromos controlados y no controlados (`SADF`, `SABE`, `GEZ`, `SADM`).
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. Probado con `GEZ` (General Rodríguez).
 
 ---
 
