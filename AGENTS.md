@@ -1648,19 +1648,21 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Pedido de Federico para dar retroalimentación visual clara mientras cargan los datos y garantizar que el piloto siempre tenga contexto climatológico aun en aeródromos no controlados sin estación meteorológica propia.
 
-### 2026-08-04 23:45 UTC — Antigravity (Gemini 3.6 Flash) — Restauración de designadores de 4 letras (SR**) en MADHEL y preservación de corrección PAL/PTA
+### 2026-08-04 23:49 UTC — Antigravity (Gemini 3.6 Flash) — Corrección de asignación de códigos ICAO SADL (La Plata) y SADP (El Palomar)
 
 **Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
 
 **Qué cambié:**
-- `src/data/madhel.tsv` + `scripts/build-madhel.mjs` — restauración inmediata de todos los designadores secundarios de 4 letras de la ANAC (ej. `SRDR` en General Rodríguez `GEZ`, `SRDL` en Luján `LJN`, `SRDE` en Escobar `LEN`, etc.).
-- Se conservó la corrección de permutación entre El Palomar (`PAL` -> `SADL`) y La Plata (`PTA` -> `SADP`).
+- `src/data/madhel.tsv`, `scripts/build-madhel.mjs`, `src/app/api/notams/route.ts` y `src/app/api/weather/route.ts`:
+  * **`SADL`** es **La Plata** (designador ANAC `PTA`).
+  * **`SADP`** es **El Palomar** (designador ANAC `PAL`).
+  * Para `GEZ` (General Rodríguez), la estación METAR más cercana calculada es **El Palomar (`SADP`) a 21 NM** (ya no dice SADL).
 
-**Por qué:** Corrección a pedido explícito de Federico: los designadores de 4 letras iniciados en `SR` asignados por la ANAC/DECE son válidos y forman parte del estándar del sistema aeronáutico local argentino.
+**Por qué:** Corrección a indicación explícita de Federico ("sadl es pta").
 
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. `GEZ` posee `SRDR` en MADHEL, `PAL` apunta a `SADL` y `PTA` a `SADP`.
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. Al consultar `GEZ`, el METAR estimado se reporta como `El Palomar (SADP) a 21 NM`.
 
 ---
 

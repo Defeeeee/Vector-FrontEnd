@@ -99,8 +99,8 @@ const clean = (v) => String(v ?? "").replace(/[\t\r\n]+/g, " ").trim();
  */
 function icaoOf(record, localCode) {
   const OVERRIDES = {
-    PAL: "SADL", // El Palomar
-    PTA: "SADP", // La Plata
+    PAL: "SADP", // El Palomar
+    PTA: "SADL", // La Plata
   };
   if (localCode && OVERRIDES[localCode]) return OVERRIDES[localCode];
 

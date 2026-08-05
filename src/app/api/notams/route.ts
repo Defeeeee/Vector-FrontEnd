@@ -6,8 +6,8 @@ const ICAO_TO_ANAC: Record<string, string> = {
   SABE: "AER", // Aeroparque
   SADF: "FDO", // San Fernando
   SAEZ: "EZE", // Ezeiza
-  SADP: "PTA", // La Plata
-  SADL: "PAL", // El Palomar
+  SADP: "PAL", // El Palomar
+  SADL: "PTA", // La Plata
   SADQ: "ILM", // Quilmes
   SAAK: "MGI", // Martín García
   SRDR: "GEZ", // General Rodríguez
@@ -81,18 +81,18 @@ const CONTROLLED_FALLBACKS: Record<string, {
     telephone: ["(011) 5480-2555 (Torre)", "(011) 5480-2666 (AIS/ARO)"]
   },
   SADP: {
-    rwy: ["02/20 1435x50 M - Tierra", "14/32 1435x30 M - Asfalto (Uso restringido)."],
-    radio: ["TWR (Torre La Plata): 118.90 MHz", "COOP (Frec. Común): 123.50 MHz"],
-    localization: "7 KM al SE de la ciudad de La Plata (Pcia. de Buenos Aires)",
-    fuel: "AVGAS 100LL",
-    telephone: ["(0221) 486-1554 (Jefatura de Aeródromo)"]
-  },
-  SADL: {
     rwy: ["16/34 2110x48 M - Hormigón."],
     radio: ["TWR (Torre Palomar): 120.60 MHz", "GND (Superficie): 121.90 MHz"],
     localization: "En El Palomar (Pcia. de Buenos Aires), partido de Morón",
     fuel: "JET A-1",
     telephone: ["(011) 4751-0011 (Fuerza Aérea)"]
+  },
+  SADL: {
+    rwy: ["02/20 1435x50 M - Tierra", "14/32 1435x30 M - Asfalto (Uso restringido)."],
+    radio: ["TWR (Torre La Plata): 118.90 MHz", "COOP (Frec. Común): 123.50 MHz"],
+    localization: "7 KM al SE de la ciudad de La Plata (Pcia. de Buenos Aires)",
+    fuel: "AVGAS 100LL",
+    telephone: ["(0221) 486-1554 (Jefatura de Aeródromo)"]
   },
   SAZM: {
     rwy: ["13/31 2200x45 M - Hormigón", "03/21 700x30 M - Tierra."],
