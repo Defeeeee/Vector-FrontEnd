@@ -14,9 +14,9 @@ export async function updateProfile(formData: FormData) {
     throw new Error("ID de perfil no encontrado");
   }
 
-  // cma_expiry is deliberately not sent: the medical lives in the `documents`
-  // table now (see src/actions/document.ts), and writing both would recreate
-  // the split source of truth this migration removed.
+  // The medical lives in the `documents` table (see src/actions/document.ts).
+  // `profiles.cma_expiry` was the old home and is being dropped — nothing here
+  // writes it, and re-adding it would recreate the split source of truth.
   const response = await apiFetch(`/profiles/${id}`, {
     method: "PATCH",
     body: JSON.stringify({

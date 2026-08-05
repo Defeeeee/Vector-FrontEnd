@@ -47,7 +47,6 @@ export interface Profile {
   id: string;
   first_name: string;
   last_name: string;
-  cma_expiry?: string;
   license_type?: string;
   tracking_mode?: 'packs' | 'balance';
   api_key?: string;

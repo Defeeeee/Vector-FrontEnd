@@ -29,7 +29,7 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
         // Two writes because they land in two places: the licence on the
         // profile, the medical as the pilot's first document.
         await updateProfile(formData);
-        const result = await upsertCmaDocument(formData.get("cma_expiry") as string);
+        const result = await upsertCmaDocument(formData.get("cma_document_expiry") as string);
         if (result?.error) {
           alert(result.error);
           return;
@@ -92,7 +92,11 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
                 <div className="relative group">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
                   <input
-                    name="cma_expiry"
+                    // Named for the document, not for the old profiles.cma_expiry
+                    // column: this feeds upsertCmaDocument and never reaches the
+                    // profile. Keeping the column's name would send the next
+                    // reader grepping for something that no longer exists.
+                    name="cma_document_expiry"
                     type="date"
                     required
                     defaultValue="2027-12-31"
