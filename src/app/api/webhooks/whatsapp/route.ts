@@ -505,8 +505,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Ignored (empty values)" });
     }
 
-    // Fetch user dashboard data from Python backend using WhatsApp phone number
-    const secret = process.env.WHATSAPP_WEBHOOK_SECRET || "shared-vector-secret-2026";
+    // Fetch user dashboard data from Python backend using WhatsApp phone number.
+    //
+    // No fallback constant. The one that used to live here is in a public repo,
+    // and since neither .env set the variable it *was* the live credential for an
+    // endpoint that reads any pilot's logbook by phone number. The backend now
+    // fails closed too, so a missing variable has to be loud on both sides rather
+    // than quietly downgrading to a published secret.
+    const secret = process.env.WHATSAPP_WEBHOOK_SECRET;
+    if (!secret) {
+      console.error("WHATSAPP_WEBHOOK_SECRET no está configurada — no se consulta el backend.");
+      return NextResponse.json(
+        { success: false, message: "WhatsApp integration is not configured." },
+        { status: 503 }
+      );
+    }
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
 
     const userRes = await fetch(`${API_URL}/whatsapp/user-data?phone=${fromNumber}&secret=${secret}`);
