@@ -1,128 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { anacIndicator, controlledFallback } from "@/lib/madhel-reference";
 
-// Mapping of common ICAO codes to ANAC local indicators
-const ICAO_TO_ANAC: Record<string, string> = {
-  // 4-letter ICAO → 3-letter ANAC local indicator
-  SABE: "AER", // Aeroparque
-  SADF: "FDO", // San Fernando
-  SAEZ: "EZE", // Ezeiza
-  SADP: "PAL", // El Palomar
-  SADL: "PTA", // La Plata
-  SADQ: "ILM", // Quilmes
-  SAAK: "MGI", // Martín García
-  SRDR: "GEZ", // General Rodríguez
-  SAZM: "MDP", // Mar del Plata
-  SAZS: "BAR", // Bariloche
-  SACO: "FMA", // Córdoba
-  SAAR: "ROS", // Rosario
-  SANC: "CAT", // Catamarca
-  SARI: "IGU", // Iguazú
-  SAVC: "CRV", // Comodoro Rivadavia
-  SAZB: "BCA", // Bahía Blanca
-  SAVT: "TRE", // Trelew
-  SANT: "TUC", // Tucumán
-  SAWE: "USU", // Ushuaia
-  SAZY: "ECA", // El Calafate
-  SAWG: "GAL", // Río Gallegos
-  SAWC: "CAL", // El Calafate (old/other)
-  SAWD: "MAD", // Puerto Madryn
-  SASA: "SAL", // Salta
-  SANU: "JUA", // San Juan
-  SAOU: "UIS", // San Luis
-  SAMR: "SRA", // San Rafael
-  SFDO: "FDO", // Fallback for San Fernando
-  // Direct 3-letter ANAC local indicators → themselves (for chatbot passthrough)
-  MGI: "MGI", // Martín García
-  FDO: "FDO", // San Fernando
-  GEZ: "GEZ", // General Rodríguez
-  AER: "AER", // Aeroparque
-  EZE: "EZE", // Ezeiza
-  PTA: "PTA", // La Plata
-  PAL: "PAL", // El Palomar
-  ILM: "ILM", // Quilmes
-  MDP: "MDP", // Mar del Plata
-  BAR: "BAR", // Bariloche
-  ROS: "ROS", // Rosario
-  TUC: "TUC", // Tucumán
-  CRV: "CRV", // Comodoro Rivadavia
-  TRE: "TRE", // Trelew
-  USU: "USU", // Ushuaia
-  GAL: "GAL", // Río Gallegos
-  SAL: "SAL", // Salta
-};
 
-// Fallbacks for controlled airports that don't publish runways/frequencies directly in the MADHEL API
-const CONTROLLED_FALLBACKS: Record<string, {
-  rwy: string[];
-  radio: string[];
-  localization: string;
-  fuel: string;
-  telephone: string[];
-}> = {
-  SADF: {
-    rwy: ["05/23 1800x30 M - Asfalto/Hormigón - Capacidad de soporte: 25t/1 38t/2 70t/4."],
-    radio: ["TWR (Torre San Fernando): 118.45 MHz", "GND (Superficie): 121.90 MHz", "COOP (Frec. Común): 123.50 MHz"],
-    localization: "3 KM al SO de la ciudad de San Fernando (Pcia. de Buenos Aires)",
-    fuel: "AVGAS 100LL, JET A-1",
-    telephone: ["(011) 4714-6002 (Torre)", "(011) 4714-6003 (ANAC)"]
-  },
-  SABE: {
-    rwy: ["13/31 2700x45 M - Hormigón - Capacidad de soporte: PCN 60/R/A/W/T."],
-    radio: ["TWR (Torre Aeroparque): 119.90 MHz / 120.40 MHz", "GND (Superficie): 121.70 MHz", "ATIS: 127.60 MHz"],
-    localization: "En la Ciudad Autónoma de Buenos Aires (Costanera Norte)",
-    fuel: "JET A-1",
-    telephone: ["(011) 5480-6111 (ANAC)", "(011) 4514-1515 (EANA)"]
-  },
-  SAEZ: {
-    rwy: ["11/29 3300x60 M - Asfalto", "17/35 3105x45 M - Hormigón."],
-    radio: ["TWR (Torre Ezeiza): 118.15 MHz / 118.85 MHz", "GND (Superficie): 121.90 MHz", "ATIS: 127.80 MHz", "APP (Control Baires): 124.90 MHz"],
-    localization: "2 KM al SW de la ciudad de Ezeiza (Pcia. de Buenos Aires)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(011) 5480-2555 (Torre)", "(011) 5480-2666 (AIS/ARO)"]
-  },
-  SADP: {
-    rwy: ["16/34 2110x48 M - Hormigón."],
-    radio: ["TWR (Torre Palomar): 120.60 MHz", "GND (Superficie): 121.90 MHz"],
-    localization: "En El Palomar (Pcia. de Buenos Aires), partido de Morón",
-    fuel: "JET A-1",
-    telephone: ["(011) 4751-0011 (Fuerza Aérea)"]
-  },
-  SADL: {
-    rwy: ["02/20 1435x50 M - Tierra", "14/32 1435x30 M - Asfalto (Uso restringido)."],
-    radio: ["TWR (Torre La Plata): 118.90 MHz", "COOP (Frec. Común): 123.50 MHz"],
-    localization: "7 KM al SE de la ciudad de La Plata (Pcia. de Buenos Aires)",
-    fuel: "AVGAS 100LL",
-    telephone: ["(0221) 486-1554 (Jefatura de Aeródromo)"]
-  },
-  SAZM: {
-    rwy: ["13/31 2200x45 M - Hormigón", "03/21 700x30 M - Tierra."],
-    radio: ["TWR (Torre Mar del Plata): 118.30 MHz", "ATIS: 127.70 MHz"],
-    localization: "7 KM al N de la ciudad de Mar del Plata (Pcia. de Buenos Aires)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0223) 478-5800 (Torre)"]
-  },
-  SAZS: {
-    rwy: ["11/29 2200x45 M - Hormigón."],
-    radio: ["TWR (Torre Bariloche): 118.00 MHz", "ATIS: 127.90 MHz", "APP (Aproximación): 120.10 MHz"],
-    localization: "13 KM al E de la ciudad de San Carlos de Bariloche (Pcia. de Río Negro)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0294) 440-5016 (AIS/ARO)"]
-  },
-  SACO: {
-    rwy: ["01/19 3200x45 M - Hormigón", "05/23 2280x45 M - Asfalto."],
-    radio: ["TWR (Torre Córdoba): 118.50 MHz / 118.95 MHz", "GND: 121.90 MHz", "ATIS: 127.60 MHz", "APP (Córdoba Radar): 119.10 MHz"],
-    localization: "9 KM al N de la ciudad de Córdoba (Pcia. de Córdoba)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0351) 475-0214 (AIS/ARO)"]
-  },
-  SAAR: {
-    rwy: ["02/20 3000x45 M - Hormigón."],
-    radio: ["TWR (Torre Rosario): 118.20 MHz", "GND: 121.75 MHz", "ATIS: 127.90 MHz"],
-    localization: "11 KM al W de la ciudad de Rosario (Pcia. de Santa Fe)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0341) 451-6300 (Jefatura de Aeródromo)"]
-  }
-};
 
 interface NotamItem {
   code: string;
@@ -159,22 +38,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Código ICAO inválido" }, { status: 400 });
   }
 
-  // Find the ANAC indicator
-  let indicator = ICAO_TO_ANAC[icao];
-  if (!indicator) {
-    if (icao.startsWith("SA") || icao.startsWith("SD") || icao.startsWith("SR") || icao.startsWith("SF")) {
-      // Standard Argentine 4-letter ICAO → strip first letter to get local indicator
-      indicator = icao.slice(1);
-    } else if (icao.length === 4 && icao.startsWith("S") && !icao.startsWith("SA")) {
-      // Model may have mangled a 3-letter ANAC code by prepending 'S' (e.g. SMGI → MGI)
-      // Try stripping the leading S as a fallback
-      const stripped = icao.slice(1); // e.g. MGI
-      indicator = ICAO_TO_ANAC[stripped] || stripped;
-    } else {
-      // Already a local indicator (3-letter) or unknown — pass through as-is
-      indicator = icao;
-    }
-  }
+  const indicator = anacIndicator(icao);
 
   let madhel: MadhelData | null = null;
   let notams: NotamItem[] = [];
@@ -192,7 +56,7 @@ export async function GET(req: NextRequest) {
     if (madhelRes.ok) {
       const mJson = await madhelRes.json();
       if (mJson && mJson.metadata) {
-        const fallback = CONTROLLED_FALLBACKS[icao];
+        const fallback = controlledFallback(icao);
 
         const particularContent = mJson.data?.norms?.particular?.content || "";
         const generalContent = mJson.data?.norms?.general?.content || "";
