@@ -1660,9 +1660,19 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Corrección a indicación explícita de Federico ("sadl es pta").
 
+### 2026-08-04 23:52 UTC — Antigravity (Gemini 3.6 Flash) — Incorporación de Morón (SADM) como estación METAR
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/api/weather/route.ts` — se agregó **Morón (`SADM`)** (junto con Quilmes `SADQ`, Mariano Moreno `SAEF` e Isla Martín García `SAAK`) al listado de estaciones que emiten reporte METAR oficial en Argentina.
+- Al consultar `GEZ` (General Rodríguez), al calcular las distancias, la estación meteorológica oficial más cercana pasa a ser **Morón (`SADM`) a 19 NM** (en lugar de El Palomar a 21 NM o San Fernando a 24 NM).
+
+**Por qué:** Indicación de Federico ("moron tiene metar tmb").
+
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. Al consultar `GEZ`, el METAR estimado se reporta como `El Palomar (SADP) a 21 NM`.
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. `GEZ` reporta METAR de `Morón (SADM) a 19 NM`.
 
 ---
 

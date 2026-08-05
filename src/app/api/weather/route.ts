@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAirport } from "@/lib/airports";
 
 const METAR_STATIONS = [
+  { icao: "SADM", name: "Morón", lat: -34.676, lon: -58.643 },
+  { icao: "SADP", name: "El Palomar", lat: -34.6097, lon: -58.6125 },
   { icao: "SADF", name: "San Fernando", lat: -34.4533, lon: -58.5897 },
   { icao: "SABE", name: "Aeroparque", lat: -34.5592, lon: -58.4156 },
   { icao: "SAEZ", name: "Ezeiza", lat: -34.8222, lon: -58.5358 },
   { icao: "SADL", name: "La Plata", lat: -34.9722, lon: -57.8944 },
-  { icao: "SADP", name: "El Palomar", lat: -34.6097, lon: -58.6125 },
+  { icao: "SADQ", name: "Quilmes", lat: -34.7075, lon: -58.2475 },
+  { icao: "SAEF", name: "Mariano Moreno", lat: -34.5606, lon: -58.7894 },
+  { icao: "SAAK", name: "Isla Martín García", lat: -34.1875, lon: -58.2464 },
   { icao: "SAZM", name: "Mar del Plata", lat: -37.9342, lon: -57.5733 },
   { icao: "SAZS", name: "Bariloche", lat: -41.1511, lon: -71.1575 },
   { icao: "SACO", name: "Córdoba", lat: -31.3236, lon: -64.2081 },
+  { icao: "SACD", name: "Coronel Olmedo", lat: -31.4886, lon: -64.1558 },
   { icao: "SAAR", name: "Rosario", lat: -32.9036, lon: -60.785 },
   { icao: "SANC", name: "Catamarca", lat: -28.5925, lon: -65.7514 },
   { icao: "SARI", name: "Iguazú", lat: -25.7372, lon: -54.4736 },
