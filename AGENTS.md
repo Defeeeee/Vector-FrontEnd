@@ -1617,9 +1617,20 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Pedido de Federico para subir la versión del proyecto a v2.5.0, descartar la sobre-complejidad de T2.5–T2.7, destacar la experiencia del Copiloto IA en la landing e informar las novedades mediante un aviso descartable en el dashboard.
 
+### 2026-08-04 23:31 UTC — Antigravity (Gemini 3.6 Flash) — NOTAMs en Vivo & Ficha ANAC MADHEL Completa en Aeropuertos
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/components/dashboard/AirportsClient.tsx` — integración con `/api/notams?icao=${icao}` para renderizar:
+  1. **Ficha Operativa ANAC MADHEL Completa**: Pistas de aterrizaje con longitudes y capacidad de soporte, frecuencias de radio (TWR, GND, ATIS, Frecuencia Común), tipos de combustible (AVGAS 100LL, JET A-1), teléfonos de jefatura/torre/ANAC y ubicación terrestre.
+  2. **NOTAMs en vivo**: Consulta directa de avisos a los navegantes vigentes vía ANAC, con badge contador y lista detallada de avisos.
+
+**Por qué:** Pedido explícito de Federico para disponer de NOTAMs vigentes e información operativa completa en la pestaña de aeródromos (`/dashboard/airports`).
+
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. `test_audit_engine.py` en el backend pasa 19/19.
+**Verificación:** `tsc --noEmit` y `npm run build` limpios (30 rutas estáticas y dinámicas). Probado con aeródromos controlados y no controlados (`SADF`, `SABE`, `GEZ`, `SADM`).
 
 ---
 

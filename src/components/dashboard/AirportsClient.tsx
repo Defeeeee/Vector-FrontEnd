@@ -10,8 +10,42 @@ import {
   Plane,
   Navigation,
   Ticket,
+  Radio,
+  FileText,
+  Phone,
+  Fuel,
+  AlertTriangle,
+  CheckCircle2,
+  Layers,
+  Compass,
 } from "lucide-react";
 import { AirportRef } from "@/types";
+
+export interface NotamItem {
+  code: string;
+  from: string;
+  to: string;
+  textRaw: string;
+  textEsp: string;
+}
+
+export interface MadhelFull {
+  name: string;
+  fullName: string;
+  state: string;
+  fir: string;
+  elevation: number;
+  condition: string;
+  control: string;
+  traffic: string;
+  status: string;
+  runways: string[];
+  radio: string[];
+  localization: string;
+  fuel: string;
+  telephone: string[];
+  norms: string;
+}
 
 /** What the pilot has flown at this aerodrome, precomputed on the server. */
 export interface AirportHistory {
@@ -70,7 +104,10 @@ export default function AirportsClient({
   const [results, setResults] = useState<AirportRef[]>([]);
   const [selected, setSelected] = useState<AirportRef | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
+  const [notams, setNotams] = useState<NotamItem[]>([]);
+  const [madhelFull, setMadhelFull] = useState<MadhelFull | null>(null);
   const [loadingWx, setLoadingWx] = useState(false);
+  const [loadingNotams, setLoadingNotams] = useState(false);
   const [searching, setSearching] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -94,10 +131,6 @@ export default function AirportsClient({
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/airports/search?q=${encodeURIComponent(q)}`);
-        // The two search endpoints disagree on shape: `?q=` wraps the list in
-        // `{ results }`, while `?icao=` returns the airport bare. Reading the
-        // wrapper as an array silently yields `length === undefined`, so the
-        // dropdown just never appears — no error, no clue.
         const body = res.ok ? await res.json() : null;
         setResults(Array.isArray(body?.results) ? body.results : []);
       } catch {
@@ -120,11 +153,10 @@ export default function AirportsClient({
   async function pick(icao: string, opts: { clearSearch?: boolean } = {}) {
     const { clearSearch = true } = opts;
     setResults([]);
-    // The initial auto-open resolves asynchronously, and clearing the box there
-    // would wipe whatever the pilot had already started typing — a race that
-    // shows up exactly when someone opens the tab and types straight away.
     if (clearSearch) setQuery("");
     setWeather(null);
+    setNotams([]);
+    setMadhelFull(null);
 
     const res = await fetch(`/api/airports/search?icao=${icao}`);
     if (!res.ok) return;
@@ -132,13 +164,27 @@ export default function AirportsClient({
     setSelected(airport);
 
     setLoadingWx(true);
+    setLoadingNotams(true);
+
     try {
-      const wx = await fetch(`/api/weather?icao=${icao}`);
-      setWeather(wx.ok ? await wx.json() : null);
+      const [wxRes, notamRes] = await Promise.all([
+        fetch(`/api/weather?icao=${icao}`).catch(() => null),
+        fetch(`/api/notams?icao=${icao}`).catch(() => null),
+      ]);
+
+      if (wxRes && wxRes.ok) {
+        setWeather(await wxRes.json());
+      }
+      if (notamRes && notamRes.ok) {
+        const notamData = await notamRes.json();
+        setNotams(notamData.notams || []);
+        setMadhelFull(notamData.madhel || null);
+      }
     } catch {
-      setWeather(null);
+      // Ignore network errors gracefully
     } finally {
       setLoadingWx(false);
+      setLoadingNotams(false);
     }
   }
 
@@ -254,32 +300,132 @@ export default function AirportsClient({
             />
           </div>
 
-          {selected.madhel && (
-            <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.01] p-4 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <span className="eyebrow text-zinc-400 dark:text-zinc-500">Ficha MADHEL ANAC:</span>
-                <span className="data text-xs font-bold text-zinc-900 dark:text-white">
-                  {selected.madhel.kind === "HEL" ? "Helipuerto" : "Aeródromo"} {selected.madhel.condition || "Público/Privado"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                {selected.madhel.controlled !== null && (
-                  <span className="data px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-zinc-700 dark:text-zinc-300 font-semibold">
-                    {selected.madhel.controlled ? "Controlado (C)" : "No controlado (NC)"}
+          {/* Ficha Operativa ANAC MADHEL Completa */}
+          {(madhelFull || selected.madhel) && (
+            <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-6 md:p-8 space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 dark:border-white/10 pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="eyebrow text-aviation-blue">Ficha Operativa Oficial ANAC MADHEL</span>
+                    {madhelFull?.status && (
+                      <span
+                        className={`data text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                          madhelFull.status === "OK"
+                            ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                        }`}
+                      >
+                        {madhelFull.status}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">
+                    {madhelFull?.fullName || selected.name}
+                  </h3>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="data px-3 py-1 rounded-xl bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 font-semibold">
+                    {madhelFull?.condition || selected.madhel?.condition || "Público/Privado"}
                   </span>
-                )}
-                {selected.madhel.status && (
-                  <span
-                    className={`data px-2.5 py-1 rounded-lg font-semibold ${
-                      selected.madhel.status === "OK"
-                        ? "bg-green-500/10 text-green-600 dark:text-green-400"
-                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    }`}
-                  >
-                    {selected.madhel.status}
+                  <span className="data px-3 py-1 rounded-xl bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-zinc-200 font-semibold">
+                    {madhelFull?.control || (selected.madhel?.controlled ? "Controlado (C)" : "No controlado (NC)")}
                   </span>
-                )}
+                  {madhelFull?.fir && (
+                    <span className="data px-3 py-1 rounded-xl bg-aviation-blue/10 text-aviation-blue font-semibold border border-aviation-blue/20">
+                      FIR {madhelFull.fir}
+                    </span>
+                  )}
+                </div>
               </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Pistas */}
+                {madhelFull?.runways && madhelFull.runways.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-aviation-blue" />
+                      Pistas de Aterrizaje
+                    </p>
+                    <div className="space-y-1.5">
+                      {madhelFull.runways.map((rwy, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/10 text-xs font-semibold text-zinc-900 dark:text-white"
+                        >
+                          {rwy}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Radio Frecuencias */}
+                {madhelFull?.radio && madhelFull.radio.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-aviation-blue" />
+                      Frecuencias de Radio
+                    </p>
+                    <div className="space-y-1.5">
+                      {madhelFull.radio.map((rad, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/10 text-xs font-semibold text-zinc-900 dark:text-white flex items-center justify-between"
+                        >
+                          <span>{rad}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Combustibles & Teléfonos */}
+                <div className="space-y-4">
+                  {madhelFull?.fuel && (
+                    <div className="space-y-1.5">
+                      <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                        <Fuel className="w-3.5 h-3.5 text-aviation-blue" />
+                        Combustible Disponible
+                      </p>
+                      <div className="p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/10 text-xs font-semibold text-zinc-900 dark:text-white">
+                        {madhelFull.fuel}
+                      </div>
+                    </div>
+                  )}
+
+                  {madhelFull?.telephone && madhelFull.telephone.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-aviation-blue" />
+                        Teléfonos de Contacto
+                      </p>
+                      <div className="space-y-1">
+                        {madhelFull.telephone.map((tel, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2.5 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/10 text-xs font-semibold text-zinc-800 dark:text-zinc-200"
+                          >
+                            {tel}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {madhelFull?.localization && (
+                <div className="pt-4 border-t border-zinc-100 dark:border-white/10">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1 flex items-center gap-1.5">
+                    <Compass className="w-3.5 h-3.5 text-aviation-blue" />
+                    Ubicación y Referencia Terrestre
+                  </p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {madhelFull.localization}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -343,6 +489,66 @@ export default function AirportsClient({
               ) : (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   Sin reporte para este aeródromo. La mayoría de los aeródromos chicos no emiten METAR.
+                </p>
+              )}
+            </div>
+
+            {/* NOTAMs en vivo */}
+            <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-6 md:p-7 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="eyebrow flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Avisos a los navegantes
+                  </p>
+                  <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white tracking-tight mt-1">
+                    NOTAMs en vivo
+                  </h3>
+                </div>
+
+                {loadingNotams ? (
+                  <span className="text-xs text-zinc-400 flex items-center gap-1.5 font-mono">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> ANAC...
+                  </span>
+                ) : notams.length > 0 ? (
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    {notams.length} {notams.length === 1 ? "NOTAM activo" : "NOTAMs activos"}
+                  </span>
+                ) : (
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Sin NOTAMs
+                  </span>
+                )}
+              </div>
+
+              {loadingNotams ? (
+                <p className="text-sm text-zinc-400 flex items-center gap-2 py-4">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Obteniendo NOTAMs vigentes desde el servicio ANAC…
+                </p>
+              ) : notams.length > 0 ? (
+                <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+                  {notams.map((item, idx) => (
+                    <div
+                      key={item.code + idx}
+                      className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/70 dark:border-white/10 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                          {item.code}
+                        </span>
+                        <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">
+                          Válido: {item.from.slice(0, 10)} → {item.to.slice(0, 10)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans whitespace-pre-wrap">
+                        {item.textEsp || item.textRaw}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 py-2">
+                  No hay NOTAMs vigentes reportados para este aeródromo.
                 </p>
               )}
             </div>
