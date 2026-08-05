@@ -1683,6 +1683,59 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 ---
 
+### 2026-08-05 15:40 UTC — Claude (Opus 5, vía Claude Code) — Auditoría de MADHEL y el bug que escondía la ruta interceptada
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Contexto:** Antigravity y yo trabajamos en paralelo sobre el mismo repo. Tomó
+mi integración MADHEL a medio hacer, completó `canonical` e `isValidCode` —que yo
+había referenciado pero todavía no escrito— y la commiteó. Esta entrada es la
+verificación de todo eso.
+
+**Lo que está bien:** comparé las 711 filas de `madhel.tsv` contra la API de ANAC
+campo por campo. **711 de 711 idénticas**, incluidos los IATA. El dataset no tiene
+nada que corregir.
+
+**Cuatro cosas que sí:**
+
+1. **`src/app/dashboard/log-flight/page.tsx` se caía.** `logbooks.find is not a
+   function`. En T2.8 metí `apiFetch("/logbooks")` en el medio del `Promise.all`
+   sin mover los nombres del destructuring: `logbooks` recibía el objeto de sesión.
+   **Estuvo roto en producción** y ninguna verificación lo agarró, incluida la mía,
+   porque el "+" no renderiza esa página sino la ruta interceptada en
+   `@modal/(.)log-flight`, que hace su propio fetch y estaba bien. Sólo aparecía
+   entrando por URL directa o refrescando.
+
+   *Lección concreta:* cuando una ruta tiene interceptor, verificarla desde el
+   botón **no** la verifica. Hay que entrar por la URL además.
+
+   También explica dos "cuelgues del navegador" que yo le había echado al entorno:
+   eran esta excepción.
+
+2. **El override PAL/PTA del generador no corregía nada.** Mapeaba PAL a SADP y
+   PTA a SADL como si MADHEL los tuviera cruzados; ANAC publica exactamente eso,
+   así que devolvía lo mismo que el parseo. Una tabla de correcciones que no
+   corrige es peor que ninguna: afirma que la fuente está mal.
+
+3. **`isValidCode` aceptaba cualquier código de 3 letras.** Agujero nuevo — antes
+   de MADHEL los de 3 se rechazaban de plano. Un tipeo entraba al libro como
+   aeródromo fantasma permanente. Sin resolver ahora sólo pasan los de 4.
+
+4. **`isCrossCountry` comparaba las teclas, no el canónico.** GEZ → SRDR es el
+   mismo campo, pero se leía travesía y el tiempo caía en `pic_day_tra`.
+
+**Verificación:** en el navegador con la cuenta real. Tipear `GEZ` muestra
+"General Rodríguez" bajo el campo; `SRDR` también; el toggle queda en **Local** y
+el `route` posteado es `SRDR SRDR`. Por API: `MOR` resuelve a SADM/Morón por
+encima de Morristown (KMOR), y el METAR de SRDR cae en Morón a 19 NM.
+`tsc --noEmit` y `npm run build` limpios.
+
+**Dato de la fuente, no nuestro:** MADHEL se contradice con la elevación de GEZ —
+el campo estructurado dice 28 m y la prosa de ubicación dice "ELEV 26 M 85 FT".
+La ficha muestra los dos, así que va a parecer un bug propio.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
