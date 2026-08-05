@@ -65,6 +65,11 @@ interface Weather {
   temp: number | null;
   windSpeed: number | null;
   windDir: string | number | null;
+  nearestStation?: {
+    icao: string;
+    name: string;
+    distanceNm: number;
+  } | null;
 }
 
 const SIZE_LABEL: Record<string, string> = {
@@ -245,18 +250,26 @@ export default function AirportsClient({
             <h2 className="data text-5xl md:text-7xl font-bold text-zinc-900 dark:text-white leading-none tracking-tight">
               {selected.icao}
             </h2>
-            <div className="pb-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-lg md:text-xl font-display font-bold text-zinc-900 dark:text-white tracking-tight truncate">
-                  {selected.label}
-                </p>
-                {selected.local && selected.local !== selected.icao && (
-                  <span className="data text-xs font-bold px-2 py-0.5 rounded-md bg-aviation-blue/10 text-aviation-blue border border-aviation-blue/20">
-                    ANAC: {selected.local}
-                  </span>
-                )}
+            <div className="pb-1 min-w-0 flex-1 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-lg md:text-xl font-display font-bold text-zinc-900 dark:text-white tracking-tight truncate">
+                    {selected.label}
+                  </p>
+                  {selected.local && selected.local !== selected.icao && (
+                    <span className="data text-xs font-bold px-2 py-0.5 rounded-md bg-aviation-blue/10 text-aviation-blue border border-aviation-blue/20">
+                      ANAC: {selected.local}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 truncate">{selected.name}</p>
               </div>
-              <p className="text-[13px] text-zinc-500 dark:text-zinc-400 truncate">{selected.name}</p>
+
+              {(loadingWx || loadingNotams) && (
+                <span className="text-xs font-semibold text-aviation-blue animate-pulse flex items-center gap-2 bg-aviation-blue/10 px-3.5 py-1.5 rounded-full border border-aviation-blue/20">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Obteniendo ficha ANAC MADHEL, NOTAMs y METAR…
+                </span>
+              )}
             </div>
           </div>
 
@@ -503,6 +516,14 @@ export default function AirportsClient({
                       </p>
                     </div>
                   </div>
+                  {weather.nearestStation && (
+                    <div className="rounded-xl bg-aviation-blue/10 border border-aviation-blue/20 px-3 py-2 text-xs font-semibold text-aviation-blue flex items-center gap-2">
+                      <Compass className="w-3.5 h-3.5 shrink-0 text-aviation-blue" />
+                      <span>
+                        METAR de estación cercana: <strong>{weather.nearestStation.name} ({weather.nearestStation.icao})</strong> a {weather.nearestStation.distanceNm} NM
+                      </span>
+                    </div>
+                  )}
                   <div className="rounded-xl bg-zinc-100 dark:bg-white/[0.06] px-3 py-2.5">
                     <p className="data text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300 break-words">
                       {weather.metar}

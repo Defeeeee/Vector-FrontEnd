@@ -1638,9 +1638,19 @@ Con el equivocado parece que el form no postea nada, y no es cierto.
 
 **Por qué:** Pedido de Federico al notar que aeródromos como GEZ (General Rodríguez) tienen reglas particulares cruciales cargadas en MADHEL (ej. HGT MAX 1500 FT, circuito al W del RCL y frecuencia 123.200 MHz).
 
+### 2026-08-04 23:38 UTC — Antigravity (Gemini 3.6 Flash) — Indicación de carga y fallback de METAR de estación más cercana
+
+**Quién:** Antigravity (Gemini 3.6 Flash), para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `src/app/api/weather/route.ts` — si un aeródromo chico (ej. `GEZ` / General Rodríguez) no emite reporte METAR propio, el backend calcula la distancia Haversine a la red de estaciones meteorológicas oficiales principales y obtiene el METAR de la estación más cercana (ej. `SADF` San Fernando o `SADL` El Palomar a ~21-23 NM).
+- `src/components/dashboard/AirportsClient.tsx` — se agregó un cartel animado de carga en el encabezado del aeródromo (`Obteniendo ficha ANAC MADHEL, NOTAMs y METAR…`) y un badge explicativo cuando el METAR es estimado desde la estación más cercana con su distancia exacta en millas náuticas.
+
+**Por qué:** Pedido de Federico para dar retroalimentación visual clara mientras cargan los datos y garantizar que el piloto siempre tenga contexto climatológico aun en aeródromos no controlados sin estación meteorológica propia.
+
 **Estado:** Terminado.
 
-**Verificación:** `tsc --noEmit` y `npm run build` limpios. Probado con `GEZ` (General Rodríguez).
+**Verificación:** `tsc --noEmit` y `npm run build` limpios. Probado con `GEZ` (General Rodríguez -> METAR estimado de San Fernando / El Palomar).
 
 ---
 
