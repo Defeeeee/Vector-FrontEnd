@@ -96,14 +96,15 @@ const clean = (v) => String(v ?? "").replace(/[\t\r\n]+/g, " ").trim();
  * 141 aerodromes while the printed name carries 152 (SAEA / General Acha is one
  * of the missing). The two never disagree where both exist, so the name is the
  * better source and the field is the fallback.
+ *
+ * This function deliberately has no correction table. There was one for a while,
+ * mapping PAL to SADP and PTA to SADL as if MADHEL had them swapped — it did not.
+ * ANAC publishes `EL PALOMAR - (PAL / SADP)` and `LA PLATA - (PTA / SADL)`, so the
+ * table returned exactly what parsing already returned. The whole file was checked
+ * row by row against the API: 711 of 711 identical. If a code ever does look
+ * wrong, the bug is in the parse or in the app, not in the source.
  */
-function icaoOf(record, localCode) {
-  const OVERRIDES = {
-    PAL: "SADP", // El Palomar
-    PTA: "SADL", // La Plata
-  };
-  if (localCode && OVERRIDES[localCode]) return OVERRIDES[localCode];
-
+function icaoOf(record) {
   const title = record.human_readable_identifier || record.the_geom?.properties?.name || "";
   const inside = /\(([^)]*)\)/.exec(title);
   const parts = inside ? inside[1].split("/").map((s) => s.trim()) : [];
@@ -150,7 +151,7 @@ for (const code of codes) {
   rows.push(
     [
       code,
-      icaoOf(record, code),
+      icaoOf(record),
       ids.iata ?? "",
       nameOf(record),
       clean(loc.city_reference),

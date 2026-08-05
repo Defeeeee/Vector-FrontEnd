@@ -243,20 +243,13 @@ export default function AirportResolver({
                   <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">
                     {airport.label}
                   </span>
-                  {/* Both codes, when the aerodrome has two. Picking the row puts
-                      the ICAO in the box, so seeing the designator that was just
-                      typed sitting next to it is what makes that make sense. */}
-                  {airport.local && airport.local !== airport.icao && (
-                    <span className="ml-auto text-[10px] font-bold data text-zinc-400 dark:text-zinc-500 shrink-0">
-                      {airport.local}
-                    </span>
-                  )}
-                  <span
-                    className={`text-[10px] font-semibold text-zinc-300 dark:text-zinc-600 shrink-0 ${
-                      airport.local && airport.local !== airport.icao ? "" : "ml-auto"
-                    }`}
-                  >
-                    {airport.country}
+                  {/* The ANAC designator takes the country's slot rather than a
+                      slot of its own. Only Argentine aerodromes have one, so "AR"
+                      next to "GEZ" is saying the same thing twice — and in the
+                      two-column form these rows are ~130 px wide, narrow enough
+                      that one extra chip truncated "General Rodríguez" to "G.". */}
+                  <span className="ml-auto text-[10px] font-semibold text-zinc-300 dark:text-zinc-600 shrink-0">
+                    {airport.local && airport.local !== airport.icao ? airport.local : airport.country}
                   </span>
                 </button>
               </li>

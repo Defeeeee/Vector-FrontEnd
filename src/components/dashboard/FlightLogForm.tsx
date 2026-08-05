@@ -116,15 +116,31 @@ function splitRoute(route?: string): [string, string] {
   return [parts[0] ?? "", parts[1] ?? parts[0] ?? ""];
 }
 
+/**
+ * What actually gets stored for a typed code.
+ *
+ * A pilot may reach General Rodríguez as GEZ or as SRDR; both have to land on the
+ * same aerodrome in the logbook, or one field's history splits in two.
+ */
 function canonical(code: string, airport: AirportRef | null): string {
   if (airport?.icao) return airport.icao;
   return code.trim().toUpperCase();
 }
 
+/**
+ * A code that resolves is always fine. One that does not is only accepted at four
+ * characters — the escape hatch for a foreign strip the directory has never heard
+ * of, which is how this field behaved before ANAC designators existed.
+ *
+ * Three characters get no such benefit of the doubt: a three-letter code means
+ * nothing except as a MADHEL designator, so one that resolves to nothing is a
+ * typo. Letting it through would write a phantom aerodrome into the logbook that
+ * then shows up for good in the history and in the unique-aerodrome count.
+ */
 function isValidCode(code: string, airport: AirportRef | null): boolean {
   if (airport) return true;
   const cleaned = code.trim().toUpperCase();
-  return cleaned.length >= 3 && cleaned.length <= 4 && /^[A-Z0-9]+$/.test(cleaned);
+  return cleaned.length === 4 && /^[A-Z0-9]+$/.test(cleaned);
 }
 
 export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, inModal = false, onCancel, stickyActions = false }: FlightLogFormProps) {
@@ -197,8 +213,14 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const toDisplay = (utc: string) => (localTime ? shiftClock(utc, UTC_OFFSET_HOURS) : utc);
   const fromDisplay = (shown: string) => (localTime ? shiftClock(shown, -UTC_OFFSET_HOURS) : shown);
 
+  // Compared canonical, not as typed: GEZ out and SRDR back is one aerodrome, so
+  // it is a local flight. Comparing the keystrokes would call it travesía and
+  // silently drop the time into the pic_day_tra bucket instead of pic_day_loc.
+  const canonicalOrigin = canonical(origin, originAirport);
+  const canonicalDestination = canonical(destination, destinationAirport);
   const isCrossCountry =
-    crossCountryOverride ?? (Boolean(origin) && Boolean(destination) && origin !== destination);
+    crossCountryOverride ??
+    (Boolean(origin) && Boolean(destination) && canonicalOrigin !== canonicalDestination);
 
   const remainderKey = isCrossCountry ? "pic_day_tra" : "pic_day_loc";
 
@@ -227,7 +249,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
     setIsPending(true);
     // The allocator can't produce an over-assigned breakdown, so there is no
     // sum check here any more — the backend still validates as a backstop.
-    formData.set("route", `${canonical(origin, originAirport)} ${canonical(destination, destinationAirport)}`);
+    formData.set("route", `${canonicalOrigin} ${canonicalDestination}`);
     formData.set("duration", total.toFixed(1));
 
     try {
@@ -318,7 +340,11 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   />
                 </div>
               </div>
-              <input type="hidden" name="route" value={`${origin} ${destination}`.trim()} />
+              {/* Canonical, matching what handleSubmit sets. It overwrites this
+                  field anyway, so a raw value here would never reach the server —
+                  but a hidden input that disagrees with what gets posted is the
+                  kind of thing someone debugs for an hour. */}
+              <input type="hidden" name="route" value={`${canonicalOrigin} ${canonicalDestination}`.trim()} />
 
               {/* Auto-set from the two codes, but still the pilot's call. */}
               <div className="flex items-center gap-2">
