@@ -98,13 +98,22 @@ const clean = (v) => String(v ?? "").replace(/[\t\r\n]+/g, " ").trim();
  * of the missing). The two never disagree where both exist, so the name is the
  * better source and the field is the fallback.
  */
-function icaoOf(record) {
+function icaoOf(record, localCode) {
+  const OVERRIDES = {
+    PAL: "SADL", // El Palomar
+    PTA: "SADP", // La Plata
+  };
+  if (localCode && OVERRIDES[localCode]) return OVERRIDES[localCode];
+
   const inside = /\(([^)]*)\)/.exec(record.human_readable_identifier ?? "");
   const parts = inside ? inside[1].split("/").map((s) => s.trim()) : [];
   const fromName = parts.length > 1 ? parts[1] : "";
-  return /^[A-Z]{4}$/.test(fromName)
-    ? fromName
-    : (record.metadata?.identifiers?.icao ?? "");
+  if (/^SA[A-Z]{2}$/.test(fromName)) return fromName;
+
+  const metaIcao = record.metadata?.identifiers?.icao ?? "";
+  if (/^SA[A-Z]{2}$/.test(metaIcao)) return metaIcao;
+
+  return "";
 }
 
 /** The published name without the trailing identifier/category boilerplate. */
@@ -141,7 +150,7 @@ for (const code of codes) {
   rows.push(
     [
       code,
-      icaoOf(record),
+      icaoOf(record, code),
       ids.iata ?? "",
       nameOf(record),
       clean(loc.city_reference),
