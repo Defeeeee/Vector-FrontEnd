@@ -8,7 +8,12 @@ import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 
 async function getData() {
-  const [acRes, sessionRes, lbRes] = await Promise.all([
+  // Order matters and has already bitten once: `/logbooks` was added in the
+  // middle of this array without moving the names, so `logbooks` got the session
+  // object and the page died on `logbooks.find is not a function`. It only showed
+  // up on a direct hit or a refresh — coming from the "+" renders the intercepted
+  // route at @modal/(.)log-flight, which fetches its own data and was fine.
+  const [acRes, lbRes, sessionRes] = await Promise.all([
     apiFetch("/aircraft"),
     apiFetch("/logbooks"),
     apiFetch("/flight-helper/session")
