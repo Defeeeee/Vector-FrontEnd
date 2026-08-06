@@ -62,7 +62,7 @@ async function waitForServer(timeoutMs = 90_000) {
   throw new Error(`El server no atendió en ${timeoutMs / 1000}s`);
 }
 
-const server = spawn("npx", ["next", "start", "-p", PORT], {
+const server = spawn("node_modules/.bin/next", ["start", "-p", PORT], {
   stdio: ["ignore", "pipe", "pipe"],
   env: { ...process.env, NODE_ENV: "production" },
 });
@@ -98,9 +98,9 @@ try {
   console.error(`✗ ${err.message}`);
   failures++;
 } finally {
-  server.kill("SIGTERM");
+  try { server.kill("SIGTERM"); } catch {}
   await sleep(300);
-  server.kill("SIGKILL");
+  try { server.kill("SIGKILL"); } catch {}
 }
 
 if (failures) {
@@ -108,3 +108,4 @@ if (failures) {
   process.exit(1);
 }
 console.log(`\n${ROUTES.length} rutas OK.`);
+process.exit(0);
