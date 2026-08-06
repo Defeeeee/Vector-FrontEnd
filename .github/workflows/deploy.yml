@@ -23,6 +23,11 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
+            # PM2 arranca este proceso con `start -- -p 3010`, y en este server
+            # hay cinco Next escuchando en 3000..3003 y 3010. La variable existe
+            # para poder moverlo sin tocar el workflow, pero el default es el
+            # puerto real, no uno teórico.
+            APP_PORT="${{ vars.FRONTEND_PORT || '3010' }}"
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
@@ -46,9 +51,17 @@ jobs:
 
             pm2 restart vector-frontend --update-env
 
+            # El check tiene que probar que contesta **Vector**, no que algo
+            # contesta. En este server conviven doce apps de PM2: un `curl` a un
+            # puerto equivocado devuelve 200 de otra cosa y el rollback nunca se
+            # dispara, con lo cual el deploy queda en verde y el sitio roto.
+            #
+            # /api/airports/search es propio de Vector, no pide sesión y además
+            # lee los TSV del disco: si el build no los copió, esto lo agarra.
             for i in $(seq 1 20); do
-              if curl -fsS -o /dev/null http://localhost:3010/login; then
-                echo "Health OK tras ${i}s"
+              if curl -fsS "http://localhost:${APP_PORT}/api/airports/search?q=SADM" \
+                   | grep -q '"icao":"SADM"'; then
+                echo "Health OK tras ${i}s (Vector respondiendo en ${APP_PORT})"
                 exit 0
               fi
               sleep 1
