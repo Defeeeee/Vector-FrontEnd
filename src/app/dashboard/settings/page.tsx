@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import { Aircraft, Profile, FlightPack, PilotDocument, Logbook } from "@/types";
-import { Plane, User, Package, CalendarClock, BookOpen } from "lucide-react";
+import { Plane, User, Package, CalendarClock, BookOpen, Download } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
 import FlightPackCard from "@/components/dashboard/FlightPackCard";
@@ -150,6 +150,34 @@ export default async function SettingsPage() {
           </div>
 
           <FlightPackForm aircraft={aircraft} />
+        </section>
+
+        {/* D1 — la contrapartida del borrado de cuentas. Va al final del Hangar,
+            que es donde el piloto ya viene a administrar lo suyo, y no en una
+            pantalla propia: es una acción que se usa una vez cada mucho. */}
+        <section className="space-y-4 md:space-y-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+              <Download className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
+            </div>
+            <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Tus datos</h3>
+          </div>
+
+          <div className="bg-white dark:bg-white/[0.02] p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none space-y-4">
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed">
+              Descargá todo lo que Vector guarda tuyo en un solo archivo: perfil,
+              aeronaves, libros, vuelos, documentos, packs y transacciones. Es tuyo
+              y te lo podés llevar cuando quieras.
+            </p>
+            <a
+              href="/api/export"
+              download
+              className="inline-flex items-center gap-2 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm px-5 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98]"
+            >
+              <Download className="w-4 h-4" />
+              <span>Descargar mis datos</span>
+            </a>
+          </div>
         </section>
       </div>
     </div>

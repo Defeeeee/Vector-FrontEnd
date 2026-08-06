@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { Sparkles, X, MapPin, BookOpen, Compass, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
-const CHANGELOG_VERSION = "v2.5.0";
+// Sólo va acá lo que el piloto efectivamente ve. La higiene de esta versión
+// —el secreto fuera de la URL, el límite de mensajes, la retención— es
+// importante pero no es una novedad que alguien quiera leer en su dashboard.
+const CHANGELOG_VERSION = "v2.6.0";
 
 export default function ChangelogNotice() {
   const [visible, setVisible] = useState(false);
@@ -49,52 +52,38 @@ export default function ChangelogNotice() {
         ¡Tu bitácora Vector sigue sumando herramientas!
       </h3>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-2xl bg-white dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10 p-4 space-y-2">
           <div className="flex items-center gap-2 text-zinc-900 dark:text-white text-xs font-bold">
             <Compass className="w-4 h-4 text-aviation-blue" />
-            <span>Mapa Geográfico de Rutas</span>
+            <span>Distancia de travesía</span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            Visualizá tu red de vuelos en el mapa interactivo dentro del Resumen de horas.
+            Al cargar un vuelo ves las millas náuticas entre los dos aeródromos, calculadas
+            con las coordenadas oficiales de ANAC.
           </p>
           <Link
-            href="/dashboard/summary"
+            href="/dashboard/log-flight"
             className="inline-flex items-center gap-1 text-[11px] font-bold text-aviation-blue hover:underline pt-1"
           >
-            Ver mapa <ChevronRight className="w-3 h-3" />
+            Cargar un vuelo <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
 
         <div className="rounded-2xl bg-white dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10 p-4 space-y-2">
           <div className="flex items-center gap-2 text-zinc-900 dark:text-white text-xs font-bold">
-            <MapPin className="w-4 h-4 text-aviation-blue" />
-            <span>Dataset ANAC MADHEL</span>
+            <Sparkles className="w-4 h-4 text-aviation-blue" />
+            <span>Descargá tus datos</span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            711 aeródromos y helipuertos argentinos con códigos locales (GEZ, SRDR, MOR).
-          </p>
-          <Link
-            href="/dashboard/airports"
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-aviation-blue hover:underline pt-1"
-          >
-            Explorar campos <ChevronRight className="w-3 h-3" />
-          </Link>
-        </div>
-
-        <div className="rounded-2xl bg-white dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-zinc-900 dark:text-white text-xs font-bold">
-            <BookOpen className="w-4 h-4 text-aviation-blue" />
-            <span>Múltiples Libros de Vuelo</span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            Creá libros por trabajo o proyecto con saldo de horas inicial sin transcribir a mano.
+            Todo lo que Vector guarda tuyo en un archivo: perfil, aeronaves, libros, vuelos,
+            documentos, packs y transacciones. Es tuyo y te lo podés llevar.
           </p>
           <Link
             href="/dashboard/settings"
             className="inline-flex items-center gap-1 text-[11px] font-bold text-aviation-blue hover:underline pt-1"
           >
-            Gestionar libros <ChevronRight className="w-3 h-3" />
+            Ir al Hangar <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
       </div>
