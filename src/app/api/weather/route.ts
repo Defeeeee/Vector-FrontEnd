@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAirport } from "@/lib/airports";
+import { distanceNm } from "@/lib/distance";
 
 const METAR_STATIONS = [
   { icao: "SADM", name: "Morón", lat: -34.676, lon: -58.643 },
@@ -35,20 +36,6 @@ const METAR_STATIONS = [
   { icao: "SANI", name: "Tinogasta", lat: -28.0631, lon: -67.5644 },
   { icao: "SATR", name: "Reconquista", lat: -29.2108, lon: -59.6797 },
 ];
-
-function distanceNm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3440.065; // Earth radius in nautical miles
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
-}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

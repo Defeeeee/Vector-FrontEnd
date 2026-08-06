@@ -3,6 +3,7 @@ import { Flight, Aircraft, Logbook } from "@/types";
 // Vive en lib/route.ts. Se reexporta para no tocar a todos los que la
 // importan desde acá desde antes de unificarla.
 export { splitRoute } from "./route";
+import { legDistanceNm } from "./distance";
 import { splitRoute } from "./route";
 
 /**
@@ -361,4 +362,39 @@ export function buildInsights(flights: Flight[], aircraft: Aircraft[]): Insight[
   }
 
   return out;
+}
+
+/** Coordenadas por código, tal como las resuelve la página del Resumen. */
+type Coords = Record<string, { lat?: number; lon?: number }>;
+
+/**
+ * Millas náuticas recorridas, sumando tramo por tramo.
+ *
+ * Los vuelos cuyos aeródromos no tienen posición **no se cuentan y no se
+ * estiman**: `legDistanceNm` devuelve null y acá se saltean. Por eso la función
+ * devuelve también cuántos quedaron afuera — un total al que le faltan tramos y
+ * no lo dice es peor que no mostrar total, porque el piloto no tiene forma de
+ * saber que está mirando un número incompleto.
+ *
+ * Un circuito local mide cero, que es correcto: despegar y aterrizar en el mismo
+ * campo no recorre distancia entre aeródromos.
+ */
+export function distanceTotals(flights: Flight[], coords: Coords) {
+  let totalNm = 0;
+  let sinPosicion = 0;
+  let masLargo = 0;
+
+  for (const f of flights) {
+    const [origin, destination] = splitRoute(f.route);
+    if (!origin || !destination) continue;
+    const nm = legDistanceNm(coords[origin] ?? null, coords[destination] ?? null);
+    if (nm === null) {
+      sinPosicion++;
+      continue;
+    }
+    totalNm += nm;
+    if (nm > masLargo) masLargo = nm;
+  }
+
+  return { totalNm, masLargo, sinPosicion };
 }
