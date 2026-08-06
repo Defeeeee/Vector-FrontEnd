@@ -15,6 +15,7 @@ import StyledSelect from "./StyledSelect";
 import TimeAllocator, { TimeCategory } from "./TimeAllocator";
 import { useAnacBreakdown } from "@/hooks/useAnacBreakdown";
 import { splitRoute } from "@/lib/route";
+import { legDistanceNm } from "@/lib/distance";
 
 const PURPOSE_OPTIONS = [
   { value: "ACR", label: "ACR – Acrobacia" },
@@ -219,6 +220,16 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   // silently drop the time into the pic_day_tra bucket instead of pic_day_loc.
   const canonicalOrigin = canonical(origin, originAirport);
   const canonicalDestination = canonical(destination, destinationAirport);
+  // Se calcula con las coordenadas que ya trae `AirportRef` — las trajo el
+  // dataset de MADHEL. Null cuando algún extremo no tiene posición, que pasa
+  // en varios aeródromos chicos.
+  //
+  // **Es información, no una regla.** No cambia el criterio de travesía: cuál es
+  // la distancia a partir de la cual un vuelo deja de ser local es una pregunta
+  // regulatoria, y poner un número inventado reclasificaría en silencio los
+  // buckets ANAC de vuelos ya cargados. El piloto ve la distancia y decide.
+  const legDistance = legDistanceNm(originAirport, destinationAirport);
+
   const isCrossCountry =
     crossCountryOverride ??
     (Boolean(origin) && Boolean(destination) && canonicalOrigin !== canonicalDestination);
@@ -359,6 +370,11 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   onClick={() => setCrossCountryOverride(true)}
                   label="Travesía"
                 />
+                {legDistance !== null && legDistance > 0 && (
+                  <span className="text-[10px] font-bold data text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
+                    {legDistance} NM
+                  </span>
+                )}
                 {crossCountryOverride !== null && (
                   <button
                     type="button"

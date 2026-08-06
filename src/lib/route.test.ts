@@ -45,3 +45,40 @@ describe("splitRoute", () => {
     expect(splitRoute("SADF SADM SAEZ")).toEqual(["SADF", "SADM"]);
   });
 });
+
+/**
+ * `distanceTotals` vive en summary.ts pero se prueba acá junto al resto de la
+ * lectura de rutas: lo que valida es cómo se comporta ante una ruta que no se
+ * puede medir, no la trigonometría —eso está en distance.test.ts—.
+ */
+import { distanceTotals } from "./summary";
+
+describe("distanceTotals", () => {
+  const coords = {
+    SADF: { lat: -34.4545, lon: -58.5909 },
+    SAEZ: { lat: -34.8222, lon: -58.5358 },
+    SINPOS: {},
+  };
+  const vuelo = (route: string) => ({ route }) as any;
+
+  it("suma tramo por tramo", () => {
+    const { totalNm } = distanceTotals([vuelo("SADF SAEZ"), vuelo("SAEZ SADF")], coords);
+    expect(totalNm).toBeGreaterThan(40);
+  });
+
+  it("cuenta cero para un circuito local, que es lo correcto", () => {
+    expect(distanceTotals([vuelo("SADF SADF")], coords).totalNm).toBe(0);
+  });
+
+  /** Un total al que le faltan tramos y no lo dice es peor que no mostrarlo. */
+  it("no estima los tramos sin posición y avisa cuántos quedaron afuera", () => {
+    const r = distanceTotals([vuelo("SADF SINPOS"), vuelo("SADF SAEZ")], coords);
+    expect(r.sinPosicion).toBe(1);
+    expect(r.totalNm).toBeGreaterThan(0);
+  });
+
+  it("guarda el tramo más largo", () => {
+    const r = distanceTotals([vuelo("SADF SAEZ"), vuelo("SADF SADF")], coords);
+    expect(r.masLargo).toBeGreaterThan(0);
+  });
+});
