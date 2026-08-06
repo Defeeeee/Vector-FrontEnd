@@ -6,6 +6,20 @@
 >
 > **Al final de este plan, Vector pasa a `2.6.0`.**
 
+> **Estado al 2026-08-06, plan cerrado.** Hechas: `H1.1` (pasos 1 y 2), `H1.2`,
+> `H1.3`, `H1.4`, `C1`, `D1`, `F1`, `V1`.
+>
+> **Pendientes a propósito:**
+> - `H1.1` paso 3 — sacarle al backend el soporte de query string. Espera unos
+>   días de confirmar en los logs que no queda ninguna llamada vieja.
+> - `T1` — bloqueada hasta que exista la cuenta de prueba. La crea Federico:
+>   crear cuentas y manejar contraseñas queda fuera de lo que hace el agente.
+>
+> **Dos cosas cambiaron al implementarlas, y el motivo está en cada tarea:**
+> `H1.2` creció para mover también el teléfono (el access log de uvicorn guardaba
+> la URL entera, así que sacar los `print` no alcanzaba), y `F1` **no** cambia el
+> criterio de travesía — la distancia se muestra, no decide.
+
 Cada tarea tiene id estable, criterio de aceptación y cómo verificarla. El orden
 importa en dos lugares y está marcado.
 
