@@ -450,7 +450,23 @@ export async function POST(req: NextRequest) {
     }
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
 
-    const userRes = await fetch(`${API_URL}/whatsapp/user-data?phone=${fromNumber}&secret=${secret}`);
+    // H1.1, paso 2 de 3. El secreto y el teléfono viajan en cabeceras y ya no en
+    // la URL: la query string queda escrita en texto plano en los logs de nginx y
+    // de PM2 en cada mensaje que recibe el bot.
+    //
+    // El backend ya acepta las dos formas (paso 1, desplegado y verificado en
+    // producción el 2026-08-06: una llamada sin parámetros devuelve 401 y no 400,
+    // que es lo que devolvía cuando `secret` era obligatorio). El paso 3 le saca
+    // el soporte de query string, después de confirmar en los logs que no queda
+    // ninguna llamada vieja.
+    const vectorHeaders = (extra: Record<string, string> = {}) => ({
+      "X-Vector-Secret": secret,
+      "X-Vector-Phone": fromNumber,
+      ...extra,
+    });
+
+
+    const userRes = await fetch(`${API_URL}/whatsapp/user-data`, { headers: vectorHeaders() });
     if (!userRes.ok) {
       const errText = await userRes.text().catch(() => "");
       console.error("Failed to fetch user-data from backend. Status:", userRes.status, "Body:", errText, "URL:", userRes.url);
@@ -484,7 +500,7 @@ export async function POST(req: NextRequest) {
     const logbooks = userData.logbooks || [];
 
     // Fetch chat history from Python backend
-    const historyRes = await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`);
+    const historyRes = await fetch(`${API_URL}/whatsapp/chat-history`, { headers: vectorHeaders() });
     let history: ChatEntry[] = [];
     if (historyRes.ok) {
       const histData = await historyRes.json();
@@ -503,9 +519,9 @@ export async function POST(req: NextRequest) {
     // Check for history clearing commands
     const cleanMsg = messageText.toLowerCase().trim();
     if (cleanMsg === "borrar historial" || cleanMsg === "reiniciar chat" || cleanMsg === "limpiar chat") {
-      await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+      await fetch(`${API_URL}/whatsapp/chat-history`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: vectorHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ history: [] })
       });
       await sendWhatsAppMessage(
@@ -536,9 +552,9 @@ export async function POST(req: NextRequest) {
           { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId },
           { role: "assistant", content: written.message },
         ];
-        await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+        await fetch(`${API_URL}/whatsapp/chat-history`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: vectorHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ history: historyAfter }),
         });
         await sendWhatsAppMessage(fromNumber, formatForWhatsApp(written.message), payloadPhoneNumberId);
@@ -1111,9 +1127,9 @@ ${flightContext}`;
         { role: "assistant", content: summary },
         { role: "system", pending_flight: pendingProposal.proposal, at: Date.now() },
       ];
-      await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+      await fetch(`${API_URL}/whatsapp/chat-history`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: vectorHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ history: historyWithProposal }),
       });
       await sendWhatsAppMessage(fromNumber, formatForWhatsApp(summary), payloadPhoneNumberId);
