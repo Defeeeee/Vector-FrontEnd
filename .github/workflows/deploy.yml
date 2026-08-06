@@ -1,0 +1,58 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Desplegar por SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 15m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd ~/Vector-FrontEnd
+
+            ANTERIOR=$(git rev-parse HEAD)
+            git fetch origin main
+            git reset --hard origin/main
+            npm ci --omit=dev --no-audit --no-fund || npm install --no-audit --no-fund
+
+            # `rm -rf .next` NO es opcional. Turbopack reusa caché entre builds y
+            # el bundle puede seguir sirviendo un valor viejo compilado adentro
+            # aunque el código fuente esté correcto. Nos pasó dos veces: una con
+            # CSS y otra con un secreto, y la segunda costó una hora y media
+            # porque el `git pull` decía "Already up to date" y el build decía
+            # "Compiled successfully".
+            #
+            # Deja el sitio sin archivos ~15 s. Es el precio de un deploy simple.
+            rm -rf .next
+            npm run build
+
+            pm2 restart vector-frontend --update-env
+
+            for i in $(seq 1 20); do
+              if curl -fsS -o /dev/null http://localhost:3000/login; then
+                echo "Health OK tras ${i}s"
+                exit 0
+              fi
+              sleep 1
+            done
+
+            echo "El health check falló. Volviendo a $ANTERIOR"
+            git reset --hard "$ANTERIOR"
+            rm -rf .next && npm run build
+            pm2 restart vector-frontend --update-env
+            exit 1
