@@ -6,6 +6,7 @@ import { ArrowRight, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monit
 import { useState, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateFlightDuration } from "@/lib/utils";
+import { splitRoute } from "@/lib/route";
 
 const PURPOSE_OPTIONS = [
   { value: "ACR", label: "ACR – Acrobacia" },
@@ -38,20 +39,11 @@ interface FlightCardProps {
   allAircraft: Aircraft[];
 }
 
-function splitRoute(route: string): [string, string] {
-  if (route.includes('-')) {
-    const [origin, dest] = route.split('-');
-    return [origin?.trim().replace(/\s+/g, '') || "???", dest?.trim().replace(/\s+/g, '') || "???"];
-  }
-  const parts = route.trim().split(/\s+/);
-  return [parts[0] || "???", parts[1] || "???"];
-}
-
 export default function FlightCard({ flight, aircraft, allAircraft }: FlightCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [origin, dest] = splitRoute(flight.route);
+  const [origin, dest] = splitRoute(flight.route, "???");
 
   const [takeoffTime, setTakeoffTime] = useState(new Date(flight.takeoff).toISOString().substring(11, 16));
   const [landingTime, setLandingTime] = useState(new Date(flight.landing).toISOString().substring(11, 16));

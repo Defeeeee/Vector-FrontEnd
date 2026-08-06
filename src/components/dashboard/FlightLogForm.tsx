@@ -14,6 +14,7 @@ import AirportResolver from "./AirportResolver";
 import StyledSelect from "./StyledSelect";
 import TimeAllocator, { TimeCategory } from "./TimeAllocator";
 import { useAnacBreakdown } from "@/hooks/useAnacBreakdown";
+import { splitRoute } from "@/lib/route";
 
 const PURPOSE_OPTIONS = [
   { value: "ACR", label: "ACR – Acrobacia" },
@@ -110,12 +111,6 @@ interface FlightLogFormProps {
   stickyActions?: boolean;
 }
 
-/** "SAEZ SACO" / "SAEZ-SACO" -> ["SAEZ", "SACO"]. */
-function splitRoute(route?: string): [string, string] {
-  const parts = (route ?? "").split(/[\s-]+/).map((p) => p.trim().toUpperCase()).filter(Boolean);
-  return [parts[0] ?? "", parts[1] ?? parts[0] ?? ""];
-}
-
 /**
  * What actually gets stored for a typed code.
  *
@@ -147,7 +142,13 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [initialOrigin, initialDestination] = splitRoute(initialData?.route);
+  // Repetir el origen cuando la ruta trae un solo código es propio de este
+  // formulario: prefija los dos campos de un circuito local. La función
+  // compartida no lo hace, porque en una agregación contaría el aeródromo dos
+  // veces y un vuelo local pasaría por travesía consigo mismo.
+  const [rawOrigin, rawDestination] = splitRoute(initialData?.route);
+  const initialOrigin = rawOrigin;
+  const initialDestination = rawDestination || rawOrigin;
   const [origin, setOrigin] = useState(initialOrigin);
   const [destination, setDestination] = useState(initialDestination);
   const [originAirport, setOriginAirport] = useState<AirportRef | null>(null);

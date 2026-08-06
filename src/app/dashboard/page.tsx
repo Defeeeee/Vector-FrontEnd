@@ -45,16 +45,8 @@ async function getDashboardData() {
   };
 }
 
-function splitRoute(route: string): [string, string] {
-  if (route.includes('-')) {
-    const [origin, dest] = route.split('-');
-    return [origin?.trim().replace(/\s+/g, '') || "???", dest?.trim().replace(/\s+/g, '') || "???"];
-  }
-  const parts = route.trim().split(/\s+/);
-  return [parts[0] || "???", parts[1] || "???"];
-}
-
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
+import { splitRoute } from "@/lib/route";
 
 export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs, audit, documents, logbooks } = await getDashboardData();
@@ -157,7 +149,7 @@ export default async function Dashboard() {
 
   const airportFreq = new Map<string, number>();
   flights.forEach((f: Flight) => {
-    const [origin, dest] = splitRoute(f.route);
+    const [origin, dest] = splitRoute(f.route, "???");
     if (origin !== "???") {
       const o = origin.toUpperCase();
       airportFreq.set(o, (airportFreq.get(o) || 0) + 1);
