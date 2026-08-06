@@ -1,17 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { Flight, Aircraft } from "@/types";
+import { splitRoute } from "@/lib/route";
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
-function splitRoute(route: string): [string, string] {
-  if (route.includes("-")) {
-    const [origin, dest] = route.split("-");
-    return [origin?.trim().replace(/\s+/g, "") || "???", dest?.trim().replace(/\s+/g, "") || "???"];
-  }
-  const parts = route.trim().split(/\s+/);
-  return [parts[0] || "???", parts[1] || "???"];
-}
 
 /**
  * The last few flights, as a read-only strip on the dashboard.
@@ -60,7 +52,7 @@ export default function RecentFlights({
 
       <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden">
         {recent.map((f) => {
-          const [origin, dest] = splitRoute(f.route);
+          const [origin, dest] = splitRoute(f.route, "???");
           const ac = f.aircraft_id ? byId.get(f.aircraft_id) : undefined;
           // Assembled by hand rather than via toLocaleDateString: the es-AR
           // long form renders "25 de jul de 2026", and the two "de"s eat the

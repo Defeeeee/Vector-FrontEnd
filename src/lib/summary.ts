@@ -1,5 +1,10 @@
 import { Flight, Aircraft, Logbook } from "@/types";
 
+// Vive en lib/route.ts. Se reexporta para no tocar a todos los que la
+// importan desde acá desde antes de unificarla.
+export { splitRoute } from "./route";
+import { splitRoute } from "./route";
+
 /**
  * Aggregations for the "Resumen de horas" page.
  *
@@ -163,15 +168,6 @@ export function anacMatrix(flights: Flight[]): AnacMatrix {
     ],
     total: add(local) + add(travesia),
   };
-}
-
-export function splitRoute(route: string): [string, string] {
-  if (route.includes("-")) {
-    const [o, d] = route.split("-");
-    return [o?.trim().replace(/\s+/g, "").toUpperCase() || "", d?.trim().replace(/\s+/g, "").toUpperCase() || ""];
-  }
-  const parts = route.trim().split(/\s+/);
-  return [(parts[0] || "").toUpperCase(), (parts[1] || "").toUpperCase()];
 }
 
 export interface AirportCount {
