@@ -1147,9 +1147,9 @@ ${flightContext}`;
       { role: "assistant", content: replyText }
     ];
 
-    await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+    await fetch(`${API_URL}/whatsapp/chat-history`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: vectorHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ history: updatedHistory })
     });
 
