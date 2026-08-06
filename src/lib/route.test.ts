@@ -82,3 +82,27 @@ describe("distanceTotals", () => {
     expect(r.masLargo).toBeGreaterThan(0);
   });
 });
+
+describe("distanceTotals con vuelos locales", () => {
+  const coords = { SADF: { lat: -34.4545, lon: -58.5909 }, SAEZ: { lat: -34.8222, lon: -58.5358 } };
+  const vuelo = (route: string, duration: number) => ({ route, duration }) as any;
+
+  /**
+   * Lo medido y lo estimado no se mezclan nunca. Un total mitad real y mitad
+   * inventado, sin que se note, es peor que no tener total.
+   */
+  it("estima el local aparte y no lo suma al medido", () => {
+    const r = distanceTotals([vuelo("SADF SADF", 1.0), vuelo("SADF SAEZ", 0.5)], coords);
+    expect(r.estimadasNm).toBe(63);
+    expect(r.totalNm).toBeGreaterThan(15);
+    expect(r.totalNm).toBeLessThan(30);
+  });
+
+  it("trata una ruta de un solo código como local", () => {
+    expect(distanceTotals([vuelo("SADF", 1.0)], coords).estimadasNm).toBe(63);
+  });
+
+  it("no estima un local demasiado corto", () => {
+    expect(distanceTotals([vuelo("SADF SADF", 0.3)], coords).estimadasNm).toBe(0);
+  });
+});

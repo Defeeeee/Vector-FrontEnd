@@ -13,8 +13,7 @@ import {
   Sunrise,
   Trophy,
   Map as MapIcon,
-  List as ListIcon,
-} from "lucide-react";
+  List as ListIcon, Compass } from "lucide-react";
 import { Flight, Aircraft, Logbook } from "@/types";
 import FlightMap from "./FlightMap";
 import {
@@ -26,6 +25,7 @@ import {
   buildInsights,
   byAircraft,
   filterByPeriod,
+  distanceTotals,
   headlineStats,
   openingTotals,
   timeOfDay,
@@ -199,6 +199,11 @@ export default function SummaryClient({
     [logbooks, period]
   );
 
+  // Millas del período. Lo medido y lo estimado se calculan juntos pero se
+  // muestran separados: mezclarlos daría un total mitad real y mitad inventado
+  // sin que el piloto pueda distinguirlos.
+  const millas = useMemo(() => distanceTotals(scoped, airportDetails), [scoped, airportDetails]);
+
   const stats = useMemo(() => {
     const base = headlineStats(scoped);
     if (!opening) return base;
@@ -290,6 +295,16 @@ export default function SummaryClient({
             <StatTile icon={<Glasses className="w-3.5 h-3.5" />} label="Capota" value={stats.hood.toFixed(1)} caption="Bajo capota" />
             <StatTile icon={<Sunrise className="w-3.5 h-3.5" />} label="Ater." value={String(stats.landings)} caption="Aterrizajes totales" />
             <StatTile icon={<Plane className="w-3.5 h-3.5" />} label="Vuelos" value={String(stats.flights)} caption="Entradas de log" />
+            <StatTile
+              icon={<Compass className="w-3.5 h-3.5" />}
+              label="Millas"
+              value={millas.totalNm.toLocaleString("es-AR")}
+              caption={
+                millas.estimadasNm > 0
+                  ? `NM medidas · ~${millas.estimadasNm.toLocaleString("es-AR")} estimadas en local`
+                  : "NM entre aeródromos"
+              }
+            />
           </div>
 
           {/* ANAC matrix */}

@@ -52,3 +52,41 @@ describe("legDistanceNm", () => {
     expect(legDistanceNm(conCoords, null)).toBeNull();
   });
 });
+
+import { CIRCUIT_SPEED_KT, MIN_ESTIMABLE_H, TAXI_ALLOWANCE_H, estimatedLocalNm } from "./distance";
+
+/**
+ * El tiempo del libro es motor encendido a motor apagado —lo que pide ANAC—,
+ * así que incluye rodaje y prueba de motor. Estos tests fijan que se descuente
+ * antes de multiplicar, y que no se estime donde el número no diría nada.
+ */
+describe("estimatedLocalNm", () => {
+  it("descuenta el rodaje antes de multiplicar", () => {
+    // 1.0 h de motor → 0.7 h de aire → 63 NM
+    expect(estimatedLocalNm(1.0)).toBe(Math.round((1.0 - TAXI_ALLOWANCE_H) * CIRCUIT_SPEED_KT));
+    expect(estimatedLocalNm(1.0)).toBe(63);
+  });
+
+  /**
+   * Un vuelo de 0.5 h quedaría con 0.2 h de aire: 60% rodaje. Estimar ahí es
+   * inventar con cara de dato.
+   */
+  it("no estima por debajo del mínimo", () => {
+    expect(estimatedLocalNm(0.3)).toBe(0);
+    expect(estimatedLocalNm(MIN_ESTIMABLE_H - 0.01)).toBe(0);
+  });
+
+  it("nunca devuelve negativo", () => {
+    expect(estimatedLocalNm(0)).toBe(0);
+    expect(estimatedLocalNm(-2)).toBe(0);
+  });
+
+  it("aguanta basura sin romperse", () => {
+    expect(estimatedLocalNm(NaN)).toBe(0);
+    expect(estimatedLocalNm(Infinity)).toBe(0);
+  });
+
+  it("crece con la duración", () => {
+    expect(estimatedLocalNm(2)).toBeGreaterThan(estimatedLocalNm(1));
+  });
+});

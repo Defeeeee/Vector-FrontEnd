@@ -403,7 +403,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
               </div>
 
               <div className="grid grid-cols-2 gap-x-6 gap-y-6">
-                <LedgerField label={localTime ? "Despegue (local)" : "Despegue (UTC)"}>
+                <LedgerField label={localTime ? "Hora de salida (local)" : "Hora de salida (UTC)"}>
                   <input
                     type="time"
                     required
@@ -413,7 +413,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   />
                 </LedgerField>
 
-                <LedgerField label={localTime ? "Aterrizaje (local)" : "Aterrizaje (UTC)"}>
+                <LedgerField label={localTime ? "Hora de llegada (local)" : "Hora de llegada (UTC)"}>
                   <input
                     type="time"
                     required
