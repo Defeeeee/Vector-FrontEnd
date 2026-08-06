@@ -11,7 +11,9 @@ import {
   isAffirmation,
   pendingFlight,
   proposalSummary,
+  rateLimited,
   writeProposedFlight,
+  yaAvisadoDelLimite,
 } from "@/lib/copilot-guards";
 
 // Compares the caller-supplied secret against the configured one without leaking timing info,
@@ -516,6 +518,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Duplicate message ignored" });
     }
 
+    // H1.3. Corta antes de llamar a Gemini, que es lo que cuesta plata.
+    if (rateLimited(history)) {
+      if (!yaAvisadoDelLimite(history)) {
+        const aviso = "Pará un poco 🛩️ Estás mandando mensajes muy seguido. Probá de nuevo en un par de minutos.";
+        await fetch(`${API_URL}/whatsapp/chat-history`, {
+          method: "POST",
+          headers: vectorHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            history: [
+              ...history,
+              { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId, at: Date.now() },
+              { role: "assistant", content: aviso, rate_notice: true },
+            ],
+          }),
+        });
+        await sendWhatsAppMessage(fromNumber, aviso, payloadPhoneNumberId);
+      }
+      // Si ya se avisó, se descarta en silencio: contestar cada mensaje de una
+      // ráfaga es gastar llamadas a Kapso para pelearle a quien la está mandando.
+      return NextResponse.json({ success: true, message: "Rate limited" });
+    }
+
     // Check for history clearing commands
     const cleanMsg = messageText.toLowerCase().trim();
     if (cleanMsg === "borrar historial" || cleanMsg === "reiniciar chat" || cleanMsg === "limpiar chat") {
@@ -549,7 +573,7 @@ export async function POST(req: NextRequest) {
         const written = await writeProposedFlight(proposed, userApiKey, API_URL);
         const historyAfter: ChatEntry[] = [
           ...history.filter((h) => !h.pending_flight),
-          { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId },
+          { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId, at: Date.now() },
           { role: "assistant", content: written.message },
         ];
         await fetch(`${API_URL}/whatsapp/chat-history`, {
@@ -1123,7 +1147,7 @@ ${flightContext}`;
       );
       const historyWithProposal: ChatEntry[] = [
         ...history.filter((h) => !h.pending_flight),
-        { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId },
+        { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId, at: Date.now() },
         { role: "assistant", content: summary },
         { role: "system", pending_flight: pendingProposal.proposal, at: Date.now() },
       ];
@@ -1143,7 +1167,7 @@ ${flightContext}`;
     // reconozca un reintento después de un reinicio del proceso.
     const updatedHistory: ChatEntry[] = [
       ...history,
-      { role: "user", content: userMessageContent, id: messageId },
+      { role: "user", content: userMessageContent, id: messageId, at: Date.now() },
       { role: "assistant", content: replyText }
     ];
 

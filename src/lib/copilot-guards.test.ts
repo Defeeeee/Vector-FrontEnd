@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  RATE_LIMIT_MESSAGES,
   alreadyHandled,
   breakdownError,
   isAffirmation,
   pendingFlight,
   proposalSummary,
+  rateLimited,
+  yaAvisadoDelLimite,
   type ChatEntry,
 } from "./copilot-guards";
 
@@ -141,5 +144,56 @@ describe("proposalSummary", () => {
   it("nombra el libro sólo cuando el piloto eligió uno", () => {
     expect(proposalSummary(proposal, "LV-S153", "Instrucción")).toContain("Instrucción");
     expect(proposalSummary(proposal, "LV-S153")).not.toContain("*Libro:*");
+  });
+});
+
+describe("rateLimited", () => {
+  const ahora = 1_800_000_000_000;
+  const mensajes = (cantidad: number, offsetMs = 0): ChatEntry[] =>
+    Array.from({ length: cantidad }, (_, i) => ({
+      role: "user",
+      content: `m${i}`,
+      at: ahora - offsetMs,
+    }));
+
+  it("deja pasar una conversación normal", () => {
+    expect(rateLimited(mensajes(3), ahora)).toBe(false);
+  });
+
+  it("corta una ráfaga", () => {
+    expect(rateLimited(mensajes(RATE_LIMIT_MESSAGES), ahora)).toBe(true);
+  });
+
+  it("no cuenta lo que quedó fuera de la ventana", () => {
+    const viejos = mensajes(20, 10 * 60 * 1000);
+    expect(rateLimited(viejos, ahora)).toBe(false);
+  });
+
+  /**
+   * Las entradas anteriores a este cambio no tienen `at`. Preferible dejar pasar
+   * algunos mensajes de más durante la transición que bloquear a alguien por
+   * historial viejo que no se puede fechar.
+   */
+  it("ignora las entradas sin hora en vez de bloquear", () => {
+    const sinHora: ChatEntry[] = Array.from({ length: 30 }, () => ({ role: "user", content: "x" }));
+    expect(rateLimited(sinHora, ahora)).toBe(false);
+  });
+
+  it("no cuenta las respuestas del copiloto", () => {
+    const respuestas: ChatEntry[] = Array.from({ length: 20 }, () => ({
+      role: "assistant", content: "ok", at: ahora,
+    }));
+    expect(rateLimited(respuestas, ahora)).toBe(false);
+  });
+});
+
+describe("yaAvisadoDelLimite", () => {
+  it("reconoce que el último mensaje fue el aviso", () => {
+    expect(yaAvisadoDelLimite([{ role: "assistant", content: "pará", rate_notice: true }])).toBe(true);
+  });
+
+  it("no confunde una respuesta normal con el aviso", () => {
+    expect(yaAvisadoDelLimite([{ role: "assistant", content: "tenés 46.3 hs" }])).toBe(false);
+    expect(yaAvisadoDelLimite([])).toBe(false);
   });
 });
