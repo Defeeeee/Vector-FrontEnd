@@ -1818,6 +1818,93 @@ que están pendientes: hoy la app no puede borrar una cuenta.
 
 ---
 
+### 2026-08-06 13:30 UTC — Claude (Opus 5, vía Claude Code) — T1.3 cerrada, borrado de cuentas arreglado, y tres capas de caché tapando un rollout
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+#### T1.3 — cerrada, los cuatro pasos
+
+`profiles.cma_expiry` ya no existe. Pero **la columna no era descartable como decía
+el plan**: 8 de 10 perfiles tenían fechas reales, no el centinela `2100-12-31`.
+Antes de dropear se compararon una por una contra `documents`: las 8 estaban
+replicadas con el valor exacto, y los 2 centinelas eran de usuarios que nunca
+cargaron CMA. Si alguna no hubiera coincidido, el `DROP` borraba el vencimiento
+médico de un piloto sin dejar rastro.
+
+**Lección:** el plan decía "sacarlo del código y después DROP COLUMN" y le faltaban
+tres cosas que sólo se ven mirando el esquema y los datos: la columna era `NOT NULL`
+sin default, `handle_new_user()` la insertaba, y **tenía datos reales**.
+
+Cada paso se verificó con un alta de prueba envuelta en `RAISE` para forzar
+rollback — así ninguna prueba dejó nada escrito en producción.
+
+#### Borrado de cuentas — andaba roto y ahora funciona
+
+Migración `002`. `handle_deleted_user()` borraba por `user_id`, columna que
+`profiles` no tiene. Comprobado ejecutándolo: `42703 — column "user_id" does not
+exist`. Con el trigger activo sobre `auth.users`, **borrar un usuario fallaba
+entero**.
+
+Además pasó a `BEFORE DELETE` —para no depender del orden de disparo entre triggers
+internos de FK, ya que `auth.users` cascadea a `logbooks` y `flights.logbook_id` es
+`NO ACTION` a propósito— y `flight_packs` pasó a `CASCADE`, que era la única hija
+que no lo estaba.
+
+Probado end-to-end con rollback: usuario descartable con perfil, libro y pack;
+borrado; no quedó nada de nada.
+
+#### El rollout de T1.4: tres capas, cada una tapando a la siguiente
+
+Esto costó una hora y media y vale anotarlo entero, porque cada síntoma parecía
+otra cosa.
+
+1. **El mensaje mentía.** `if (!userRes.ok)` en el webhook trata **cualquier** error
+   como "tu número no está vinculado a ningún piloto". Un `401` de configuración se
+   disfrazaba de problema del usuario. Se perdió un buen rato buscando en la tabla
+   de perfiles un problema que estaba en el `.env`.
+
+2. **Turbopack, otra vez.** Con el código correcto en `main`, el `.env` correcto y
+   un `npm run build` exitoso, el bundle **seguía trayendo la constante vieja
+   compilada adentro**. `next build` sin borrar `.next` reusa caché. El build
+   "exitoso" tardaba 8.8 s, que para un build completo es sospechosamente poco.
+
+   > **`rm -rf .next` antes de buildear en el server.** Ya nos mordió con el CSS en
+   > agosto y volvió a morder con un valor compilado. El test decisivo es
+   > `grep -rl "<lo que no debería estar>" .next/` — el código fuente puede estar
+   > perfecto y el bundle no.
+
+3. **El valor en sí estaba mal.** Resueltas las dos anteriores, el front seguía
+   mandando la constante. Como el código nuevo no tiene fallback, sólo podía
+   significar una cosa: la variable de entorno **contenía literalmente** la
+   constante vieja, copiada como si fuera el valor.
+
+   Ese razonamiento —"el código no puede producir esto, entonces viene del
+   entorno"— fue lo que cerró el caso. Vale más que cualquier log.
+
+**Y un efecto colateral que quedó abierto:** el secreto viaja en query string, así
+que ahora que es el correcto **se escribe en texto plano en los logs de PM2 y de
+nginx en cada mensaje al bot**, junto con los teléfonos de los pilotos. Se cambió
+una exposición en un repo público por una en los logs del server. Falta moverlo a
+un header y sacar los `print(f"[DEBUG WHATSAPP] ... {phone}")` del backend.
+
+#### Lo que se encontró mirando el chatbot
+
+`log_flight` deja que el copiloto **escriba vuelos en la bitácora**, y las defensas
+que tiene el formulario web no existen del lado del bot:
+
+- La confirmación previa es **una instrucción en el prompt**, no un guard en código.
+- El dedupe (`processedMessageIds`) es un `Set` en memoria que se vacía en cada
+  reinicio — y el proceso lleva 119.
+- El desglose ANAC lo produce el modelo y **nadie valida que sume**. El
+  `TimeAllocator` no puede sobre-asignar; el bot sí, y también puede mandar todo
+  `null`.
+- `route` se guarda crudo, sin canonicalizar, así que el bot puede partir en dos un
+  aeródromo que el formulario acababa de unificar.
+- No manda `logbook_id`: todo cae en el libro por defecto.
+- Cero disclaimers, mientras sirve pistas y frecuencias de una tabla hecha a mano.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
