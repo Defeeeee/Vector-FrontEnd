@@ -13,11 +13,31 @@ estable (`T0.1`, `T2.3`…) para poder referenciarlas desde la bitácora.
 
 **Leyenda de esfuerzo:** XS < 1 h · S ≈ media jornada · M ≈ 1–2 jornadas · L > 2 jornadas.
 
-**Hechas:** `T4.2` · `T2.8` · `T3.10` · `T2.1` · `T2.2` · `T2.3` · `T2.4` · `T3.7` · `T3.8` ·
-`T4.1` · `T0.1` · `T0.2` · `T0.3` · `T0.6` · `T3.1` · `T3.3` · `T3.5` · `T3.6` · `T5.1`.
+**Hechas** (verificadas contra el código el 2026-08-05, no contra este documento):
+`T0.1` · `T0.2` · `T0.3` · `T0.6` · `T2.1` · `T2.2` · `T2.3` · `T2.4` · `T2.8` ·
+`T3.1` · `T3.3` · `T3.4` · `T3.5` · `T3.6` · `T3.7` · `T3.8` · `T3.9` · `T3.10` ·
+`T4.1` · `T4.2` · `T5.1` · `T5.3` · `T5.4`.
+
+**Cerradas sin trabajo:** `T3.2` (la tipografía se queda en Nunito) ·
+`T2.5`–`T2.7` (desestimadas por decisión de producto).
+
+**En PR, bloqueadas de tu lado:** `T1.4` — el arreglo está en las ramas
+`security/whatsapp-shared-secret` de los dos repos, pero **no se mergean** hasta
+que `WHATSAPP_WEBHOOK_SECRET` y `KAPSO_WEBHOOK_SECRET` estén seteadas en prod, o
+el bot deja de responder.
+
+**A medio camino:** `T1.3` — el paso 1 (`DROP NOT NULL`) está aplicado y el paso 2
+(sacarlo del código) está en PR. Los pasos 3 y 4 van **después de desplegar**.
+
+**Pendientes, y ninguna es código:** `T1.1` (falta `DOCUMENTS_ALERT_SECRET` y la
+entrada de cron) · `T1.2` (correr la auditoría una vez con Reanalizar) · `T5.2`
+(activar protección de contraseñas filtradas en el panel de Supabase).
+
 **Parcial:** `T0.4` — el scroller de la matriz ANAC se verificó constriñendo la card
-a 358 px (scrollea sola, la página no desborda), pero **las media queries no se
-pudieron probar**: la ventana de Chrome del entorno no baja de ~1514 px.
+a 358 px (scrollea sola, la página no desborda), pero **las media queries siguen sin
+probarse**. Reintentado el 2026-08-05 con `resize_window` a 390 px: la ventana
+cambia de tamaño pero `window.innerWidth` sigue dando 1710, así que el viewport
+angosto no se alcanza desde acá. Hace falta un dispositivo o un navegador real.
 **Sin probar:** `T0.5` — con los datos reales de Federico ningún período queda
 vacío, así que el empty state no se alcanza desde la UI.
 
