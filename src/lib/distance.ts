@@ -49,3 +49,39 @@ export function legDistanceNm(origin: Located | null, destination: Located | nul
   }
   return distanceNm(origin.lat, origin.lon, destination.lat, destination.lon);
 }
+
+/**
+ * Millas estimadas de un vuelo local, donde no hay distancia entre aeródromos
+ * que medir.
+ *
+ * Un circuito sale y vuelve al mismo campo, así que su distancia por gran
+ * círculo es cero — cierto como "distancia entre aeródromos" y falso como
+ * "millas que voló el piloto". Esto llena ese hueco, y sólo ese.
+ *
+ * **El tiempo que se carga en el libro es motor encendido a motor apagado**, que
+ * es lo que pide ANAC. Incluye rodaje y prueba de motor, así que hay que
+ * descontarlos antes de multiplicar por una velocidad.
+ *
+ * Los 90 kt son deliberadamente una constante y no la velocidad de crucero de
+ * cada avión: un Harmony crucea ~100 kt pero el circuito se vuela a 70-80, y los
+ * vuelos locales son mayormente circuitos. Usar el crucero sobreestimaría justo
+ * donde se aplica. Si algún día se hace por avión, el campo tiene que ser
+ * velocidad de circuito, no de crucero.
+ *
+ * Distancia = velocidad × tiempo vale aunque el track sea todo virajes: lo que
+ * se estima es distancia recorrida por el aire, no sobre el terreno.
+ */
+export const TAXI_ALLOWANCE_H = 0.3;
+export const CIRCUIT_SPEED_KT = 90;
+
+/**
+ * Por debajo de este total no se estima nada. Un vuelo de 0.5 h quedaría con
+ * 0.2 h de aire —60% rodaje— y el número no diría nada útil.
+ */
+export const MIN_ESTIMABLE_H = 0.4;
+
+export function estimatedLocalNm(durationHours: number): number {
+  if (!Number.isFinite(durationHours) || durationHours < MIN_ESTIMABLE_H) return 0;
+  const airborne = Math.max(0, durationHours - TAXI_ALLOWANCE_H);
+  return Math.round(airborne * CIRCUIT_SPEED_KT);
+}

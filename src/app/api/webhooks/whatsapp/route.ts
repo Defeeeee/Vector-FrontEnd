@@ -624,8 +624,8 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
    - date: Fecha (YYYY-MM-DD).
    - route: Ruta (ej: SADF - SADR).
    - duration: Horas de duración (ej: 1.5). Calcula o valida la duración SIEMPRE usando la conversión de minutos a decimales aeronáuticos que se detalla abajo.
-   - takeoff: Hora despegue (HH:MM).
-   - landing: Hora aterrizaje (HH:MM).
+   - takeoff: Hora de salida, motor encendido (HH:MM). Es lo que pide ANAC, no la hora de rueda arriba.
+   - landing: Hora de llegada, motor apagado (HH:MM).
    - landings: Aterrizajes (número entero, por defecto pídelo o pon 1 si está implícito).
    - purpose: Finalidad del vuelo (debe ser un código corto como VP para Vuelo Privado, ENT para Entrenamiento, EXA para Examen, INST para Instrucción, etc. Si el piloto no lo indica, PREGÚNTALE siempre primero).
 3. CONFIRMACIÓN: llamar a 'log_flight' NO registra el vuelo. Deja una propuesta pendiente, y el sistema —no vos— le muestra al piloto el resumen exacto de lo que se va a escribir y le pide que confirme. El vuelo se escribe recién cuando el piloto responde que sí, y se escribe la propuesta tal cual quedó.
@@ -689,8 +689,8 @@ ${flightContext}`;
                   date: { type: SchemaType.STRING, description: "Fecha del vuelo en formato YYYY-MM-DD" },
                   route: { type: SchemaType.STRING, description: "Ruta del vuelo (ej. SADF - SADR)" },
                   duration: { type: SchemaType.NUMBER, description: "Duración total del vuelo en horas decimales (ej. 1.2)" },
-                  takeoff: { type: SchemaType.STRING, description: "Hora de despegue en formato de 24 hs (HH:MM)" },
-                  landing: { type: SchemaType.STRING, description: "Hora de aterrizaje en formato de 24 hs (HH:MM)" },
+                  takeoff: { type: SchemaType.STRING, description: "Hora de salida (motor encendido) en formato de 24 hs (HH:MM)" },
+                  landing: { type: SchemaType.STRING, description: "Hora de llegada (motor apagado) en formato de 24 hs (HH:MM)" },
                   landings: { type: SchemaType.INTEGER, description: "Cantidad de aterrizajes realizados" },
                   purpose: { type: SchemaType.STRING, description: "Código de finalidad del vuelo (ej. VP, ENT, EXA, INST, ACR, etc.)" },
                   logbook_name: { type: SchemaType.STRING, description: "Nombre del libro de vuelo donde registrarlo. Omitir si el piloto no lo menciona: se usa el libro por defecto." },

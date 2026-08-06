@@ -3,7 +3,7 @@ import { Flight, Aircraft, Logbook } from "@/types";
 // Vive en lib/route.ts. Se reexporta para no tocar a todos los que la
 // importan desde acá desde antes de unificarla.
 export { splitRoute } from "./route";
-import { legDistanceNm } from "./distance";
+import { estimatedLocalNm, legDistanceNm } from "./distance";
 import { splitRoute } from "./route";
 
 /**
@@ -381,12 +381,23 @@ type Coords = Record<string, { lat?: number; lon?: number }>;
  */
 export function distanceTotals(flights: Flight[], coords: Coords) {
   let totalNm = 0;
+  let estimadasNm = 0;
   let sinPosicion = 0;
   let masLargo = 0;
 
   for (const f of flights) {
     const [origin, destination] = splitRoute(f.route);
-    if (!origin || !destination) continue;
+    if (!origin) continue;
+
+    // Un vuelo local —mismo campo en los dos extremos, o un solo código— no
+    // tiene distancia entre aeródromos que medir. Se estima aparte y **nunca**
+    // se suma al total medido: mezclarlos daría un número mitad real y mitad
+    // inventado sin que se note.
+    if (!destination || destination === origin) {
+      estimadasNm += estimatedLocalNm(f.duration ?? 0);
+      continue;
+    }
+
     const nm = legDistanceNm(coords[origin] ?? null, coords[destination] ?? null);
     if (nm === null) {
       sinPosicion++;
@@ -396,5 +407,5 @@ export function distanceTotals(flights: Flight[], coords: Coords) {
     if (nm > masLargo) masLargo = nm;
   }
 
-  return { totalNm, masLargo, sinPosicion };
+  return { totalNm, estimadasNm, masLargo, sinPosicion };
 }
