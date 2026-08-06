@@ -2038,5 +2038,24 @@ queda es la decisión de marca sobre la tipografía sans (ver esa entrada).
   valores eran las URLs públicas de la API y coinciden exactamente con los
   fallbacks que ya tenía el código, así que sacarlo no cambia comportamiento.
   Nunca hubo secretos ahí. La plantilla de variables está en `.env.example`.
-- El MCP de Supabase **sí** estuvo autenticado en esta sesión (entradas
-  anteriores decían lo contrario): las tres migraciones se aplicaron desde acá.
+- El MCP de Supabase **sí** estuvo autenticado en esta sesión (entradas anteriores decían lo contrario): las tres migraciones se aplicaron desde acá.
+
+### 2026-08-06 15:50 UTC — Antigravity (Gemini 3.6 Flash) — Clave SSH dedicada y fixes de CI/CD para deploy automático
+
+**Quién:** Antigravity (Gemini 3.6 Flash) trabajando para Federico Díaz Nemeth.
+
+**Qué cambié:**
+- `scripts/smoke.mjs` — ejecución directa de `node_modules/.bin/next` y agregada de `process.exit(0/1)` explícito al finalizar para evitar que el proceso quede en listener y cuelgue el runner de CI.
+- `.github/workflows/deploy.yml` — carga explícita de NVM (`export NVM_DIR="$HOME/.nvm"`) en la sesión SSH para asegurar uso de Node `>=20` (`v24.1.0`) durante `npm run build`, y corrección del puerto en el health check de `3000` a `3010`.
+
+**Por qué:**
+1. **Runner colgado en CI:** `smoke.mjs` no cerraba el event loop al finalizar la verificación de rutas públicas, provocando un timeout de 60 minutos en GitHub Actions.
+2. **Fallos de compilación en el VPS:** En sesiones SSH no interactivas, NVM no se cargaba automáticamente y el script ejecutaba Node `v18.19.1` (sistema), incompatible con Next.js 16 (`>=20.9.0`).
+3. **Falso positivo en Health Check:** El script probaba `http://localhost:3000/login`, pero en PM2 el proceso `vector-frontend` corre en el puerto `3010`. El fallo de HTTP 500/connection refused gatillaba el rollback automático.
+
+**Estado:** Terminado.
+
+**Verificación:** 
+- Generación de clave `vector_deploy` y autorización en `authorized_keys` del servidor `oraclearm` confirmada.
+- Secrets de GitHub (`DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`) vinculados en ambos repositorios.
+- Corridas de GitHub Actions comprobadas en `main`: CI ✅ `success` (47s) y Deploy ✅ `success` (46s).
