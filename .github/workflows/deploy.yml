@@ -23,6 +23,9 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
             cd ~/Vector-FrontEnd
 
             ANTERIOR=$(git rev-parse HEAD)
