@@ -2003,6 +2003,79 @@ recupere conviene relanzar.
 
 ---
 
+### 2026-08-06 22:30 UTC — Claude (Opus 5, vía Claude Code) — Plan 07 cerrado y Vector 2.6.0
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+Cierra el plan `07-higiene-y-travesia.md`. Hechas: `H1.1` (pasos 1 y 2), `H1.2`,
+`H1.3`, `H1.4`, `C1`, `D1`, `F1`, `V1`.
+
+#### H1.4 — retención, 90 días
+
+`pg_cron` estaba disponible pero no instalada. Queda instalada, con un job diario
+a las 04:00 UTC. **Los 90 días son el número que va en la política de privacidad**;
+si se cambia en la migración hay que cambiarlo allá.
+
+Probado con filas de 200, 91 y 89 días: borró las dos primeras, respetó la
+tercera, todo con rollback.
+
+#### D1 — exportar los datos
+
+Sale **por la sesión del piloto y no con service role**, así lo que se exporta es
+exactamente lo que ese usuario puede ver. Si mañana cambia una policy de RLS, la
+exportación cambia sola.
+
+Dos cortes aparecieron **al probarlo, no al escribirlo**:
+
+- Sin sesión devolvía `200` con un archivo vacío. La comprobación estaba delegada
+  al backend; con el backend caído, todas las llamadas fallaban por red y la ruta
+  entregaba el archivo sin haber comprobado nunca quién preguntaba.
+- Si no se puede traer nada, ahora `502`. Un JSON de dos líneas que el piloto se
+  lleva creyendo que eso es todo lo que Vector tiene suyo es peor que un error.
+
+#### F1 — la distancia se muestra, no decide
+
+El plan decía "el toggle deja de adivinar". **Al implementarlo decidí no hacerlo.**
+Cuál es la distancia a partir de la cual un vuelo deja de ser local es una
+pregunta regulatoria, y un número inventado reclasificaría en silencio los buckets
+ANAC de vuelos ya cargados. El piloto ve la distancia y decide.
+
+Dos decisiones sobre datos faltantes que conviene no revertir: `legDistanceNm`
+devuelve **null y no cero** —un cero se confunde con un circuito local, que es
+justo lo que esto distingue— y `distanceTotals` **no estima** los tramos sin
+posición, devuelve cuántos quedaron afuera.
+
+#### Lo que me volvió a morder
+
+**Borré `.next` con el dev server corriendo. Dos veces el mismo día.** Rompe el
+caché de Turbopack y todo empieza a devolver 500, incluidas rutas que no tienen
+nada que ver. La segunda vez casi reporto como bug de mi propia ruta lo que era
+mi dev server roto.
+
+> Para limpiar el caché en desarrollo: **parar el server, borrar `.next`,
+> levantarlo**. En ese orden. En el deploy no aplica porque ahí no hay server
+> corriendo sobre el directorio.
+
+#### Queda pendiente, a propósito
+
+- **`H1.1` paso 3** — sacarle al backend el soporte de query string. Espera unos
+  días de confirmar en los logs que no queda ninguna llamada vieja. Comprobación:
+  `pm2 flush` y después `grep -cE "whatsapp/(user-data|chat-history)\?"`, que
+  tiene que dar 0 con mensajes nuevos de por medio.
+- **`T1`** — el smoke autenticado. Bloqueado hasta que exista la cuenta de
+  prueba, que **la crea Federico**: crear cuentas y manejar contraseñas queda
+  fuera de lo que hace el agente, aun con autorización explícita. El script lee
+  `SMOKE_EMAIL` y `SMOKE_PASSWORD` de los secrets.
+
+#### Un incidente para no repetir
+
+Durante H1.1 **el secreto real apareció en un log que se pegó en el chat** para
+diagnosticar otra cosa, y hubo que rotarlo. Es exactamente lo que la tarea venía a
+evitar: mientras un secreto viaje en una query string, se copia sin querer. Si
+alguna vez se discute si vale la pena moverlo, esto es la respuesta.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
