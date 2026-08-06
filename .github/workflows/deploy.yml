@@ -47,7 +47,7 @@ jobs:
             pm2 restart vector-frontend --update-env
 
             for i in $(seq 1 20); do
-              if curl -fsS -o /dev/null http://localhost:3000/login; then
+              if curl -fsS -o /dev/null http://localhost:3010/login; then
                 echo "Health OK tras ${i}s"
                 exit 0
               fi
