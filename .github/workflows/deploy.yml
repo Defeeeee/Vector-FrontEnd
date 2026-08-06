@@ -23,9 +23,11 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            # El puerto en el que escucha el front en este server. Si no es
-            # 3000, definí la variable FRONTEND_PORT en el repo.
-            APP_PORT="${{ vars.FRONTEND_PORT || '3000' }}"
+            # PM2 arranca este proceso con `start -- -p 3010`, y en este server
+            # hay cinco Next escuchando en 3000..3003 y 3010. La variable existe
+            # para poder moverlo sin tocar el workflow, pero el default es el
+            # puerto real, no uno teórico.
+            APP_PORT="${{ vars.FRONTEND_PORT || '3010' }}"
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
