@@ -15,14 +15,58 @@ export interface ChatEntry {
   id?: string;
   /** A flight the pilot has been shown and has not confirmed yet. */
   pending_flight?: Record<string, any>;
-  /** ms epoch, for expiring a stale proposal. */
+  /** ms epoch. En una entrada del piloto marca cuándo llegó el mensaje, y es lo
+   *  que hace medible el límite por número; en una propuesta, cuándo se creó. */
   at?: number;
+  /** Marca el aviso de "frenaste demasiado rápido", para no repetirlo. */
+  rate_notice?: boolean;
 }
 
 export const alreadyHandled = (history: ChatEntry[], messageId: string): boolean =>
   Boolean(messageId) && history.some((h) => h.id === messageId);
 
 /** How long a flight waiting for confirmation stays valid. */
+/**
+ * Límite por número de teléfono.
+ *
+ * El webhook es una URL pública y cada mensaje dispara una llamada a Gemini que
+ * paga el dueño de la cuenta. Sin esto, cualquiera que la encuentre puede vaciar
+ * la cuota; que el código ya tuviera manejo específico de errores de cuota
+ * sugiere que pasó al menos una vez sin que nadie atacara.
+ *
+ * Ocho mensajes en tres minutos es holgado para una persona —una conversación
+ * normal con el copiloto son dos o tres— y corta una ráfaga automatizada.
+ *
+ * Se mide sobre el historial que ya se guarda, así que no hace falta
+ * almacenamiento nuevo. El backend lo recorta a 20 entradas, lo que acota la
+ * ventana observable: en la práctica el límite corto se ve entero y un tope
+ * diario no se podría calcular con lo que hay. Queda anotado como límite de este
+ * enfoque, no como olvido.
+ */
+export const RATE_LIMIT_MESSAGES = 8;
+export const RATE_LIMIT_WINDOW_MS = 3 * 60 * 1000;
+
+/**
+ * True cuando el número ya superó el límite en la ventana.
+ *
+ * Sólo cuentan las entradas del piloto que llevan `at`. Las anteriores a este
+ * cambio no lo tienen y no se cuentan: preferible dejar pasar unos mensajes de
+ * más durante la transición que bloquear a alguien por historial viejo.
+ */
+export function rateLimited(history: ChatEntry[], now: number = Date.now()): boolean {
+  const desde = now - RATE_LIMIT_WINDOW_MS;
+  const recientes = history.filter(
+    (h) => h.role === "user" && typeof h.at === "number" && h.at >= desde
+  );
+  return recientes.length >= RATE_LIMIT_MESSAGES;
+}
+
+/** Evita contestar el aviso de límite una y otra vez: sólo la primera vez. */
+export function yaAvisadoDelLimite(history: ChatEntry[]): boolean {
+  const ultima = history[history.length - 1];
+  return Boolean(ultima?.rate_notice);
+}
+
 export const PENDING_FLIGHT_TTL_MS = 30 * 60 * 1000;
 
 export function pendingFlight(history: ChatEntry[]): Record<string, any> | null {
