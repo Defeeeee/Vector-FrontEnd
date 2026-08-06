@@ -1905,6 +1905,104 @@ que tiene el formulario web no existen del lado del bot:
 
 ---
 
+### 2026-08-06 19:00 UTC — Claude (Opus 5, vía Claude Code) — Plan 07: higiene de WhatsApp, `splitRoute` y rate limiting
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Qué se cerró:** el plan `07-higiene-y-travesia.md`, C1, H1.2, H1.3 y los dos
+primeros pasos de H1.1.
+
+---
+
+#### La lección más cara del día: el secreto en la URL se filtra solo
+
+H1.1 mueve el secreto de la query string a una cabecera. Mientras se hacía, pasó
+exactamente lo que la tarea venía a evitar: **Federico pegó un log en el chat para
+diagnosticar otra cosa, y el log traía el secreto real en la URL.** Hubo que
+rotarlo.
+
+Nadie hizo nada mal. El secreto estaba en un lugar donde se copia sin querer, que
+es el argumento entero de la tarea. Si alguna vez se discute si vale la pena mover
+un secreto fuera de una query string, esto es la respuesta.
+
+**Y el teléfono viajaba igual.** Sacar los `print` del backend no alcanzaba: el
+access log de uvicorn registra la URL entera. Después de limpiar los prints, el
+número completo **seguía apareciendo dos veces** en el log. Por eso el teléfono se
+movió a `X-Vector-Phone` en la misma tanda.
+
+#### H1.1 en tres pasos, y por qué
+
+1. **Backend acepta header y query.** Desplegado y verificado desde afuera **sin
+   el secreto**: una llamada sin ningún parámetro devuelve `401` y no el `400` que
+   devolvía cuando `secret` era obligatorio. Ese contraste es la prueba de que el
+   código nuevo está vivo, y no hace falta credencial para medirlo.
+2. **El front manda cabeceras.** Desplegado.
+3. **El backend deja de aceptar query string.** *Pendiente*, a propósito: va
+   después de días de confirmar en los logs que no queda ninguna llamada vieja.
+
+#### Migré seis de siete llamadas y verifiqué con el patrón equivocado
+
+De las siete llamadas al backend, quedó una sin migrar — el guardado del historial
+al final del turno, el camino más frecuente de todos.
+
+Lo peor no fue el olvido sino la verificación: corrí `grep -c "secret=\${secret}"`,
+que por un problema de escape en la shell no matcheó nada, y **reporté "0
+ocurrencias"**. Lo encontró Federico mirando que el contador del server subía.
+
+> **Verificar con el patrón equivocado es lo mismo que no verificar, pero peor,
+> porque deja a todos tranquilos.** Para esto, la comprobación que sirve es sobre
+> el patrón de la URL y no sobre la interpolación:
+>
+>     grep -rn 'whatsapp/user-data?\|whatsapp/chat-history?' src/
+
+Y para saber si un log tiene líneas nuevas o viejas, `pm2 flush` y volver a medir
+desde cero: contar sobre un buffer que ya tenía coincidencias no distingue una
+cosa de la otra, y `pm2 logs` arma la ventana distinto en cada invocación.
+
+#### C1 — `splitRoute` estaba escrita cinco veces
+
+Ninguna estaba mal; se leyeron las cinco antes de tocarlas. Difieren en el borde
+—`"???"`, `""`, repetir el origen— y el riesgo era la deriva.
+
+**Casi meto una regresión al unificarlas.** La primera versión repetía el origen
+cuando la ruta trae un solo código, copiando lo que hace el formulario. Eso habría
+hecho que las agregaciones contaran ese aeródromo **dos veces** y que un circuito
+local figurara como travesía consigo mismo. Repetir el origen es propio del
+formulario, y quedó en su call site.
+
+#### H1.3 — el webhook no tenía ningún límite
+
+`grep -ci "ratelimit|throttle"` daba **0**. URL pública, y cada mensaje una llamada
+a Gemini que paga Federico. Ocho mensajes en tres minutos, medidos sobre el
+historial que ya se guardaba.
+
+El aviso se manda **una sola vez**: contestar cada mensaje de una ráfaga es gastar
+llamadas a Kapso para pelearle a quien la está mandando.
+
+#### Estado
+
+| | |
+|---|---|
+| H1.1 pasos 1 y 2 · H1.2 | desplegado y verificado |
+| C1 | mergeado |
+| H1.3 | en PR |
+| H1.1 paso 3 | esperando unos días a propósito |
+| H1.4 · F1 · D1 | pendientes |
+| T1 | esperando la cuenta de prueba de Federico |
+
+**Retención decidida por Federico: 90 días** (H1.4).
+
+**La cuenta de prueba la crea Federico**, no el agente: crear cuentas y manejar
+contraseñas queda fuera de lo que hace Claude, aun con autorización. El smoke
+autenticado se escribe leyendo `SMOKE_EMAIL` y `SMOKE_PASSWORD` de los secrets.
+
+**GitHub Actions estuvo en `major_outage` gran parte del día** (incidente
+`critical` abierto 15:22 UTC). Durante la caída los push **no generaban corridas**,
+así que varias PRs se mergearon sin CI y los deploys se hicieron a mano. Cuando se
+recupere conviene relanzar.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
