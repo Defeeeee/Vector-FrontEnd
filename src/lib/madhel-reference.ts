@@ -124,3 +124,32 @@ export function controlledFallback(code: string) {
   const clean = (code ?? "").trim().toUpperCase();
   return CONTROLLED_FALLBACKS[getAirport(clean)?.icao ?? clean];
 }
+
+/**
+ * Normaliza la ruta que escribe un piloto —o que devuelve un modelo— a los
+ * códigos canónicos del directorio.
+ *
+ * "gez - srdr", "GEZ SRDR" y "General Rodríguez" no pueden terminar como tres
+ * aeródromos distintos en la bitácora. El formulario web ya canonicaliza; sin
+ * esto el copiloto entra por la ventana y parte en dos el historial de un campo.
+ *
+ * Lo que no resuelve se deja tal cual, en mayúsculas: es preferible guardar un
+ * código raro a inventar uno.
+ */
+export function canonicalRoute(raw: string): string {
+  const original = (raw ?? "").trim();
+  const tokens = original.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+
+  // Sólo se toca lo que tiene forma de código. Un split ciego sobre
+  // "General Rodríguez" parte la Í y devuelve "GENERAL RODR GUEZ" — peor que
+  // no haber hecho nada. Si no parece una ruta de códigos, se deja como vino.
+  const looksLikeCodes =
+    tokens.length > 0 && tokens.length <= 2 && tokens.every((t) => t.length >= 3 && t.length <= 4);
+  if (!looksLikeCodes) return original;
+
+  // Se normaliza también el separador: el formulario web siempre guarda
+  // "ORIGEN DESTINO" con un espacio, y "SADF-SADM" convivía como una tercera
+  // forma de escribir la misma ruta. Los códigos que no resuelven se dejan tal
+  // cual — es preferible guardar uno raro a inventar uno.
+  return tokens.map((code) => getAirport(code)?.icao ?? code).join(" ");
+}

@@ -3,7 +3,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { timingSafeEqual } from "crypto";
-import { anacIndicator, controlledFallback } from "@/lib/madhel-reference";
+import { anacIndicator, canonicalRoute, controlledFallback } from "@/lib/madhel-reference";
 
 // Compares the caller-supplied secret against the configured one without leaking timing info,
 // and without throwing when lengths differ (timingSafeEqual requires equal-length buffers).
@@ -16,8 +16,163 @@ function secretsMatch(provided: string, expected: string): boolean {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// Memory cache to keep track of processed message IDs and prevent duplicate replies due to WhatsApp/Kapso retries
+/**
+ * Fast path for retries that arrive while this process is still alive.
+ *
+ * It is only a fast path: the set empties on every restart, and this process has
+ * been restarted well over a hundred times. The durable check lives in
+ * `alreadyHandled`, against the stored chat history — without it, a Kapso retry
+ * that lands just after a deploy logs the pilot's flight twice.
+ */
 const processedMessageIds = new Set<string>();
+
+interface ChatEntry {
+  role: string;
+  content?: string;
+  /** WhatsApp message id, stored so a retry can be recognised across restarts. */
+  id?: string;
+  /** A flight the pilot has been shown and has not confirmed yet. */
+  pending_flight?: Record<string, any>;
+  /** ms epoch, for expiring a stale proposal. */
+  at?: number;
+}
+
+const alreadyHandled = (history: ChatEntry[], messageId: string): boolean =>
+  Boolean(messageId) && history.some((h) => h.id === messageId);
+
+/** How long a flight waiting for confirmation stays valid. */
+const PENDING_FLIGHT_TTL_MS = 30 * 60 * 1000;
+
+function pendingFlight(history: ChatEntry[]): Record<string, any> | null {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entry = history[i];
+    if (!entry?.pending_flight) continue;
+    if (entry.at && Date.now() - entry.at > PENDING_FLIGHT_TTL_MS) return null;
+    return entry.pending_flight;
+  }
+  return null;
+}
+
+const AFFIRMATIONS = new Set([
+  "ok", "oka", "okay", "si", "sí", "sip", "dale", "confirmar", "confirmo", "correcto",
+  "va", "vale", "listo", "go", "perfecto", "exacto", "afirmativo", "yes", "y",
+]);
+
+/** Deliberately strict: anything that is not a clear yes cancels the proposal. */
+function isAffirmation(text: string): boolean {
+  const clean = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s]/g, "")
+    .trim();
+  if (!clean) return false;
+  const words = clean.split(/\s+/);
+  return words.length <= 2 && words.every((w) => AFFIRMATIONS.has(w));
+}
+
+/**
+ * The ANAC buckets a flight's time is split into, and the ceiling they share.
+ *
+ * IMC, capota and simulator deliberately are not summed: they overlap flight
+ * time rather than partition it — the same rule `openingTotals` follows in
+ * src/lib/summary.ts.
+ */
+const PIC_SIC_KEYS = [
+  "pic_day_loc", "pic_day_tra", "pic_night_loc", "pic_night_tra",
+  "sic_day_loc", "sic_day_tra", "sic_night_loc", "sic_night_tra",
+] as const;
+
+/**
+ * Rejects a breakdown that claims more hours than the flight lasted.
+ *
+ * The web form cannot produce one — `TimeAllocator` caps every field against
+ * what is left. The copilot has no such floor: the numbers come out of a
+ * language model, so they get checked here instead of being written to a
+ * regulatory record on trust.
+ */
+function breakdownError(args: Record<string, any>, duration: number): string | null {
+  const assigned = PIC_SIC_KEYS.reduce((sum, k) => sum + (Number(args[k]) || 0), 0);
+  // A hundredth of an hour of slack, for decimals that do not divide cleanly.
+  if (assigned > duration + 0.01) {
+    return `El desglose asigna ${assigned.toFixed(1)} h a PIC/SIC pero el vuelo dura ${duration.toFixed(1)} h.`;
+  }
+  return null;
+}
+
+/** Lo que el piloto ve antes de confirmar. Se arma en código, no en el modelo:
+ *  tiene que describir exactamente lo que se va a escribir. */
+function proposalSummary(p: Record<string, any>, aircraftLabel: string, logbookLabel?: string): string {
+  const lines = [
+    "✈️ *Vuelo a registrar*",
+    "",
+    `*Aeronave:* ${aircraftLabel}`,
+    `*Fecha:* ${p.date}`,
+    `*Ruta:* ${p.route}`,
+    `*Despegue:* ${p.takeoff}  ·  *Aterrizaje:* ${p.landing}`,
+    `*Duración:* ${p.duration} h`,
+    `*Aterrizajes:* ${p.landings}`,
+    `*Finalidad:* ${p.purpose}`,
+  ];
+
+  if (logbookLabel) lines.push(`*Libro:* ${logbookLabel}`);
+
+  const desglose = PIC_SIC_KEYS.filter((k) => Number(p[k]) > 0).map((k) => `${k}: ${p[k]}`);
+  if (desglose.length) lines.push(`*Desglose:* ${desglose.join(" · ")}`);
+  else lines.push("*Desglose:* sin asignar");
+
+  lines.push("", "Respondé *SÍ* para registrarlo, o corregime lo que esté mal.");
+  return lines.join("\n");
+}
+
+/**
+ * Escribe el vuelo que el piloto confirmó.
+ *
+ * La ruta se canonicaliza acá y no antes: es el último punto por el que pasa
+ * antes de la base, igual que hace el formulario web. Sin esto el copiloto
+ * puede guardar "gez" mientras la web guarda "SRDR", y el mismo aeródromo
+ * aparece dos veces en el historial del piloto.
+ */
+async function writeProposedFlight(
+  p: Record<string, any>,
+  apiKey: string,
+  apiUrl: string
+): Promise<{ ok: boolean; message: string }> {
+  const takeoffDt = new Date(`${p.date}T${p.takeoff}:00Z`).toISOString().split(".")[0] + "Z";
+  const landingDt = new Date(`${p.date}T${p.landing}:00Z`).toISOString().split(".")[0] + "Z";
+
+  const body: Record<string, any> = {
+    aircraft_id: p.aircraft_id,
+    date: p.date,
+    route: canonicalRoute(p.route),
+    landings: p.landings,
+    duration: p.duration,
+    takeoff: takeoffDt,
+    landing: landingDt,
+    purpose: p.purpose,
+    "IMC Pil": p.imc_pil || null,
+    "IMC Cop": p.imc_cop || null,
+    Capota: p.capota || null,
+    "Sim Instructor": p.sim_instructor || null,
+    "Sim Pil en Inst": p.sim_pil_en_inst || null,
+    discount_type: p.discount_type || null,
+    discount_amount: p.discount_amount || null,
+  };
+  for (const k of PIC_SIC_KEYS) body[k] = p[k] || null;
+  if (p.logbook_id) body.logbook_id = p.logbook_id;
+
+  const res = await fetch(`${apiUrl}/flights`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    return { ok: false, message: `❌ No se pudo registrar el vuelo: ${err.detail || "error del servidor"}` };
+  }
+  return { ok: true, message: `✅ Vuelo registrado: ${body.route} · ${p.duration} h · ${p.date}` };
+}
 
 function formatForWhatsApp(text: string): string {
   let formatted = text;
@@ -465,13 +620,23 @@ export async function POST(req: NextRequest) {
     const balance = userData.balance || 0;
     const session = userData.session || { active: false };
     const documents = userData.documents || [];
+    const logbooks = userData.logbooks || [];
 
     // Fetch chat history from Python backend
     const historyRes = await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`);
-    let history: any[] = [];
+    let history: ChatEntry[] = [];
     if (historyRes.ok) {
       const histData = await historyRes.json();
       history = histData.history || [];
+    }
+
+    // Durable de-duplication. The in-memory set above catches retries within the
+    // life of this process; this catches the ones that arrive after a restart,
+    // which is when it matters — a retried webhook re-runs the whole turn, and if
+    // that turn was a confirmed `log_flight` the pilot gets the flight twice.
+    if (alreadyHandled(history, messageId)) {
+      console.log(`Duplicate delivery for message ${messageId} found in stored history. Ignoring.`);
+      return NextResponse.json({ success: true, message: "Duplicate message ignored" });
     }
 
     // Check for history clearing commands
@@ -488,6 +653,39 @@ export async function POST(req: NextRequest) {
         payloadPhoneNumberId
       );
       return NextResponse.json({ success: true });
+    }
+
+    // ---------------------------------------------------------------------
+    // Confirmación de un vuelo propuesto.
+    //
+    // Corre ANTES del modelo y a propósito: si dependiera de que el modelo
+    // vuelva a llamar a `log_flight` al leer "ok", un turno en que decida
+    // contestar "listo!" sin llamar a nada dejaría al piloto creyendo que su
+    // vuelo quedó registrado cuando no se escribió nada.
+    //
+    // Se escribe la propuesta guardada, no lo que el modelo reconstruya ahora:
+    // lo que se guarda tiene que ser exactamente lo que el piloto vio.
+    // ---------------------------------------------------------------------
+    const proposed = pendingFlight(history);
+    if (proposed) {
+      if (isAffirmation(messageText)) {
+        const written = await writeProposedFlight(proposed, userApiKey, API_URL);
+        const historyAfter: ChatEntry[] = [
+          ...history.filter((h) => !h.pending_flight),
+          { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId },
+          { role: "assistant", content: written.message },
+        ];
+        await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ history: historyAfter }),
+        });
+        await sendWhatsAppMessage(fromNumber, formatForWhatsApp(written.message), payloadPhoneNumberId);
+        return NextResponse.json({ success: true });
+      }
+      // Cualquier otra cosa cancela la propuesta: si el piloto corrige un dato,
+      // el turno siguiente arma una nueva. Nunca se arrastra una vieja.
+      history = history.filter((h) => !h.pending_flight);
     }
 
     const flightContext = buildFlightContext(
@@ -529,10 +727,10 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
    - landing: Hora aterrizaje (HH:MM).
    - landings: Aterrizajes (número entero, por defecto pídelo o pon 1 si está implícito).
    - purpose: Finalidad del vuelo (debe ser un código corto como VP para Vuelo Privado, ENT para Entrenamiento, EXA para Examen, INST para Instrucción, etc. Si el piloto no lo indica, PREGÚNTALE siempre primero).
-3. PASO DE CONFIRMACIÓN OBLIGATORIO: Cuando el usuario te pida registrar un nuevo vuelo (ya sea describiéndolo por texto o mediante una nota de voz), NO debes llamar a la función 'log_flight' inmediatamente.
-   - Primero, debes redactar un resumen formateado de todos los datos que vas a registrar (aeronave, fecha, ruta, despegue/aterrizaje, duración calculada, aterrizajes y finalidad) y preguntarle explícitamente al usuario: "¿Está todo correcto? Por favor responde 'Ok', 'Sí' o 'Confirmar' para registrar el vuelo."
-   - Únicamente si el usuario responde en el mensaje inmediatamente siguiente con una afirmación (como "ok", "sí", "confirmar", "dale", "correcto", "go"), debes proceder a llamar a la función 'log_flight' con los parámetros correspondientes.
-   - Si el usuario te corrige algún dato, genera un nuevo resumen corregido y vuelve a pedir la confirmación.
+3. CONFIRMACIÓN: llamar a 'log_flight' NO registra el vuelo. Deja una propuesta pendiente, y el sistema —no vos— le muestra al piloto el resumen exacto de lo que se va a escribir y le pide que confirme. El vuelo se escribe recién cuando el piloto responde que sí, y se escribe la propuesta tal cual quedó.
+   - Por eso no hace falta que redactes vos el resumen ni que pidas la confirmación: llamá a 'log_flight' con los datos completos y el sistema se encarga.
+   - Si el piloto corrige un dato, volvé a llamar a 'log_flight' con los datos corregidos: la propuesta anterior se descarta sola.
+   - El desglose PIC/SIC no puede sumar más que la duración del vuelo. Si lo intentás, la herramienta te lo rechaza con el detalle.
 4. Si el usuario te pide editar ('update_flight') o eliminar ('delete_flight') un vuelo, busca el UUID de ese vuelo en tu contexto de vuelos registrados (representado como [ID: uuid]) y úsalo para llamar a la función. Si no estás seguro de cuál vuelo se refiere, muéstrale los candidatos con sus datos y pídele confirmación.
 5. Si falta cualquier dato requerido, detente y pregunta amablemente. No inventes nada.
 
@@ -541,6 +739,9 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
 2. Si el piloto avisa que está por despegar o iniciar un vuelo, llama a 'start_flight_session' con la matrícula de la aeronave. NO pidas confirmación previa para esto (a diferencia de 'log_flight'), es una acción reversible de bajo riesgo.
 3. Si el piloto avisa que aterrizó o terminó el vuelo, llama a 'end_flight_session'. Al recibir la respuesta, informa la duración calculada y, si te devuelve un link, compártelo para que el piloto revise y guarde el vuelo completo con todos los detalles.
 4. Solo incluye el parámetro 'time' si el piloto menciona una hora explícita (ej. "arranqué a las 14:30"); si no la menciona, omite el parámetro por completo para que se use la hora actual.
+
+## LÍMITE OPERATIVO (no negociable):
+Los datos de aeródromo, pistas, frecuencias y teléfonos que devuelven tus herramientas son de referencia y pueden estar desactualizados. Cuando informes pistas, frecuencias, combustible o cualquier dato para una operación, cerrá SIEMPRE recordando que hay que verificarlo contra el AIP y los NOTAM vigentes antes de volar. Nunca presentes esta información como apta para tomar una decisión operativa por sí sola.
 
 ## REGLAS PARA METAR, TAF, NOTAM Y DATOS DE AERÓDROMO:
 1. Si el usuario te pregunta por el clima, reporte meteorológico, METAR o TAF de un aeropuerto (ej: "clima en SADF" o "METAR SAEZ"), debes obtenerlo usando la herramienta 'get_airport_weather'.
@@ -591,6 +792,7 @@ ${flightContext}`;
                   landing: { type: SchemaType.STRING, description: "Hora de aterrizaje en formato de 24 hs (HH:MM)" },
                   landings: { type: SchemaType.INTEGER, description: "Cantidad de aterrizajes realizados" },
                   purpose: { type: SchemaType.STRING, description: "Código de finalidad del vuelo (ej. VP, ENT, EXA, INST, ACR, etc.)" },
+                  logbook_name: { type: SchemaType.STRING, description: "Nombre del libro de vuelo donde registrarlo. Omitir si el piloto no lo menciona: se usa el libro por defecto." },
                   pic_day_loc: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
                   pic_day_tra: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
                   pic_night_loc: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
@@ -694,10 +896,14 @@ ${flightContext}`;
       ]
     });
 
-    const formattedHistory = (history || []).map((m: { role: string; content: string }) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    }));
+    // Las entradas que sólo llevan una propuesta pendiente no tienen texto y no
+    // van al modelo: son estado nuestro, no parte de la conversación.
+    const formattedHistory = (history || [])
+      .filter((m) => typeof m.content === "string" && m.content.length > 0)
+      .map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content as string }],
+      }));
 
     // Gemini requires history to start with user
     const firstUserIndex = formattedHistory.findIndex((h: any) => h.role === "user");
@@ -725,16 +931,28 @@ ${flightContext}`;
     let result = await chat.sendMessage(chatParts);
     let functionCalls = result.response.functionCalls();
 
+    // La propuesta de vuelo que quedó lista en este turno, si el modelo pidió
+    // registrar uno. Vive fuera del bucle porque se resuelve al terminarlo.
+    let pendingProposal: { proposal: Record<string, any>; aircraftLabel: string; logbookLabel?: string } | null = null;
+
     while (functionCalls && functionCalls.length > 0) {
-      const toolResults = [];
+      const toolResults: any[] = [];
 
       for (const call of functionCalls) {
         const args: any = call.args;
 
         try {
           if (call.name === "log_flight") {
+            // El copiloto nunca escribe acá. Deja la propuesta pendiente y el
+            // piloto la confirma en el mensaje siguiente; esa confirmación se
+            // resuelve antes de llamar al modelo, así que este camino es el
+            // único que existe y no puede saltearse.
+            //
+            // Antes la confirmación era una instrucción en el prompt ("NO
+            // llames a log_flight inmediatamente"). Eso es pedirle a un modelo
+            // que se porte bien antes de escribir un registro regulatorio.
             const ac = aircraft.find(
-              (a: any) => a.registration.trim().toUpperCase() === args.aircraft_registration.trim().toUpperCase()
+              (a: any) => a.registration.trim().toUpperCase() === String(args.aircraft_registration ?? "").trim().toUpperCase()
             );
             if (!ac) {
               toolResults.push({
@@ -744,56 +962,43 @@ ${flightContext}`;
               continue;
             }
 
-            const takeoff_dt = new Date(`${args.date}T${args.takeoff}:00Z`).toISOString().split('.')[0] + 'Z';
-            const landing_dt = new Date(`${args.date}T${args.landing}:00Z`).toISOString().split('.')[0] + 'Z';
-            const computedDuration = calculateFlightDuration(args.takeoff, args.landing);
-
-            const response = await fetch(`${API_URL}/flights`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": userApiKey
-              },
-              body: JSON.stringify({
-                aircraft_id: ac.id,
-                date: args.date,
-                route: args.route,
-                landings: args.landings,
-                duration: computedDuration,
-                takeoff: takeoff_dt,
-                landing: landing_dt,
-                purpose: args.purpose,
-                pic_day_loc: args.pic_day_loc || null,
-                pic_day_tra: args.pic_day_tra || null,
-                pic_night_loc: args.pic_night_loc || null,
-                pic_night_tra: args.pic_night_tra || null,
-                sic_day_loc: args.sic_day_loc || null,
-                sic_day_tra: args.sic_day_tra || null,
-                sic_night_loc: args.sic_night_loc || null,
-                sic_night_tra: args.sic_night_tra || null,
-                "IMC Pil": args.imc_pil || null,
-                "IMC Cop": args.imc_cop || null,
-                "Capota": args.capota || null,
-                "Sim Instructor": args.sim_instructor || null,
-                "Sim Pil en Inst": args.sim_pil_en_inst || null,
-                discount_type: args.discount_type || null,
-                discount_amount: args.discount_amount || null
-              })
-            });
-
-            if (!response.ok) {
-              const errData = await response.json();
+            const proposedDuration = calculateFlightDuration(args.takeoff, args.landing);
+            const invalid = breakdownError(args, Number(proposedDuration));
+            if (invalid) {
               toolResults.push({
                 name: call.name,
-                response: { error: errData.detail || "Error al registrar el vuelo en el servidor" }
+                response: { error: `${invalid} Corregí el desglose y volvé a proponerlo.` }
               });
-            } else {
-              const resData = await response.json();
-              toolResults.push({
-                name: call.name,
-                response: { result: `Vuelo registrado exitosamente (duración calculada: ${computedDuration}h)`, flight: resData }
-              });
+              continue;
             }
+
+            // Si el piloto nombró un libro, se resuelve contra los suyos. Un
+            // nombre que no existe se rechaza en vez de caer al libro por
+            // defecto en silencio: escribir en el libro equivocado es peor que
+            // no escribir.
+            let logbookId: string | undefined;
+            let logbookLabel = "";
+            if (args.logbook_name) {
+              const wanted = String(args.logbook_name).trim().toLowerCase();
+              const book = logbooks.find((l: any) => String(l.name ?? "").trim().toLowerCase() === wanted);
+              if (!book) {
+                const names = logbooks.map((l: any) => l.name).filter(Boolean).join(", ");
+                toolResults.push({
+                  name: call.name,
+                  response: { error: `No encontré un libro llamado '${args.logbook_name}'. Los tuyos son: ${names || "ninguno"}.` }
+                });
+                continue;
+              }
+              logbookId = book.id;
+              logbookLabel = book.name;
+            }
+
+            const proposal = { ...args, aircraft_id: ac.id, duration: proposedDuration, logbook_id: logbookId };
+            pendingProposal = { proposal, aircraftLabel: ac.registration, logbookLabel };
+            toolResults.push({
+              name: call.name,
+              response: { result: "Propuesta preparada. Se le mostró el resumen al piloto para que confirme." }
+            });
 
           } else if (call.name === "delete_flight") {
             toolResults.push({
@@ -1030,12 +1235,38 @@ ${flightContext}`;
       functionCalls = result.response.functionCalls();
     }
 
+    // Una propuesta pendiente corta el turno acá: el resumen lo arma el código,
+    // no el modelo, porque tiene que describir exactamente lo que se va a
+    // escribir cuando el piloto conteste que sí.
+    if (pendingProposal) {
+      const summary = proposalSummary(
+        pendingProposal.proposal,
+        pendingProposal.aircraftLabel,
+        pendingProposal.logbookLabel
+      );
+      const historyWithProposal: ChatEntry[] = [
+        ...history.filter((h) => !h.pending_flight),
+        { role: "user", content: messageText.trim() || "[Nota de voz]", id: messageId },
+        { role: "assistant", content: summary },
+        { role: "system", pending_flight: pendingProposal.proposal, at: Date.now() },
+      ];
+      await fetch(`${API_URL}/whatsapp/chat-history?phone=${fromNumber}&secret=${secret}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history: historyWithProposal }),
+      });
+      await sendWhatsAppMessage(fromNumber, formatForWhatsApp(summary), payloadPhoneNumberId);
+      return NextResponse.json({ success: true });
+    }
+
     const replyText = result.response.text();
 
     const userMessageContent = messageText.trim() || "[Nota de voz]";
-    const updatedHistory = [
+    // El id va guardado con el mensaje: es lo que hace que `alreadyHandled`
+    // reconozca un reintento después de un reinicio del proceso.
+    const updatedHistory: ChatEntry[] = [
       ...history,
-      { role: "user", content: userMessageContent },
+      { role: "user", content: userMessageContent, id: messageId },
       { role: "assistant", content: replyText }
     ];
 
