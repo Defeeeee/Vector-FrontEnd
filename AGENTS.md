@@ -2507,12 +2507,32 @@ apunta al backend de **producción** —no hay uno de test—, así que verifica
 de vuelos escribiría en la base real en cada push y exigiría un teardown confiable.
 Esa mitad se verifica a mano; la lista está en `docs/brief/10-onboarding.md`.
 
-Falta sólo que Federico cree la cuenta y corra:
+**Activo desde el 2026-08-10.** Federico cargó los secrets y el rerun lo confirma:
 
-```bash
-gh secret set SMOKE_EMAIL --repo Defeeeee/Vector-FrontEnd
-gh secret set SMOKE_PASSWORD --repo Defeeeee/Vector-FrontEnd
 ```
+--- con sesión ---
+✓ 200 /dashboard · /log-flight · /history · /summary · /settings
+✓ 200 /audit · /balance · /airports · /tools · /route-weather
+
+22 rutas OK (incluye el dashboard con sesión).
+```
+
+> **El verde del CI no alcanza para dar esto por comprobado.** El script pasa
+> igual cuando omite la tanda autenticada, así que un ✅ no distingue "entró" de
+> "no había credenciales". Hay que leer la salida: el `--- con sesión ---` y el
+> conteo de **22** en vez de 12 son la prueba.
+
+#### Dos decisiones tomadas, para no "arreglarlas" sin querer
+
+- **El smoke se loguea contra producción en cada push, y si el backend está caído
+  el CI se pone rojo.** Federico lo decidió así el 2026-08-10, sabiendo el costo.
+  **No degradar el fallo de login a warning**: la alternativa es que la cobertura
+  del dashboard desaparezca en silencio, que es lo que este trabajo vino a
+  terminar.
+- **La verificación de los caminos de escritura del wizard queda manual**, con la
+  lista en `docs/brief/10-onboarding.md`. No automatizarla: el build apunta al
+  backend de producción —no hay uno de test— y hacerlo escribiría en la base real
+  en cada push.
 
 ---
 
