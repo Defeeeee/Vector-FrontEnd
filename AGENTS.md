@@ -2222,6 +2222,104 @@ se nombra primero.
 
 ---
 
+### 2026-08-10 17:20 UTC — Claude (Opus 5, vía Claude Code) — Cinco pilotos que nunca pudieron entrar, y un backlog que mentía
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+Fui a hacer `T1.3` y estaba hecha. Fui a hacer el Tier 5 y tres de cuatro estaban
+hechas. Auditando la base para confirmarlo apareció algo que no estaba en ningún
+plan.
+
+#### El hallazgo
+
+**5 de 15 usuarios de `auth.users` no tenían fila en `profiles`.** Cero vuelos,
+libros, aeronaves, documentos y packs; `deleted_at` en null. No eran cuentas
+borradas: gente que se registró y **nunca pudo usar la app**. Uno de Google volvió
+a entrar el 2026-07-01, dos meses después de registrarse, y encontró lo mismo.
+**Uno era tu propia cuenta de Google.**
+
+Hay dos defensas para que un usuario tenga perfil, y fallaban las dos:
+
+1. El trigger `on_auth_user_created` cubre las altas nuevas —todos los usuarios
+   posteriores al 2026-05-27 tienen perfil— pero no repara hacia atrás.
+2. El auto-alta de `ProfilesController.get_profiles`, que existe **justamente**
+   para curar este caso al siguiente login. Corre con el cliente del usuario, y
+   `profiles` tenía RLS activo con policies de `SELECT` y `UPDATE` pero **ninguna
+   de `INSERT`**.
+
+Lo comprobé simulando el insert con `role=authenticated` y el claim `sub` del
+huérfano, en vez de deducirlo del listado de policies:
+
+```
+NEGADO -> new row violates row-level security policy for table "profiles"
+```
+
+> **Una policy que falta no se ve como un error: se ve como una pantalla vacía.**
+> El `except` del controlador convertía ese mensaje en un `print` y devolvía `[]`.
+> El log decía exactamente qué pasaba desde hacía cuatro meses y nadie lo miró,
+> porque del lado del piloto no había ningún error que investigar.
+
+#### El arreglo — migración `006` del backend
+
+- **Policy de `INSERT`** con `with check (auth.uid() = id)`. No agrega ninguna
+  capacidad: el usuario ya podía cambiarse el nombre por `UPDATE`. Lo único que
+  habilita es crear **su propia** fila faltante. Verificado en los dos sentidos:
+  la fila propia ahora choca por **clave primaria** (o sea que pasó RLS) y la
+  ajena la sigue negando RLS.
+- **`handle_new_user()` aprende OAuth.** Sólo miraba `first_name`/`last_name`;
+  Google manda `full_name`/`name`. Un alta con Google caía a los defaults y se
+  llamaba **"New Pilot"**. Ahora parte el nombre entero, y si viene en una sola
+  palabra el apellido queda en el default en vez de repetir el nombre.
+- **Backfill de los 5**, con la misma regla. `15 usuarios / 15 perfiles / 0
+  huérfanos`.
+- **El controlador dejó de devolver `[]` en silencio.** Si no puede crear el
+  perfil, ahora es un 500 con mensaje.
+
+La regla de nombres está escrita **dos veces a propósito** —en el trigger SQL y en
+`_parse_name` de `profiles.py`— porque son dos caminos que crean la misma fila.
+Están probadas contra los mismos cinco casos reales y coinciden. Si tocás una,
+tocá la otra.
+
+#### El backlog estaba desactualizado, y eso cuesta
+
+`T1.3` (borrar `cma_expiry`), `T5.1`, `T5.3` y `T5.4` figuraban pendientes y
+estaban hechas. Casi hago de nuevo un `DROP COLUMN` de una columna que ya no
+existe.
+
+> **Antes de agarrar una tarea del plan, comprobá contra la base o el código que
+> siga pendiente.** Marcar lo hecho no es prolijidad: es lo que evita que el
+> próximo agente trabaje sobre un mapa viejo.
+
+Dos falsos positivos que dejé documentados en el `06` para que no se vuelvan a
+levantar: `documents_reset_alerts` con `EXECUTE` para `PUBLIC` es inocuo (es una
+función **trigger**, PostgREST no la expone), y `whatsapp_chats` con RLS y cero
+policies es **deliberado** —niega a `anon` y `authenticated`, el service role la
+saltea—. No agregarle policies.
+
+#### Lo que queda y no puede hacer un agente
+
+**`T5.2`** — protección de contraseñas filtradas. Sigue en `WARN` en los advisors
+y es un toggle del panel de Auth (Authentication → Policies → *Leaked password
+protection*), no SQL ni MCP. **Lo tenés que hacer vos.**
+
+#### Notas de entorno
+
+- La **clave de Supabase ya no está vencida**: `/health` devuelve
+  `database: connected`. El `PGRST303` del 2026-08-04 está resuelto, así que
+  **`T1.2` (Reanalizar) quedó desbloqueada**.
+- **Nginx le come el prefijo `/api`.** El router de Litestar monta todo bajo
+  `/api`, pero desde afuera las rutas van sin prefijo: `/audit/summary` da 401 y
+  `/api/audit/summary` da 404. Si armás un `curl` contra producción copiando el
+  path del controlador, va sin `/api`.
+- El MCP de Supabase **no expone la config de Auth**: sirve para SQL y advisors,
+  no para toggles del panel.
+- Ojo con `DO $$ ... $$` por el MCP: **no devuelve los `NOTICE`**, así que una
+  prueba que reporta por `RAISE NOTICE` se ve como resultado vacío y no distingue
+  "no pasó nada" de "no me llega la salida". Devolver el resultado como fila
+  (función en `pg_temp`) en vez de notificarlo.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
