@@ -16,6 +16,11 @@ import { ClassRecency } from "@/lib/recency";
  * Vector ya tenía tres de las cuatro repartidas en pantallas distintas y ninguna
  * que las juntara. Esto las junta.
  *
+ * A las cuatro condiciones de la norma se suman las que el piloto declare: un
+ * documento puede marcarse como bloqueante de vuelo o sólo de pasajeros. Una cuota
+ * de aeroclub no está en la RAAC, pero si el piloto dice que sin eso no vuela,
+ * no vuela.
+ *
  * **La respuesta no es sí/no.** La norma define estados con salidas distintas: a
  * quien se le venció la experiencia reciente puede volar **solo** a recuperarla
  * (61.140(c)(2)(i)); a quien se le venció el repaso, no. Devolver un booleano
@@ -106,6 +111,22 @@ export function pilotStatus(
     };
   }
 
+  // Documentos que el piloto marcó como bloqueantes de vuelo. Van acá, entre las
+  // condiciones de la norma y el repaso: no son RAAC —una cuota del aeroclub no
+  // está en la 61— pero si el piloto dice que sin eso no vuela, no vuela.
+  const bloqueaVuelo = documentos.find(
+    (d) => d.blocking === "vuelo" && documentStatus(d.expiry_date, hoy).tone === "expired"
+  );
+  if (bloqueaVuelo) {
+    return {
+      estado: "documento_vencido",
+      puede: "No podés volar.",
+      paraVolver: `Renová ${bloqueaVuelo.name} antes de volar.`,
+      seccion: "requisito propio",
+      detalle: `${bloqueaVuelo.name} — ${documentStatus(bloqueaVuelo.expiry_date, hoy).label.toLowerCase()}. Lo marcaste como bloqueante.`,
+    };
+  }
+
   // 61.135 — el repaso. Sin él no se puede actuar como piloto al mando.
   const repaso = documentos.find((d) => d.kind === "repaso_vuelo");
   if (!repaso || documentStatus(repaso.expiry_date, hoy).tone === "expired") {
@@ -119,6 +140,37 @@ export function pilotStatus(
       detalle: repaso
         ? `Tu repaso ${documentStatus(repaso.expiry_date, hoy).label.toLowerCase()}.`
         : "No tenés un repaso de vuelo cargado. Si lo hiciste, cargalo en el Hangar.",
+    };
+  }
+
+  // Documentos que impiden volar solo. Misma consecuencia que el repaso vencido,
+  // y se levantan igual: volando con un instructor. Van después del repaso porque
+  // si los dos faltan, conviene nombrar primero el que exige la norma.
+  const bloqueaSolo = documentos.find(
+    (d) => d.blocking === "solo" && documentStatus(d.expiry_date, hoy).tone === "expired"
+  );
+  if (bloqueaSolo) {
+    return {
+      estado: "repaso_vencido",
+      puede: "Sólo podés volar con instructor.",
+      paraVolver: `Necesitás un vuelo con instructor para renovar ${bloqueaSolo.name}.`,
+      seccion: "requisito propio",
+      detalle: `${bloqueaSolo.name} — ${documentStatus(bloqueaSolo.expiry_date, hoy).label.toLowerCase()}. Lo marcaste como bloqueante de vuelo solo.`,
+    };
+  }
+
+  // Documentos que sólo impiden llevar pasajeros. Misma salida que la falta de
+  // experiencia reciente: se puede volar solo.
+  const bloqueaPasajeros = documentos.find(
+    (d) => d.blocking === "pasajeros" && documentStatus(d.expiry_date, hoy).tone === "expired"
+  );
+  if (bloqueaPasajeros) {
+    return {
+      estado: "sin_recencia",
+      puede: "Podés volar solo, pero no llevar pasajeros.",
+      paraVolver: `Renová ${bloqueaPasajeros.name} para volver a llevar pasajeros.`,
+      seccion: "requisito propio",
+      detalle: `${bloqueaPasajeros.name} — ${documentStatus(bloqueaPasajeros.expiry_date, hoy).label.toLowerCase()}. Lo marcaste como bloqueante de pasajeros.`,
     };
   }
 

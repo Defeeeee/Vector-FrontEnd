@@ -113,10 +113,26 @@ export type DocumentKind =
   | "repaso_vuelo"
   | "otro";
 
+/**
+ * Qué pasa cuando un documento vence.
+ *
+ * El semáforo de RAAC 61.060(a)(1) tiene cuatro condiciones fijas, pero un piloto
+ * de escuela vive con exigencias que la norma no enumera —cuota del aeroclub,
+ * autorización del instructor, un curso interno—. Esto deja que cualquier
+ * documento diga si condiciona el vuelo, sin que Vector conozca cada caso.
+ *
+ * De menos a más restrictivo: `pasajeros` deja volar solo; `solo` obliga a volar
+ * con instructor —la misma semántica que el repaso de 61.135, y ese vuelo es el
+ * que lo renueva—; `vuelo` no deja volar.
+ */
+export type DocumentBlocking = "nada" | "pasajeros" | "solo" | "vuelo";
+
 export interface PilotDocument {
   id: string;
   user_id: string;
   kind: DocumentKind;
+  /** Default "nada": un documento no bloquea salvo que el piloto lo pida. */
+  blocking: DocumentBlocking;
   name: string;
   /** "YYYY-MM-DD" */
   expiry_date: string;

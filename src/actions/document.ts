@@ -23,6 +23,7 @@ function revalidateDocuments() {
 export async function createDocument(formData: FormData) {
   const payload = {
     kind: (formData.get("kind") as string) || "otro",
+    blocking: (formData.get("blocking") as string) || "nada",
     name: (formData.get("name") as string)?.trim(),
     expiry_date: formData.get("expiry_date") as string,
     issued_date: (formData.get("issued_date") as string) || null,
@@ -51,6 +52,7 @@ export async function createDocument(formData: FormData) {
 export async function updateDocument(documentId: string, formData: FormData) {
   const payload = {
     kind: (formData.get("kind") as string) || "otro",
+    blocking: (formData.get("blocking") as string) || "nada",
     name: (formData.get("name") as string)?.trim(),
     expiry_date: formData.get("expiry_date") as string,
     issued_date: (formData.get("issued_date") as string) || null,

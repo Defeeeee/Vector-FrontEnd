@@ -242,6 +242,10 @@ function DocumentForm({
   onError: (message: string | null) => void;
 }) {
   const [kind, setKind] = useState<string>(doc?.kind ?? presetKind ?? "otro");
+  // Default "nada": un documento no condiciona el vuelo salvo que el piloto lo
+  // pida. Cambiar eso haría que cargar un curso vencido apagara el semáforo sin
+  // que nadie lo haya decidido.
+  const [blocking, setBlocking] = useState<string>(doc?.blocking ?? "nada");
   const presetName = presetKind ? QUICK_ADD.find((q) => q.kind === presetKind)?.name : undefined;
   const [pending, startTransition] = useTransition();
 
@@ -307,6 +311,23 @@ function DocumentForm({
             required
             defaultValue={doc?.expiry_date ?? ""}
             className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+          />
+        </div>
+
+        <div>
+          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+            Si vence
+          </label>
+          <StyledSelect
+            name="blocking"
+            value={blocking}
+            onChange={setBlocking}
+            options={[
+              { value: "nada", label: "Sólo avisame" },
+              { value: "pasajeros", label: "No puedo llevar pasajeros" },
+              { value: "solo", label: "Sólo puedo volar con instructor" },
+              { value: "vuelo", label: "No puedo volar" },
+            ]}
           />
         </div>
 

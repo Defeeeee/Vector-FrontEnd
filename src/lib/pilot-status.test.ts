@@ -11,8 +11,8 @@ import { pilotStatus } from "./pilot-status";
 
 const HOY = new Date("2026-08-06T12:00:00Z");
 
-const doc = (kind: string, expiry: string, name = kind): PilotDocument =>
-  ({ id: kind, user_id: "u", kind, name, expiry_date: expiry, alert_days: [], created_at: "", updated_at: "" }) as PilotDocument;
+const doc = (kind: string, expiry: string, name = kind, blocking = "nada"): PilotDocument =>
+  ({ id: name, user_id: "u", kind, name, expiry_date: expiry, blocking, alert_days: [], created_at: "", updated_at: "" }) as PilotDocument;
 
 const vuelo = (date: string): Flight =>
   ({ id: date, user_id: "u", date, route: "SADF SADF", landings: 1, duration: 1, takeoff: "", landing: "", purpose: "VP" }) as Flight;
@@ -90,6 +90,90 @@ describe("pilotStatus", () => {
       [vigente()], [vuelo("2026-08-01")], HOY
     );
     expect(r.estado).toBe("vigente");
+  });
+
+  /**
+   * Un documento que el piloto marcó como bloqueante. No es RAAC —una cuota de
+   * aeroclub no está en la 61— pero si él dice que sin eso no vuela, no vuela.
+   */
+  it("un documento marcado como bloqueante de vuelo impide volar", () => {
+    const r = pilotStatus(
+      [...alDia, doc("otro", "2026-01-01", "Cuota del aeroclub", "vuelo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.estado).toBe("documento_vencido");
+    expect(r.puede).toBe("No podés volar.");
+    expect(r.detalle).toContain("Cuota del aeroclub");
+  });
+
+  it("uno marcado como bloqueante de pasajeros deja volar solo", () => {
+    const r = pilotStatus(
+      [...alDia, doc("otro", "2026-01-01", "Autorización del instructor", "pasajeros")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.estado).toBe("sin_recencia");
+    expect(r.puede).toContain("solo");
+    expect(r.detalle).toContain("Autorización del instructor");
+  });
+
+  /**
+   * El nivel intermedio: no podés volar solo, pero sí con instructor — y ese
+   * vuelo es el que lo renueva. Es la misma semántica que el repaso de 61.135.
+   */
+  it("uno marcado como bloqueante de vuelo solo obliga a volar con instructor", () => {
+    const r = pilotStatus(
+      [...alDia, doc("otro", "2026-01-01", "Adaptación a la aeronave", "solo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.puede).toBe("Sólo podés volar con instructor.");
+    expect(r.paraVolver).toContain("vuelo con instructor");
+    expect(r.detalle).toContain("Adaptación a la aeronave");
+  });
+
+  /** Si faltan los dos, se nombra primero el que exige la norma. */
+  it("el repaso vencido se nombra antes que un bloqueante propio de vuelo solo", () => {
+    const r = pilotStatus(
+      [doc("cma", "2027-06-30"), doc("repaso_vuelo", "2026-01-01"),
+       doc("otro", "2026-01-01", "Adaptación", "solo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.seccion).toBe("61.135");
+  });
+
+  /** La escalera respeta su orden: lo más restrictivo gana. */
+  it("bloquear el vuelo gana sobre bloquear el vuelo solo", () => {
+    const r = pilotStatus(
+      [...alDia, doc("otro", "2026-01-01", "Solo", "solo"), doc("otro", "2026-01-01", "Todo", "vuelo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.puede).toBe("No podés volar.");
+  });
+
+  /** El default no cambia nada: un documento no bloquea salvo que se lo pidan. */
+  it("un documento vencido sin marcar no bloquea", () => {
+    const r = pilotStatus(
+      [...alDia, doc("otro", "2020-01-01", "Curso viejo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.estado).toBe("vigente");
+  });
+
+  it("uno marcado pero vigente tampoco bloquea", () => {
+    const r = pilotStatus(
+      [...alDia, doc("otro", "2027-12-31", "Cuota", "vuelo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.estado).toBe("vigente");
+  });
+
+  /** Lo de la norma pesa más que un requisito propio. */
+  it("el CMA vencido gana sobre un bloqueante propio", () => {
+    const r = pilotStatus(
+      [doc("cma", "2026-01-01", "CMA"), doc("repaso_vuelo", "2027-12-31"),
+       doc("otro", "2026-01-01", "Cuota", "vuelo")],
+      [vigente()], [vuelo("2026-08-01")], HOY
+    );
+    expect(r.detalle).toContain("CMA");
   });
 
   /** 61.060(a)(2) — el peor estado gana sobre cualquier otro. */
