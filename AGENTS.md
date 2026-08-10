@@ -2536,6 +2536,70 @@ Esa mitad se verifica a mano; la lista está en `docs/brief/10-onboarding.md`.
 
 ---
 
+### 2026-08-10 22:30 UTC — Claude (Opus 5, vía Claude Code) — Documentos que no vencen, y el Hangar al avatar
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+Dos de tres ideas de Federico. La subida de PDF/PNG queda pendiente: **no hay
+ningún bucket de Storage creado**, así que es greenfield.
+
+#### El crash que había debajo de "las licencias no siempre vencen"
+
+`documents.expiry_date` era `NOT NULL`. El pedido sonaba a cambio de modelo de
+datos; lo caro estaba en el código:
+
+```ts
+const expiry = Date.parse(`${expiryDate.slice(0, 10)}T00:00:00Z`);
+```
+
+Con `null` eso **tira una excepción**, y `pilotStatus` llama a `documentStatus`
+por cada documento bloqueante: **un solo documento sin fecha tiraba el semáforo
+entero** en vez de degradarlo. Justo la pantalla que esta misma sesión arregló
+para que nunca afirme de más.
+
+> **Hacer el tipo nullable *antes* de tocar la base fue lo que hizo el trabajo.**
+> El typechecker marcó los cuatro consumidores; los cuatro habrían aparecido en
+> producción de a uno.
+
+**La distinción semántica, que conviene no borrar:** sin fecha es **"no vence"**,
+no "no sabemos". Lo segundo es `documento_faltante`, agregado hoy para el
+documento que debería estar y no está. Acá el documento está y sabemos que no
+caduca: nunca vencido, nunca bloquea, nunca alerta. Y **se muestra en gris, no en
+verde** — no es salud, es la ausencia de una cuenta regresiva.
+
+Dos consecuencias que quedaron resueltas y no son obvias: en la card de
+vencimientos, los documentos sin fecha no cuentan como urgentes ni pueden ser "el
+próximo a vencer", y si ninguno vence la card lo dice en vez de inventar un número.
+
+Descubierto de paso: **el barrido ya lo contemplaba** — `document_alerts.py` abre
+con `if not raw_expiry: return None`. No hubo que tocarlo.
+
+**La migración 007 es de las seguras de aplicar antes de desplegar**, al revés que
+un `DROP COLUMN`: sólo relaja una restricción, ninguna fila cambia, y el código
+viejo no puede escribir un null porque exigía la fecha. Verificado: `nullable YES`,
+0 nulos sobre 6 documentos.
+
+#### Hangar al avatar — y la trampa
+
+Sale del nav y pasa al avatar en las tres superficies: rail de desktop, barra
+superior y header móvil.
+
+> **El avatar sólo existía en desktop.** Sacar Hangar del nav sin agregarlo al
+> header móvil lo dejaba **sin ninguna entrada en el teléfono**: es el 7º destino
+> y `MOBILE_SLOTS = 5`, así que caía en el sheet de "Más" y de ahí desaparecía.
+> Antes de mover algo del nav, mirar en qué superficies existe el destino nuevo.
+
+Los cinco primeros destinos quedan intactos, que es lo que el comentario de
+`DashboardNav` pide expresamente no romper.
+
+**Verificación:** 142 tests (9 nuevos, incluidos los de integración que fijan que
+un bloqueante sin fecha no rompe ni bloquea, y que un CMA sin fecha **no** dispara
+`documento_faltante` porque el documento existe). `tsc`, build y smoke limpios.
+El aspecto —avatar en las tres superficies, badge gris— está detrás de login y
+**no se vio**.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
