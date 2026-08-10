@@ -62,6 +62,8 @@ async function getDashboardData() {
 }
 
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
+import PrimerosPasos from "@/components/dashboard/PrimerosPasos";
+import { estadoOnboarding } from "@/lib/onboarding";
 import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
 import CustomStatsRow from "@/components/dashboard/CustomStatsRow";
 import { listCustomStats } from "@/actions/custom-stat";
@@ -235,6 +237,20 @@ export default async function Dashboard() {
         stats={customStats}
         flights={flights as Flight[]}
         aircraft={aircraft as Aircraft[]}
+      />
+
+      {/* Va después del semáforo, que es la única pregunta de esta pantalla con
+          consecuencias antes de despegar, y antes de las métricas, que para una
+          cuenta nueva son todas cero. Desaparece solo cuando los cuatro pasos
+          están hechos. Los datos ya vienen del Promise.all de arriba: no agrega
+          ni un viaje al backend. */}
+      <PrimerosPasos
+        estado={estadoOnboarding({
+          profile,
+          tieneCma: (documents as PilotDocument[]).some((d) => d.kind === "cma"),
+          aeronaves: aircraft.length,
+          vuelos: flights.length,
+        })}
       />
 
       {/* Novedades de la versión */}

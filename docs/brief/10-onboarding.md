@@ -1,9 +1,13 @@
 # Plan 10 — Onboarding: del registro al primer vuelo
 
-> **Estado al 2026-08-10:** `O0`, `O1` y `O4` hechas y mergeadas. `O2` y `O3` en
-> curso. Ver la bitácora de `AGENTS.md` para lo que cambió al implementar —
-> sobre todo el alcance de `O0`, que se achicó al consultar la base, y el
-> `revalidatePath` que `O1` necesitaba y este documento no preveía.
+> **Estado al 2026-08-10: cerrado.** Las cinco tareas (`O0`, `O1`, `O2`, `O3`,
+> `O4`) están hechas y mergeadas. Ver la bitácora de `AGENTS.md` para lo que
+> cambió al implementar: el alcance de `O0` se achicó al consultar la base, `O1`
+> necesitaba un `revalidatePath` que este documento no preveía, y el paso 3 de
+> `O2` se verificó contra el backend para que no cree un libro duplicado.
+>
+> **Lo que queda pendiente es la verificación del recorrido real** —que los writes
+> de cada paso peguen contra el backend—, bloqueada por la cuenta de prueba.
 
 ## Contexto
 
