@@ -188,7 +188,7 @@ export default function RegisterPage() {
 
         {/* Version Tag */}
         <div className="mt-12 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.5em]">
-            Vector Aviation v2.6.0
+            Vector Aviation v2.7.0
         </div>
       </div>
     </div>

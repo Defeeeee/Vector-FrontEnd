@@ -47,10 +47,15 @@ async function getDashboardData() {
 
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
 import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
+import CustomStatsRow from "@/components/dashboard/CustomStatsRow";
+import { listCustomStats } from "@/actions/custom-stat";
 import { splitRoute } from "@/lib/route";
 
 export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs, audit, documents, logbooks } = await getDashboardData();
+  // Sólo la definición viaja; el cálculo pasa en el cliente sobre los vuelos que
+  // esta pantalla ya tiene.
+  const customStats = await listCustomStats();
 
   const totalFlights = flights.length;
   const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
@@ -210,6 +215,12 @@ export default async function Dashboard() {
         aircraft={aircraft as Aircraft[]}
         documents={documents as PilotDocument[]}
         profile={profile}
+      />
+
+      <CustomStatsRow
+        stats={customStats}
+        flights={flights as Flight[]}
+        aircraft={aircraft as Aircraft[]}
       />
 
       {/* Novedades de la versión */}

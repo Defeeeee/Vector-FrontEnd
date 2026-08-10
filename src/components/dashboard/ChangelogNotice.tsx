@@ -7,7 +7,7 @@ import Link from "next/link";
 // Sólo va acá lo que el piloto efectivamente ve. La higiene de esta versión
 // —el secreto fuera de la URL, el límite de mensajes, la retención— es
 // importante pero no es una novedad que alguien quiera leer en su dashboard.
-const CHANGELOG_VERSION = "v2.6.0";
+const CHANGELOG_VERSION = "v2.7.0";
 
 export default function ChangelogNotice() {
   const [visible, setVisible] = useState(false);
@@ -56,34 +56,34 @@ export default function ChangelogNotice() {
         <div className="rounded-2xl bg-white dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10 p-4 space-y-2">
           <div className="flex items-center gap-2 text-zinc-900 dark:text-white text-xs font-bold">
             <Compass className="w-4 h-4 text-aviation-blue" />
-            <span>Distancia de travesía</span>
+            <span>¿Podés volar hoy?</span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            Al cargar un vuelo ves las millas náuticas entre los dos aeródromos, calculadas
-            con las coordenadas oficiales de ANAC.
+            Vector ahora junta tu certificado médico, tu repaso de vuelo y tu experiencia
+            reciente, y te dice qué podés hacer — citando la sección de la RAAC 61.
           </p>
           <Link
-            href="/dashboard/log-flight"
+            href="/dashboard"
             className="inline-flex items-center gap-1 text-[11px] font-bold text-aviation-blue hover:underline pt-1"
           >
-            Cargar un vuelo <ChevronRight className="w-3 h-3" />
+            Ver mi estado <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
 
         <div className="rounded-2xl bg-white dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10 p-4 space-y-2">
           <div className="flex items-center gap-2 text-zinc-900 dark:text-white text-xs font-bold">
             <Sparkles className="w-4 h-4 text-aviation-blue" />
-            <span>Descargá tus datos</span>
+            <span>Tus propias métricas</span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            Todo lo que Vector guarda tuyo en un archivo: perfil, aeronaves, libros, vuelos,
-            documentos, packs y transacciones. Es tuyo y te lo podés llevar.
+            Armá los números que querés seguir —horas en una aeronave, aterrizajes en un
+            aeródromo, lo que sea— y aparecen en tu dashboard.
           </p>
           <Link
             href="/dashboard/settings"
             className="inline-flex items-center gap-1 text-[11px] font-bold text-aviation-blue hover:underline pt-1"
           >
-            Ir al Hangar <ChevronRight className="w-3 h-3" />
+            Crear una métrica <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
       </div>
