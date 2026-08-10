@@ -13,13 +13,22 @@
  * Cubre las rutas públicas y las de API que no piden sesión. Ahí un 5xx es
  * siempre un bug.
  *
- * **No cubre el interior del dashboard.** El middleware redirige al login antes
- * de que la página corra, así que sin sesión sólo se comprueba que la redirección
- * ocurra — no que la página renderice. Un crash como el de `/dashboard/log-flight`
- * (`logbooks.find is not a function`, agosto 2026) **no se detecta desde acá**:
- * para eso hace falta correr esto con una cuenta de prueba y su cookie de sesión.
- * Está anotado como pendiente a propósito, para no dar una sensación de cobertura
- * que no existe.
+ * **El interior del dashboard sólo se cubre con credenciales.** Sin sesión el
+ * proxy redirige antes de que la página corra, así que únicamente se comprueba
+ * que la redirección ocurra — no que la página renderice. Un crash como el de
+ * `/dashboard/log-flight` (`logbooks.find is not a function`, agosto 2026) no se
+ * ve desde ahí.
+ *
+ * Con `SMOKE_EMAIL` y `SMOKE_PASSWORD` en el entorno, la segunda tanda entra con
+ * una sesión real y comprueba que cada pantalla del dashboard **renderice**. Sin
+ * esas variables se omite y el smoke sigue pasando: los secrets no se exponen a
+ * los PR desde forks, y un PR externo no debería dar rojo por una credencial que
+ * no puede tener.
+ *
+ * **Es de sólo lectura, a propósito.** El build apunta al backend de producción
+ * —no hay uno de test—, así que esto se loguea contra la base real. Comprobar el
+ * alta de vuelos exigiría escribir ahí en cada push y después limpiar; esa
+ * verificación se hace a mano.
  */
 
 import { spawn } from "node:child_process";
@@ -46,7 +55,57 @@ const ROUTES = [
   { path: "/dashboard/airports", expect: (s) => s === 307 || s === 302 },
 ];
 
+/**
+ * Con sesión, estas tienen que **renderizar**, no redirigir. Todas son GET y
+ * ninguna escribe: el backend es el de producción.
+ */
+const AUTH_ROUTES = [
+  "/dashboard",
+  // La que se rompió en producción con los tipos en verde.
+  "/dashboard/log-flight",
+  "/dashboard/history",
+  "/dashboard/summary",
+  "/dashboard/settings",
+  "/dashboard/audit",
+  "/dashboard/balance",
+  "/dashboard/airports",
+  "/dashboard/tools",
+  "/dashboard/route-weather",
+];
+
+const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || "https://auth.flightlog.fdiaznem.com.ar";
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Token de la cuenta de prueba, o `null` si no hay credenciales configuradas.
+ *
+ * Se pide directo al backend de auth en vez de simular el formulario: la server
+ * action de login hace exactamente esto y después guarda el token en la cookie
+ * `session_token`, que es lo único que mira `src/proxy.ts`.
+ */
+async function login() {
+  const email = process.env.SMOKE_EMAIL;
+  const password = process.env.SMOKE_PASSWORD;
+  if (!email || !password) return null;
+
+  const res = await fetch(`${AUTH_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || !body.access_token) {
+    // Si las credenciales están puestas y no andan, es un fallo: la alternativa
+    // es que la cobertura desaparezca en silencio y nadie se entere.
+    throw new Error(
+      `login de la cuenta de prueba falló (HTTP ${res.status}). ` +
+      `Revisá SMOKE_EMAIL/SMOKE_PASSWORD contra ${AUTH_URL}.`
+    );
+  }
+  return body.access_token;
+}
 
 async function waitForServer(timeoutMs = 90_000) {
   const deadline = Date.now() + timeoutMs;
@@ -94,6 +153,39 @@ try {
     if (!ok) failures++;
     console.log(`${ok ? "✓" : "✗"} ${String(status).padEnd(3)} ${route.path}${detail}`);
   }
+
+  const token = await login();
+
+  if (!token) {
+    console.log(
+      "\n· Dashboard omitido: sin SMOKE_EMAIL/SMOKE_PASSWORD.\n" +
+      "  Las pantallas con sesión no se comprobaron."
+    );
+  } else {
+    console.log("\n--- con sesión ---");
+    for (const path of AUTH_ROUTES) {
+      let status = 0;
+      let detail = "";
+      try {
+        const res = await fetch(BASE + path, {
+          redirect: "manual",
+          headers: { Cookie: `session_token=${token}` },
+        });
+        status = res.status;
+        // Un 307 acá no es "todavía no atiende": es que la sesión no se aceptó,
+        // y entonces esta tanda no está comprobando nada. Conviene decirlo.
+        if (status === 307 || status === 302) {
+          detail = " — redirigió al login: la sesión no fue aceptada";
+        }
+      } catch (err) {
+        detail = ` — ${err.message}`;
+      }
+
+      const ok = status === 200 && !detail;
+      if (!ok) failures++;
+      console.log(`${ok ? "✓" : "✗"} ${String(status).padEnd(3)} ${path}${detail}`);
+    }
+  }
 } catch (err) {
   console.error(`✗ ${err.message}`);
   failures++;
@@ -107,5 +199,9 @@ if (failures) {
   console.error(`\n${failures} ruta(s) fallaron.\n--- salida del server ---\n${serverLog.slice(-3000)}`);
   process.exit(1);
 }
-console.log(`\n${ROUTES.length} rutas OK.`);
+const conSesion = process.env.SMOKE_EMAIL && process.env.SMOKE_PASSWORD;
+console.log(
+  `\n${ROUTES.length + (conSesion ? AUTH_ROUTES.length : 0)} rutas OK` +
+  `${conSesion ? " (incluye el dashboard con sesión)" : " — dashboard sin comprobar"}.`
+);
 process.exit(0);

@@ -289,7 +289,44 @@ piloto, la segunda porque destraba el paso donde el embudo se corta.
    andando después de las extracciones.
 
 **Cuenta de prueba:** la crea Federico. Manejar contraseñas queda fuera de lo que
-hace el agente, y el smoke autenticado (`T1` del plan 07) sigue bloqueado por eso.
+hace el agente.
+
+### El smoke autenticado (`T1` del plan 07) — hecho, esperando la cuenta
+
+`scripts/smoke.mjs` entra con sesión si encuentra `SMOKE_EMAIL` y `SMOKE_PASSWORD`
+y comprueba que **rendericen** las 10 pantallas del dashboard. Sin esas variables
+omite esa tanda y pasa igual: los secrets no llegan a los PR desde forks y un PR
+externo no debería dar rojo por una credencial que no puede tener.
+
+Para activarlo:
+
+```bash
+gh secret set SMOKE_EMAIL --repo Defeeeee/Vector-FrontEnd
+gh secret set SMOKE_PASSWORD --repo Defeeeee/Vector-FrontEnd
+```
+
+`ci.yml` ya se los pasa al step. **Es de sólo lectura a propósito:** el build
+apunta al backend de producción —no hay uno de test—, así que verificar altas
+escribiría en la base real en cada push.
+
+### La pasada manual que el smoke no cubre
+
+Son los caminos de **escritura** del alta, que se tocan poco y no justifican
+ensuciar producción en cada PR. Con una cuenta recién creada, en claro y oscuro:
+
+1. **Saltear todo.** Completar sólo la licencia y omitir CMA, aeronave y saldo.
+   → el tablero muestra `Primeros pasos` en **1 de 4** y el semáforo en **gris**,
+   no en verde.
+2. **El paso 2 escribe.** Cargar una aeronave en el wizard y confirmar que aparece
+   en Configuración → Mis aeronaves.
+3. **El paso 3 escribe y no duplica.** Cargar un saldo inicial y confirmar en
+   Configuración → Libros que hay **un solo** libro, que es el default, y que sus
+   horas aparecen en el total del tablero.
+4. **El callejón.** Con cero aeronaves, entrar a `/dashboard/log-flight` **y**
+   abrir el "+". Las dos rutas muestran `SinAeronaves`. Cargar la aeronave desde
+   ahí y confirmar que la pantalla pasa al formulario **sin refrescar a mano**.
+5. **El checklist se apaga.** Con licencia, CMA, aeronave y un vuelo cargados,
+   `Primeros pasos` desaparece.
 
 ---
 
