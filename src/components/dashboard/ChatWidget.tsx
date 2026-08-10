@@ -7,6 +7,18 @@ import { MessageCircle, X, Send, Loader2, Bot, User, ChevronDown, Plus } from "l
 interface Message {
   role: "user" | "assistant";
   content: string;
+  /**
+   * Vuelo propuesto que espera confirmación.
+   *
+   * El copiloto no escribe directo: propone, y el vuelo se guarda recién cuando
+   * el piloto contesta que sí. Como este chat no persiste el historial del lado
+   * del servidor, la propuesta viaja acá y vuelve en el siguiente mensaje — es el
+   * mismo mecanismo que el de WhatsApp, sólo que guardado en el cliente.
+   *
+   * Que el cliente pueda perderla es aceptable: si se pierde, el vuelo no se
+   * escribe. Falla del lado seguro.
+   */
+  pendingFlight?: Record<string, unknown>;
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -104,7 +116,10 @@ export default function ChatWidget() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al conectar con la IA");
 
-      setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      setMessages(prev => [
+        ...prev,
+        { role: "assistant", content: data.reply, pendingFlight: data.pendingFlight },
+      ]);
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -159,11 +159,19 @@ export function proposalSummary(p: Record<string, any>, aircraftLabel: string, l
  * puede guardar "gez" mientras la web guarda "SRDR", y el mismo aeródromo
  * aparece dos veces en el historial del piloto.
  */
-export async function writeProposedFlight(
-  p: Record<string, any>,
-  apiKey: string,
-  apiUrl: string
-): Promise<{ ok: boolean; message: string }> {
+/**
+ * El cuerpo del POST a /flights, tal como lo espera el backend.
+ *
+ * Vive separado del envío porque **los dos copilotos escriben por caminos
+ * distintos**: el de WhatsApp con la API key del piloto, el de la app con su
+ * sesión. Lo que no puede diferir es *qué* se escribe — la canonicalización de la
+ * ruta y el mapeo de los buckets ANAC tienen que ser los mismos, o el mismo vuelo
+ * queda distinto según por dónde se cargó.
+ *
+ * Antes cada ruta armaba su propio cuerpo, y por eso la canonicalización llegó a
+ * una sola de las dos.
+ */
+export function buildFlightBody(p: Record<string, any>): Record<string, any> {
   const takeoffDt = new Date(`${p.date}T${p.takeoff}:00Z`).toISOString().split(".")[0] + "Z";
   const landingDt = new Date(`${p.date}T${p.landing}:00Z`).toISOString().split(".")[0] + "Z";
 
@@ -186,6 +194,18 @@ export async function writeProposedFlight(
   };
   for (const k of PIC_SIC_KEYS) body[k] = p[k] || null;
   if (p.logbook_id) body.logbook_id = p.logbook_id;
+  return body;
+}
+
+/**
+ * Escribe el vuelo que el piloto confirmó, por la API key (camino de WhatsApp).
+ */
+export async function writeProposedFlight(
+  p: Record<string, any>,
+  apiKey: string,
+  apiUrl: string
+): Promise<{ ok: boolean; message: string }> {
+  const body = buildFlightBody(p);
 
   const res = await fetch(`${apiUrl}/flights`, {
     method: "POST",

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile, PilotDocument } from "@/types";
+import { breakdownError, buildFlightBody, isAffirmation, proposalSummary } from "@/lib/copilot-guards";
+import { canonicalRoute } from "@/lib/madhel-reference";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 import { anacIndicator, controlledFallback } from "@/lib/madhel-reference";
 
@@ -262,6 +264,21 @@ export async function POST(req: NextRequest) {
   try {
     const { message, history } = await req.json();
 
+    /**
+     * Propuesta de vuelo esperando confirmación.
+     *
+     * Este chat no persiste el historial: lo manda el cliente en cada turno. La
+     * propuesta viaja con él y vuelve acá, que es el mismo mecanismo que el de
+     * WhatsApp con otra caja. Si el cliente la pierde, el vuelo no se escribe —
+     * falla del lado seguro.
+     */
+    const propuestaPendiente = (history || [])
+      .slice()
+      .reverse()
+      .find((m: { pendingFlight?: Record<string, unknown> }) => m?.pendingFlight)?.pendingFlight as
+      | Record<string, any>
+      | undefined;
+
     if (!message?.trim()) {
       return NextResponse.json({ error: "Mensaje vacío" }, { status: 400 });
     }
@@ -472,9 +489,14 @@ ${flightContext}`;
     let result = await chat.sendMessage(message);
     let functionCalls = result.response.functionCalls();
 
+    // La propuesta que quedó lista en este turno, si el modelo pidió registrar.
+    // Fuera del bucle porque se resuelve al terminarlo.
+    let propuestaNueva: Record<string, any> | null = null;
+    let propuestaLabel = "";
+
     // Loop to handle potential multiple sequential function calls (multi-turn tool use)
     while (functionCalls && functionCalls.length > 0) {
-      const toolResults = [];
+      const toolResults: any[] = [];
 
       for (const call of functionCalls) {
         const args: any = call.args;
@@ -482,7 +504,7 @@ ${flightContext}`;
         try {
           if (call.name === "log_flight") {
             const ac = aircraft.find(
-              a => a.registration.trim().toUpperCase() === args.aircraft_registration.trim().toUpperCase()
+              a => a.registration.trim().toUpperCase() === String(args.aircraft_registration ?? "").trim().toUpperCase()
             );
             if (!ac) {
               toolResults.push({
@@ -492,53 +514,30 @@ ${flightContext}`;
               continue;
             }
 
-            const takeoff_dt = new Date(`${args.date}T${args.takeoff}:00Z`).toISOString().split('.')[0] + 'Z';
-            const landing_dt = new Date(`${args.date}T${args.landing}:00Z`).toISOString().split('.')[0] + 'Z';
             const computedDuration = calculateFlightDuration(args.takeoff, args.landing);
 
-            const response = await apiFetch("/flights", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                aircraft_id: ac.id,
-                date: args.date,
-                route: args.route,
-                landings: args.landings,
-                duration: computedDuration,
-                takeoff: takeoff_dt,
-                landing: landing_dt,
-                purpose: args.purpose,
-                pic_day_loc: args.pic_day_loc || null,
-                pic_day_tra: args.pic_day_tra || null,
-                pic_night_loc: args.pic_night_loc || null,
-                pic_night_tra: args.pic_night_tra || null,
-                sic_day_loc: args.sic_day_loc || null,
-                sic_day_tra: args.sic_day_tra || null,
-                sic_night_loc: args.sic_night_loc || null,
-                sic_night_tra: args.sic_night_tra || null,
-                "IMC Pil": args.imc_pil || null,
-                "IMC Cop": args.imc_cop || null,
-                "Capota": args.capota || null,
-                "Sim Instructor": args.sim_instructor || null,
-                "Sim Pil en Inst": args.sim_pil_en_inst || null,
-                discount_type: args.discount_type || null,
-                discount_amount: args.discount_amount || null
-              })
-            });
-
-            if (!response.ok) {
-              const errData = await response.json();
+            // Las mismas defensas que el copiloto de WhatsApp. Estaban sólo de
+            // aquel lado porque los dos caminos escribían su propio cuerpo, y por
+            // eso este podía guardar un desglose que sumara más que el vuelo, o
+            // una ruta sin canonicalizar que partía en dos un aeródromo.
+            const invalid = breakdownError(args, Number(computedDuration));
+            if (invalid) {
               toolResults.push({
                 name: call.name,
-                response: { error: errData.detail || "Error al registrar el vuelo en el servidor" }
+                response: { error: `${invalid} Corregí el desglose y volvé a intentarlo.` }
               });
-            } else {
-              const resData = await response.json();
-              toolResults.push({
-                name: call.name,
-                response: { result: `Vuelo registrado exitosamente (duración calculada: ${computedDuration}h)`, flight: resData }
-              });
+              continue;
             }
+
+            // No escribe: propone. El vuelo se guarda recién cuando el piloto
+            // confirma, resuelto antes de llamar al modelo. Era la última defensa
+            // que tenía el copiloto de WhatsApp y este no.
+            propuestaNueva = { ...args, aircraft_id: ac.id, duration: computedDuration };
+            propuestaLabel = ac.registration;
+            toolResults.push({
+              name: call.name,
+              response: { result: "Propuesta preparada. Se le muestra el resumen al piloto para que confirme." }
+            });
 
           } else if (call.name === "delete_flight") {
             const response = await apiFetch(`/flights/${args.flight_id}`, {
@@ -701,6 +700,16 @@ ${flightContext}`;
 
     // Belt and braces on the "never show internal IDs" rule above: a system
     // prompt is guidance, not a guarantee, and a leaked UUID is user-visible.
+    // Una propuesta pendiente corta el turno: el resumen lo arma el código y no el
+    // modelo, porque tiene que describir exactamente lo que se va a escribir
+    // cuando el piloto conteste que sí.
+    if (propuestaNueva) {
+      return NextResponse.json({
+        reply: proposalSummary(propuestaNueva, propuestaLabel),
+        pendingFlight: propuestaNueva,
+      });
+    }
+
     const text = stripInternalIds(result.response.text());
     return NextResponse.json({ reply: text });
   } catch (err: any) {
