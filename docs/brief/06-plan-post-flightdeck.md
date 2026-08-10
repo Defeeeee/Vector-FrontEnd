@@ -113,14 +113,39 @@ devuelve el JSON y un vencimiento de prueba dispara el mensaje.
 que un libro que no se toca no tiene hallazgos. El botón **Reanalizar** de
 `/dashboard/audit` lo fuerza.
 
-### T1.3 — Secuencia para borrar `profiles.cma_expiry`
+### T1.3 — ~~Secuencia para borrar `profiles.cma_expiry`~~ ✅ **CERRADA**
 
-**Esfuerzo:** S. **Orden obligatorio** — el paso 3 antes del 1 rompe producción:
+**Verificado el 2026-08-10:** los tres pasos están hechos. La columna ya no
+existe en la tabla (`information_schema.columns` sobre `profiles` devuelve 8
+columnas y ninguna es `cma_expiry`), y ni el modelo del backend ni `Profile` en
+`src/types/index.ts` la mencionan. El `cmaExpiry` que queda en `ProfileForm` sale
+de `documents`, no de la columna vieja.
 
-1. Desplegar el backend actual.
-2. Sacar `cma_expiry` de `ProfilesController.get_profiles`, de
-   `src/models/profile.py` y de `Profile` en `src/types/index.ts`.
-3. Recién ahí: `ALTER TABLE public.profiles DROP COLUMN cma_expiry;`
+### T1.5 — Perfiles huérfanos ✅ **CERRADA el 2026-08-10** — *no estaba en el plan; salió de auditar la base*
+
+**5 de 15 usuarios no tenían perfil**, con cero vuelos, libros, aeronaves,
+documentos y packs, y `deleted_at` en null. No eran cuentas borradas: gente que
+se registró y **nunca pudo usar la app**. Uno volvió a entrar dos meses después y
+encontró lo mismo. Uno era la cuenta de Google de Federico.
+
+Las dos defensas fallaban a la vez:
+
+1. El trigger `on_auth_user_created` cubre altas nuevas (todos los usuarios
+   posteriores al 2026-05-27 tienen perfil) pero no repara hacia atrás.
+2. El auto-alta de `ProfilesController.get_profiles`, que existe justamente para
+   curar esto al siguiente login, **estaba muerto**: corre con el cliente del
+   usuario y `profiles` tenía RLS con policies de `SELECT` y `UPDATE` pero
+   **ninguna de `INSERT`**.
+
+> **Una policy que falta no se ve como un error, se ve como una pantalla vacía.**
+> El `except` del controlador convertía `new row violates row-level security
+> policy` en un `print` y devolvía `[]`. Nadie miró ese log en cuatro meses.
+
+Migración `006` en el backend: policy de `INSERT` (`with check (auth.uid() = id)`,
+que no agrega capacidad — el usuario ya podía cambiarse el nombre por `UPDATE`),
+`handle_new_user()` aprende a leer `full_name`/`name` de OAuth —Google no manda
+`first_name`, así que un alta con Google se llamaba "New Pilot"— y backfill de los
+5. El controlador dejó de devolver `[]` en silencio.
 
 ### T1.4 — Arreglar `WhatsAppController._verify_secret`
 
@@ -314,12 +339,26 @@ mapa. Requiere Leaflet o Mapbox. Las coordenadas ya están en el TSV.
 
 ## Tier 5 — Higiene
 
-| id | Tarea | Esfuerzo |
-|---|---|---|
-| T5.1 | Borrar `Libro Digital.pdf` y `extract_pdf.js` de la raíz — nada los importa | XS |
-| T5.2 | Activar protección de contraseñas filtradas en Supabase | XS |
-| T5.3 | Revocar ejecución por `anon` vía RPC de `handle_new_user()` / `handle_deleted_user()` | S |
-| T5.4 | Fijar `search_path` en `handle_deleted_user` | XS |
+> **Auditado contra la base el 2026-08-10.** Tres de las cuatro ya estaban
+> hechas y el documento no lo decía. Sólo queda `T5.2`, y **no la puede hacer un
+> agente**: es un toggle del panel de Auth, no SQL ni MCP.
+
+| id | Tarea | Esfuerzo | Estado |
+|---|---|---|---|
+| T5.1 | Borrar `Libro Digital.pdf` y `extract_pdf.js` de la raíz — nada los importa | XS | ✅ ya no están en la raíz |
+| T5.2 | Activar protección de contraseñas filtradas en Supabase | XS | ⬜ **pendiente, lo tiene que hacer Federico** — Authentication → Policies → *Leaked password protection*. Sigue apareciendo como `WARN` en los advisors |
+| T5.3 | Revocar ejecución por `anon` vía RPC de `handle_new_user()` / `handle_deleted_user()` | S | ✅ las dos quedaron con `EXECUTE` sólo para `postgres` y `service_role` |
+| T5.4 | Fijar `search_path` en `handle_deleted_user` | XS | ✅ `search_path=public` en las dos |
+
+**Dos falsos positivos que conviene no volver a levantar:**
+
+- `documents_reset_alerts` figura con `EXECUTE` para `PUBLIC`/`anon`. Es una
+  función **trigger** (`RETURNS trigger`): PostgREST no la expone y llamarla
+  directo falla. El grant es inocuo.
+- El advisor marca `whatsapp_chats` como *RLS enabled, no policy*. Es
+  **deliberado**: RLS activo y cero policies niega a `anon` y `authenticated`, y
+  el service role la saltea. Es el patrón correcto para una tabla que sólo toca
+  el barrido. No agregarle policies.
 
 ---
 
