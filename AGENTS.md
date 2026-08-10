@@ -2076,6 +2076,75 @@ alguna vez se discute si vale la pena moverlo, esto es la respuesta.
 
 ---
 
+### 2026-08-06 23:50 UTC — Claude (Opus 5, vía Claude Code) — Plan 08: "¿Puedo volar hoy?" y Vector 2.7.0
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+Cierra `docs/brief/08-puedo-volar-hoy.md`: `R1`, `R2`, `R3`, `R4`, `R5`, `S1` y `V`.
+
+#### La lección: planeé una feature regulatoria de memoria y estaba mal
+
+Escribí el plan antes de leer la norma. Federico pasó la **RAAC Parte 61, Edición
+VI** y **seis cosas estaban mal o faltaban**:
+
+1. **Los 90 días de recencia no son 90 para todos.** `61.140(a)(2)` los extiende a
+   **180 para piloto privado**, planeador y globo. Federico es PPA: le habríamos
+   dicho "no vigente" estando vigente.
+2. La recencia es **por categoría, clase y tipo**, no global.
+3. Aplica a **PIC y SIC**.
+4. Cuenta sólo como **única persona a los controles**.
+5. La nocturna son **180 días** y exige aterrizajes **hasta la detención
+   completa** — dos datos que Vector no tiene, así que es doblemente incalculable.
+   `61.140(b)(2)` da la única salida afirmable: HVI vigente.
+6. Faltaban **dos estados enteros**: el Repaso de Vuelo de 24 meses (`61.135`) y la
+   pérdida de atribuciones por 24 meses de inactividad (`61.060(a)(2)`).
+
+> **No planear features regulatorias de memoria.** Pedir la norma primero. Los
+> números de `lib/recency.ts` y `lib/pilot-status.ts` citan su sección, y las tres
+> secciones quedaron versionadas en `docs/normativa/` — antes vivían sólo en la
+> carpeta de descargas de Federico.
+
+#### El hallazgo que ordenó todo
+
+**`61.060(a)(1)` es literalmente el semáforo.** Define cuatro condiciones —CMA,
+habilitaciones, experiencia reciente, repaso— y Vector ya tenía tres repartidas en
+pantallas distintas sin nada que las juntara.
+
+Y la respuesta **no es sí/no**: a quien se le vence la experiencia reciente puede
+volar **solo** a recuperarla (`61.140(c)(2)(i)`, sin personas a bordo ni carga); a
+quien se le vence el repaso, no. Un booleano habría perdido justo eso.
+
+#### R2 — un número inflado que nunca se estrenó
+
+`PCATracker` sumaba **todos** los aterrizajes de un vuelo con cualquier hora
+nocturna: una sesión de circuitos que cruza el ocaso sumaba seis en vez de uno.
+Quien lo escribió advertía de ese riesgo exacto un renglón más arriba.
+
+Verificado contra producción: **ningún usuario tiene vuelos nocturnos cargados**,
+así que hoy no cambia ningún número. Se arregló antes de que alguien lo estrenara.
+
+#### Lo que cambió al implementar
+
+- **`R4` decía "no requiere esquema nuevo" y estaba mal.** `documents.kind` tiene
+  un CHECK que enumera los tipos. Migración `003`, y **va antes que el frontend** o
+  el piloto ve un error al guardar. Verificar los CHECK antes de agregar un valor.
+- **El regex de las métricas se evalúa en el cliente a propósito.** Un patrón
+  catastrófico cuelga la pestaña de quien lo escribió, no el proceso que atiende a
+  todos. El tope de largo está declarado en la base, en el modelo y en la UI: la
+  base no debe aceptar lo que la UI rechaza.
+
+#### Verificación, y lo que quedó sin ver
+
+113 tests, build y smoke limpios. La recencia se contrastó **contra los vuelos
+reales**: el tercer aterrizaje hacia atrás cae el 2026-07-25 y la función devuelve
+vencimiento 2027-01-21, idéntico al calculado a mano por SQL.
+
+**Sin verificar a ojo:** la card del semáforo y el constructor de métricas. La
+extensión de Chrome estuvo desconectada toda la sesión y esas pantallas están
+detrás de login. Es la misma deuda que dejó el plan 07 y sigue abierta.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
