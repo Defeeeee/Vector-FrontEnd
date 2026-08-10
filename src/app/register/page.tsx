@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Lock, Mail, User, ArrowRight, Loader2, Compass, ChevronLeft } from "lucide-react";
 import { register } from "@/actions/auth";
+import GoogleButton from "@/components/GoogleButton";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -175,6 +176,17 @@ export default function RegisterPage() {
                     </p>
                 </div>
             </form>
+
+            {/*
+              Google crea la cuenta si no existe, así que acá el mismo botón que
+              en login es un alta. Hasta ahora sólo lo tenía login: la pantalla
+              que dice "Crear cuenta" era la única sin el camino más corto.
+            */}
+            <GoogleButton
+                disabled={isPending}
+                onError={(m) => setError(m || null)}
+                label="Registrarme con Google"
+            />
 
             <div className="flex flex-col items-center space-y-6 pt-6 border-t border-zinc-200 dark:border-white/10 transition-colors">
                 <div className="flex items-center space-x-2 text-sm font-medium">

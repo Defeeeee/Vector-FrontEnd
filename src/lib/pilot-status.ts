@@ -32,6 +32,7 @@ export type EstadoPiloto =
   | "sin_recencia"
   | "repaso_vencido"
   | "documento_vencido"
+  | "documento_faltante"
   | "inactividad_prolongada";
 
 export interface PilotStatus {
@@ -124,6 +125,33 @@ export function pilotStatus(
       paraVolver: `Renová ${bloqueaVuelo.name} antes de volar.`,
       seccion: "requisito propio",
       detalle: `${bloqueaVuelo.name} — ${documentStatus(bloqueaVuelo.expiry_date, hoy).label.toLowerCase()}. Lo marcaste como bloqueante.`,
+    };
+  }
+
+  // 61.060(a)(1)(i) — el CMA que **no está cargado**.
+  //
+  // Sin esto la función devolvía `vigente` a un piloto cuyo estado médico no
+  // conocemos: el `find` de arriba sólo matchea documentos vencidos, y uno que no
+  // existe no entra. Afirmar que puede volar es justo lo que no hay que hacer.
+  //
+  // Es la misma forma que ya tiene el repaso unas líneas más abajo (`!repaso`),
+  // aplicada a la condición que la norma nombra primero.
+  //
+  // **Sólo el CMA, a propósito.** `licencia` y `habilitacion` también están en
+  // BLOQUEANTES, pero ningún piloto los tiene cargados como documento —el tipo de
+  // licencia vive en `profiles.license_type`— así que exigirlos dispararía este
+  // estado para todos y no significaría nada. El CMA sí se pide en el alta, y
+  // desde el wizard de onboarding se puede saltear: ese es el hueco real.
+  const cma = documentos.find((d) => d.kind === "cma");
+  if (!cma) {
+    return {
+      estado: "documento_faltante",
+      puede: "No podemos confirmar que puedas volar.",
+      paraVolver: "Cargá tu certificado médico aeronáutico en el Hangar.",
+      seccion: "61.060(a)(1)(i)",
+      detalle:
+        "No tenés un certificado médico cargado, así que no podemos evaluar si " +
+        "está vigente. Esto no dice que no puedas volar: dice que Vector no lo sabe.",
     };
   }
 

@@ -2350,6 +2350,89 @@ dueño` en las nueve tablas hijas, y los 41 vuelos de Federico intactos.
 
 ---
 
+### 2026-08-10 18:10 UTC — Claude (Opus 5, vía Claude Code) — Plan 10: el embudo de onboarding, y dos cosas que sólo se ven mirando la base
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+Arranca `docs/brief/10-onboarding.md`. Hechas `O0`, `O1` y `O4`; `O2` y `O3` en curso.
+
+#### El número que ordena el plan
+
+Vector tuvo **15 usuarios registrados y un solo vuelo cargado**, el de Federico.
+Medido, no estimado:
+
+```
+registraron 15 → con perfil 10 → completaron el overlay 8 → con aeronave 4 → con vuelo 1
+```
+
+Los dos escalones son **8 → 4** (la aeronave) y **4 → 1** (el primer vuelo). El
+onboarding pedía licencia y CMA, o sea que **terminaba justo antes de los dos**.
+
+#### `O0` — el semáforo decía "vigente" sin saber nada
+
+`pilotStatus` detectaba documentos **vencidos**, no **faltantes**. El `find` sobre
+`BLOQUEANTES` sólo matchea los que tienen `expiry_date` pasada, y uno que no existe
+no entra: la función seguía de largo hasta `vigente`. Le afirmaba a un piloto que
+podía volar sin saber nada de su certificado médico.
+
+Con el CMA volviéndose salteable en el wizard, "no está cargado" deja de ser un
+caso de laboratorio. Estado nuevo `documento_faltante`, y un **tercer tono** en
+`FlightStatusCard`: en ámbar se lee como "algo está mal con tu CMA" cuando lo que
+pasa es que no hay ninguno. El gris dice que falta el dato.
+
+> **El alcance lo cambió mirar la base, no leer el código.** Iba a disparar el
+> estado por cualquiera de los tres bloqueantes. Consultando primero:
+> **ningún piloto tiene cargados `licencia` ni `habilitacion` como documento** —el
+> tipo de licencia vive en `profiles.license_type`—, así que exigir los tres habría
+> mandado a los cuatro usuarios reales a "no podemos confirmar" el día uno, y el
+> estado no habría significado nada. Se dispara **sólo por el CMA**. Hay un test
+> dedicado a esa regresión.
+
+#### `O1` — y el bug que el plan iba a introducir
+
+El select de aeronave recibía `options=[]` con `required`: se abría, decía "Sin
+resultados" y bloqueaba el submit **sin ninguna forma de satisfacerlo**.
+
+`SinAeronaves` **embebe `AircraftForm`** en vez de linkear a Configuración: la
+salida del callejón va adentro del callejón. Es un componente y no un `if`
+duplicado porque lo usan la página **y** el modal interceptado, y ese par ya derivó
+una vez.
+
+> **Lo que casi se me pasa:** `addAircraft` revalidaba sólo `/dashboard` y
+> `/dashboard/settings`, y los GET se cachean 20s (`api.ts`). El empty state vive
+> en `/dashboard/log-flight`, que no estaba en la lista — **cargar la aeronave no
+> habría hecho desaparecer la pantalla que la pedía**, sin ningún error. El
+> comentario de `api.ts` dice que las server actions "ya llaman a `revalidatePath`,
+> así que no queda data vieja": es cierto **sólo para las rutas listadas**, y esa
+> suposición es justo la que rompe. Al agregar una pantalla que depende de datos
+> frescos, revisar quién revalida esa ruta.
+
+#### `O4` — dos copias que no llegaron a divergir
+
+`/login` ofrecía Google y `/register` no. El SVG y el handler estaban inline; salen
+a `GoogleButton`, que usan las dos. `onPendingChange` preserva el bloqueo del
+formulario de credenciales que login ya tenía.
+
+#### Verificación
+
+126 tests (5 nuevos), `tsc`, `build` y `smoke` limpios en cada paso. `/register` y
+`/login` **sí se verificaron a ojo** —son públicas— con Playwright en claro y
+oscuro, desktop y móvil, comprobando además que no hay scroll horizontal.
+
+> **Para capturas en oscuro:** el tema es `next-themes` con `attribute="class"`, no
+> `prefers-color-scheme`. `colorScheme: 'dark'` en Playwright **no alcanza** y la
+> captura sale en claro sin avisar. Hay que sembrar `localStorage.theme = 'dark'`
+> con `addInitScript` y comprobar `documentElement.classList.contains('dark')`.
+> Playwright no está en el repo; se instala aparte con
+> `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` y `executablePath: '/opt/pw-browsers/chromium'`.
+
+**Sigue sin verificarse a ojo lo que está detrás de login.** Es la misma deuda de
+los planes 07, 08 y 09, y la cuenta de prueba la crea Federico: manejar
+contraseñas queda fuera de lo que hace el agente. **Y no se piden por el chat** —
+durante el plan 07 un secreto pegado para diagnosticar otra cosa hubo que rotarlo.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
