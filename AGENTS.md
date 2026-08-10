@@ -2318,6 +2318,36 @@ protection*), no SQL ni MCP. **Lo tenés que hacer vos.**
   "no pasó nada" de "no me llega la salida". Devolver el resultado como fila
   (función en `pg_temp`) en vez de notificarlo.
 
+#### Después: borrado de las cuentas sin aeronaves (decisión de Federico)
+
+Federico pidió borrar **todas las cuentas sin aviones registrados**. Antes de
+ejecutar miré el alcance, porque el borrado cascadea a las nueve tablas hijas y no
+tiene vuelta atrás. Dos cosas no se veían desde el pedido y se las llevé:
+
+1. **Cuatro de las 11 tenían documentos cargados** —un CMA de verdad, con fecha de
+   vencimiento— o sea gente que usó la app y nunca cargó un avión.
+2. **Una era su propia cuenta de Google**, la que se acababa de backfillear.
+
+Con esa información **decidió borrar las 11 igual**, su cuenta de Google incluida.
+Quedaron **4 usuarios**: la suya principal (6 aeronaves, 41 vuelos), Martin Leis
+Otero, Juan Cariola y "Hola Hola".
+
+> **Ningún borrado tocó una cuenta con vuelos cargados.** Eso se comprobó *antes*,
+> no después: la consulta de alcance trae vuelos, libros, aeronaves, documentos,
+> packs, transacciones y métricas por usuario, no sólo el criterio del pedido.
+
+Se borró **por lista explícita de 11 IDs**, no por el criterio recalculado en el
+`delete`. Si entre que mostrás el alcance y ejecutás alguien carga un avión, un
+`where not exists (aircraft)` borra algo distinto de lo que se aprobó.
+
+El snapshot previo (emails, metadata y documentos de los 11) quedó en el
+scratchpad de la sesión, **fuera de git a propósito**: son datos personales y el
+repo es el lugar equivocado. Si hace falta recuperar algo, es efímero — vive lo
+que vive el contenedor.
+
+Post-verificación: `4 usuarios / 4 perfiles / 0 perfiles huérfanos / 0 filas sin
+dueño` en las nueve tablas hijas, y los 41 vuelos de Federico intactos.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
