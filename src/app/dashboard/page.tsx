@@ -46,6 +46,7 @@ async function getDashboardData() {
 }
 
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
+import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
 import { splitRoute } from "@/lib/route";
 
 export default async function Dashboard() {
@@ -200,6 +201,16 @@ export default async function Dashboard() {
           </Link>
         )}
       </section>
+
+      {/* "¿Puedo volar hoy?" — las cuatro condiciones de RAAC 61.060(a)(1).
+          Va arriba de todo porque es la única pregunta de esta pantalla que tiene
+          consecuencias antes de despegar; el resto es historia. */}
+      <FlightStatusCard
+        flights={flights as Flight[]}
+        aircraft={aircraft as Aircraft[]}
+        documents={documents as PilotDocument[]}
+        profile={profile}
+      />
 
       {/* Novedades de la versión */}
       <ChangelogNotice />

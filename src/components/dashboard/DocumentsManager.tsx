@@ -13,6 +13,7 @@ const KIND_OPTIONS: { value: DocumentKind; label: string }[] = [
   { value: "habilitacion", label: "Habilitación" },
   { value: "seguro", label: "Seguro" },
   { value: "aeronavegabilidad", label: "Aeronavegabilidad" },
+  { value: "repaso_vuelo", label: "Repaso de vuelo (24 meses)" },
   { value: "otro", label: "Otro" },
 ];
 
@@ -29,6 +30,7 @@ const QUICK_ADD: { kind: DocumentKind; label: string; name: string }[] = [
   { kind: "habilitacion", label: "Habilitación", name: "Habilitación" },
   { kind: "seguro", label: "Seguro", name: "Seguro" },
   { kind: "aeronavegabilidad", label: "Aeronavegabilidad", name: "Certificado de aeronavegabilidad" },
+  { kind: "repaso_vuelo", label: "Repaso de vuelo", name: "Repaso de vuelo (RAAC 61.135)" },
 ];
 
 const KIND_LABEL = Object.fromEntries(KIND_OPTIONS.map((k) => [k.value, k.label])) as Record<DocumentKind, string>;

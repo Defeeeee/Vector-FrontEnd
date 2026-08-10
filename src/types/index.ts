@@ -103,7 +103,15 @@ export interface AuditSummary {
   last_recalculated_at?: string | null;
 }
 
-export type DocumentKind = "cma" | "licencia" | "habilitacion" | "seguro" | "aeronavegabilidad" | "otro";
+/**
+ * `repaso_vuelo` es el de RAAC 61.135: 24 meses, con instructor, firmado en el
+ * libro. Es una de las cuatro condiciones de 61.060(a)(1) y la única que no se
+ * puede derivar de los vuelos, porque la norma pide una firma.
+ */
+export type DocumentKind =
+  | "cma" | "licencia" | "habilitacion" | "seguro" | "aeronavegabilidad"
+  | "repaso_vuelo"
+  | "otro";
 
 export interface PilotDocument {
   id: string;
