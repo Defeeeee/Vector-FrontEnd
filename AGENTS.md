@@ -2431,6 +2431,63 @@ los planes 07, 08 y 09, y la cuenta de prueba la crea Federico: manejar
 contraseñas queda fuera de lo que hace el agente. **Y no se piden por el chat** —
 durante el plan 07 un secreto pegado para diagnosticar otra cosa hubo que rotarlo.
 
+#### Después: `O2` (wizard de 3 pasos) y `O3` (checklist)
+
+**`O2`.** El overlay pasa de dos campos a tres pasos: licencia+CMA → aeronave →
+saldo inicial. **Todo salteable menos la licencia**, que sigue siendo el gate. Un
+modal que no se puede cerrar y pide datos que el piloto no tiene a mano no lo
+retiene: lo expulsa.
+
+- El `defaultValue="2027-12-31"` del CMA **se fue**. Quien pasara sin mirar quedaba
+  con una fecha inventada alimentando el semáforo y las alertas de vencimiento.
+- El paso 3 arranca **colapsado**: son 12 campos numéricos en el primer minuto y
+  este overlay ya perdía gente con dos. El que no trae horas ve un botón.
+- Cada paso guarda lo suyo y no avanza si falló. Antes los dos writes iban juntos
+  y si el segundo fallaba quedaba a medias sin decirlo.
+- `OpeningBalanceFields` sale de `LogbooksManager` y lo usan los dos. Copiarlo era
+  la forma más rápida de que un bucket ANAC cambie en un lado y no en el otro.
+
+> **Verificado contra el backend antes de escribirlo:** el paso 3 crea un libro, y
+> `_default_logbook_id` ya auto-crea "Mi libro" al cargar el primer vuelo. Podían
+> quedar dos. No pasa: `logbooks.py:86` hace `is_default = not bool(existing)`, así
+> que el primero que crea el usuario **es** el default y el auto-creado no se
+> dispara.
+
+**`O3`.** `PrimerosPasos` recoge lo que el wizard saltea. Va en
+`dashboard/page.tsx` y no en el layout: la página ya trae aeronaves, vuelos,
+perfil y documentos en su `Promise.all`, así que **no agrega ni un viaje**; el
+layout envuelve todas las rutas del dashboard y ahí un fetch nuevo se paga en cada
+navegación. Se borra sola cuando los cuatro pasos están hechos, sin estado
+persistido.
+
+La condición vive en `src/lib/onboarding.ts` y no inline: **el overlay y el
+checklist opinan sobre lo mismo**, y con la condición escrita a mano en los dos, el
+día que se agregue un requisito uno dice que sí y el otro que no. Es además lo
+único de este plan con test automático posible (7 casos).
+
+#### Cómo verificar lo que está detrás de login sin poder loguearse
+
+Se armó una página descartable en `src/app/harness-tmp/page.tsx` que renderiza el
+overlay y el checklist con datos ficticios, se sacaron capturas y **se borró antes
+de commitear**. Dos cosas que cuesta descubrir:
+
+- **Una carpeta que empieza con `_` no se enruta.** `src/app/_harness` da 404 sin
+  ningún error: el App Router las trata como privadas. Hay que usar otro nombre.
+- Para ver los pasos 2 y 3 hay que parchear el estado inicial, porque avanzar
+  exige que las server actions respondan. Se hizo como **edit local revertido
+  desde una copia**, no como prop nueva: una API que sólo existe para el harness
+  termina en producción.
+
+Queda verificado a ojo, en claro y oscuro y en móvil, sin scroll horizontal: los
+tres pasos del wizard y el checklist en `0 de 4` y `3 de 4`. **Lo que sigue sin
+probarse es el recorrido real** —que los writes de cada paso peguen contra el
+backend— y eso necesita la cuenta de prueba.
+
+> **Ojo con `cmd 2>&1 | head -5 && echo "limpio"`:** el `&&` cuelga del `head`, no
+> del comando, así que imprime "limpio" aunque haya fallado. Pasó con `tsc` en esta
+> sesión y el error era real (caché de `.next` apuntando al harness borrado).
+> Comprobar por código de salida.
+
 ---
 
 ## Pasos a seguir (para el próximo agente)
