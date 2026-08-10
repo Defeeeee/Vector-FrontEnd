@@ -2145,6 +2145,83 @@ detrás de login. Es la misma deuda que dejó el plan 07 y sigue abierta.
 
 ---
 
+### 2026-08-07 01:30 UTC — Claude (Opus 5, vía Claude Code) — Plan 09: velocidad, y dos premisas que la medición volteó
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+**Lo que se hizo:** `P1`, `P2`, `P5` y una feature nueva. **`P3`, `P4` y `P6` no se
+hicieron, y el motivo es lo más útil de esta entrada.**
+
+#### Lo que sí, con números
+
+**P1 — tres viajes al backend en serie pasan a uno.** `/dashboard`, `/logbooks` y
+`/custom-stats` se pedían encadenados sin que ninguno dependiera del anterior.
+
+**P2 — las ocho consultas del backend, en paralelo.** Medido contra la base real:
+
+```
+8 consultas en serie:    1649 ms
+8 consultas en paralelo:  635 ms   (2.6x)
+```
+
+Y un efecto de fondo: `supabase-py` es sincrónico, así que cada `.execute()`
+bloqueaba el event loop. Dos pilotos entrando a la vez se hacían cola entre ellos.
+`asyncio.to_thread` + `gather` arregla latencia y concurrencia de una.
+
+**P5 — el copiloto de la app escribía sin ninguna defensa.** Los guardrails del
+plan 08 estaban **sólo** en el de WhatsApp: `api/chat` tenía su propio
+`log_flight`, su propio cuerpo de POST y cero de los cinco. Arreglé una de dos
+copias porque no miré que hubiera dos.
+
+> **La duplicación no es un problema estético: es cómo un arreglo llega a la mitad
+> de los caminos.** Antes de dar por cerrada una defensa, buscar si hay otra copia.
+
+#### Las dos premisas que la medición volteó
+
+**P4 — "pdf-lib viaja al navegador".** Falso. Medí el bundle antes y después:
+**1.82 MB en los dos casos**, y `pdf-lib` no aparecía en ningún chunk. Deduje el
+problema de un import estático sin comprobar que el componente estuviera en uso —
+`ExportPdfButton` era **código muerto**, nunca renderizado. El import dinámico que
+había escrito no servía para nada y se revirtió; se borró el componente,
+`pdfGenerator` y la dependencia.
+
+**P3 — "el payload trae columnas que nadie usa".** Falso también. Todas las
+columnas de `flights` se usan menos `user_id`, y el payload entero son **33 KB**:
+sacarlo ahorraría **1,5 KB**. No hay nada que ganar. El problema eran los viajes,
+no el tamaño.
+
+**P6 — menos componentes cliente.** No se hizo **a propósito**. Turbopack no
+imprime First Load JS por ruta, la pantalla está detrás de login y Chrome estuvo
+desconectado, así que no hay número al que apuntar. Y de los 39 componentes
+cliente, los únicos dos sin hooks ni handlers son los envoltorios de
+`next/dynamic`, que **tienen** que ser cliente. No hay subconjunto mecánico seguro:
+sería reestructurar la superficie más grande de la app a ciegas.
+
+> **Tres de seis tareas de un plan de performance se cayeron al medirlas.** Las que
+> quedaron valían un par de segundos. Medir antes de optimizar no es una formalidad.
+
+#### La feature: un documento puede condicionar el vuelo
+
+El semáforo de `61.060(a)(1)` tiene cuatro condiciones fijas, pero un piloto de
+escuela vive con exigencias que la norma no enumera. Ahora cualquier documento
+declara qué pasa cuando vence, de menos a más restrictivo:
+
+| | |
+|---|---|
+| `nada` | informativo — es el default |
+| `pasajeros` | volás solo, sin pasajeros |
+| `solo` | sólo con instructor, y ese vuelo es el que lo renueva |
+| `vuelo` | no volás |
+
+`solo` es la semántica del repaso de `61.135` aplicada a lo que el piloto quiera:
+una adaptación a la aeronave, un chequeo del aeroclub.
+
+El default es `nada` para que **ningún documento ya cargado cambie de significado**;
+los 10 existentes quedaron ahí, verificado por SQL. Lo que exige la norma siempre
+se nombra primero.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
