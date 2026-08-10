@@ -251,6 +251,12 @@ function DocumentForm({
   // pida. Cambiar eso haría que cargar un curso vencido apagara el semáforo sin
   // que nadie lo haya decidido.
   const [blocking, setBlocking] = useState<string>(doc?.blocking ?? "nada");
+  // "No vence" es una casilla y no "dejá la fecha vacía". Un <input type="date">
+  // con valor no se puede vaciar de forma confiable —en varios navegadores no hay
+  // forma, y en el teléfono el picker no ofrece "ninguna"—, así que pedir un campo
+  // vacío era pedir algo que el control no permite. Además hace descubrible la
+  // opción: nadie adivina que puede dejarlo en blanco.
+  const [noVence, setNoVence] = useState<boolean>(doc ? !doc.expiry_date : false);
   const presetName = presetKind ? QUICK_ADD.find((q) => q.kind === presetKind)?.name : undefined;
   const [pending, startTransition] = useTransition();
 
@@ -308,48 +314,72 @@ function DocumentForm({
 
         <div>
           <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-            Vence el <span className="text-zinc-300 dark:text-zinc-600">— vacío si no vence</span>
+            Vence el
           </label>
           {/*
-            Sin `required`: una licencia puede ser de por vida. Vacío se guarda
-            como null y significa "no vence" — nunca vencido, nunca un aviso.
+            Deshabilitado y no oculto: un input `disabled` no se envía, así que
+            `expiry_date` llega ausente y la server action lo manda como null.
+            Dejarlo a la vista en gris muestra qué se está descartando.
           */}
           <input
             name="expiry_date"
             type="date"
+            disabled={noVence}
+            required={!noVence}
             defaultValue={doc?.expiry_date ?? ""}
-            className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+            className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]"
           />
+          <label className="mt-2 flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={noVence}
+              onChange={(e) => setNoVence(e.target.checked)}
+              className="w-4 h-4 rounded border-zinc-300 dark:border-white/20 accent-zinc-900 dark:accent-white cursor-pointer"
+            />
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              No vence
+            </span>
+          </label>
         </div>
 
-        <div>
-          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-            Si vence
-          </label>
-          <StyledSelect
-            name="blocking"
-            value={blocking}
-            onChange={setBlocking}
-            options={[
-              { value: "nada", label: "Sólo avisame" },
-              { value: "pasajeros", label: "No puedo llevar pasajeros" },
-              { value: "solo", label: "Sólo puedo volar con instructor" },
-              { value: "vuelo", label: "No puedo volar" },
-            ]}
-          />
-        </div>
+        {/*
+          Los dos campos que sólo tienen sentido si el documento vence. "Si vence"
+          describe qué pasa al vencer y "Avisar a los (días)" cuándo avisar: en un
+          documento que no caduca, ninguno de los dos se va a evaluar nunca.
+          Dejarlos a la vista sugiere que hacen algo.
+        */}
+        {!noVence && (
+          <>
+            <div>
+              <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+                Si vence
+              </label>
+              <StyledSelect
+                name="blocking"
+                value={blocking}
+                onChange={setBlocking}
+                options={[
+                  { value: "nada", label: "Sólo avisame" },
+                  { value: "pasajeros", label: "No puedo llevar pasajeros" },
+                  { value: "solo", label: "Sólo puedo volar con instructor" },
+                  { value: "vuelo", label: "No puedo volar" },
+                ]}
+              />
+            </div>
 
-        <div>
-          <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-            Avisar a los (días)
-          </label>
-          <input
-            name="alert_days"
-            defaultValue={(doc?.alert_days ?? [60, 30, 7]).join(", ")}
-            placeholder="60, 30, 7"
-            className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
-          />
-        </div>
+            <div>
+              <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+                Avisar a los (días)
+              </label>
+              <input
+                name="alert_days"
+                defaultValue={(doc?.alert_days ?? [60, 30, 7]).join(", ")}
+                placeholder="60, 30, 7"
+                className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <div>
