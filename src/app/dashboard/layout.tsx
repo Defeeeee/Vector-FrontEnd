@@ -81,9 +81,19 @@ export default async function DashboardLayout({
           </Link>
           <RailThemeToggle />
           <LogoutButton variant="rail" />
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-zinc-300 mt-2">
+          {/* El avatar es la puerta al Hangar. Salió del nav —donde competía por
+              un slot con destinos que se usan a diario— y quedó donde la gente
+              ya busca su configuración. */}
+          <Link
+            href="/dashboard/settings"
+            title="Hangar"
+            className="group relative w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[10px] font-bold text-zinc-300 mt-2 transition-colors"
+          >
             {initials}
-          </div>
+            <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg bg-zinc-900 text-white text-xs font-semibold px-3 py-1.5 opacity-0 scale-95 origin-left group-hover:opacity-100 group-hover:scale-100 transition-all z-50 shadow-xl border border-white/10">
+              Hangar
+            </span>
+          </Link>
         </div>
       </aside>
 
@@ -97,6 +107,16 @@ export default async function DashboardLayout({
         </Link>
         <div className="flex items-center space-x-3">
             <ThemeToggle />
+            {/* En el teléfono no hay rail, así que el avatar vive acá. Sin esto,
+                sacar Hangar del nav lo dejaba sin ninguna entrada en móvil: caía
+                en el sheet de "Más" y de ahí desaparecía. */}
+            <Link
+              href="/dashboard/settings"
+              aria-label="Hangar"
+              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-[11px] font-bold text-zinc-600 dark:text-zinc-300"
+            >
+              {initials}
+            </Link>
             <LogoutButton isMobile={true} />
         </div>
       </header>
@@ -106,12 +126,16 @@ export default async function DashboardLayout({
         {/* Desktop Top Bar */}
         <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl z-20 shrink-0">
           <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wide">{todayCapitalized}</p>
-          <div className="flex items-center gap-2.5">
+          <Link
+            href="/dashboard/settings"
+            title="Hangar"
+            className="flex items-center gap-2.5 rounded-full pr-2 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+          >
             <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300">
               {initials}
             </div>
             <span className="text-sm font-semibold text-zinc-900 dark:text-white">{profile?.first_name}</span>
-          </div>
+          </Link>
         </header>
 
         {/* Main Content Area */}

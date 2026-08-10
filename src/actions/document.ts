@@ -25,14 +25,16 @@ export async function createDocument(formData: FormData) {
     kind: (formData.get("kind") as string) || "otro",
     blocking: (formData.get("blocking") as string) || "nada",
     name: (formData.get("name") as string)?.trim(),
-    expiry_date: formData.get("expiry_date") as string,
+    // "" es lo que manda un <input type="date"> vacío. Va como null: el
+    // documento no vence. Ver `documentStatus`.
+    expiry_date: ((formData.get("expiry_date") as string) || "").trim() || null,
     issued_date: (formData.get("issued_date") as string) || null,
     notes: ((formData.get("notes") as string) || "").trim() || null,
     alert_days: parseAlertDays(formData.get("alert_days")),
   };
 
-  if (!payload.name || !payload.expiry_date) {
-    return { error: "Nombre y fecha de vencimiento son obligatorios" };
+  if (!payload.name) {
+    return { error: "El nombre es obligatorio" };
   }
 
   const response = await apiFetch("/documents", {
@@ -54,14 +56,16 @@ export async function updateDocument(documentId: string, formData: FormData) {
     kind: (formData.get("kind") as string) || "otro",
     blocking: (formData.get("blocking") as string) || "nada",
     name: (formData.get("name") as string)?.trim(),
-    expiry_date: formData.get("expiry_date") as string,
+    // "" es lo que manda un <input type="date"> vacío. Va como null: el
+    // documento no vence. Ver `documentStatus`.
+    expiry_date: ((formData.get("expiry_date") as string) || "").trim() || null,
     issued_date: (formData.get("issued_date") as string) || null,
     notes: ((formData.get("notes") as string) || "").trim() || null,
     alert_days: parseAlertDays(formData.get("alert_days")),
   };
 
-  if (!payload.name || !payload.expiry_date) {
-    return { error: "Nombre y fecha de vencimiento son obligatorios" };
+  if (!payload.name) {
+    return { error: "El nombre es obligatorio" };
   }
 
   const response = await apiFetch(`/documents/${documentId}`, {

@@ -240,4 +240,36 @@ describe("pilotStatus", () => {
       expect(r.estado).toBe("repaso_vencido");
     });
   });
+
+  /**
+   * Desde la migración 007 un documento puede no vencer. `pilotStatus` llama a
+   * `documentStatus` por cada bloqueante, así que sin la guarda un solo documento
+   * sin fecha tiraba toda la evaluación en vez de degradarla.
+   */
+  describe("documentos que no vencen", () => {
+    const sinFecha = (kind: string, blocking = "nada") =>
+      ({ id: kind, user_id: "u", kind, name: kind, expiry_date: null, blocking, alert_days: [], created_at: "", updated_at: "" }) as unknown as PilotDocument;
+
+    it("un bloqueante sin fecha no rompe la evaluación", () => {
+      const docs = [doc("cma", "2027-06-30"), doc("repaso_vuelo", "2027-12-31"), sinFecha("licencia")];
+      expect(() => pilotStatus(docs, [vigente()], [vuelo("2026-08-01")], HOY)).not.toThrow();
+    });
+
+    /** Una licencia de por vida no vence, así que no puede impedir volar. */
+    it("un bloqueante sin fecha no bloquea", () => {
+      const docs = [doc("cma", "2027-06-30"), doc("repaso_vuelo", "2027-12-31"), sinFecha("licencia")];
+      expect(pilotStatus(docs, [vigente()], [vuelo("2026-08-01")], HOY).estado).toBe("vigente");
+    });
+
+    it("tampoco bloquea uno declarado bloqueante por el piloto", () => {
+      const docs = [doc("cma", "2027-06-30"), doc("repaso_vuelo", "2027-12-31"), sinFecha("otro", "vuelo")];
+      expect(pilotStatus(docs, [vigente()], [vuelo("2026-08-01")], HOY).estado).toBe("vigente");
+    });
+
+    /** Un CMA sin fecha existe, así que no es el caso de "falta el documento". */
+    it("un CMA sin fecha no dispara documento_faltante", () => {
+      const docs = [sinFecha("cma"), doc("repaso_vuelo", "2027-12-31")];
+      expect(pilotStatus(docs, [vigente()], [vuelo("2026-08-01")], HOY).estado).not.toBe("documento_faltante");
+    });
+  });
 });

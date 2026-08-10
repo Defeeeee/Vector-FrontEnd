@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Settings, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2 } from "lucide-react";
+import { LayoutDashboard, History, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,7 +13,6 @@ const navItems = [
   { href: "/dashboard/route-weather", icon: CloudRain, label: "Ruta METAR" },
   { href: "/dashboard/tools", icon: Ruler, label: "Herramientas" },
   { href: "/dashboard/audit", icon: ShieldCheck, label: "Auditoría" },
-  { href: "/dashboard/settings", icon: Settings, label: "Hangar" },
   // Appended rather than slotted next to "Bitácora", where it belongs
   // thematically: the first five entries are the ones visible on the phone bar,
   // and reordering them would push Herramientas into the "Más" sheet. Muscle

@@ -40,6 +40,9 @@ const TONE_STYLES = {
   critical: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20",
   warning: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20",
   ok: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20",
+  // Neutro y no verde: "no vence" no es un estado saludable que haya que
+  // celebrar, es la ausencia de una cuenta regresiva.
+  sin_vencimiento: "bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-white/10",
 } as const;
 
 export default function DocumentsManager({
@@ -139,11 +142,13 @@ export default function DocumentsManager({
                   </span>
                 </div>
                 <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  {new Date(`${doc.expiry_date}T00:00:00`).toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  {doc.expiry_date
+                    ? new Date(`${doc.expiry_date}T00:00:00`).toLocaleDateString("es-AR", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "No vence"}
                   {doc.notes ? ` · ${doc.notes}` : ""}
                 </p>
               </div>
@@ -303,12 +308,15 @@ function DocumentForm({
 
         <div>
           <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-            Vence el
+            Vence el <span className="text-zinc-300 dark:text-zinc-600">— vacío si no vence</span>
           </label>
+          {/*
+            Sin `required`: una licencia puede ser de por vida. Vacío se guarda
+            como null y significa "no vence" — nunca vencido, nunca un aviso.
+          */}
           <input
             name="expiry_date"
             type="date"
-            required
             defaultValue={doc?.expiry_date ?? ""}
             className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
           />

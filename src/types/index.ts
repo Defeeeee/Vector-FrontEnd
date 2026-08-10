@@ -134,8 +134,8 @@ export interface PilotDocument {
   /** Default "nada": un documento no bloquea salvo que el piloto lo pida. */
   blocking: DocumentBlocking;
   name: string;
-  /** "YYYY-MM-DD" */
-  expiry_date: string;
+  /** "YYYY-MM-DD", o `null` si el documento no vence (una licencia de por vida). */
+  expiry_date: string | null;
   issued_date?: string | null;
   notes?: string | null;
   alert_days: number[];
