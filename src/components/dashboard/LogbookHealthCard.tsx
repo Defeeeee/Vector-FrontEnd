@@ -21,12 +21,17 @@ export default function LogbookHealthCard({
 }) {
   const clean = audit.open_total === 0;
 
+  // Los que no vencen van al final del orden y no cuentan como urgentes: no hay
+  // cuenta regresiva que mostrar ni nada que renovar.
   const ranked = documents
     .map((doc) => ({ doc, status: documentStatus(doc.expiry_date) }))
-    .sort((a, b) => a.status.daysRemaining - b.status.daysRemaining);
+    .sort((a, b) => (a.status.daysRemaining ?? Infinity) - (b.status.daysRemaining ?? Infinity));
 
-  const urgent = ranked.filter((d) => d.status.tone !== "ok");
-  const next = ranked[0];
+  const urgent = ranked.filter((d) => d.status.tone !== "ok" && d.status.tone !== "sin_vencimiento");
+  // El próximo a vencer sale sólo de los que efectivamente vencen. Con todos los
+  // documentos sin fecha, no hay "próximo" y la card lo dice en vez de inventar
+  // un número.
+  const next = ranked.find((d) => d.status.daysRemaining !== null);
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -65,6 +70,11 @@ export default function LogbookHealthCard({
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
             No hay documentos cargados. Agregá el CMA y la licencia para recibir avisos.
           </p>
+        ) : !next ? (
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            {documents.length === 1 ? "Tu documento no vence" : "Ninguno de tus documentos vence"}.
+            No hay nada por renovar.
+          </p>
         ) : (
           <div className="space-y-3">
             <div className="flex items-baseline gap-2">
@@ -77,10 +87,10 @@ export default function LogbookHealthCard({
                       : "text-red-600 dark:text-red-400"
                 }`}
               >
-                {next.status.daysRemaining < 0 ? "0" : next.status.daysRemaining}
+                {(next.status.daysRemaining ?? 0) < 0 ? "0" : next.status.daysRemaining}
               </span>
               <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">
-                {next.status.daysRemaining < 0 ? "días — vencido" : "días para el próximo"}
+                {(next.status.daysRemaining ?? 0) < 0 ? "días — vencido" : "días para el próximo"}
               </span>
             </div>
 

@@ -151,8 +151,9 @@ export function buildActivityHeatmap(
 }
 
 export interface DocumentStatus {
-  daysRemaining: number;
-  tone: "expired" | "critical" | "warning" | "ok";
+  /** `null` cuando el documento no vence: no hay cuenta regresiva que hacer. */
+  daysRemaining: number | null;
+  tone: "expired" | "critical" | "warning" | "ok" | "sin_vencimiento";
   label: string;
 }
 
@@ -167,7 +168,18 @@ export interface DocumentStatus {
  * running them through local time would flip the count a day either way
  * depending on the pilot's timezone.
  */
-export function documentStatus(expiryDate: string, today = new Date()): DocumentStatus {
+export function documentStatus(expiryDate: string | null | undefined, today = new Date()): DocumentStatus {
+  // No todo documento caduca: una licencia puede ser de por vida. **Sin fecha es
+  // "no vence", no "no sabemos"** — nunca está vencido, nunca bloquea y nunca
+  // dispara un aviso.
+  //
+  // Sin esta guarda el `slice` de abajo explota con null, y como `pilotStatus`
+  // llama a esta función por cada documento bloqueante, un solo documento sin
+  // fecha tiraba el semáforo entero en vez de degradarlo.
+  if (!expiryDate) {
+    return { daysRemaining: null, tone: "sin_vencimiento", label: "Sin vencimiento" };
+  }
+
   const expiry = Date.parse(`${expiryDate.slice(0, 10)}T00:00:00Z`);
   const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   const daysRemaining = Math.round((expiry - todayUtc) / DAY_MS);
