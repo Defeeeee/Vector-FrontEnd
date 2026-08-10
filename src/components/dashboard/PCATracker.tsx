@@ -3,6 +3,7 @@
 import { Flight, Logbook } from "@/types";
 import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Target } from "lucide-react";
 import { motion } from "framer-motion";
+import { totalNightLandings } from "@/lib/landings";
 
 interface PCATrackerProps {
   flights: Flight[];
@@ -52,12 +53,14 @@ export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) 
   // carried-forward landing count cannot be assumed to be nocturnal, and
   // inflating a night-landing requirement is the kind of error that sends a
   // pilot to a checkride short.
-  const nightLandings = flights.reduce((acc, f) => {
-    if ((f.pic_night_loc || 0) > 0 || (f.pic_night_tra || 0) > 0) {
-      return acc + (f.landings || 0);
-    }
-    return acc;
-  }, 0);
+  //
+  // Ese mismo razonamiento faltaba un renglón más abajo: la versión anterior
+  // sumaba **todos** los aterrizajes de cualquier vuelo con horas nocturnas, así
+  // que una sesión de circuitos que cruzaba el ocaso —seis aterrizajes, uno solo
+  // después de la puesta— sumaba seis. La regla vive ahora en lib/landings.ts,
+  // compartida con la experiencia reciente para que las dos pantallas no puedan
+  // dar distinto el mismo conteo.
+  const nightLandings = totalNightLandings(flights);
 
   const requirements = [
     { label: "PIC", current: picHours, target: 100, subTarget: 70, unit: "hs", icon: <Target className="w-4 h-4" /> },
