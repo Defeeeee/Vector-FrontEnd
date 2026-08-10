@@ -12,8 +12,24 @@ import RecentFlights from "@/components/dashboard/RecentFlights";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+/**
+ * Los tres endpoints que necesita esta pantalla, en paralelo.
+ *
+ * Estaban encadenados —`/dashboard`, después `/logbooks`, después
+ * `/custom-stats`— sin que ninguno dependiera del anterior. Medido contra
+ * producción, una llamada trivial al backend (`/health`, una sola consulta)
+ * tarda ~547 ms: tres en serie es cerca de un segundo y medio de espera que se
+ * puede colapsar al tiempo de la más lenta.
+ *
+ * `Promise.all` y no `allSettled`: si `/dashboard` falla, la página no tiene nada
+ * que mostrar igual. Los otros dos degradan solos a lista vacía más abajo.
+ */
 async function getDashboardData() {
-  const response = await apiFetch("/dashboard");
+  const [response, logbooksResponse, customStats] = await Promise.all([
+    apiFetch("/dashboard"),
+    apiFetch("/logbooks"),
+    listCustomStats(),
+  ]);
 
   if (response.status === 401) {
     console.log("Dashboard: 401 Unauthorized. Redirecting to logout...");
@@ -23,18 +39,18 @@ async function getDashboardData() {
   const emptyAudit: AuditSummary = { critical: 0, warning: 0, suppressed: 0, open_total: 0, by_rule: {} };
 
   if (!response.ok) {
-    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [], logbooks: [] as Logbook[] };
+    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [] };
   }
 
   const data = await response.json();
 
   // Logbooks are not in the /dashboard payload yet; fetched alongside so the
   // totals on this page can include carried-forward hours.
-  const logbooksResponse = await apiFetch("/logbooks");
   const logbooks: Logbook[] = logbooksResponse.ok ? await logbooksResponse.json() : [];
 
   return {
     logbooks,
+    customStats,
     flights: data.flights || [],
     aircraft: data.aircraft || [],
     profile: data.profile || null,
@@ -52,10 +68,8 @@ import { listCustomStats } from "@/actions/custom-stat";
 import { splitRoute } from "@/lib/route";
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs, audit, documents, logbooks } = await getDashboardData();
-  // Sólo la definición viaja; el cálculo pasa en el cliente sobre los vuelos que
-  // esta pantalla ya tiene.
-  const customStats = await listCustomStats();
+  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats } =
+    await getDashboardData();
 
   const totalFlights = flights.length;
   const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
