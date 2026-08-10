@@ -2488,6 +2488,32 @@ backend— y eso necesita la cuenta de prueba.
 > sesión y el error era real (caché de `.next` apuntando al harness borrado).
 > Comprobar por código de salida.
 
+#### `T1` del plan 07 — el smoke autenticado, después de dos planes esperándolo
+
+**La nota que venía arrastrándose era falsa.** Decía "el script lee `SMOKE_EMAIL` y
+`SMOKE_PASSWORD` de los secrets": `smoke.mjs` sólo leía `SMOKE_PORT`. Describía
+cómo iba a ser, no cómo era, y así quedó dos planes. Cargar los secrets no habría
+activado nada.
+
+Ahora sí lo hace. Con las dos variables presentes entra con sesión real y comprueba
+que **rendericen** las 10 pantallas del dashboard; sin ellas omite esa tanda y pasa
+igual. Esa degradación no es comodidad: **los secrets no llegan a los PR desde
+forks**, y sin ella cualquier PR externo daría rojo por una credencial que no puede
+tener. Un 307 en esa tanda se reporta como "la sesión no fue aceptada" y no como
+éxito, porque si no la cobertura desaparecería en silencio.
+
+**Es de sólo lectura a propósito, y la razón es de infraestructura:** el build
+apunta al backend de **producción** —no hay uno de test—, así que verificar el alta
+de vuelos escribiría en la base real en cada push y exigiría un teardown confiable.
+Esa mitad se verifica a mano; la lista está en `docs/brief/10-onboarding.md`.
+
+Falta sólo que Federico cree la cuenta y corra:
+
+```bash
+gh secret set SMOKE_EMAIL --repo Defeeeee/Vector-FrontEnd
+gh secret set SMOKE_PASSWORD --repo Defeeeee/Vector-FrontEnd
+```
+
 ---
 
 ## Pasos a seguir (para el próximo agente)

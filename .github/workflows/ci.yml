@@ -35,8 +35,16 @@ jobs:
       # Levanta el build y comprueba que las rutas respondan. `tsc` no ve los
       # errores de runtime: la página Registrar estuvo rota en producción con
       # los tipos en verde.
+      #
+      # Con la cuenta de prueba configurada, además entra al dashboard y comprueba
+      # que cada pantalla renderice. Si los secrets no están —un PR desde un fork
+      # no los recibe— el script omite esa tanda y sigue pasando, en vez de dar
+      # rojo por una credencial que ese PR no puede tener.
       - name: Smoke
         run: npm run smoke
+        env:
+          SMOKE_EMAIL: ${{ secrets.SMOKE_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
 
   secretos:
     runs-on: ubuntu-latest
