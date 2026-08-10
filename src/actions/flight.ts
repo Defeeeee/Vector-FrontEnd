@@ -208,6 +208,11 @@ export async function addAircraft(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/settings");
+  // Nuevo Vuelo también depende de esta lista: sin aeronaves muestra `SinAeronaves`,
+  // y el alta se hace **desde ahí**. Sin esta línea, los GET cacheados 20s
+  // (`api.ts`) dejan la pantalla que pide cargar una aeronave en su lugar después
+  // de haberla cargado — sin ningún error, que es el peor modo de falla.
+  revalidatePath("/dashboard/log-flight");
 }
 
 export async function updateAircraft(formData: FormData) {

@@ -3,6 +3,7 @@ import { Aircraft } from "@/types";
 import Link from "next/link";
 import FlightLogForm from "@/components/dashboard/FlightLogForm";
 import LiveSessionController from "@/components/dashboard/LiveSessionController";
+import SinAeronaves from "@/components/dashboard/SinAeronaves";
 import { ChevronLeft } from "lucide-react";
 
 import { redirect } from "next/navigation";
@@ -71,6 +72,16 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
+      {/*
+        Sin aeronaves no hay nada que completar: el select queda vacío y el
+        `required` bloquea el submit sin salida. La cabecera se mantiene arriba
+        para no dejar al piloto sin el botón de volver.
+
+        Este branch tiene que existir igual en `@modal/(.)log-flight/page.tsx`.
+      */}
+      {aircraft.length === 0 ? (
+        <SinAeronaves />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2 order-2 lg:order-1">
           <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={prefillData} />
@@ -87,6 +98,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

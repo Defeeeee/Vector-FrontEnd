@@ -196,4 +196,48 @@ describe("pilotStatus", () => {
     const r = pilotStatus(alDia, [], [], HOY);
     expect(r.estado).toBe("vigente");
   });
+
+  /**
+   * El CMA se puede saltear en el onboarding, así que "no está cargado" es un
+   * estado real y no un caso de laboratorio. Antes de esto la función devolvía
+   * `vigente`: le afirmaba a un piloto que podía volar sin saber nada de su
+   * certificado médico.
+   */
+  describe("documento faltante", () => {
+    it("sin CMA cargado no afirma que pueda volar", () => {
+      const r = pilotStatus([doc("repaso_vuelo", "2027-12-31")], [vigente()], [vuelo("2026-08-01")], HOY);
+      expect(r.estado).toBe("documento_faltante");
+      expect(r.seccion).toBe("61.060(a)(1)(i)");
+      expect(r.paraVolver).toContain("certificado médico");
+    });
+
+    /** Ni "podés" ni "no podés": Vector no lo sabe, y lo dice. */
+    it("distingue no saber de no poder", () => {
+      const r = pilotStatus([], [vigente()], [], HOY);
+      expect(r.estado).toBe("documento_faltante");
+      expect(r.detalle).toContain("no lo sabe");
+    });
+
+    /** De un CMA vencido sí sabemos algo, y es peor que no tenerlo cargado. */
+    it("un CMA vencido gana sobre uno faltante", () => {
+      const r = pilotStatus([doc("cma", "2020-01-01")], [vigente()], [vuelo("2026-08-01")], HOY);
+      expect(r.estado).toBe("documento_vencido");
+    });
+
+    /**
+     * La regresión que este estado podía causar: ningún piloto real tiene
+     * cargados `licencia` ni `habilitacion` como documento —el tipo de licencia
+     * vive en `profiles.license_type`—, así que exigirlos mandaría a todos a
+     * "no podemos confirmar" y el estado no significaría nada.
+     */
+    it("no se dispara por licencia o habilitación sin cargar", () => {
+      const r = pilotStatus(alDia, [vigente()], [vuelo("2026-08-01")], HOY);
+      expect(r.estado).toBe("vigente");
+    });
+
+    it("con el CMA cargado sigue evaluando el resto", () => {
+      const r = pilotStatus([doc("cma", "2027-06-30")], [vigente()], [vuelo("2026-08-01")], HOY);
+      expect(r.estado).toBe("repaso_vencido");
+    });
+  });
 });

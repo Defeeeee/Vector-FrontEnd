@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ShieldAlert, TriangleAlert } from "lucide-react";
+import { ArrowRight, CheckCircle2, HelpCircle, ShieldAlert, TriangleAlert } from "lucide-react";
 import { Flight, PilotDocument, Profile } from "@/types";
 import { recencyByClass, recencyWindowDays } from "@/lib/recency";
 import { pilotStatus } from "@/lib/pilot-status";
@@ -51,10 +51,18 @@ export default function FlightStatusCard({
     );
   }
 
+  // Tres tonos, no dos. `documento_faltante` no es una advertencia: es la
+  // ausencia del dato. En ámbar se lee como "algo está mal con tu CMA", y lo que
+  // pasa es que no hay ninguno cargado. Gris dice lo que corresponde —falta el
+  // dato— sin afirmar ni desmentir nada sobre el piloto.
+  const desconocido = estado.estado === "documento_faltante";
+
   const tono = grave
     ? "border-red-500/25 bg-red-500/[0.07] text-red-600 dark:text-red-500"
-    : "border-amber-500/25 bg-amber-500/[0.07] text-amber-600 dark:text-amber-500";
-  const Icono = grave ? ShieldAlert : TriangleAlert;
+    : desconocido
+      ? "border-zinc-300 dark:border-white/15 bg-zinc-500/[0.06] text-zinc-500 dark:text-zinc-400"
+      : "border-amber-500/25 bg-amber-500/[0.07] text-amber-600 dark:text-amber-500";
+  const Icono = grave ? ShieldAlert : desconocido ? HelpCircle : TriangleAlert;
 
   return (
     <div className={`flex flex-col sm:flex-row sm:items-start gap-3 rounded-2xl border px-4 py-3.5 ${tono}`}>

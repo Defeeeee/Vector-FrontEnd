@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Plane, X } from "lucide-react";
 import { Aircraft } from "@/types";
 import FlightLogForm from "./FlightLogForm";
+import SinAeronaves from "./SinAeronaves";
 
 /**
  * "Nuevo Vuelo" as a dialog over the current page.
@@ -32,6 +33,14 @@ export default function NewFlightModal({
 }) {
   const router = useRouter();
   const close = () => router.back();
+
+  // Sin aeronaves no hay formulario que completar. El branch va acá y no en la
+  // ruta que monta este modal, porque el chrome —cierre, título, gesto de
+  // volver— tiene que quedar: lo que cambia es el cuerpo, no el diálogo.
+  //
+  // El mismo caso está resuelto en `/dashboard/log-flight/page.tsx`. Si tocás
+  // uno, tocá el otro: este par ya derivó una vez.
+  const sinAeronaves = aircraft.length === 0;
 
   // Escape closes, and the page behind must not scroll while the dialog owns
   // the screen.
@@ -90,13 +99,17 @@ export default function NewFlightModal({
               Nuevo vuelo
             </h2>
             <p className="mt-1 text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 truncate">
-              Operaciones de vuelo
+              {sinAeronaves ? "Falta un paso previo" : "Operaciones de vuelo"}
             </p>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-10">
-          <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={initialData} inModal stickyActions onCancel={close} />
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-10 pb-6 md:pb-10">
+          {sinAeronaves ? (
+            <SinAeronaves />
+          ) : (
+            <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={initialData} inModal stickyActions onCancel={close} />
+          )}
         </div>
       </motion.div>
     </div>
