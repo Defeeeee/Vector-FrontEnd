@@ -472,9 +472,21 @@ export async function POST(req: NextRequest) {
     if (!userRes.ok) {
       const errText = await userRes.text().catch(() => "");
       console.error("Failed to fetch user-data from backend. Status:", userRes.status, "Body:", errText, "URL:", userRes.url);
+
+      // **Sólo un 404 significa que el número no está vinculado.** Cualquier otro
+      // status es un problema nuestro —401 por secreto desalineado, 5xx por
+      // backend caído— y decirle al piloto "tu número no está asociado" lo manda
+      // a revisar su perfil, que está bien.
+      //
+      // Ya pasó dos veces: en el plan 07 se perdió un buen rato buscando en la
+      // tabla de perfiles un problema que estaba en el `.env`, y volvió a
+      // confundir el 2026-08-11 al conectar el número de producción.
+      const noVinculado = userRes.status === 404;
       await sendWhatsAppMessage(
         fromNumber,
-        "Hola 🛩️ Tu número de WhatsApp no está asociado a ningún piloto en Vector. Ingresá a la web, ve a tu Perfil y vinculá tu número en el campo 'WhatsApp (para Copiloto IA)'.",
+        noVinculado
+          ? "Hola 🛩️ Tu número de WhatsApp no está asociado a ningún piloto en Vector. Ingresá a la web, ve a tu Perfil y vinculá tu número en el campo 'WhatsApp (para Copiloto IA)'."
+          : "Hola 🛩️ Tuvimos un problema técnico para acceder a tus datos. No es algo de tu cuenta: ya quedó registrado y lo estamos viendo. Probá de nuevo en un rato.",
         payloadPhoneNumberId
       );
       return NextResponse.json({ success: true });
