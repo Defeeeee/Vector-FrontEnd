@@ -16,9 +16,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiazn
  * the document unmarked so the next run retries it — the alternative would burn
  * the 60-day warning on a Kapso outage and never mention it again.
  *
- * Schedule it once a day, e.g. from the same host that runs the backend:
+ * Programarlo una vez por día, desde el mismo host que corre el backend. **El
+ * secreto va por cabecera**: en query string se escribe en el access log de nginx
+ * en cada corrida.
+ *
  *   0 12 * * * curl -fsS -X POST \
- *     "https://vector.fdiaznem.com.ar/api/cron/document-alerts?secret=$DOCUMENTS_ALERT_SECRET"
+ *     -H "X-Cron-Secret: $DOCUMENTS_ALERT_SECRET" \
+ *     https://vector.fdiaznem.com.ar/api/cron/document-alerts
  */
 
 function secretsMatch(provided: string, expected: string): boolean {
@@ -55,8 +59,12 @@ export async function POST(req: NextRequest) {
 
   let pending: PendingAlert[] = [];
   try {
-    const res = await fetch(`${API_URL}/document-alerts/pending?secret=${encodeURIComponent(secret)}`, {
+    // El secreto va por cabecera y no en la URL: el access log de nginx y el de
+    // uvicorn registran la URL entera, así que en query string se escribiría en
+    // texto plano en el server en cada corrida diaria.
+    const res = await fetch(`${API_URL}/document-alerts/pending`, {
       cache: "no-store",
+      headers: { "X-Cron-Secret": secret },
     });
     if (!res.ok) {
       const detail = await res.text();
@@ -89,8 +97,8 @@ export async function POST(req: NextRequest) {
 
     try {
       const markRes = await fetch(
-        `${API_URL}/document-alerts/${alert.document_id}/sent?secret=${encodeURIComponent(secret)}&threshold=${alert.threshold}`,
-        { method: "POST", cache: "no-store" }
+        `${API_URL}/document-alerts/${alert.document_id}/sent?threshold=${alert.threshold}`,
+        { method: "POST", cache: "no-store", headers: { "X-Cron-Secret": secret } }
       );
       if (!markRes.ok) {
         // Delivered but not recorded: the pilot may get one duplicate tomorrow,
