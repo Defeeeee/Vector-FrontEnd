@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
 
@@ -41,7 +41,41 @@ interface PendingAlert {
   threshold: number;
   days_remaining: number;
   whatsapp_phone?: string | null;
+  first_name?: string | null;
   message: string;
+}
+
+/**
+ * Las dos plantillas aprobadas por Meta, por entorno porque el nombre lo fija la
+ * aprobación y no el código.
+ *
+ * **Los parámetros son posicionales**, en el mismo orden en que aparecen los
+ * `{{n}}` del body. Si alguna vez se cargan plantillas con parámetros
+ * *nombrados*, Meta exige `parameter_name` en cada uno y hay que cambiar
+ * `sendWhatsAppTemplate`.
+ *
+ *   vencimiento_proximo  {{1}} nombre · {{2}} documento · {{3}} fecha · {{4}} días
+ *   documento_vencido    {{1}} nombre · {{2}} documento · {{3}} fecha
+ */
+const TEMPLATE_PROXIMO = process.env.WHATSAPP_TEMPLATE_VENCIMIENTO || "vencimiento_proximo";
+const TEMPLATE_VENCIDO = process.env.WHATSAPP_TEMPLATE_VENCIDO || "documento_vencido";
+
+/** `0` es el centinela con el que el backend dice "ya venció" una sola vez. */
+const EXPIRED_BUCKET = 0;
+
+/**
+ * "YYYY-MM-DD" a "DD/MM/YYYY", a mano.
+ *
+ * Sin `Date` ni `toLocaleDateString`: acá corre en el server y la fecha ya viene
+ * como texto ISO, así que construir un `Date` sólo agregaría una zona horaria que
+ * puede correr el día. Ya costó dos bugs de hidratación en este repo.
+ */
+function fechaLegible(iso: string): string {
+  // Validado por forma y no sólo por "tiene tres partes": partir una cadena
+  // cualquiera por guiones también da tres pedazos, y esto termina en un mensaje
+  // que lee un piloto. Ante algo inesperado, devolver el original.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
 }
 
 export async function POST(req: NextRequest) {
@@ -89,7 +123,19 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const delivered = await sendWhatsAppMessage(alert.whatsapp_phone, alert.message);
+    // Plantilla y no texto libre: este envío es proactivo y Meta rechaza texto
+    // fuera de la ventana de 24 h. Ver `sendWhatsAppTemplate`.
+    const vencido = alert.threshold === EXPIRED_BUCKET;
+    const nombre = (alert.first_name || "").trim() || "piloto";
+    const params = vencido
+      ? [nombre, alert.name, fechaLegible(alert.expiry_date)]
+      : [nombre, alert.name, fechaLegible(alert.expiry_date), String(alert.threshold)];
+
+    const delivered = await sendWhatsAppTemplate(
+      alert.whatsapp_phone,
+      vencido ? TEMPLATE_VENCIDO : TEMPLATE_PROXIMO,
+      params
+    );
     if (!delivered) {
       failed += 1;
       continue;
