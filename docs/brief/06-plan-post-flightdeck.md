@@ -29,9 +29,11 @@ el bot deja de responder.
 **A medio camino:** `T1.3` — el paso 1 (`DROP NOT NULL`) está aplicado y el paso 2
 (sacarlo del código) está en PR. Los pasos 3 y 4 van **después de desplegar**.
 
-**Pendientes, y ninguna es código:** `T1.1` (falta `DOCUMENTS_ALERT_SECRET` y la
-entrada de cron) · `T1.2` (correr la auditoría una vez con Reanalizar) · `T5.2`
-(activar protección de contraseñas filtradas en el panel de Supabase).
+**Pendientes:** `T1.1` — **reclasificada el 2026-08-11**: no era "XS, es
+configuración". El secreto y la fuga están resueltos, pero la entrega está
+bloqueada por Meta (número de producción + plantilla aprobada), ver la tarea ·
+`T1.2` (correr la auditoría una vez con Reanalizar) · `T5.2` (activar protección
+de contraseñas filtradas en el panel de Supabase).
 
 **Parcial:** `T0.4` — el scroller de la matriz ANAC se verificó constriñendo la card
 a 358 px (scrollea sola, la página no desborda), pero **las media queries siguen sin
@@ -89,23 +91,61 @@ sesión dejó de poder tomar capturas a mitad de camino, y la ventana no bajaba 
 
 No es diseño. Es la app no haciendo lo que dice.
 
-### T1.1 — Configurar el cron de vencimientos ⚠️ *lo más importante de la lista*
+### T1.1 — Avisos de vencimiento ⚠️ *bloqueada por Meta, no por código*
 
-La Fase 4 guarda documentos y calcula vencimientos, pero **si el cron no está
-configurado no avisa nunca**. Un piloto que confía en Vector para el aviso del CMA
-hoy no recibe nada, y eso es peor que no tener la feature: genera confianza falsa
-sobre algo con consecuencias regulatorias.
+> **Corregida el 2026-08-11.** Este ítem decía "**Esfuerzo: XS (es configuración,
+> no código)**" y eso era falso. Lo probamos de punta a punta y la feature **no
+> puede entregar un solo aviso**, por una razón que no está en el repo.
 
-- `DOCUMENTS_ALERT_SECRET` con el **mismo valor** en el `.env` del backend y del
-  frontend. Si falta, el barrido rechaza la llamada a propósito (corre con service
-  role sobre todos los usuarios: falla cerrado).
-- Entrada de cron diaria contra
-  `POST /api/cron/document-alerts?secret=$DOCUMENTS_ALERT_SECRET`.
-- Devuelve `{pending, sent, skipped, failed}`. `skipped` son pilotos sin WhatsApp
-  cargado; quedan **sin marcar** para que el aviso salga si después lo cargan.
+La Fase 4 guarda documentos y calcula vencimientos. El barrido funciona: corrido a
+mano el 2026-08-11 devolvió `{"pending":2,"sent":0,"skipped":1,"failed":1}`,
+encontró los documentos correctos, salteó al piloto sin WhatsApp y **no marcó
+nada**, así que ningún aviso se quemó.
 
-**Esfuerzo:** XS (es configuración, no código). **Criterio:** una corrida manual
-devuelve el JSON y un vencimiento de prueba dispara el mensaje.
+**Lo que falla es la entrega.** Kapso rechaza:
+
+```
+"Cannot send non-template messages outside the 24-hour window."
+"next_steps": "Send a WhatsApp template message to reopen the session."
+"Active sandbox session required to send messages"
+```
+
+Meta sólo permite texto libre dentro de las **24 horas** desde el último mensaje
+del piloto. **Un aviso de vencimiento es proactivo por definición**: llega justo
+cuando el piloto no escribió nada. Y `sendWhatsAppMessage` manda siempre
+`type: "text"`.
+
+> Esto explica el cuadro entero, incluida la parte que confundía: **el copiloto de
+> WhatsApp funciona** porque son respuestas dentro de la ventana. Los avisos no
+> pueden, por la misma razón por la que el bot sí.
+
+Y hay un bloqueo antes de la plantilla — Kapso, textual:
+
+```
+Template sending is disabled for sandbox numbers.
+Please connect a production phone number to create and send WhatsApp templates.
+```
+
+**La cadena real, en orden:**
+
+1. Conectar un **número de producción** en Kapso → verificación de negocio con
+   Meta. *Trámite de Federico, puede tardar días.*
+2. Crear la plantilla *utility* y esperar aprobación. *Trámite.*
+3. `sendWhatsAppMessage` necesita un camino `type: "template"` con nombre y
+   parámetros. *Código, y es lo único chico de los tres.*
+
+**Hecho el 2026-08-11, y sigue siendo útil igual:** `DOCUMENTS_ALERT_SECRET`
+generado y puesto en los dos `.env`, y **el secreto salió de la query string** —
+viajaba en la URL y el access log de nginx la registra entera, así que programar el
+cron diario habría escrito el secreto en texto plano todos los días.
+
+**El cron NO está programado, a propósito.** Correría cada día a las 9, fallaría
+cada día y no avisaría nada.
+
+**La pregunta de producto que esto abre:** ¿es WhatsApp el canal correcto para
+esto? Un mail no tiene ventana de 24 horas ni aprobación de plantilla. La app ya
+muestra los vencimientos bien —`LogbookHealthCard`, el semáforo, `PrimerosPasos`—;
+lo que falta es **empujar** a un piloto que no está mirando.
 
 ### T1.2 — Correr la auditoría una primera vez por usuario
 
