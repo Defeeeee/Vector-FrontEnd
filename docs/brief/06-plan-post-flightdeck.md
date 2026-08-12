@@ -29,11 +29,13 @@ el bot deja de responder.
 **A medio camino:** `T1.3` — el paso 1 (`DROP NOT NULL`) está aplicado y el paso 2
 (sacarlo del código) está en PR. Los pasos 3 y 4 van **después de desplegar**.
 
-**Pendientes:** `T1.1` — **reclasificada el 2026-08-11**: no era "XS, es
-configuración". El secreto y la fuga están resueltos, pero la entrega está
-bloqueada por Meta (número de producción + plantilla aprobada), ver la tarea ·
-`T1.2` (correr la auditoría una vez con Reanalizar) · `T5.2` (activar protección
-de contraseñas filtradas en el panel de Supabase).
+**Pendientes:** `T1.2` (correr la auditoría una vez con Reanalizar) · `T5.2`
+(activar protección de contraseñas filtradas en el panel de Supabase).
+
+**`T1.1` cerrada el 2026-08-12**, tres planes después de escribirse como "XS, es
+configuración". Vale leer la tarea entera: el diagnóstico —dos bugs de
+contaminación de sesión y un barrido que devolvía lista vacía sin fallar— es más
+útil que el resultado.
 
 **Parcial:** `T0.4` — el scroller de la matriz ANAC se verificó constriñendo la card
 a 358 px (scrollea sola, la página no desborda), pero **las media queries siguen sin
@@ -91,11 +93,19 @@ sesión dejó de poder tomar capturas a mitad de camino, y la ventana no bajaba 
 
 No es diseño. Es la app no haciendo lo que dice.
 
-### T1.1 — Avisos de vencimiento ⚠️ *bloqueada por Meta, no por código*
+### T1.1 — Avisos de vencimiento ✅ **CERRADA el 2026-08-12**
 
-> **Corregida el 2026-08-11.** Este ítem decía "**Esfuerzo: XS (es configuración,
-> no código)**" y eso era falso. Lo probamos de punta a punta y la feature **no
-> puede entregar un solo aviso**, por una razón que no está en el repo.
+> **Tres planes, y nunca fue "configurar un cron".** El ítem decía "**Esfuerzo: XS
+> (es configuración, no código)**". Entre que se escribió eso y que un piloto
+> recibió el primer aviso hubo: un número de WhatsApp de producción, dos plantillas
+> aprobadas por Meta, un camino `type: "template"` en el código, el secreto fuera
+> de la query string, y **dos bugs de contaminación de sesión** que hacían que el
+> barrido viera 3 documentos de 6 sin quejarse.
+>
+> **El primer aviso salió el 2026-08-11 a las 11:47 UTC.** El cron quedó instalado
+> el 2026-08-12 (`0 12 * * *`, 09:00 ART).
+>
+> Lo de abajo se conserva porque el diagnóstico vale más que el resultado.
 
 La Fase 4 guarda documentos y calcula vencimientos. El barrido funciona: corrido a
 mano el 2026-08-11 devolvió `{"pending":2,"sent":0,"skipped":1,"failed":1}`,
@@ -139,8 +149,10 @@ generado y puesto en los dos `.env`, y **el secreto salió de la query string** 
 viajaba en la URL y el access log de nginx la registra entera, así que programar el
 cron diario habría escrito el secreto en texto plano todos los días.
 
-**El cron NO está programado, a propósito.** Correría cada día a las 9, fallaría
-cada día y no avisaría nada.
+**El cron quedó programado el 2026-08-12**, una vez que un envío real funcionó:
+`0 12 * * *` (09:00 ART), leyendo el secreto del `.env` en cada corrida y
+mandándolo por cabecera. El script escribe una línea por día en
+`~/logs/document-alerts.log`.
 
 **La pregunta de producto que esto abre:** ¿es WhatsApp el canal correcto para
 esto? Un mail no tiene ventana de 24 horas ni aprobación de plantilla. La app ya
