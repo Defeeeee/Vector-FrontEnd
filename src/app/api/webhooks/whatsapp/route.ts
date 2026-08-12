@@ -258,8 +258,31 @@ function buildFlightContext(
   const documentLines = documents
     .map((doc: any) => {
       const status = documentStatus(doc.expiry_date);
-      return `- ${doc.name}: vence ${doc.expiry_date} (${status.label.toLowerCase()})`;
+      // Sin fecha no se escribe "vence null": desde la migración 007 un documento
+      // puede no caducar, y decir que vence en null es peor que no decir nada.
+      const cuando = doc.expiry_date ? `vence ${doc.expiry_date}` : "no vence";
+      return `- ${doc.name}: ${cuando} (${status.label.toLowerCase()})`;
     })
+    .join("\n");
+
+  /**
+   * Los que **ya cruzaron un umbral de aviso** y por lo tanto el copiloto tiene
+   * que mencionar sin que se lo pregunten.
+   *
+   * Es la mitad gratis del sistema de avisos. Un aviso proactivo por WhatsApp es
+   * una plantilla y Meta la cobra por entrega; **responder dentro de la ventana de
+   * 24 h no se cobra nunca**. Así que si el piloto ya está escribiendo, avisarle
+   * sale cero.
+   *
+   * No reemplaza al aviso proactivo —sólo llega si el piloto abre la conversación—
+   * pero la información ya estaba acá sin usarse.
+   */
+  const urgentes = documents
+    .filter((doc: any) => {
+      const t = documentStatus(doc.expiry_date).tone;
+      return t === "expired" || t === "critical" || t === "warning";
+    })
+    .map((doc: any) => `- ${doc.name}: ${documentStatus(doc.expiry_date).label.toLowerCase()}`)
     .join("\n");
 
   return `
@@ -270,6 +293,7 @@ Modo de seguimiento: ${profile?.tracking_mode === "balance" ? "Saldo en Cuenta (
 
 ## Documentos y vencimientos
 ${documentLines || "(Sin documentos cargados)"}
+${urgentes ? `\n### ⚠️ Requieren atención\n${urgentes}` : ""}
 
 ## Estado Financiero (Modo Saldo en Cuenta)
 Saldo disponible en cuenta: $ ${balance.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
@@ -626,6 +650,18 @@ Estás interactuando con el piloto a través de WHATSAPP.
 Tu rol es ayudar al piloto a analizar su historial de vuelos, estadísticas, responder preguntas, y también puedes EDITAR, REGISTRAR o ELIMINAR vuelos del libro de vuelo usando tus herramientas integradas.
 
 Responde siempre en español, de forma concisa y clara. Usa emojis cuando sean útiles.
+
+## VENCIMIENTOS: avisá sin que te pregunten
+Si el contexto trae una sección "⚠️ Requieren atención", mencionalo **una sola vez
+al principio de tu primera respuesta de la conversación**, en una línea, antes de
+contestar lo que el piloto haya preguntado. Después no lo repitas salvo que él
+saque el tema.
+
+Es el único canal por el que hoy se entera: el aviso automático de vencimientos
+necesita una plantilla paga de WhatsApp, y esta conversación no cuesta nada.
+
+No dramatices ni repitas la lista entera si es larga: nombrá lo más urgente y
+ofrecé el detalle. Y no inventes fechas — usá exactamente las del contexto.
 
 La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fecha actual de referencia cuando el usuario mencione "hoy", "ayer" o fechas relativas.
 
