@@ -2600,6 +2600,99 @@ El aspecto —avatar en las tres superficies, badge gris— está detrás de log
 
 ---
 
+### 2026-08-12 15:55 UTC — Claude (Opus 5, vía Claude Code) — `T1.1` cerrada: el primer aviso de vencimiento, tres planes después
+
+**Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
+
+El backlog decía **"Esfuerzo: XS (es configuración, no código)"**. Entre eso y que
+un piloto recibiera el primer aviso hubo cinco cosas, y **ninguna era el cron**.
+
+#### 1. Texto libre no sirve para avisar
+
+Meta sólo permite texto libre dentro de las **24 horas** desde el último mensaje
+del piloto. **Un aviso de vencimiento es proactivo por definición**: llega justo
+cuando el piloto no escribió nada.
+
+> Explica el cuadro entero, incluida la parte que confundía: **el copiloto de
+> WhatsApp funciona porque responde dentro de la ventana. Los avisos no pueden,
+> por la misma razón por la que el bot sí.**
+
+Hizo falta un número de producción (las plantillas están deshabilitadas en
+sandbox), dos plantillas *utility* aprobadas por Meta, y `sendWhatsAppTemplate`.
+Los nombres y el idioma van por entorno: los fija la aprobación, no el código.
+
+**Las plantillas se cargaron con parámetros numerados = posicionales**, que es lo
+que manda la implementación. Con parámetros *nombrados*, Meta exige
+`parameter_name` en cada uno y hay que cambiar la función.
+
+#### 2. Y dos bugs de contaminación de sesión, en dos niveles
+
+El barrido devolvía `[]` **con 200 y sin ningún error**. Los `edge_logs` de
+Supabase lo mostraron:
+
+```
+GET /rest/v1/documents?select=*
+apikey        = service_role
+authorization = authenticated     <- el token de un piloto
+content_range = 0-2/*             <- 3 filas de 6
+```
+
+PostgREST prioriza `Authorization` sobre `apikey`: el cliente de service role
+consultaba como usuario común y RLS le tapaba las filas ajenas.
+
+> **La contaminación de sesión tiene dos niveles y arreglar uno no arregla el
+> otro.** El 2026-08-10 se descacheó `get_base_client()` y eso arregló `/health`,
+> donde lo compartido era el **cliente**. Acá lo compartido eran las **options**:
+> `ClientOptions` crea su `storage` con `default_factory`, pero `supabase-py` hace
+> `copy.copy(options)` —superficial— y sólo rehace los `headers`. El storage queda
+> siendo el mismo objeto, así que el login guarda la sesión ahí y **cualquier
+> cliente posterior la recupera**.
+
+Probado con el paquete real: `a.storage is b.storage → True` con options
+compartidas, `False` con una nueva por llamada.
+
+#### La lección que vale más que los bugs
+
+> **El barrido nunca falló.** Devolvía 200 y una lista vacía, indistinguible de "no
+> hay nada por avisar". Con el cron puesto habría corrido **en verde todos los
+> días** avisándole a un solo piloto, y no había forma de notarlo desde afuera.
+>
+> Un proceso que corre sobre **todos** los usuarios y de golpe ve los de uno tiene
+> que **gritar**. El fallback a la clave anónima ahora loguea, pero el problema
+> general sigue abierto: nadie se entera de que un barrido silencioso dejó de ver
+> gente.
+
+Por eso el orden importó: **primero un envío real funcionando, después el cron.**
+Programarlo antes habría convertido un bug silencioso en una rutina diaria
+silenciosa.
+
+#### Otras dos cosas que salieron del camino
+
+- **El bot dejó de mentir.** `if (!userRes.ok)` mandaba "tu número no está asociado
+  a ningún piloto" ante **cualquier** error del backend. Ahora sólo un 404 dice
+  eso. Estaba documentado desde el plan 07 sin arreglar y volvió a confundir al
+  conectar el número de producción.
+- **El formato de teléfono argentino:** WhatsApp manda `5411…` (12 dígitos, **sin
+  el 9**) y el perfil guarda `54911…` (13). La rama alternativa del backend lo
+  cubre y funciona. El log de "sin match" ahora dice largo y prefijo además del
+  sufijo — con sólo el sufijo el diagnóstico quedaba trabado, porque coincidía.
+
+#### Estado
+
+**Primer aviso entregado el 2026-08-11 11:47 UTC.** Cron instalado el 2026-08-12:
+`0 12 * * *` (09:00 ART), leyendo el secreto del `.env` y mandándolo por cabecera.
+El script escribe una línea por día en `~/logs/document-alerts.log`.
+
+Verificado antes/después en la misma consulta de Supabase: `authenticated` con
+`0-2/*` pasó a `service_role` con `0-5/*`, y el barrido devuelve
+`{"pending":1,"sent":0,"skipped":1,"failed":0}`. El `skipped` es un piloto sin
+WhatsApp, que queda **sin marcar** para que el aviso salga si algún día lo carga.
+
+⚠️ **Al consultar los `edge_logs` de Supabase, fijar la ventana con la fecha
+correcta.** Se perdió una vuelta mirando los del día anterior.
+
+---
+
 ## Pasos a seguir (para el próximo agente)
 
 > **El backlog vigente está en `docs/brief/06-plan-post-flightdeck.md`**, con
