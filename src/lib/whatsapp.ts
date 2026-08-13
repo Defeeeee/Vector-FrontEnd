@@ -48,6 +48,27 @@ export async function sendWhatsAppMessage(
 }
 
 /**
+ * El resultado de un envío por plantilla, que **no es un booleano**.
+ *
+ * `accepted` quiere decir que Kapso tomó el mensaje, no que el piloto lo haya
+ * recibido: Meta resuelve la entrega después y avisa por webhook. Son dos hechos
+ * distintos y el barrido necesita los dos —uno para no reenviar mañana, otro para
+ * poder reintentar si la entrega termina fallando—, así que colapsarlos en un
+ * `true` es justamente lo que hacía que un aviso fallido se perdiera para siempre.
+ *
+ * `messageId` es el wamid con el que después llega ese veredicto. Puede ser
+ * `null` con `accepted: true`: el envío salió, pero perdimos la forma de
+ * relacionarlo con su resultado.
+ */
+export interface TemplateSendResult {
+  accepted: boolean;
+  messageId: string | null;
+}
+
+/** Nada salió: ni hay mensaje ni hay id que esperar. */
+const RECHAZADO: TemplateSendResult = { accepted: false, messageId: null };
+
+/**
  * Envío por **plantilla aprobada**, que es la única forma de escribirle a un
  * piloto que no habló primero.
  *
@@ -72,17 +93,17 @@ export async function sendWhatsAppTemplate(
   templateName: string,
   bodyParams: string[],
   languageCode = process.env.WHATSAPP_TEMPLATE_LANG || "es_AR"
-): Promise<boolean> {
+): Promise<TemplateSendResult> {
   const apiKey = process.env.KAPSO_API_KEY;
   const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID;
 
   if (!apiKey || !phoneNumberId) {
     console.error("Missing Kapso API configuration (KAPSO_API_KEY or KAPSO_PHONE_NUMBER_ID)");
-    return false;
+    return RECHAZADO;
   }
   if (!templateName) {
     console.error("No template name configured for this alert — nothing sent.");
-    return false;
+    return RECHAZADO;
   }
 
   const url = `https://api.kapso.ai/meta/whatsapp/v24.0/${phoneNumberId}/messages`;
@@ -113,11 +134,34 @@ export async function sendWhatsAppTemplate(
         await res.text(),
         "| template:", templateName, "| lang:", languageCode, "| params:", bodyParams.length
       );
-      return false;
+      return RECHAZADO;
     }
-    return true;
+
+    // El wamid viaja en `messages[0].id`, con el cuerpo de la Cloud API tal cual
+    // porque Kapso la expone sin envolver.
+    //
+    // Si el JSON no se puede leer, el envío **igual fue aceptado**: un 2xx ya
+    // significa que Meta lo tomó. Por eso el parseo va en su propio try y no
+    // degrada `accepted` — tratarlo como fallo mandaría el aviso de nuevo mañana
+    // sobre un mensaje que el piloto ya recibió.
+    let messageId: string | null = null;
+    try {
+      const data = await res.json();
+      messageId = data?.messages?.[0]?.id ?? null;
+    } catch {
+      messageId = null;
+    }
+    if (!messageId) {
+      // No es fatal, pero sí una pérdida concreta: sin id, un `failed` posterior
+      // no se puede atribuir a este documento y el aviso no se reintenta solo.
+      console.warn(
+        "Kapso aceptó la plantilla pero no devolvió un id de mensaje — este aviso no se va a poder reintentar si falla la entrega.",
+        "| template:", templateName
+      );
+    }
+    return { accepted: true, messageId };
   } catch (err) {
     console.error("Failed to send WhatsApp template:", err);
-    return false;
+    return RECHAZADO;
   }
 }
