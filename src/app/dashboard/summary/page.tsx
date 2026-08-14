@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Logbook } from "@/types";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/dashboard/PageHeader";
+import CompartirTarjeta from "@/components/dashboard/CompartirTarjeta";
 import SummaryClient from "@/components/dashboard/SummaryClient";
 import { getAirport } from "@/lib/airports";
 import { splitRoute } from "@/lib/summary";
@@ -69,6 +70,7 @@ export default async function SummaryPage() {
       <PageHeader
         eyebrow="Tu carrera como piloto, narrada por los datos"
         title="Resumen de horas"
+        action={<CompartirTarjeta />}
       />
       <SummaryClient
         flights={flights}

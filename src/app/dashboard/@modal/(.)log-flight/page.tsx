@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api";
 import { Aircraft } from "@/types";
 import NewFlightModal from "@/components/dashboard/NewFlightModal";
 import { redirect } from "next/navigation";
+import { parsePrefill } from "@/lib/prefill";
 
 /**
  * Intercepted "Nuevo Vuelo".
@@ -27,18 +28,8 @@ export default async function InterceptedLogFlight({ searchParams }: PageProps) 
       : searchParams
     : {};
 
-  const prefill = resolvedParams.prefill === "true";
-  const initialData = prefill
-    ? {
-        aircraft_id: resolvedParams.aircraft_id as string,
-        route: resolvedParams.route as string,
-        takeoff: resolvedParams.takeoff as string,
-        landing: resolvedParams.landing as string,
-        date: resolvedParams.date as string,
-        landings: resolvedParams.landings ? parseInt(resolvedParams.landings as string, 10) : undefined,
-        duration: resolvedParams.duration as string,
-      }
-    : undefined;
+  // Mismo parser que la página completa, a propósito: ver `src/lib/prefill.ts`.
+  const { initialData, plannedId } = parsePrefill(resolvedParams);
 
   const [res, lbRes] = await Promise.all([apiFetch("/aircraft"), apiFetch("/logbooks")]);
   if (res.status === 401) {
@@ -47,5 +38,5 @@ export default async function InterceptedLogFlight({ searchParams }: PageProps) 
   const aircraft: Aircraft[] = res.ok ? await res.json() : [];
   const logbooks = lbRes.ok ? await lbRes.json() : [];
 
-  return <NewFlightModal aircraft={aircraft} logbooks={logbooks} initialData={initialData} />;
+  return <NewFlightModal aircraft={aircraft} logbooks={logbooks} initialData={initialData} plannedId={plannedId} />;
 }
