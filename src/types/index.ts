@@ -56,6 +56,14 @@ export interface PlannedFlight {
   /** Mismo formato que `Flight.route`: los ICAO separados por espacio. */
   route?: string | null;
   notes?: string | null;
+  /**
+   * Horas tentativas, **en UTC**, como "HH:MM:SS" (Postgres manda los segundos).
+   *
+   * Misma convención que `Flight.takeoff`: lo guardado es UTC y el interruptor
+   * local/UTC del calendario sólo cambia lo que se ve. Ver `src/lib/horarios.ts`.
+   */
+  takeoff_time?: string | null;
+  landing_time?: string | null;
   status: PlannedStatus;
   /** Con qué vuelo se cerró. Sólo presente cuando `status` es `completado`. */
   flight_id?: string | null;

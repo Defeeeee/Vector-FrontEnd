@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
+import { aLocal, aUtc } from "@/lib/horarios";
 import { ArrowRight, Loader2, Compass, User, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import {
   calculateBlockMinutes,
@@ -212,16 +213,11 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
     if (takeoff && landing) setManualDuration("");
   }, [takeoff, landing]);
 
-  /** Argentina is UTC-3 year round — no DST since 2009, so a constant is honest here. */
-  const UTC_OFFSET_HOURS = -3;
-  const shiftClock = (hhmm: string, hours: number) => {
-    if (!/^\d{2}:\d{2}$/.test(hhmm)) return hhmm;
-    const [h, m] = hhmm.split(":").map(Number);
-    const shifted = (((h + hours) % 24) + 24) % 24;
-    return `${String(shifted).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  };
-  const toDisplay = (utc: string) => (localTime ? shiftClock(utc, UTC_OFFSET_HOURS) : utc);
-  const fromDisplay = (shown: string) => (localTime ? shiftClock(shown, -UTC_OFFSET_HOURS) : shown);
+  // La conversión vive en `src/lib/horarios.ts`, con tests: el calendario de vuelos
+  // programados muestra horas también, y dos copias del offset es cómo una se
+  // queda vieja sin que nadie lo note.
+  const toDisplay = (utc: string) => (localTime ? aLocal(utc) : utc);
+  const fromDisplay = (shown: string) => (localTime ? aUtc(shown) : shown);
 
   // Compared canonical, not as typed: GEZ out and SRDR back is one aerodrome, so
   // it is a local flight. Comparing the keystrokes would call it travesía and
