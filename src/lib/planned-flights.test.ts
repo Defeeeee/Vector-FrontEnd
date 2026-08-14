@@ -19,6 +19,7 @@ import {
   correrMes,
   esMesIso,
   estadoProgramado,
+  horasDelMes,
   mesDe,
   pendientesDeConfirmar,
   prefillQuery,
@@ -236,6 +237,29 @@ describe("mesDe", () => {
     const dias = mes.semanas.flat();
     expect(dias.flatMap((d) => d.planned).map((p) => p.id).sort()).toEqual(["a", "b"]);
     expect(dias.flatMap((d) => d.flights)).toHaveLength(1);
+  });
+
+  /**
+   * El total del mes no puede incluir los días de relleno: la grilla arrastra el
+   * 31 de julio para que no aparezca un agujero al mirar agosto, pero esas horas
+   * son de julio.
+   */
+  it("las horas del mes ignoran los días de relleno y los programados", () => {
+    const mes = mesDe({
+      ...base,
+      mesIso: "2026-09",
+      planned: [plan({ id: "p", date: "2026-09-02" })],
+      flights: [
+        vuelo({ id: "agosto", date: "2026-08-31", duration: 5 }),
+        vuelo({ id: "septiembre", date: "2026-09-02", duration: 1.5 }),
+        vuelo({ id: "tambien", date: "2026-09-20", duration: 2 }),
+      ],
+    });
+    expect(horasDelMes(mes.semanas)).toBe(3.5);
+  });
+
+  it("un mes sin vuelos da cero", () => {
+    expect(horasDelMes(mesDe(base).semanas)).toBe(0);
   });
 
   it("expone el mes anterior y el siguiente para navegar", () => {
