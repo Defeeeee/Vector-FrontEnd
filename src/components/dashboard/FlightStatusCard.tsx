@@ -24,15 +24,18 @@ export default function FlightStatusCard({
   aircraft,
   documents,
   profile,
+  documentosDisponibles = true,
 }: {
   flights: Flight[];
   aircraft: Aircraft[];
   documents: PilotDocument[];
   profile: Profile | null;
+  /** `false` si la consulta de documentos falló. Ver `pilotStatus`. */
+  documentosDisponibles?: boolean;
 }) {
   const ventana = recencyWindowDays(profile?.license_type);
   const recencias = recencyByClass(flights, aircraft, ventana);
-  const estado = pilotStatus(documents, recencias, flights);
+  const estado = pilotStatus(documents, recencias, flights, new Date(), documentosDisponibles);
 
   const ok = estado.estado === "vigente";
   const grave = estado.estado === "inactividad_prolongada" || estado.estado === "documento_vencido";
@@ -55,7 +58,11 @@ export default function FlightStatusCard({
   // ausencia del dato. En ámbar se lee como "algo está mal con tu CMA", y lo que
   // pasa es que no hay ninguno cargado. Gris dice lo que corresponde —falta el
   // dato— sin afirmar ni desmentir nada sobre el piloto.
-  const desconocido = estado.estado === "documento_faltante";
+  //
+  // `datos_no_disponibles` va en el mismo gris por el mismo motivo, un escalón
+  // más atrás: ahí ni siquiera sabemos si falta.
+  const desconocido =
+    estado.estado === "documento_faltante" || estado.estado === "datos_no_disponibles";
 
   const tono = grave
     ? "border-red-500/25 bg-red-500/[0.07] text-red-600 dark:text-red-500"

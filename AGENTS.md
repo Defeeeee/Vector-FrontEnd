@@ -2970,3 +2970,40 @@ verdad a un PNG y se miró.
 correr localmente porque `litestar` no está instalado en este entorno y
 `pip install -r requirements.txt` falla por un `PyJWT` de Debian sin `RECORD`; sólo
 corrió `py_compile`. **Mirar el CI del backend en verde antes de mergear.**
+
+---
+
+## Una lista vacía no es una respuesta — 2026-08-14
+
+**El bug:** el semáforo del dashboard le decía a un piloto «no tenés un certificado
+médico cargado» cada tanto al entrar, teniéndolo cargado, y se arreglaba solo después
+de pasar por el Hangar.
+
+La causa raíz está del lado del backend (ver su `AGENTS.md`: una carrera entre los
+ocho hilos de `/dashboard` sobre el mismo cliente de Supabase). Lo que toca a este
+repo es la mitad de arriba: **`documents: []` llegaba igual si el piloto no tiene
+documentos que si la consulta se cayó**, y `pilotStatus` resolvía esa ambigüedad
+afirmando.
+
+`/dashboard` ahora manda `unavailable: string[]` con las secciones que no se pudieron
+leer, y eso baja como `documentosDisponibles` a los tres lugares que opinaban sobre
+documentos:
+
+- **`pilotStatus`** gana el estado `datos_no_disponibles` — "no pudimos leer tus
+  documentos, es una falla nuestra". Va después de `inactividad_prolongada`, que sale
+  de los vuelos y sigue siendo verdad, y antes de todo lo que mire la lista.
+- **`estadoOnboarding`** acepta `tieneCma: boolean | null`. `null` es "no sé" y ese
+  paso **no se dibuja** en `PrimerosPasos`: ni tildado, que sería mentir, ni
+  pendiente, que sería pedirle que cargue lo que ya tiene. Ojo con `!v` al contar
+  pendientes — `null` también es falsy.
+- **`LogbookHealthCard`** dice "no pudimos cargar tus vencimientos" en vez de "no hay
+  documentos cargados".
+
+Y `getDashboardData` marca **las ocho** secciones como no disponibles cuando
+`/dashboard` no responde ok, que es el mismo caso a mayor escala.
+
+**La regla:** antes de escribir una afirmación sobre el piloto a partir de una
+colección vacía, preguntar si esa colección puede estar vacía por una falla. Si puede,
+el estado "no sé" tiene que existir. `documento_faltante` se agregó justo para eso y
+aun así la capa de abajo le pasaba "no hay" cuando lo que había pasado era "no pude
+preguntar".

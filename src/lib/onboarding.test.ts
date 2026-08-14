@@ -57,4 +57,25 @@ describe("estadoOnboarding", () => {
     expect(r.pendientes).toBe(4);
     expect(r.completo).toBe(false);
   });
+
+  /**
+   * El bug reportado: "a veces me logueo y me dice que no tengo CMA hasta que voy
+   * al Hangar", con el CMA cargado. La consulta de documentos fallaba, llegaba
+   * `[]`, y `[]` se leía como "no tiene".
+   */
+  describe("cuando no se pudieron leer los documentos", () => {
+    it("el CMA queda en desconocido y no cuenta como pendiente", () => {
+      const r = estadoOnboarding({ ...completo, tieneCma: null });
+      expect(r.cma).toBe(null);
+      expect(r.pendientes).toBe(0);
+      expect(r.completo).toBe(true);
+    });
+
+    it("no tapa los pasos que sí se pudieron verificar", () => {
+      const r = estadoOnboarding({ ...completo, tieneCma: null, vuelos: 0 });
+      expect(r.vuelo).toBe(false);
+      expect(r.pendientes).toBe(1);
+      expect(r.completo).toBe(false);
+    });
+  });
 });

@@ -17,12 +17,15 @@ import { EstadoOnboarding } from "@/lib/onboarding";
 export default function PrimerosPasos({ estado }: { estado: EstadoOnboarding }) {
   if (estado.completo) return null;
 
+  // Los pasos que no se pudieron verificar (`null`) no se dibujan. Ver
+  // `PasoOnboarding`: pedirle a alguien que cargue el CMA que ya tiene, porque
+  // una consulta nuestra falló, es peor que no decir nada.
   const pasos = [
     { hecho: estado.licencia, texto: "Cargá el tipo de licencia", href: "/dashboard/settings" },
     { hecho: estado.cma, texto: "Cargá tu certificado médico", href: "/dashboard/settings" },
     { hecho: estado.aeronave, texto: "Agregá tu primera aeronave", href: "/dashboard/settings" },
     { hecho: estado.vuelo, texto: "Registrá tu primer vuelo", href: "/dashboard/log-flight" },
-  ];
+  ].filter((p) => p.hecho !== null);
 
   const hechos = pasos.filter((p) => p.hecho).length;
 

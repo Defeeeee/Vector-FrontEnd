@@ -33,6 +33,8 @@ export type EstadoPiloto =
   | "repaso_vencido"
   | "documento_vencido"
   | "documento_faltante"
+  /** No llegaron los documentos. No es un estado del piloto: es uno nuestro. */
+  | "datos_no_disponibles"
   | "inactividad_prolongada";
 
 export interface PilotStatus {
@@ -79,7 +81,17 @@ export function pilotStatus(
   documentos: PilotDocument[],
   recencias: ClassRecency[],
   flights: Flight[],
-  hoy = new Date()
+  hoy = new Date(),
+  /**
+   * `false` cuando la consulta de documentos falló y `documentos` llegó vacía
+   * **porque no se pudo preguntar**, no porque no haya.
+   *
+   * Sin esto la lista vacía es ambigua y esta función resuelve la ambigüedad de
+   * la peor manera posible: afirmando. Un piloto con el CMA cargado veía "no
+   * tenés un certificado médico cargado" cada tanto al entrar, hasta que pasaba
+   * por el Hangar —otra pantalla, otra consulta— y ahí sí aparecía.
+   */
+  documentosDisponibles = true
 ): PilotStatus {
   // 61.060(a)(2) — el peor estado, y el más fácil de detectar.
   const ultimo = flights.reduce<string | null>(
@@ -94,6 +106,25 @@ export function pilotStatus(
         "reentrenamiento con instructor y aprobar un examen de pericia ante la ANAC.",
       seccion: "61.060(a)(2)",
       detalle: `Tu último vuelo registrado es del ${ultimo.slice(0, 10)}.`,
+    };
+  }
+
+  // Si no llegaron los documentos, todo lo que sigue es sobre documentos y no
+  // hay nada honesto que decir. Va después de la inactividad porque esa se
+  // deriva de los vuelos, que sí llegaron, y es más grave.
+  //
+  // **Callarse no es una opción**: sin este corte, la lista vacía cae en el
+  // `!cma` de abajo y sale como "no tenés un certificado médico cargado", que es
+  // una afirmación sobre el piloto sacada de una falla nuestra.
+  if (!documentosDisponibles) {
+    return {
+      estado: "datos_no_disponibles",
+      puede: "No podemos confirmar que puedas volar.",
+      paraVolver: "Probá recargar la página en un momento.",
+      seccion: "61.060(a)(1)",
+      detalle:
+        "No pudimos leer tus documentos. Es una falla nuestra, no algo que te " +
+        "falte: lo que tengas cargado sigue ahí.",
     };
   }
 

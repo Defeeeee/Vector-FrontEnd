@@ -15,9 +15,12 @@ import { documentStatus } from "@/lib/utils";
 export default function LogbookHealthCard({
   audit,
   documents,
+  documentosDisponibles = true,
 }: {
   audit: AuditSummary;
   documents: PilotDocument[];
+  /** `false` si la consulta de documentos falló: acá no hay "no hay". */
+  documentosDisponibles?: boolean;
 }) {
   const clean = audit.open_total === 0;
 
@@ -66,7 +69,13 @@ export default function LogbookHealthCard({
         title="Vencimientos"
         cta="Gestionar"
       >
-        {documents.length === 0 ? (
+        {!documentosDisponibles ? (
+          // Con la consulta caída, `documents` está vacía por no haber podido
+          // preguntar. "No hay documentos cargados" sería inventar la respuesta.
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            No pudimos cargar tus vencimientos. Probá recargar la página.
+          </p>
+        ) : documents.length === 0 ? (
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
             No hay documentos cargados. Agregá el CMA y la licencia para recibir avisos.
           </p>
