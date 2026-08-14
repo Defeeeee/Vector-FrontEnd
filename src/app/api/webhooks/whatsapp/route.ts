@@ -342,6 +342,71 @@ export async function GET(req: NextRequest) {
   return new Response("OK", { status: 200 });
 }
 
+/**
+ * Un veredicto de entrega de Meta, si el payload traía uno.
+ *
+ * Meta manda estos avisos por el **mismo webhook** que los mensajes entrantes,
+ * con `statuses` en lugar de `messages`. Hasta ahora ninguna de las tres ramas de
+ * parseo de abajo matcheaba esa forma, así que se caían al final con el teléfono
+ * vacío y se descartaban en silencio: los `failed` ya venían llegando y los
+ * tirábamos.
+ *
+ * Se aceptan también las formas de Kapso porque el resto del archivo ya convive
+ * con sus dos envoltorios y no hay razón para suponer que acá manda sólo Meta
+ * crudo.
+ */
+function parseStatus(body: any): { messageId: string; status: string } | null {
+  const meta = body?.entry?.[0]?.changes?.[0]?.value?.statuses?.[0];
+  const kapso = body?.status && body?.message_id ? body : null;
+  const evento =
+    typeof body?.event === "string" && body.event.startsWith("whatsapp.message.status")
+      ? body?.data
+      : null;
+
+  const s = meta || evento || kapso;
+  if (!s) return null;
+
+  const messageId = s.id || s.message_id || "";
+  const status = String(s.status || "").toLowerCase();
+  if (!messageId || !status) return null;
+  return { messageId, status };
+}
+
+/**
+ * Le avisa al backend que un aviso de vencimiento no llegó, para que limpie la
+ * marca y el barrido lo reintente mañana.
+ *
+ * **Silenciosa cuando no hay coincidencia**, y esa es la parte importante: por acá
+ * pasan los status de *todos* los mensajes que salen, incluidas las respuestas del
+ * copiloto. Que un id no corresponda a ningún documento es lo normal, no un error.
+ */
+async function desmarcarAvisoFallido(messageId: string): Promise<void> {
+  const secret = process.env.DOCUMENTS_ALERT_SECRET;
+  if (!secret) {
+    console.error(
+      "Llegó un status 'failed' pero DOCUMENTS_ALERT_SECRET no está configurada — el aviso no se va a reintentar."
+    );
+    return;
+  }
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
+  try {
+    // El id va por query string y el secreto por cabecera, igual que en el resto
+    // del barrido: la URL entera se escribe en el access log de nginx.
+    const query = new URLSearchParams({ message_id: messageId });
+    const res = await fetch(`${API_URL}/document-alerts/failed?${query}`, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "X-Cron-Secret": secret },
+    });
+    if (!res.ok) {
+      console.error("No se pudo desmarcar el aviso fallido:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("No se pudo avisar del fallo de entrega:", err);
+  }
+}
+
 export async function POST(req: NextRequest) {
   // Authenticate via Kapso's X-Webhook-Signature header (HMAC-SHA256 of raw body with our secret).
   //
@@ -376,6 +441,23 @@ export async function POST(req: NextRequest) {
     // verificación pasó a ser obligatoria.
     const body = JSON.parse(rawBodyText);
     console.log("Incoming WhatsApp Webhook Payload:", JSON.stringify(body, null, 2));
+
+    // Los veredictos de entrega se resuelven acá y no siguen de largo.
+    //
+    // Va **antes** del deduplicador: un status trae el id del mensaje *saliente*,
+    // que para un aviso de vencimiento es un id que este proceso ya vio al
+    // enviarlo. Dejarlo pasar por `processedMessageIds` lo haría descartar como si
+    // fuera un reenvío del webhook, que es justo el aviso que no queremos perder.
+    const status = parseStatus(body);
+    if (status) {
+      if (status.status === "failed") {
+        await desmarcarAvisoFallido(status.messageId);
+      }
+      // El resto —`sent`, `delivered`, `read`— no cambia nada: el documento ya
+      // quedó marcado al aceptarse el envío. Se responde 200 igual para que Meta
+      // no reintente.
+      return NextResponse.json({ success: true, status: status.status });
+    }
 
     let messageId = "";
     let messageText = "";

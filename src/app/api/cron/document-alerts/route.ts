@@ -12,9 +12,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiazn
  * records what was delivered (`/document-alerts/{id}/sent`); this route is only
  * the courier.
  *
- * Marking happens strictly after a successful send. A failed delivery leaves
- * the document unmarked so the next run retries it — the alternative would burn
- * the 60-day warning on a Kapso outage and never mention it again.
+ * Marking happens strictly after Kapso **accepts** the send, which is not the
+ * same as the pilot receiving it: Meta resolves delivery asynchronously and
+ * reports it later over the webhook. Se marca igual en la aceptación —esperar el
+ * `delivered` dejaría una ventana en la que un segundo barrido manda el aviso
+ * duplicado— y el webhook **desmarca** si el veredicto termina siendo `failed`,
+ * con lo que el barrido del día siguiente reintenta.
+ *
+ * Fallar de este lado es el lado correcto: el peor caso es un reintento, no un
+ * vencimiento del que el piloto nunca se enteró.
  *
  * Programarlo una vez por día, desde el mismo host que corre el backend. **El
  * secreto va por cabecera**: en query string se escribe en el access log de nginx
@@ -111,7 +117,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Backend unreachable" }, { status: 502 });
   }
 
-  let sent = 0;
+  // `accepted` y no `sent`: es lo que efectivamente sabemos al terminar el
+  // barrido. Cuántos llegaron lo dicen los webhooks de status, más tarde.
+  let accepted = 0;
   let skipped = 0;
   let failed = 0;
 
@@ -131,32 +139,39 @@ export async function POST(req: NextRequest) {
       ? [nombre, alert.name, fechaLegible(alert.expiry_date)]
       : [nombre, alert.name, fechaLegible(alert.expiry_date), String(alert.threshold)];
 
-    const delivered = await sendWhatsAppTemplate(
+    const envio = await sendWhatsAppTemplate(
       alert.whatsapp_phone,
       vencido ? TEMPLATE_VENCIDO : TEMPLATE_PROXIMO,
       params
     );
-    if (!delivered) {
+    if (!envio.accepted) {
       failed += 1;
       continue;
     }
 
     try {
+      // El wamid va al marcar: es lo único con lo que después se puede desandar
+      // esta marca si Meta reporta que la entrega falló. Sin él el documento queda
+      // marcado igual —que es el comportamiento correcto para no duplicar— pero
+      // ese aviso en particular ya no se reintenta solo.
+      const query = new URLSearchParams({ threshold: String(alert.threshold) });
+      if (envio.messageId) query.set("message_id", envio.messageId);
+
       const markRes = await fetch(
-        `${API_URL}/document-alerts/${alert.document_id}/sent?threshold=${alert.threshold}`,
+        `${API_URL}/document-alerts/${alert.document_id}/sent?${query}`,
         { method: "POST", cache: "no-store", headers: { "X-Cron-Secret": secret } }
       );
       if (!markRes.ok) {
-        // Delivered but not recorded: the pilot may get one duplicate tomorrow,
+        // Accepted but not recorded: the pilot may get one duplicate tomorrow,
         // which is the right way round to fail.
-        console.error("Expiry sweep: delivered but could not mark", alert.document_id, markRes.status);
+        console.error("Expiry sweep: accepted but could not mark", alert.document_id, markRes.status);
       }
-      sent += 1;
+      accepted += 1;
     } catch (err) {
-      console.error("Expiry sweep: delivered but could not mark", alert.document_id, err);
-      sent += 1;
+      console.error("Expiry sweep: accepted but could not mark", alert.document_id, err);
+      accepted += 1;
     }
   }
 
-  return NextResponse.json({ pending: pending.length, sent, skipped, failed });
+  return NextResponse.json({ pending: pending.length, accepted, skipped, failed });
 }

@@ -2847,3 +2847,60 @@ queda es la decisión de marca sobre la tipografía sans (ver esa entrada).
 - Generación de clave `vector_deploy` y autorización en `authorized_keys` del servidor `oraclearm` confirmada.
 - Secrets de GitHub (`DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`) vinculados en ambos repositorios.
 - Corridas de GitHub Actions comprobadas en `main`: CI ✅ `success` (47s) y Deploy ✅ `success` (46s).
+
+### 2026-08-13 20:30 UTC — Claude (Opus 5, vía Claude Code) — Aceptado no es entregado: el aviso que se quemaba sin que nadie lo leyera
+
+**Quién:** Claude (Opus 5) trabajando para Federico Díaz Nemeth.
+
+**El síntoma que lo destapó:** a las 09:00 de hoy llegó el primer aviso proactivo
+real —`Inspección Smart`, 26 días, umbral de 30—. Funcionó. Pero al mirar cómo
+había quedado marcado apareció que la marca se pone cuando **Kapso responde 2xx**,
+y eso no es una entrega: es un acuse de recibo de la API. Meta resuelve la entrega
+después, asincrónicamente, y avisa por webhook.
+
+Entre las dos cosas caben un número dado de baja, un piloto que bloqueó la cuenta
+y una plantilla pausada. Cuando pasa cualquiera de esas, el documento ya quedó
+marcado con el umbral de 30 y `should_alert` no vuelve a disparar hasta el de 7:
+**el aviso se quema sin que nadie lo haya leído**, y el piloto se entera un mes
+más tarde, o no se entera.
+
+**Qué cambié:**
+- `src/lib/whatsapp.ts` — `sendWhatsAppTemplate` deja de devolver `boolean` y
+  devuelve `{ accepted, messageId }`. Colapsar las dos cosas en un `true` era
+  exactamente lo que hacía imposible distinguir "salió" de "llegó". El parseo del
+  wamid va en su propio `try`: si el JSON no se puede leer el envío **igual fue
+  aceptado**, y degradar eso a fallo mandaría el aviso de nuevo mañana sobre un
+  mensaje que el piloto ya recibió.
+- `src/app/api/cron/document-alerts/route.ts` — pasa el `message_id` al marcar, y
+  el contador pasa de `sent` a `accepted`, que es lo que efectivamente sabemos al
+  terminar el barrido.
+- `src/app/api/webhooks/whatsapp/route.ts` — `parseStatus` y
+  `desmarcarAvisoFallido`. **Los payloads de `statuses` ya venían llegando y los
+  tirábamos**: las tres ramas de parseo eran todas de mensajes entrantes, así que
+  un status se caía al final con el teléfono vacío y se descartaba sin log.
+
+**Dos decisiones que no se deducen del código:**
+
+1. **Se sigue marcando en la aceptación, y se desmarca ante el fallo.** La
+   alternativa —esperar el `delivered` para marcar— deja una ventana entre el
+   envío y el webhook en la que un segundo barrido manda el aviso duplicado.
+   Marcar y desmarcar falla del lado correcto: el peor caso es un reintento, no un
+   silencio.
+2. **El manejo de `statuses` va antes del deduplicador.** Un status trae el id del
+   mensaje *saliente*, que para un aviso es un id que este proceso ya vio al
+   enviarlo; pasarlo por `processedMessageIds` lo descartaría como reenvío del
+   webhook, que es justo el aviso que no queremos perder.
+
+**Estado:** Terminado. Migración `008` aplicada.
+
+**Verificación:** `npx tsc --noEmit` = 0, `npm test` 142/142, `npm run build`
+compilado en 8.3s. Backend: `python3 test_audit_engine.py` 16/16, con dos casos
+nuevos que fijan la invariante del reintento — que un documento desmarcado vuelve
+a disparar, y que dispara **el bucket de hoy y no el que falló** (si el fallo se
+detecta cuando ya bajó de 30 a 7, reintentar el de 30 sería avisar de más días de
+los que quedan).
+
+**Lo que queda sin cubrir, dicho:** un aviso aceptado cuya respuesta no trajo
+wamid queda marcado y **no se puede reintentar solo** — se loguea un `warn` cuando
+pasa. Y el `failed` depende de que Kapso reenvíe los status de Meta; no está
+verificado contra un fallo real todavía, sólo contra la forma del payload.
