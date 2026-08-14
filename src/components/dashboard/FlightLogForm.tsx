@@ -110,6 +110,14 @@ interface FlightLogFormProps {
    * padding and keeps the actions inline.
    */
   stickyActions?: boolean;
+  /**
+   * El vuelo programado que esta carga cierra, si el piloto llegó por "Completar".
+   *
+   * Viaja como `<input type="hidden">` y no como argumento de la acción porque
+   * `handleSubmit` recibe el `FormData` del form y nada más: sumarlo al payload es
+   * una línea, y así `logFlight` lo encuentra igual venga de la página o del modal.
+   */
+  plannedId?: string;
 }
 
 /**
@@ -139,7 +147,7 @@ function isValidCode(code: string, airport: AirportRef | null): boolean {
   return cleaned.length === 4 && /^[A-Z0-9]+$/.test(cleaned);
 }
 
-export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, inModal = false, onCancel, stickyActions = false }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, inModal = false, onCancel, stickyActions = false, plannedId }: FlightLogFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -278,6 +286,8 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
 
   return (
     <form action={handleSubmit} className="w-full">
+      {/* Lo que después cierra el vuelo programado. Ver `logFlight`. */}
+      {plannedId && <input type="hidden" name="planned_id" value={plannedId} />}
       <AnimatePresence>
         {error && (
           <motion.div

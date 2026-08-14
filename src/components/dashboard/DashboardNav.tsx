@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2 } from "lucide-react";
+import { LayoutDashboard, History, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,6 +19,10 @@ const navItems = [
   // memory beats taxonomy — see the nav redesign entry in AGENTS.md.
   { href: "/dashboard/summary", icon: PieChart, label: "Resumen" },
   { href: "/dashboard/airports", icon: Building2, label: "Aeropuertos" },
+  // Al final por la misma razón que los dos de arriba, aunque temáticamente iría
+  // pegado a "Bitácora": entrar entre los primeros cinco empujaría a otro a la
+  // hoja "Más" y movería un ícono que la gente ya tiene en la memoria muscular.
+  { href: "/dashboard/calendario", icon: CalendarDays, label: "Calendario" },
 ];
 
 const AUDIT_HREF = "/dashboard/audit";

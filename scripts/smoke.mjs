@@ -53,6 +53,11 @@ const ROUTES = [
   { path: "/dashboard", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/log-flight", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/airports", expect: (s) => s === 307 || s === 302 },
+  { path: "/dashboard/calendario", expect: (s) => s === 307 || s === 302 },
+  // La tarjeta compartible sale de la sesión del piloto. Que sin sesión conteste
+  // 401 es lo que comprueba que la comprobación de auth sigue ahí: es una imagen
+  // con horas de vuelo de una persona, y "simplificar" ese chequeo la publicaría.
+  { path: "/api/share-card", expect: (s) => s === 401 },
 ];
 
 /**
@@ -71,6 +76,11 @@ const AUTH_ROUTES = [
   "/dashboard/airports",
   "/dashboard/tools",
   "/dashboard/route-weather",
+  "/dashboard/calendario",
+  // Un `.ttf` faltante o mal nombrado pasa `tsc` y pasa `next build`: la ruta tira
+  // 500 recién cuando alguien pide la imagen. Esto es lo único automático que lo
+  // agarra antes de producción.
+  "/api/share-card?tiles=pic,noche",
 ];
 
 const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || "https://auth.flightlog.fdiaznem.com.ar";

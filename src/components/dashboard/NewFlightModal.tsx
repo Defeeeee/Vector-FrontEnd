@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Plane, X } from "lucide-react";
 import { Aircraft } from "@/types";
 import FlightLogForm from "./FlightLogForm";
+import type { FlightPrefill } from "@/lib/prefill";
 import SinAeronaves from "./SinAeronaves";
 
 /**
@@ -26,10 +27,15 @@ export default function NewFlightModal({
   aircraft,
   logbooks,
   initialData,
+  plannedId,
 }: {
   aircraft: Aircraft[];
   logbooks?: import("@/types").Logbook[];
-  initialData?: Record<string, unknown>;
+  /** Tipado de verdad y no `Record<string, unknown>`: así un campo que el parser
+   *  deje de mandar lo marca `tsc` acá y no aparece como un input vacío. */
+  initialData?: FlightPrefill;
+  /** Vuelo programado que esta carga cierra, si vino por "Completar". */
+  plannedId?: string;
 }) {
   const router = useRouter();
   const close = () => router.back();
@@ -108,7 +114,7 @@ export default function NewFlightModal({
           {sinAeronaves ? (
             <SinAeronaves />
           ) : (
-            <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={initialData} inModal stickyActions onCancel={close} />
+            <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={initialData} plannedId={plannedId} inModal stickyActions onCancel={close} />
           )}
         </div>
       </motion.div>

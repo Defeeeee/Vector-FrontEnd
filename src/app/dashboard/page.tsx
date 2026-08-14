@@ -1,7 +1,7 @@
 import { MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { buildActivityHeatmap } from "@/lib/utils";
-import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument, Logbook } from "@/types";
+import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument, Logbook, PlannedFlight } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardChartsLazy";
 import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
 import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
@@ -25,10 +25,15 @@ import { redirect } from "next/navigation";
  * que mostrar igual. Los otros dos degradan solos a lista vacía más abajo.
  */
 async function getDashboardData() {
-  const [response, logbooksResponse, customStats] = await Promise.all([
+  const [response, logbooksResponse, customStats, planned] = await Promise.all([
     apiFetch("/dashboard"),
     apiFetch("/logbooks"),
     listCustomStats(),
+    // Cuarto viaje y no una extensión de `/dashboard`: ese endpoint ya devuelve la
+    // bitácora entera sin paginar, y el plan 09 se dedicó a sacarle viajes, no a
+    // darle más carga. `listPlannedFlights` degrada a lista vacía sola, así que un
+    // backend sin la migración 009 no rompe esta pantalla.
+    listPlannedFlights(),
   ]);
 
   if (response.status === 401) {
@@ -39,7 +44,7 @@ async function getDashboardData() {
   const emptyAudit: AuditSummary = { critical: 0, warning: 0, suppressed: 0, open_total: 0, by_rule: {} };
 
   if (!response.ok) {
-    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [] };
+    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [], planned: [] as PlannedFlight[] };
   }
 
   const data = await response.json();
@@ -51,6 +56,7 @@ async function getDashboardData() {
   return {
     logbooks,
     customStats,
+    planned,
     flights: data.flights || [],
     aircraft: data.aircraft || [],
     profile: data.profile || null,
@@ -62,6 +68,8 @@ async function getDashboardData() {
 }
 
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
+import VuelosPendientes from "@/components/dashboard/VuelosPendientes";
+import { listPlannedFlights } from "@/actions/planned-flight";
 import PrimerosPasos from "@/components/dashboard/PrimerosPasos";
 import { estadoOnboarding } from "@/lib/onboarding";
 import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
@@ -70,7 +78,7 @@ import { listCustomStats } from "@/actions/custom-stat";
 import { splitRoute } from "@/lib/route";
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats } =
+  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned } =
     await getDashboardData();
 
   const totalFlights = flights.length;
@@ -231,6 +239,20 @@ export default async function Dashboard() {
         aircraft={aircraft as Aircraft[]}
         documents={documents as PilotDocument[]}
         profile={profile}
+      />
+
+      {/* "¿Volaste esto?" — el vuelo que el piloto programó y cuya fecha ya pasó.
+          Va acá porque es lo único de la pantalla, además del semáforo, que le pide
+          algo: un vuelo sin registrar es un agujero en el libro. Y va antes de las
+          métricas porque todas se calculan sobre los vuelos, así que hasta que este
+          se cargue todas están cortas.
+
+          "Hoy" baja resuelto desde el server, como en el resumen y el heatmap. */}
+      <VuelosPendientes
+        planned={planned as PlannedFlight[]}
+        aircraft={aircraft as Aircraft[]}
+        todayIso={new Date().toISOString().slice(0, 10)}
+        tieneVuelos={flights.length > 0}
       />
 
       <CustomStatsRow

@@ -2904,3 +2904,69 @@ los que quedan).
 wamid queda marcado y **no se puede reintentar solo** — se loguea un `warn` cuando
 pasa. Y el `failed` depende de que Kapso reenvíe los status de Meta; no está
 verificado contra un fallo real todavía, sólo contra la forma del payload.
+
+### 2026-08-14 01:45 UTC — Claude (Opus 5, vía Claude Code) — Plan 11: el calendario y la tarjeta compartible
+
+**Quién:** Claude (Opus 5) trabajando para Federico Díaz Nemeth.
+
+**Qué es:** dos features del plan `docs/brief/11-calendario-y-tarjeta.md`. El
+calendario de vuelos programados —con la tarjeta de "¿volaste esto?" en el
+dashboard— y la tarjeta de estadísticas compartible por WhatsApp. Ninguna de las dos
+toca el copiloto, y la tarjeta no lleva mapa: las dos exclusiones son decisión de
+Federico.
+
+**Las decisiones que no se deducen del código:**
+
+- **`planned_flights` es una tabla aparte y nunca una columna en `flights`.** Tres
+  motivos, en orden: `flights` tiene NOT NULL en cinco columnas que un plan no
+  tiene; toda consulta agregada leería vuelos inexistentes salvo que le agreguen un
+  filtro, y un filtro olvidado infla las horas de alguien en un papel que presenta
+  ante ANAC; y **`POST /flights` cobra la hora contra el saldo del piloto** vía
+  `_sync_flight_transaction`, así que un plan ahí adentro cobraría plata por un
+  vuelo que no ocurrió.
+
+- **El marcado del plan al completarlo es best-effort.** El vuelo ya está guardado
+  cuando se intenta; si el PATCH falla, el plan queda en `programado` y la tarjeta
+  vuelve a preguntar. Un recordatorio duplicado es molesto y visible; revertir el
+  vuelo sería perder una entrada de bitácora por un post-it. Misma dirección de
+  falla que el marcado de los avisos de vencimiento.
+
+- **La duplicación del prefill se borró en vez de comentarse.** `log-flight/page.tsx`
+  y `@modal/(.)log-flight/page.tsx` parseaban el mismo objeto literal y los dos
+  llevaban un comentario avisando que ya habían derivado. Ahora hay un solo
+  `parsePrefill` en `src/lib/prefill.ts`, con tests. Un tercer comentario no
+  arreglaba nada.
+
+- **La tarjeta compartible duplica el sistema de diseño a mano, y está bien.**
+  satori entiende un subconjunto de CSS: sin grid, sin variables CSS, sin Tailwind,
+  sin `filter: blur()`. **No se puede importar ningún componente de la app.** El
+  archivo lo dice para que nadie intente reusar `Card`.
+
+- **Las fuentes NO se cargan como documenta `@vercel/og`.** El patrón
+  `fetch(new URL(..., import.meta.url))` es sólo para el runtime edge; en Node eso
+  es un `file://` y el `fetch` de Node no lo soporta ("not implemented... yet...").
+  Van con `fs.readFile` y **perezosas**, porque a nivel de módulo el intento corría
+  durante `next build` y lo rompía.
+
+- **El preview de la tarjeta es la imagen final**, el mismo endpoint y los mismos
+  bytes. Una vista previa dibujada en HTML sería una segunda implementación sin nada
+  que la mantenga sincronizada, y no hay harness de tests de componentes para
+  atraparlo. Por lo mismo se descartó el drag and drop.
+
+- **El mes del calendario se navega por `searchParams`**, no por estado de cliente:
+  ni el mes ni "hoy" se deciden en el navegador. Dos bugs de hidratación previos.
+
+**Estado:** Terminado y pusheado. **La migración `009` necesita aplicarse a mano** —
+es aditiva y el frontend tolera un backend sin ella (`listPlannedFlights` devuelve
+`[]`), así que el orden de los deploys no importa.
+
+**Verificación:** `npx tsc --noEmit` = 0 · `npm test` **186/186** (eran 142) ·
+`npm run build` limpio · `npm run smoke` 14 rutas OK. La tarjeta se renderizó de
+verdad a un PNG y se miró.
+
+**Lo que quedó sin comprobar, dicho:** la tanda con sesión del smoke no corrió acá
+(sin `SMOKE_EMAIL`/`SMOKE_PASSWORD`), así que de `/api/share-card` se verificó el
+401 y no el 200 — el render sí, aparte. Y el `import src.app` del backend no se pudo
+correr localmente porque `litestar` no está instalado en este entorno y
+`pip install -r requirements.txt` falla por un `PyJWT` de Debian sin `RECORD`; sólo
+corrió `py_compile`. **Mirar el CI del backend en verde antes de mergear.**
