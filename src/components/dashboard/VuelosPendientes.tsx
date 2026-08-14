@@ -7,6 +7,7 @@ import {
   resumenPendientes,
   sumarDias,
 } from "@/lib/planned-flights";
+import BotonPendiente from "@/components/BotonPendiente";
 import type { Aircraft, PlannedFlight } from "@/types";
 
 /**
@@ -129,21 +130,25 @@ function Fila({
         >
           Completar
         </Link>
+        {/*
+          Cada botón en su propio `<form>`: `useFormStatus` lee el formulario padre
+          más cercano, así que dos submits en uno solo se prenderían juntos.
+        */}
         <form action={descartar}>
-          <button
-            type="submit"
+          <BotonPendiente
+            pendiente="Guardando…"
             className="px-3 py-2.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors whitespace-nowrap"
           >
             No lo volé
-          </button>
+          </BotonPendiente>
         </form>
         <form action={posponer}>
-          <button
-            type="submit"
+          <BotonPendiente
+            pendiente="Guardando…"
             className="px-3 py-2.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
           >
             Después
-          </button>
+          </BotonPendiente>
         </form>
       </div>
     </div>

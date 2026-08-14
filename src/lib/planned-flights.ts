@@ -193,6 +193,27 @@ export interface Mes {
 }
 
 /**
+ * Horas voladas en el mes que se está mirando.
+ *
+ * **Sólo los días del propio mes.** La grilla arrastra días de relleno del mes
+ * anterior y el siguiente —con sus vuelos, para que no aparezca un agujero al
+ * cambiar de mes— y sumarlos haría que agosto incluya el 31 de julio.
+ *
+ * Y sólo vuelos: un programado no tiene duración y, aunque la tuviera, sumar una
+ * intención a un total de horas es exactamente lo que este plan evita.
+ */
+export function horasDelMes(semanas: DiaCalendario[][]): number {
+  let total = 0;
+  for (const semana of semanas) {
+    for (const dia of semana) {
+      if (!dia.delMes) continue;
+      for (const f of dia.flights) total += Number(f.duration) || 0;
+    }
+  }
+  return total;
+}
+
+/**
  * La grilla de un mes, mezclando lo programado y lo ya volado.
  *
  * Siempre **6 filas de 7**, aunque sobren días: si la grilla cambiara de alto entre

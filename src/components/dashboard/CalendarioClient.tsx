@@ -2,9 +2,19 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
-import { createPlannedFlight } from "@/actions/planned-flight";
-import { mesDe, prefillHref, type DiaCalendario } from "@/lib/planned-flights";
+import { ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
+import {
+  createPlannedFlight,
+  deletePlannedFlight,
+  updatePlannedFlight,
+} from "@/actions/planned-flight";
+import BotonPendiente from "@/components/BotonPendiente";
+import {
+  horasDelMes,
+  mesDe,
+  prefillHref,
+  type DiaCalendario,
+} from "@/lib/planned-flights";
 import type { Aircraft, Flight, PlannedFlight } from "@/types";
 
 /**
@@ -26,6 +36,9 @@ const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const CARD =
   "rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none";
 
+const INPUT =
+  "w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-transparent px-3 py-2.5 text-sm text-zinc-900 dark:text-white";
+
 interface Props {
   planned: PlannedFlight[];
   flights: Flight[];
@@ -35,14 +48,17 @@ interface Props {
 }
 
 export default function CalendarioClient({ planned, flights, aircraft, mesIso, todayIso }: Props) {
-  const [abierto, setAbierto] = useState(false);
+  /** La fecha con la que abre el alta, o `null` si está cerrada. */
+  const [alta, setAlta] = useState<string | null>(null);
+  const [editando, setEditando] = useState<PlannedFlight | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
 
   const mes = useMemo(
     () => mesDe({ mesIso, todayIso, planned, flights }),
     [mesIso, todayIso, planned, flights]
   );
+
+  const horas = useMemo(() => horasDelMes(mes.semanas), [mes]);
 
   const matriculas = useMemo(() => {
     const m = new Map<string, string>();
@@ -55,24 +71,39 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
     [mes]
   );
 
+  function abrirAlta(fecha: string) {
+    setError(null);
+    setEditando(null);
+    setAlta(fecha);
+  }
+
   async function programar(formData: FormData) {
     setError(null);
-    setEnviando(true);
-    const res = await createPlannedFlight({
-      date: String(formData.get("date") || ""),
-      aircraft_id: (formData.get("aircraft_id") as string) || null,
-      route: ((formData.get("route") as string) || "").trim().toUpperCase() || null,
-      notes: ((formData.get("notes") as string) || "").trim() || null,
-    });
-    setEnviando(false);
+    const res = await createPlannedFlight(leerForm(formData));
     if (res && "error" in res && res.error) setError(res.error);
-    else setAbierto(false);
+    else setAlta(null);
+  }
+
+  async function guardarEdicion(formData: FormData) {
+    if (!editando) return;
+    setError(null);
+    const res = await updatePlannedFlight(editando.id, leerForm(formData));
+    if (res && "error" in res && res.error) setError(res.error);
+    else setEditando(null);
+  }
+
+  async function borrar() {
+    if (!editando) return;
+    setError(null);
+    const res = await deletePlannedFlight(editando.id);
+    if (res && "error" in res && res.error) setError(res.error);
+    else setEditando(null);
   }
 
   return (
     <div className="space-y-6">
       {/* Barra de mes ------------------------------------------------------ */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Link
             href={`/dashboard/calendario?mes=${mes.anterior}`}
@@ -81,9 +112,15 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
           >
             <ChevronLeft className="w-4 h-4" />
           </Link>
-          <span className="font-display font-bold text-xl md:text-2xl text-zinc-900 dark:text-white min-w-[10rem] text-center">
-            {mes.etiqueta}
-          </span>
+          <div className="min-w-[10rem] text-center">
+            <span className="font-display font-bold text-xl md:text-2xl text-zinc-900 dark:text-white block leading-tight">
+              {mes.etiqueta}
+            </span>
+            {/* Sólo los vuelos del mes propio: ver `horasDelMes`. */}
+            <span className="data text-[11px] text-zinc-400 dark:text-zinc-500">
+              {horas.toFixed(1)} hs voladas
+            </span>
+          </div>
           <Link
             href={`/dashboard/calendario?mes=${mes.siguiente}`}
             aria-label="Mes siguiente"
@@ -95,75 +132,32 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
 
         <button
           type="button"
-          onClick={() => setAbierto((v) => !v)}
+          onClick={() => (alta ? setAlta(null) : abrirAlta(todayIso))}
           className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold shadow-cal-highlight"
         >
-          {abierto ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {abierto ? "Cancelar" : "Programar"}
+          {alta ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {alta ? "Cancelar" : "Programar"}
         </button>
       </div>
 
+      {error && !editando && (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
       {/* Alta -------------------------------------------------------------- */}
-      {abierto && (
+      {alta && (
         <form action={programar} className={`${CARD} p-6 md:p-8 space-y-5`}>
-          {error && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
-              {error}
-            </div>
-          )}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <label className="space-y-1.5">
-              <span className="eyebrow">Fecha</span>
-              <input
-                type="date"
-                name="date"
-                required
-                defaultValue={todayIso}
-                className="w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-transparent px-3 py-2.5 text-sm text-zinc-900 dark:text-white"
-              />
-            </label>
-            <label className="space-y-1.5">
-              <span className="eyebrow">Aeronave</span>
-              <select
-                name="aircraft_id"
-                className="w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-transparent px-3 py-2.5 text-sm text-zinc-900 dark:text-white"
-              >
-                <option value="">Sin definir</option>
-                {aircraft.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.registration}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-1.5">
-              <span className="eyebrow">Ruta</span>
-              <input
-                type="text"
-                name="route"
-                placeholder="SADF SADR"
-                className="w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-transparent px-3 py-2.5 text-sm data text-zinc-900 dark:text-white"
-              />
-            </label>
-            <label className="space-y-1.5">
-              <span className="eyebrow">Nota</span>
-              <input
-                type="text"
-                name="notes"
-                placeholder="Opcional"
-                className="w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-transparent px-3 py-2.5 text-sm text-zinc-900 dark:text-white"
-              />
-            </label>
-          </div>
+          <Campos aircraft={aircraft} fecha={alta} />
           {/* Sin hora ni duración a propósito: eso se completa al registrar el
               vuelo, donde el formulario ya sabe pedirlas en UTC. */}
-          <button
-            type="submit"
-            disabled={enviando}
-            className="px-8 py-3 rounded-full bg-aviation-blue text-white text-sm font-bold disabled:opacity-50"
+          <BotonPendiente
+            pendiente="Programando…"
+            className="px-8 py-3 rounded-full bg-aviation-blue text-white text-sm font-bold"
           >
-            {enviando ? "Programando…" : "Programar"}
-          </button>
+            Programar
+          </BotonPendiente>
         </form>
       )}
 
@@ -178,7 +172,18 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
         </div>
         <div className="grid grid-cols-7 gap-1.5">
           {mes.semanas.flat().map((dia) => (
-            <Celda key={dia.iso} dia={dia} matriculas={matriculas} todayIso={todayIso} />
+            <Celda
+              key={dia.iso}
+              dia={dia}
+              matriculas={matriculas}
+              todayIso={todayIso}
+              onDia={abrirAlta}
+              onPlan={(p) => {
+                setError(null);
+                setAlta(null);
+                setEditando(p);
+              }}
+            />
           ))}
         </div>
       </div>
@@ -199,32 +204,192 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
                 <span className="data text-lg font-bold text-zinc-900 dark:text-white">{dia.dia}</span>
                 <span className="eyebrow">{DIAS[(new Date(`${dia.iso}T00:00:00Z`).getUTCDay() + 6) % 7]}</span>
               </div>
-              <Contenido dia={dia} matriculas={matriculas} todayIso={todayIso} />
+              <Contenido
+                dia={dia}
+                matriculas={matriculas}
+                todayIso={todayIso}
+                onPlan={(p) => {
+                  setError(null);
+                  setAlta(null);
+                  setEditando(p);
+                }}
+              />
             </div>
           ))
         )}
       </div>
 
       <p className="text-xs text-zinc-400 dark:text-zinc-500 px-2">
-        Los vuelos registrados van en sólido; los programados, con borde punteado. Un
-        vuelo programado nunca suma horas.
+        Los vuelos registrados van en sólido; los programados, con borde punteado.
+        Tocá un día vacío para programar ahí, o un programado para editarlo. Un vuelo
+        programado nunca suma horas.
       </p>
+
+      {/* Edición ----------------------------------------------------------- */}
+      {editando && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-6">
+          <div className="w-full sm:max-w-lg bg-white dark:bg-[#111111] rounded-t-[2.5rem] sm:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 p-6 md:p-8 space-y-5 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">Vuelo programado</p>
+                <h3 className="text-2xl font-display font-bold text-zinc-900 dark:text-white">
+                  {editando.status === "programado" ? "Editar" : "Cerrado"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditando(null)}
+                aria-label="Cerrar"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {error && (
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
+                {error}
+              </div>
+            )}
+
+            <form action={guardarEdicion} className="space-y-5">
+              <Campos aircraft={aircraft} plan={editando} />
+              <BotonPendiente
+                pendiente="Guardando…"
+                className="px-8 py-3 rounded-full bg-aviation-blue text-white text-sm font-bold"
+              >
+                Guardar cambios
+              </BotonPendiente>
+            </form>
+
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-zinc-100 dark:border-white/5">
+              {editando.status === "programado" ? (
+                <Link
+                  href={prefillHref(editando)}
+                  className="text-sm font-bold text-aviation-blue dark:text-aviation-cyan"
+                >
+                  Completar como vuelo →
+                </Link>
+              ) : (
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                  Este plan ya está {editando.status}.
+                </span>
+              )}
+
+              {/*
+                Borrar es distinto de descartar: descartar deja constancia de que el
+                piloto contestó "no lo volé", y el calendario lo muestra tachado.
+                Esto es para el que se cargó por error, y por eso no deja rastro.
+
+                En su propio `<form>` para que el pendiente sea el de esta acción y
+                no el de guardar — y porque un form dentro de otro no es HTML válido.
+              */}
+              <form action={borrar}>
+                <BotonPendiente
+                  pendiente="Borrando…"
+                  title="Borra el plan sin dejar rastro"
+                  className="text-sm font-semibold text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Borrar
+                </BotonPendiente>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/** El mismo juego de campos para el alta y para la edición. */
+function Campos({
+  aircraft,
+  plan,
+  fecha,
+}: {
+  aircraft: Aircraft[];
+  plan?: PlannedFlight;
+  fecha?: string;
+}) {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <label className="space-y-1.5">
+        <span className="eyebrow">Fecha</span>
+        <input type="date" name="date" required defaultValue={plan?.date ?? fecha} className={INPUT} />
+      </label>
+      <label className="space-y-1.5">
+        <span className="eyebrow">Aeronave</span>
+        <select name="aircraft_id" defaultValue={plan?.aircraft_id ?? ""} className={INPUT}>
+          <option value="">Sin definir</option>
+          {aircraft.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.registration}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="space-y-1.5">
+        <span className="eyebrow">Ruta</span>
+        <input
+          type="text"
+          name="route"
+          placeholder="SADF SADR"
+          defaultValue={plan?.route ?? ""}
+          className={`${INPUT} data`}
+        />
+      </label>
+      <label className="space-y-1.5">
+        <span className="eyebrow">Nota</span>
+        <input
+          type="text"
+          name="notes"
+          placeholder="Opcional"
+          defaultValue={plan?.notes ?? ""}
+          className={INPUT}
+        />
+      </label>
+    </div>
+  );
+}
+
+function leerForm(formData: FormData) {
+  return {
+    date: String(formData.get("date") || ""),
+    aircraft_id: (formData.get("aircraft_id") as string) || null,
+    route: ((formData.get("route") as string) || "").trim().toUpperCase() || null,
+    notes: ((formData.get("notes") as string) || "").trim() || null,
+  };
 }
 
 function Celda({
   dia,
   matriculas,
   todayIso,
+  onDia,
+  onPlan,
 }: {
   dia: DiaCalendario;
   matriculas: Map<string, string>;
   todayIso: string;
+  onDia: (iso: string) => void;
+  onPlan: (p: PlannedFlight) => void;
 }) {
   return (
     <div
-      className={`min-h-[5.5rem] rounded-xl p-1.5 border ${
+      // El día entero es la zona de click para programar. Los chips de adentro
+      // paran la propagación, así que tocar un vuelo no abre el alta.
+      onClick={() => onDia(dia.iso)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onDia(dia.iso);
+        }
+      }}
+      aria-label={`Programar un vuelo el ${dia.iso}`}
+      className={`min-h-[5.5rem] rounded-xl p-1.5 border cursor-pointer transition-colors hover:border-zinc-300 dark:hover:border-white/20 ${
         dia.delMes
           ? "border-zinc-100 dark:border-white/5"
           : "border-transparent bg-zinc-50/50 dark:bg-white/[0.01]"
@@ -241,7 +406,7 @@ function Celda({
       >
         {dia.dia}
       </div>
-      <Contenido dia={dia} matriculas={matriculas} todayIso={todayIso} />
+      <Contenido dia={dia} matriculas={matriculas} todayIso={todayIso} onPlan={onPlan} />
     </div>
   );
 }
@@ -249,40 +414,49 @@ function Celda({
 /**
  * Lo que pasó y lo que se planea, en el mismo día.
  *
- * El vuelo registrado es un hecho: relleno sólido. El programado es una intención:
- * borde punteado, que es el vocabulario que la app ya usa para lo pendiente. El
- * programado que ya pasó y sigue sin contestar lleva ámbar — nunca rojo, porque un
- * plan sin confirmar no es una infracción.
+ * El vuelo registrado es un hecho: relleno sólido, y linkea a la bitácora. El
+ * programado es una intención: borde punteado, que es el vocabulario que la app ya
+ * usa para lo pendiente, y abre el panel de edición. El programado que ya pasó y
+ * sigue sin contestar lleva ámbar — nunca rojo, porque un plan sin confirmar no es
+ * una infracción.
  */
 function Contenido({
   dia,
   matriculas,
   todayIso,
+  onPlan,
 }: {
   dia: DiaCalendario;
   matriculas: Map<string, string>;
   todayIso: string;
+  onPlan: (p: PlannedFlight) => void;
 }) {
   return (
     <div className="space-y-1">
       {dia.flights.map((f) => (
-        <div
+        <Link
           key={f.id}
-          title={f.route}
-          className="data text-[10px] leading-tight truncate px-1.5 py-1 rounded-md bg-zinc-900 dark:bg-white/90 text-white dark:text-zinc-900"
+          href="/dashboard/history"
+          onClick={(e) => e.stopPropagation()}
+          title={`${f.route} · ${f.duration} hs`}
+          className="block data text-[10px] leading-tight truncate px-1.5 py-1 rounded-md bg-zinc-900 dark:bg-white/90 text-white dark:text-zinc-900"
         >
           {f.route}
-        </div>
+        </Link>
       ))}
       {dia.planned.map((p) => {
         const vencido = p.status === "programado" && p.date < todayIso;
         const cerrado = p.status !== "programado";
         return (
-          <Link
+          <button
             key={p.id}
-            href={p.status === "programado" ? prefillHref(p) : "/dashboard/calendario"}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlan(p);
+            }}
             title={p.notes || p.route || "Vuelo programado"}
-            className={`block data text-[10px] leading-tight truncate px-1.5 py-1 rounded-md border border-dashed ${
+            className={`w-full text-left data text-[10px] leading-tight truncate px-1.5 py-1 rounded-md border border-dashed ${
               cerrado
                 ? "border-zinc-200 dark:border-white/10 text-zinc-300 dark:text-zinc-600 line-through"
                 : vencido
@@ -291,7 +465,7 @@ function Contenido({
             }`}
           >
             {p.route || (p.aircraft_id && matriculas.get(p.aircraft_id)) || "Programado"}
-          </Link>
+          </button>
         );
       })}
     </div>
