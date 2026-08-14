@@ -9,6 +9,7 @@ import {
   updatePlannedFlight,
 } from "@/actions/planned-flight";
 import BotonPendiente from "@/components/BotonPendiente";
+import { aLocal, aUtc, soloHoraYMinuto } from "@/lib/horarios";
 import {
   horasDelMes,
   mesDe,
@@ -52,6 +53,14 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
   const [alta, setAlta] = useState<string | null>(null);
   const [editando, setEditando] = useState<PlannedFlight | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Si las horas se escriben en hora local.
+   *
+   * **Lo guardado siempre es UTC**, igual que `flights.takeoff`: esto sólo cambia
+   * lo que se ve y lo que se lee del campo. Arranca en UTC como el formulario de
+   * vuelo, para que las dos pantallas digan lo mismo por defecto.
+   */
+  const [horaLocal, setHoraLocal] = useState(false);
 
   const mes = useMemo(
     () => mesDe({ mesIso, todayIso, planned, flights }),
@@ -79,7 +88,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
 
   async function programar(formData: FormData) {
     setError(null);
-    const res = await createPlannedFlight(leerForm(formData));
+    const res = await createPlannedFlight(leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
     else setAlta(null);
   }
@@ -87,7 +96,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
   async function guardarEdicion(formData: FormData) {
     if (!editando) return;
     setError(null);
-    const res = await updatePlannedFlight(editando.id, leerForm(formData));
+    const res = await updatePlannedFlight(editando.id, leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
     else setEditando(null);
   }
@@ -149,9 +158,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
       {/* Alta -------------------------------------------------------------- */}
       {alta && (
         <form action={programar} className={`${CARD} p-6 md:p-8 space-y-5`}>
-          <Campos aircraft={aircraft} fecha={alta} />
-          {/* Sin hora ni duración a propósito: eso se completa al registrar el
-              vuelo, donde el formulario ya sabe pedirlas en UTC. */}
+          <Campos aircraft={aircraft} fecha={alta} horaLocal={horaLocal} onHoraLocal={setHoraLocal} />
           <BotonPendiente
             pendiente="Programando…"
             className="px-8 py-3 rounded-full bg-aviation-blue text-white text-sm font-bold"
@@ -253,7 +260,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
             )}
 
             <form action={guardarEdicion} className="space-y-5">
-              <Campos aircraft={aircraft} plan={editando} />
+              <Campos aircraft={aircraft} plan={editando} horaLocal={horaLocal} onHoraLocal={setHoraLocal} />
               <BotonPendiente
                 pendiente="Guardando…"
                 className="px-8 py-3 rounded-full bg-aviation-blue text-white text-sm font-bold"
@@ -307,11 +314,20 @@ function Campos({
   aircraft,
   plan,
   fecha,
+  horaLocal,
+  onHoraLocal,
 }: {
   aircraft: Aircraft[];
   plan?: PlannedFlight;
   fecha?: string;
+  horaLocal: boolean;
+  onHoraLocal: (v: boolean) => void;
 }) {
+  // Lo guardado es UTC; esto es sólo cómo se muestra en el campo.
+  const mostrar = (v: string | null | undefined) => {
+    const utc = soloHoraYMinuto(v);
+    return utc && horaLocal ? aLocal(utc) : utc;
+  };
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <label className="space-y-1.5">
@@ -349,16 +365,72 @@ function Campos({
           className={INPUT}
         />
       </label>
+
+      {/*
+        Horarios tentativos. Van al prefill, así que completar el vuelo llega con
+        los dos horarios puestos en vez de pedirlos de nuevo.
+
+        La `key` fuerza a React a recrear el input cuando cambia el interruptor:
+        son campos no controlados con `defaultValue`, y sin esto el valor mostrado
+        se quedaría en la unidad anterior mientras el rótulo dice la nueva.
+      */}
+      <label className="space-y-1.5">
+        <span className="eyebrow">Despegue {horaLocal ? "(local)" : "(UTC)"}</span>
+        <input
+          key={`t-${horaLocal}`}
+          type="time"
+          name="takeoff_time"
+          defaultValue={mostrar(plan?.takeoff_time)}
+          className={`${INPUT} data`}
+        />
+      </label>
+      <label className="space-y-1.5">
+        <span className="eyebrow">Aterrizaje {horaLocal ? "(local)" : "(UTC)"}</span>
+        <input
+          key={`l-${horaLocal}`}
+          type="time"
+          name="landing_time"
+          defaultValue={mostrar(plan?.landing_time)}
+          className={`${INPUT} data`}
+        />
+      </label>
+
+      <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onHoraLocal(!horaLocal)}
+          className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors underline underline-offset-4"
+        >
+          Escribir en hora {horaLocal ? "UTC" : "local"}
+        </button>
+        <span className="text-xs text-zinc-400 dark:text-zinc-500">
+          El libro guarda UTC; esto sólo cambia cómo lo escribís.
+        </span>
+      </div>
     </div>
   );
 }
 
-function leerForm(formData: FormData) {
+/**
+ * Lee el formulario y **normaliza las horas a UTC**, que es lo único que se guarda.
+ *
+ * Si el piloto está tipeando en local, lo que escribió hay que correrlo antes de
+ * mandarlo. Hacerlo al revés —guardar local y convertir al mostrar— es lo que el
+ * comentario de `FlightLogForm` avisa que movería todos los vuelos tres horas.
+ */
+function leerForm(formData: FormData, horaLocal: boolean) {
+  const hora = (campo: string) => {
+    const v = (formData.get(campo) as string) || "";
+    if (!v) return null;
+    return horaLocal ? aUtc(v) : v;
+  };
   return {
     date: String(formData.get("date") || ""),
     aircraft_id: (formData.get("aircraft_id") as string) || null,
     route: ((formData.get("route") as string) || "").trim().toUpperCase() || null,
     notes: ((formData.get("notes") as string) || "").trim() || null,
+    takeoff_time: hora("takeoff_time"),
+    landing_time: hora("landing_time"),
   };
 }
 
@@ -464,6 +536,9 @@ function Contenido({
                   : "border-zinc-300 dark:border-white/20 text-zinc-500 dark:text-zinc-400"
             }`}
           >
+            {soloHoraYMinuto(p.takeoff_time) && (
+              <span className="opacity-70">{soloHoraYMinuto(p.takeoff_time)} </span>
+            )}
             {p.route || (p.aircraft_id && matriculas.get(p.aircraft_id)) || "Programado"}
           </button>
         );

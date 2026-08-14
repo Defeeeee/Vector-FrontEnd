@@ -16,6 +16,7 @@
  * lexicográficamente igual que cronológicamente. Ningún `Date` de por medio.
  */
 
+import { soloHoraYMinuto } from "./horarios";
 import type { Flight, PlannedFlight } from "@/types";
 
 /**
@@ -140,6 +141,14 @@ export function prefillQuery(p: PlannedFlight): string {
   const params = new URLSearchParams({ prefill: "true", planned_id: p.id, date: p.date });
   if (p.aircraft_id) params.set("aircraft_id", p.aircraft_id);
   if (p.route) params.set("route", p.route);
+  // Las horas van tal cual: guardadas en UTC y leídas en UTC por el formulario,
+  // que es donde el interruptor local/UTC decide cómo mostrarlas. Recortadas a
+  // "HH:MM" porque Postgres manda los segundos y un `<input type="time">` con
+  // segundos se queda vacío sin decir nada.
+  const despegue = soloHoraYMinuto(p.takeoff_time);
+  const aterrizaje = soloHoraYMinuto(p.landing_time);
+  if (despegue) params.set("takeoff", despegue);
+  if (aterrizaje) params.set("landing", aterrizaje);
   return params.toString();
 }
 
@@ -245,6 +254,23 @@ export function mesDe(input: {
   for (const p of planned) casillero(p.date).planned.push(p);
   // `f.date` puede venir con hora pegada de algún origen viejo; el prefijo alcanza.
   for (const f of flights) casillero(String(f.date).slice(0, 10)).flights.push(f);
+
+  // Dentro de un día, por hora de despegue. Los que no tienen hora van al final:
+  // un plan sin hora es "en algún momento del sábado", y ponerlo primero afirmaría
+  // que sale antes que uno de las 07:00.
+  //
+  // Comparación explícita y no `localeCompare` con un centinela: la colación de
+  // ICU le da poco peso a la puntuación, así que un `"~"` **no** queda después de
+  // los dígitos y los sin hora terminaban primero. Como son "HH:MM:SS", el orden
+  // lexicográfico directo ya es el cronológico.
+  for (const casilla of porFecha.values()) {
+    casilla.planned.sort((a, b) => {
+      const ha = a.takeoff_time || "";
+      const hb = b.takeoff_time || "";
+      if (!ha !== !hb) return ha ? -1 : 1;
+      return ha < hb ? -1 : ha > hb ? 1 : 0;
+    });
+  }
 
   const primero = new Date(Date.UTC(y, m - 1, 1));
   const desplazamiento = (primero.getUTCDay() + 6) % 7;

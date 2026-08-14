@@ -8,6 +8,7 @@ import {
   sumarDias,
 } from "@/lib/planned-flights";
 import BotonPendiente from "@/components/BotonPendiente";
+import { soloHoraYMinuto } from "@/lib/horarios";
 import type { Aircraft, PlannedFlight } from "@/types";
 
 /**
@@ -114,6 +115,13 @@ function Fila({
         </p>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
           Programado para el <span className="data">{plan.date}</span>
+          {/* En UTC, que es como se guarda y como lo va a pedir el formulario. */}
+          {soloHoraYMinuto(plan.takeoff_time) && (
+            <>
+              {" a las "}
+              <span className="data">{soloHoraYMinuto(plan.takeoff_time)}</span> UTC
+            </>
+          )}
           {plan.notes && ` · ${plan.notes}`}
         </p>
       </div>

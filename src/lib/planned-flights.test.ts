@@ -135,6 +135,36 @@ describe("prefillQuery", () => {
     const params = new URLSearchParams(prefillQuery(plan({ route: "SADF SADR" })));
     expect(params.get("route")).toBe("SADF SADR");
   });
+
+  /**
+   * Postgres devuelve "12:00:00" para una columna `time`, y un `<input type="time">`
+   * con segundos se queda vacío **sin decir nada** — el piloto ve el campo en blanco
+   * y cree que la hora nunca se guardó.
+   */
+  it("recorta los segundos de las horas antes de mandarlas al formulario", () => {
+    const params = new URLSearchParams(
+      prefillQuery(plan({ takeoff_time: "12:00:00", landing_time: "13:30:00" }))
+    );
+    expect(params.get("takeoff")).toBe("12:00");
+    expect(params.get("landing")).toBe("13:30");
+  });
+
+  /**
+   * Las horas viajan **en UTC**, sin convertir: el formulario de vuelo guarda UTC y
+   * su interruptor local/UTC decide sólo cómo mostrarlas. Convertir acá las movería
+   * tres horas y rompería la detección de superposiciones de la auditoría.
+   */
+  it("no convierte la hora: lo que se guardó en UTC llega en UTC", () => {
+    const params = new URLSearchParams(prefillQuery(plan({ takeoff_time: "12:00:00" })));
+    expect(params.get("takeoff")).toBe("12:00");
+    expect(params.get("takeoff")).not.toBe("09:00");
+  });
+
+  it("un plan sin horas no emite las claves", () => {
+    const q = prefillQuery(plan({ takeoff_time: null, landing_time: null }));
+    expect(q).not.toContain("takeoff");
+    expect(q).not.toContain("landing");
+  });
 });
 
 describe("sumarDias", () => {
@@ -226,6 +256,23 @@ describe("mesDe", () => {
     const dia = mes.semanas.flat().find((d) => d.iso === "2026-08-10")!;
     expect(dia.planned.map((p) => p.id)).toEqual(["p"]);
     expect(dia.flights.map((f) => f.id)).toEqual(["f"]);
+  });
+
+  /**
+   * Un plan sin hora es "en algún momento del sábado". Ponerlo primero afirmaría
+   * que sale antes que uno de las 07:00, que es información que nadie cargó.
+   */
+  it("ordena los programados del día por hora, y los sin hora al final", () => {
+    const mes = mesDe({
+      ...base,
+      planned: [
+        plan({ id: "sinHora", date: "2026-08-10" }),
+        plan({ id: "tarde", date: "2026-08-10", takeoff_time: "18:00:00" }),
+        plan({ id: "temprano", date: "2026-08-10", takeoff_time: "07:00:00" }),
+      ],
+    });
+    const dia = mes.semanas.flat().find((d) => d.iso === "2026-08-10")!;
+    expect(dia.planned.map((p) => p.id)).toEqual(["temprano", "tarde", "sinHora"]);
   });
 
   it("no pierde ningún elemento del mes", () => {
