@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile, FlightPack, PilotDocument, Logbook } from "@/types";
+import { Aircraft, Profile, FlightPack, PilotDocument, Logbook, Flight } from "@/types";
 import { Plane, User, Package, CalendarClock, BookOpen, Download, Gauge } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
@@ -17,13 +17,20 @@ import { listCustomStats } from "@/actions/custom-stat";
 import { recencyWindowDays } from "@/lib/recency";
 
 async function getSettingsData() {
-  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes] = await Promise.all([
-    apiFetch("/profiles"),
-    apiFetch("/aircraft"),
-    apiFetch("/flight-packs"),
-    apiFetch("/documents"),
-    apiFetch("/logbooks")
-  ]);
+  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes, flightsRes] =
+    await Promise.all([
+      apiFetch("/profiles"),
+      apiFetch("/aircraft"),
+      apiFetch("/flight-packs"),
+      apiFetch("/documents"),
+      apiFetch("/logbooks"),
+      // Sólo para el ancla de los vencimientos derivados: el formulario necesita
+      // poder contestar "entonces hoy vence el ..." mientras el piloto escribe los
+      // días. Va en el mismo `Promise.all`, así que no agrega latencia — sí agrega
+      // una respuesta grande, y el día que este endpoint pagine conviene pedirle el
+      // último vuelo y nada más.
+      apiFetch("/flights"),
+    ]);
 
   if (profilesRes.status === 401 || aircraftRes.status === 401 || packsRes.status === 401) {
     console.log("SettingsPage: 401 Unauthorized. Redirecting to logout...");
@@ -35,13 +42,20 @@ async function getSettingsData() {
   const packs: FlightPack[] = packsRes.ok ? await packsRes.json() : [];
   const documents: PilotDocument[] = documentsRes.ok ? await documentsRes.json() : [];
   const logbooks: Logbook[] = logbooksRes.ok ? await logbooksRes.json() : [];
+  const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
 
-  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks };
+  // Comparación de strings ISO, nunca construyendo un `Date`: "2026-08-09" y
+  // "2026-08-10" ordenan igual como texto y sin zona horaria de por medio.
+  const ultimoVuelo = flights.reduce<string | null>(
+    (acc, f) => (f.date && (!acc || f.date > acc) ? f.date : acc), null
+  );
+
+  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, ultimoVuelo };
 }
 
 export default async function SettingsPage() {
   const customStats = await listCustomStats();
-  const { profile, aircraft, packs, documents, logbooks } = await getSettingsData();
+  const { profile, aircraft, packs, documents, logbooks, ultimoVuelo } = await getSettingsData();
   const cma = documents.find(doc => doc.kind === "cma");
 
   return (
@@ -93,7 +107,11 @@ export default async function SettingsPage() {
             started using. */}
         {documents.length > 0 && !profile?.whatsapp_phone && <WhatsAppMissingNotice />}
 
-        <DocumentsManager documents={documents} todayIso={new Date().toISOString().slice(0, 10)} />
+        <DocumentsManager
+          documents={documents}
+          todayIso={new Date().toISOString().slice(0, 10)}
+          ultimoVuelo={ultimoVuelo}
+        />
       </section>
 
       {/* Aircraft + Packs side by side on wide screens */}

@@ -167,6 +167,14 @@ export type DocumentKind =
  */
 export type DocumentBlocking = "nada" | "pasajeros" | "solo" | "vuelo";
 
+/**
+ * Quién decide la fecha de vencimiento de un documento.
+ *
+ * Vive acá y no en `src/lib/expiry-rules.ts` para que ese módulo pueda importar
+ * `PilotDocument` sin que los dos se importen entre sí.
+ */
+export type ExpiryRule = "fijo" | "ultimo_vuelo";
+
 export interface PilotDocument {
   id: string;
   user_id: string;
@@ -176,6 +184,20 @@ export interface PilotDocument {
   name: string;
   /** "YYYY-MM-DD", o `null` si el documento no vence (una licencia de por vida). */
   expiry_date: string | null;
+  /**
+   * Quién escribe `expiry_date`.
+   *
+   * `"fijo"` (el default, y lo que son casi todas las filas): el piloto, a mano.
+   * `"ultimo_vuelo"`: el backend, sumándole `expiry_offset_days` a la fecha del
+   * vuelo más reciente y recalculándola cada vez que los vuelos cambian. Ver
+   * `src/lib/expiry-rules.ts` y `migrations/011_documents_expiry_rule.sql`.
+   *
+   * Opcional porque un backend sin la migración 011 no la manda; ausente se lee
+   * como `"fijo"`.
+   */
+  expiry_rule?: ExpiryRule;
+  /** Días después del ancla. Sólo con `expiry_rule: "ultimo_vuelo"`. */
+  expiry_offset_days?: number | null;
   issued_date?: string | null;
   notes?: string | null;
   alert_days: number[];

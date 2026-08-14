@@ -3007,3 +3007,51 @@ colección vacía, preguntar si esa colección puede estar vacía por una falla.
 el estado "no sé" tiene que existir. `documento_faltante` se agregó justo para eso y
 aun así la capa de abajo le pasaba "no hay" cuando lo que había pasado era "no pude
 preguntar".
+
+---
+
+## Vencimientos que se mueven solos — 2026-08-14
+
+El pedido: «que se puedan setear vencimientos variables, por ejemplo en base a la
+fecha del último vuelo, que se actualiza constantemente». La mitad de fondo está en
+el backend (migración 011 y `src/services/derived_expiries.py`); acá va lo que toca
+a esta app.
+
+**El cálculo no vive acá.** `expiry_date` llega ya resuelta y todo lo que la lee
+—`documentStatus`, `pilotStatus`, `LogbookHealthCard`— sigue igual, sin enterarse de
+que existen reglas. `src/lib/expiry-rules.ts` hace otras dos cosas:
+
+- **Explicarle la regla al piloto.** Sin eso ve una fecha que se le mueve sola y no
+  sabe por qué. Por eso la fila del listado dice "Se recalcula: 60 días después de tu
+  último vuelo" debajo de la fecha.
+- **Previsualizar.** `vencimientoDerivado` repite la aritmética del backend para que
+  el formulario conteste "entonces hoy vence el ..." mientras el piloto escribe los
+  días.
+
+**El texto de ayuda dice que volar corre la fecha hacia adelante, y eso es
+deliberado.** Es al revés que todos los otros vencimientos de Vector, donde lo único
+que ayuda es un trámite. Sin decirlo, la cuenta regresiva se lee como una amenaza en
+vez de como lo que es.
+
+**El "No vence" dejó de ser una casilla y pasó a ser un select de tres.** El motivo
+original de la casilla sigue valiendo —un `<input type="date">` con valor no se puede
+vaciar de forma confiable, y nadie adivinaba que podía dejarlo en blanco—, pero
+ahora hay tres estados y tres no entran en una casilla.
+
+**`parseVencimiento` arma el trío regla/offset/fecha de una sola vez** porque los
+tres son incoherentes por separado: el CHECK rechaza una regla derivada sin offset y
+un offset sobre una regla fija. Con `ultimo_vuelo` **no manda `expiry_date`**: esa
+columna tiene un solo escritor, que es el backend. `upsertCmaDocument` manda
+`expiry_rule: "fijo"` explícito por lo mismo — sin eso, un CMA que hubiera quedado
+con regla derivada se comería la fecha que el piloto acaba de escribir en el
+onboarding, en el próximo vuelo.
+
+**El costo que quedó abierto:** `/dashboard/settings` ahora pide `/flights` para
+tener el ancla, y ese endpoint devuelve la bitácora entera sin paginar. Va en el
+`Promise.all` que ya estaba, así que no agrega latencia, pero sí una respuesta
+grande en una página que no la necesitaba. El día que ese endpoint pagine, pedirle el
+último vuelo y nada más.
+
+**Estado:** pusheado. La migración 011 **no está aplicada**, así que hasta que lo
+esté el modo "Días después de mi último vuelo" va a fallar al guardar. Los otros dos
+modos andan igual que siempre.
