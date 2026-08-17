@@ -96,7 +96,9 @@ export default async function Dashboard() {
   const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable } =
     await getDashboardData();
 
-  const documentosDisponibles = !unavailable.includes("documents");
+  /** Si esa sección del payload se pudo leer. Ver `unavailable` más arriba. */
+  const disponible = (seccion: string) => !unavailable.includes(seccion);
+  const documentosDisponibles = disponible("documents");
 
   const totalFlights = flights.length;
   const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
@@ -285,15 +287,20 @@ export default async function Dashboard() {
           están hechos. Los datos ya vienen del Promise.all de arriba: no agrega
           ni un viaje al backend. */}
       <PrimerosPasos
+        // `null` y no `false` en cada paso cuya consulta falló: el paso no se
+        // dibuja, en vez de pedirle al piloto que cargue algo que ya tiene.
+        //
+        // **Los cuatro, no sólo el CMA.** El 2026-08-17 una request perdió siete
+        // de las ocho consultas y el checklist le marcó tres pasos en falso a un
+        // piloto que tenía todo cargado.
         estado={estadoOnboarding({
           profile,
-          // `null` y no `false` si la consulta falló: el paso no se dibuja en vez
-          // de pedirle al piloto que cargue el CMA que probablemente ya tiene.
+          perfilDisponible: disponible("profile"),
           tieneCma: documentosDisponibles
             ? (documents as PilotDocument[]).some((d) => d.kind === "cma")
             : null,
-          aeronaves: aircraft.length,
-          vuelos: flights.length,
+          aeronaves: disponible("aircraft") ? aircraft.length : null,
+          vuelos: disponible("flights") ? flights.length : null,
         })}
       />
 

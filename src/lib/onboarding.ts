@@ -37,19 +37,33 @@ export interface EstadoOnboarding {
   pendientes: number;
 }
 
+/**
+ * Cada paso acepta `null` = "no se pudo leer", y **los cuatro, no sólo el CMA**.
+ *
+ * La primera versión de esto sólo contemplaba que fallara la consulta de
+ * documentos, porque ése fue el bug reportado. El 2026-08-17 se vio la otra
+ * mitad: una request de `/dashboard` en la que siete de las ocho consultas no
+ * salieron, y el checklist le mostró a un piloto con licencia, 6 aeronaves y 41
+ * vuelos cargados **tres de los cuatro pasos sin tildar**. El bug nunca fue "el
+ * CMA": es "una lista vacía se lee como una afirmación", y hay cuatro listas.
+ */
 export function estadoOnboarding(input: {
   profile: Profile | null;
+  /** `false` si no se pudo leer el perfil: sin él no se sabe si hay licencia. */
+  perfilDisponible?: boolean;
   /** `null` si no se pudieron leer los documentos. Ver `PasoOnboarding`. */
   tieneCma: PasoOnboarding;
-  aeronaves: number;
-  vuelos: number;
+  /** `null` si no se pudieron leer las aeronaves. */
+  aeronaves: number | null;
+  /** `null` si no se pudieron leer los vuelos. */
+  vuelos: number | null;
 }): EstadoOnboarding {
-  const licencia = tieneLicencia(input.profile);
+  const perfilDisponible = input.perfilDisponible ?? true;
   const pasos = {
-    licencia,
+    licencia: perfilDisponible ? tieneLicencia(input.profile) : null,
     cma: input.tieneCma,
-    aeronave: input.aeronaves > 0,
-    vuelo: input.vuelos > 0,
+    aeronave: input.aeronaves === null ? null : input.aeronaves > 0,
+    vuelo: input.vuelos === null ? null : input.vuelos > 0,
   };
 
   // `=== false` y no `!v`: `null` también es falsy y contarlo haría que la

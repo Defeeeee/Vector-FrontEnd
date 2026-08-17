@@ -78,4 +78,51 @@ describe("estadoOnboarding", () => {
       expect(r.completo).toBe(false);
     });
   });
+
+  /**
+   * El 2026-08-17: una request de `/dashboard` perdió siete de sus ocho consultas
+   * y el checklist le marcó **tres pasos sin tildar** a un piloto con licencia, 6
+   * aeronaves y 41 vuelos cargados. La primera versión de este arreglo sólo
+   * contemplaba que fallara la consulta de documentos, porque ése había sido el
+   * bug reportado — pero el bug nunca fue "el CMA", es "una lista vacía se lee
+   * como una afirmación", y hay cuatro listas.
+   */
+  describe("cuando falla cualquier otra sección", () => {
+    it("sin perfil no afirma que falta la licencia", () => {
+      const r = estadoOnboarding({ ...completo, profile: null, perfilDisponible: false });
+      expect(r.licencia).toBe(null);
+      expect(r.pendientes).toBe(0);
+    });
+
+    it("sin aeronaves leídas no afirma que no tiene ninguna", () => {
+      const r = estadoOnboarding({ ...completo, aeronaves: null });
+      expect(r.aeronave).toBe(null);
+      expect(r.pendientes).toBe(0);
+    });
+
+    it("sin vuelos leídos no afirma que no voló nunca", () => {
+      const r = estadoOnboarding({ ...completo, vuelos: null });
+      expect(r.vuelo).toBe(null);
+      expect(r.pendientes).toBe(0);
+    });
+
+    /** El caso exacto de la captura: sólo llegaron los documentos. */
+    it("con sólo los documentos leídos, no marca nada como pendiente", () => {
+      const r = estadoOnboarding({
+        profile: null, perfilDisponible: false,
+        tieneCma: true, aeronaves: null, vuelos: null,
+      });
+      expect([r.licencia, r.aeronave, r.vuelo]).toEqual([null, null, null]);
+      expect(r.cma).toBe(true);
+      expect(r.pendientes).toBe(0);
+      expect(r.completo).toBe(true);
+    });
+
+    /** Con el perfil disponible y sin licencia, sigue siendo un paso pendiente. */
+    it("no confunde 'no pude leer' con 'está vacío'", () => {
+      const r = estadoOnboarding({ ...completo, profile: perfil("-"), perfilDisponible: true });
+      expect(r.licencia).toBe(false);
+      expect(r.pendientes).toBe(1);
+    });
+  });
 });
