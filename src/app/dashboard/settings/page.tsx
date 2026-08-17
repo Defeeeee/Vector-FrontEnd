@@ -24,11 +24,10 @@ async function getSettingsData() {
       apiFetch("/flight-packs"),
       apiFetch("/documents"),
       apiFetch("/logbooks"),
-      // Sólo para el ancla de los vencimientos derivados: el formulario necesita
-      // poder contestar "entonces hoy vence el ..." mientras el piloto escribe los
-      // días. Va en el mismo `Promise.all`, así que no agrega latencia — sí agrega
-      // una respuesta grande, y el día que este endpoint pagine conviene pedirle el
-      // último vuelo y nada más.
+      // Para los vencimientos derivados: el formulario necesita poder contestar
+      // "entonces hoy vence el ..." mientras el piloto escribe la cantidad, y
+      // ofrecer la lista de la que se elige el vuelo ancla. Va en el mismo
+      // `Promise.all`, así que no agrega latencia — sí agrega una respuesta grande.
       apiFetch("/flights"),
     ]);
 
@@ -44,18 +43,12 @@ async function getSettingsData() {
   const logbooks: Logbook[] = logbooksRes.ok ? await logbooksRes.json() : [];
   const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
 
-  // Comparación de strings ISO, nunca construyendo un `Date`: "2026-08-09" y
-  // "2026-08-10" ordenan igual como texto y sin zona horaria de por medio.
-  const ultimoVuelo = flights.reduce<string | null>(
-    (acc, f) => (f.date && (!acc || f.date > acc) ? f.date : acc), null
-  );
-
-  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, ultimoVuelo };
+  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, flights };
 }
 
 export default async function SettingsPage() {
   const customStats = await listCustomStats();
-  const { profile, aircraft, packs, documents, logbooks, ultimoVuelo } = await getSettingsData();
+  const { profile, aircraft, packs, documents, logbooks, flights } = await getSettingsData();
   const cma = documents.find(doc => doc.kind === "cma");
 
   return (
@@ -110,7 +103,7 @@ export default async function SettingsPage() {
         <DocumentsManager
           documents={documents}
           todayIso={new Date().toISOString().slice(0, 10)}
-          ultimoVuelo={ultimoVuelo}
+          flights={flights}
         />
       </section>
 

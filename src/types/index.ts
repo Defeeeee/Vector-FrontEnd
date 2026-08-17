@@ -173,7 +173,10 @@ export type DocumentBlocking = "nada" | "pasajeros" | "solo" | "vuelo";
  * Vive acá y no en `src/lib/expiry-rules.ts` para que ese módulo pueda importar
  * `PilotDocument` sin que los dos se importen entre sí.
  */
-export type ExpiryRule = "fijo" | "ultimo_vuelo";
+export type ExpiryRule = "fijo" | "ultimo_vuelo" | "vuelo_ancla";
+
+/** En qué unidad se cuenta `expiry_offset_days`. Los meses son meses calendario. */
+export type OffsetUnit = "dias" | "meses";
 
 export interface PilotDocument {
   id: string;
@@ -196,8 +199,18 @@ export interface PilotDocument {
    * como `"fijo"`.
    */
   expiry_rule?: ExpiryRule;
-  /** Días después del ancla. Sólo con `expiry_rule: "ultimo_vuelo"`. */
+  /** Cuánto después del ancla. La unidad la dice `expiry_offset_unit`. */
   expiry_offset_days?: number | null;
+  /** Ausente se lee como `"dias"`, que es el default de la columna. */
+  expiry_offset_unit?: OffsetUnit;
+  /**
+   * Vuelo desde el que se cuenta, con `expiry_rule: "vuelo_ancla"`.
+   *
+   * Referencia blanda a propósito: no hay foreign key, para que borrar un vuelo
+   * nunca falle. Si el vuelo desaparece, el backend **congela** el documento en
+   * `"fijo"` con la última fecha calculada. Ver `migrations/013`.
+   */
+  expiry_anchor_flight_id?: string | null;
   issued_date?: string | null;
   notes?: string | null;
   alert_days: number[];

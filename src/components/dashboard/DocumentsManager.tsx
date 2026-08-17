@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { CalendarClock, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
-import { DocumentKind, PilotDocument } from "@/types";
+import { DocumentKind, Flight, OffsetUnit, PilotDocument } from "@/types";
 import { documentStatus } from "@/lib/utils";
 import {
-  MAX_OFFSET_DAYS,
+  MAX_OFFSET,
+  ayudaAncla,
   ayudaRegla,
   descripcionRegla,
   modoDe,
@@ -50,8 +51,21 @@ const QUICK_ADD: { kind: DocumentKind; label: string; name: string }[] = [
  */
 const MODO_OPTIONS: { value: ModoVencimiento; label: string }[] = [
   { value: "fecha", label: "En una fecha" },
-  { value: "ultimo_vuelo", label: "Días después de mi último vuelo" },
+  { value: "ultimo_vuelo", label: "Contado desde mi último vuelo" },
+  { value: "vuelo_ancla", label: "Contado desde un vuelo puntual" },
   { value: "no_vence", label: "No vence" },
+];
+
+/**
+ * Días o meses.
+ *
+ * Los meses no son un lujo: el repaso de 61.135 son **24 meses calendario**, y
+ * resolverlo con 730 días se corre uno o dos según los bisiestos. En un vencimiento
+ * regulatorio esos dos días son poder volar o no.
+ */
+const UNIDAD_OPTIONS: { value: OffsetUnit; label: string }[] = [
+  { value: "dias", label: "días" },
+  { value: "meses", label: "meses" },
 ];
 
 const KIND_LABEL = Object.fromEntries(KIND_OPTIONS.map((k) => [k.value, k.label])) as Record<DocumentKind, string>;
@@ -69,18 +83,17 @@ const TONE_STYLES = {
 export default function DocumentsManager({
   documents,
   todayIso,
-  ultimoVuelo = null,
+  flights = [],
 }: {
   documents: PilotDocument[];
   /**
-   * Fecha del último vuelo del piloto, "YYYY-MM-DD", o `null` si no tiene ninguno.
+   * Los vuelos del piloto, para los vencimientos derivados.
    *
-   * Es el ancla de los vencimientos derivados, y acá se usa **sólo para explicar**:
-   * la fecha que vale la calcula y la guarda el backend. Sirve para que el
-   * formulario pueda contestar "entonces hoy vence el ..." antes de guardar, que es
-   * lo que hace entendible la regla.
+   * Acá se usan **sólo para explicar y para elegir**: la fecha que vale la calcula y
+   * la guarda el backend. Sirven para dos cosas —contestar "entonces hoy vence el
+   * ..." antes de guardar, y ofrecer la lista de la que se elige el vuelo ancla—.
    */
-  ultimoVuelo?: string | null;
+  flights?: Flight[];
   /**
    * "Today" as decided by the server, in YYYY-MM-DD.
    *
@@ -92,6 +105,14 @@ export default function DocumentsManager({
   todayIso: string;
 }) {
   const today = new Date(`${todayIso}T00:00:00Z`);
+
+  // Del más reciente al más viejo: es el orden en que un piloto busca un vuelo suyo,
+  // y deja el ancla más probable arriba de todo. Comparación de strings ISO, sin
+  // construir un `Date`.
+  const vuelosOrdenados = [...flights].sort((a, b) => b.date.localeCompare(a.date));
+  const ultimoVuelo = vuelosOrdenados[0]?.date ?? null;
+  const fechaPorVuelo = new Map(flights.map((f) => [f.id, f.date]));
+
   const [editing, setEditing] = useState<PilotDocument | null>(null);
   const [adding, setAdding] = useState(false);
   /** Category a quick-add chip preselected, if the form was opened by one. */
@@ -149,7 +170,7 @@ export default function DocumentsManager({
               <DocumentForm
                 key={doc.id}
                 document={doc}
-                ultimoVuelo={ultimoVuelo}
+                vuelos={vuelosOrdenados}
                 onCancel={() => setEditing(null)}
                 onDone={() => setEditing(null)}
                 onError={setError}
@@ -186,9 +207,20 @@ export default function DocumentsManager({
                 {/* La fecha de un vencimiento derivado se mueve sola. Sin la regla
                     escrita al lado, el piloto ve un número distinto cada tanto y no
                     tiene forma de saber por qué. */}
-                {descripcionRegla(doc) && (
+                {descripcionRegla(
+                  doc,
+                  doc.expiry_anchor_flight_id
+                    ? fechaPorVuelo.get(doc.expiry_anchor_flight_id)
+                    : ultimoVuelo
+                ) && (
                   <p className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                    Se recalcula: {descripcionRegla(doc)}
+                    Se recalcula:{" "}
+                    {descripcionRegla(
+                      doc,
+                      doc.expiry_anchor_flight_id
+                        ? fechaPorVuelo.get(doc.expiry_anchor_flight_id)
+                        : ultimoVuelo
+                    )}
                   </p>
                 )}
               </div>
@@ -232,7 +264,7 @@ export default function DocumentsManager({
       {adding ? (
         <DocumentForm
           presetKind={presetKind}
-          ultimoVuelo={ultimoVuelo}
+          vuelos={vuelosOrdenados}
           onCancel={closeForm}
           onDone={closeForm}
           onError={setError}
@@ -276,14 +308,14 @@ export default function DocumentsManager({
 function DocumentForm({
   document: doc,
   presetKind,
-  ultimoVuelo = null,
+  vuelos = [],
   onCancel,
   onDone,
   onError,
 }: {
   document?: PilotDocument;
-  /** Ancla de los vencimientos derivados. Ver `DocumentsManager`. */
-  ultimoVuelo?: string | null;
+  /** Los vuelos, del más reciente al más viejo. Ver `DocumentsManager`. */
+  vuelos?: Flight[];
   /** Set when a quick-add chip opened this form. */
   presetKind?: DocumentKind | null;
   onCancel: () => void;
@@ -305,6 +337,14 @@ function DocumentForm({
   // el backend desde el último vuelo— y tres estados no entran en una casilla.
   const [modo, setModo] = useState<ModoVencimiento>(modoDe(doc));
   const [offset, setOffset] = useState<string>(String(doc?.expiry_offset_days ?? 60));
+  const [unidad, setUnidad] = useState<OffsetUnit>(doc?.expiry_offset_unit ?? "dias");
+  const [ancla, setAncla] = useState<string>(
+    doc?.expiry_anchor_flight_id ?? vuelos[0]?.id ?? ""
+  );
+
+  const ultimoVuelo = vuelos[0]?.date ?? null;
+  const fechaAncla = vuelos.find((f) => f.id === ancla)?.date ?? null;
+  const cantidad = Number(offset) || 0;
   const presetName = presetKind ? QUICK_ADD.find((q) => q.kind === presetKind)?.name : undefined;
   const [pending, startTransition] = useTransition();
 
@@ -383,28 +423,65 @@ function DocumentForm({
             />
           )}
 
-          {modo === "ultimo_vuelo" && (
-            <div className="mt-3 space-y-2">
-              <div className="flex items-baseline gap-2">
+          {(modo === "ultimo_vuelo" || modo === "vuelo_ancla") && (
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-2">
                 <input
                   name="expiry_offset_days"
                   type="number"
                   min={1}
-                  max={MAX_OFFSET_DAYS}
+                  max={MAX_OFFSET[unidad]}
                   required
                   value={offset}
                   onChange={(e) => setOffset(e.target.value)}
-                  className="w-24 bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold data text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors"
+                  aria-label="Cantidad"
+                  className="w-20 bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold data text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors"
                 />
+                <div className="w-28">
+                  <StyledSelect
+                    name="expiry_offset_unit"
+                    value={unidad}
+                    onChange={(v) => setUnidad(v as OffsetUnit)}
+                    options={UNIDAD_OPTIONS}
+                  />
+                </div>
                 <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  días después de tu último vuelo
+                  {modo === "ultimo_vuelo" ? "después de tu último vuelo" : "después de:"}
                 </span>
               </div>
-              {/* Volar corre la fecha hacia adelante, que es al revés que todos los
-                  otros vencimientos de Vector. Si no se dice, la cuenta regresiva
-                  se lee como una amenaza en vez de como lo que es. */}
+
+              {modo === "vuelo_ancla" &&
+                (vuelos.length === 0 ? (
+                  // Sin vuelos no hay ancla que elegir, y ofrecer un select vacío es
+                  // ofrecer un callejón sin salida.
+                  <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                    No tenés vuelos cargados todavía, así que no hay desde cuál contar.
+                    Cargá el vuelo primero y volvé.
+                  </p>
+                ) : (
+                  <StyledSelect
+                    name="expiry_anchor_flight_id"
+                    value={ancla}
+                    onChange={setAncla}
+                    options={vuelos.map((f) => ({
+                      value: f.id,
+                      label: `${f.date} · ${f.route || "sin ruta"}`,
+                    }))}
+                  />
+                ))}
+
+              {/*
+                Los dos textos dicen cosas opuestas y eso es el punto. Con el último
+                vuelo, volar **corre** la fecha —al revés que todos los otros
+                vencimientos de Vector, donde lo único que ayuda es un trámite—. Con
+                un vuelo puntual, no la mueve nada. Una vez guardado, esta línea es la
+                única diferencia visible entre los dos modos, y confundirlos es creer
+                que estás cubierto cuando no.
+              */}
               <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {ayudaRegla(Number(offset) || 0, ultimoVuelo)}
+                {modo === "ultimo_vuelo"
+                  ? ayudaRegla(cantidad, ultimoVuelo, unidad)
+                  : ayudaAncla(cantidad, fechaAncla, unidad)}
               </p>
             </div>
           )}

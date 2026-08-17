@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { PilotDocument } from "@/types";
-import { ayudaRegla, descripcionRegla, modoDe, vencimientoDerivado } from "./expiry-rules";
+import {
+  ayudaAncla,
+  ayudaRegla,
+  descripcionRegla,
+  modoDe,
+  sumarOffset,
+  vencimientoDerivado,
+} from "./expiry-rules";
 
 const doc = (over: Partial<PilotDocument> = {}): PilotDocument =>
   ({
@@ -110,5 +117,107 @@ describe("ayudaRegla", () => {
 
   it("sin vuelos explica que la cuenta no empezó", () => {
     expect(ayudaRegla(60, null)).toMatch(/no empezó/);
+  });
+});
+
+/**
+ * Meses, que no son 30 días.
+ *
+ * El repaso de 61.135 son 24 meses calendario. Resolverlo con 730 días se corre uno
+ * o dos según los bisiestos y los meses de 31, y en un vencimiento regulatorio esos
+ * dos días son poder volar o no. Esta aritmética está duplicada en
+ * `derived_expiries.sumar_offset` del backend: si una cambia, la otra también.
+ */
+describe("sumarOffset", () => {
+  it("24 meses caen el mismo día, dos años después", () => {
+    expect(sumarOffset("2026-03-15", 24, "meses")).toBe("2028-03-15");
+  });
+
+  /** El caso que rompe una implementación ingenua: no existe el 31 de febrero. */
+  it("satura al último día del mes destino", () => {
+    expect(sumarOffset("2026-01-31", 1, "meses")).toBe("2026-02-28");
+    expect(sumarOffset("2024-01-31", 1, "meses")).toBe("2024-02-29");
+  });
+
+  it("un 29 de febrero cae en el 28 del año no bisiesto", () => {
+    expect(sumarOffset("2024-02-29", 12, "meses")).toBe("2025-02-28");
+  });
+
+  /** El módulo tiene que cruzar diciembre sin dar mes 13 ni mes 0. */
+  it("cruza el fin de año", () => {
+    expect(sumarOffset("2026-12-15", 1, "meses")).toBe("2027-01-15");
+    expect(sumarOffset("2026-12-15", 13, "meses")).toBe("2028-01-15");
+  });
+
+  it("en días delega en sumarDias", () => {
+    expect(sumarOffset("2026-08-01", 60, "dias")).toBe("2026-09-30");
+  });
+
+  /**
+   * Espejo exacto del backend. Si estos dos dejaran de coincidir, el formulario
+   * mostraría una fecha antes de guardar y la base guardaría otra.
+   */
+  it("coincide con lo que calcula el backend", () => {
+    expect(sumarOffset("2026-03-15", 24, "meses")).toBe("2028-03-15");
+    expect(sumarOffset("2026-01-31", 1, "meses")).toBe("2026-02-28");
+    expect(sumarOffset("2024-02-29", 12, "meses")).toBe("2025-02-28");
+    expect(sumarOffset("2026-12-15", 1, "meses")).toBe("2027-01-15");
+  });
+});
+
+describe("vencimiento anclado a un vuelo puntual", () => {
+  const anclado = (over = {}) =>
+    doc({
+      expiry_rule: "vuelo_ancla",
+      expiry_offset_days: 24,
+      expiry_offset_unit: "meses",
+      expiry_anchor_flight_id: "f1",
+      ...over,
+    });
+
+  it("es su propio modo", () => {
+    expect(modoDe(anclado())).toBe("vuelo_ancla");
+  });
+
+  it("la descripción nombra el vuelo cuando sabemos su fecha", () => {
+    expect(descripcionRegla(anclado(), "2026-03-15"))
+      .toBe("24 meses desde tu vuelo del 2026-03-15");
+  });
+
+  /**
+   * Sin la fecha del ancla no se puede afirmar cuál vuelo es. Decir "desde un vuelo
+   * que elegiste" es peor que decir la fecha, pero es lo único cierto.
+   */
+  it("sin la fecha del ancla no inventa cuál vuelo era", () => {
+    expect(descripcionRegla(anclado(), null)).toBe("24 meses desde un vuelo que elegiste");
+  });
+
+  it("pluraliza el mes solo", () => {
+    expect(descripcionRegla(anclado({ expiry_offset_days: 1 }), "2026-03-15"))
+      .toBe("1 mes desde tu vuelo del 2026-03-15");
+  });
+
+  it("calcula la fecha en meses", () => {
+    expect(vencimientoDerivado("2026-03-15", 24, "meses")).toBe("2028-03-15");
+  });
+});
+
+/**
+ * Los dos textos de ayuda dicen lo contrario a propósito, y es la única diferencia
+ * visible entre los dos modos una vez guardados.
+ */
+describe("ayudaAncla", () => {
+  it("dice que volar NO mueve la fecha", () => {
+    const texto = ayudaAncla(24, "2026-03-15", "meses");
+    expect(texto).toContain("2028-03-15");
+    expect(texto).toMatch(/no lo mueve/i);
+  });
+
+  it("y ayudaRegla dice lo contrario", () => {
+    expect(ayudaRegla(60, "2026-08-01")).toMatch(/corre hacia adelante/);
+  });
+
+  it("sin vuelo elegido pide que se elija", () => {
+    expect(ayudaAncla(24, null, "meses")).toMatch(/Elegí desde qué vuelo/);
   });
 });

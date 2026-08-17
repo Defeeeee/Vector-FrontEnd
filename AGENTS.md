@@ -3058,3 +3058,37 @@ La 012 existe porque el CHECK de la 011 no rechazaba nada —`false or NULL` es 
 un CHECK que da NULL pasa—, así que durante un rato la única validación real del
 trío regla/offset/fecha fue `_apply_expiry_rule` en el backend. Está en el `AGENTS.md`
 del backend con el detalle.
+
+---
+
+## Contar desde un vuelo puntual — 2026-08-14
+
+El cuarto modo del formulario de vencimientos: "Contado desde un vuelo puntual", que
+guarda `expiry_rule: 'vuelo_ancla'` con el id del vuelo. El porqué del modelo está en
+el `AGENTS.md` del backend; acá va lo que toca a esta app.
+
+**Los dos textos de ayuda dicen lo contrario a propósito.** Con `ultimo_vuelo`,
+volar **corre** la fecha hacia adelante; con `vuelo_ancla`, no la mueve nada. Una vez
+guardados, los dos modos se ven idénticos —una fecha y una leyenda— y esa línea es la
+única forma que tiene el piloto de saber cuál eligió. Confundirlos es creer que estás
+cubierto cuando no. Por eso son dos funciones separadas, `ayudaRegla` y `ayudaAncla`,
+y no una con un `if`.
+
+**`sumarOffset` está duplicada del backend** (`derived_expiries.sumar_offset`), y es
+duplicación deliberada: el formulario previsualiza la fecha mientras el piloto
+escribe la cantidad, y sin la cuenta acá esa previsualización no existe. Si las dos
+se separan, la pantalla muestra una fecha y la base guarda otra. **Los tests de los
+dos lados comparten los mismos cuatro casos**, incluido el que rompe cualquier
+implementación ingenua: 31 de enero + 1 mes es el 28 de febrero, no el 3 de marzo.
+
+**`descripcionRegla` no inventa cuál vuelo era.** Recibe la fecha del ancla como
+segundo argumento y, si no la tiene, dice "desde un vuelo que elegiste" en vez de
+nombrar uno. Es peor de leer y es lo único cierto.
+
+**Sin vuelos cargados el modo avisa en vez de ofrecer un select vacío**, que sería un
+callejón sin salida.
+
+`DocumentsManager` pasó de recibir `ultimoVuelo` a recibir `flights`: necesita la
+lista entera para el selector del ancla, y de ahí saca el último vuelo solo.
+
+**Estado:** pusheado, migraciones 011/012/013 aplicadas. Los cuatro modos guardan.

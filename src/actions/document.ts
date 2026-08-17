@@ -1,8 +1,8 @@
 "use server";
 
 import { apiFetch } from "@/lib/api";
-import { MAX_OFFSET_DAYS } from "@/lib/expiry-rules";
-import { PilotDocument } from "@/types";
+import { MAX_OFFSET } from "@/lib/expiry-rules";
+import { OffsetUnit, PilotDocument } from "@/types";
 import { revalidatePath } from "next/cache";
 
 function parseAlertDays(raw: FormDataEntryValue | null): number[] {
@@ -30,22 +30,43 @@ function parseAlertDays(raw: FormDataEntryValue | null): number[] {
 function parseVencimiento(formData: FormData) {
   const modo = (formData.get("expiry_mode") as string) || "fecha";
 
-  if (modo === "ultimo_vuelo") {
-    const dias = parseInt(((formData.get("expiry_offset_days") as string) || "").trim(), 10);
-    if (!Number.isFinite(dias) || dias < 1 || dias > MAX_OFFSET_DAYS) {
-      return { error: `Los días tienen que ser un número entre 1 y ${MAX_OFFSET_DAYS}` } as const;
+  if (modo === "ultimo_vuelo" || modo === "vuelo_ancla") {
+    const unidad: OffsetUnit =
+      (formData.get("expiry_offset_unit") as string) === "meses" ? "meses" : "dias";
+    const tope = MAX_OFFSET[unidad];
+    const cantidad = parseInt(((formData.get("expiry_offset_days") as string) || "").trim(), 10);
+    if (!Number.isFinite(cantidad) || cantidad < 1 || cantidad > tope) {
+      const nombre = unidad === "meses" ? "meses" : "días";
+      return { error: `Los ${nombre} tienen que ser un número entre 1 y ${tope}` } as const;
     }
+
+    // El ancla sólo existe para `vuelo_ancla`. En `ultimo_vuelo` la elige el backend,
+    // y mandar un id sería un dato que el recálculo ignora y que confunde la fila.
+    let ancla: string | null = null;
+    if (modo === "vuelo_ancla") {
+      ancla = ((formData.get("expiry_anchor_flight_id") as string) || "").trim() || null;
+      if (!ancla) return { error: "Elegí desde qué vuelo se cuenta" } as const;
+    }
+
     return {
-      payload: { expiry_rule: "ultimo_vuelo", expiry_offset_days: dias, expiry_date: null },
+      payload: {
+        expiry_rule: modo,
+        expiry_offset_days: cantidad,
+        expiry_offset_unit: unidad,
+        expiry_anchor_flight_id: ancla,
+        expiry_date: null,
+      },
     } as const;
   }
 
-  // "" es lo que manda un <input type="date"> vacío o deshabilitado. Va como null:
-  // el documento no vence. Ver `documentStatus`.
+  // "" es lo que manda un <input type="date"> vacío o ausente. Va como null: el
+  // documento no vence. Ver `documentStatus`.
   return {
     payload: {
       expiry_rule: "fijo",
       expiry_offset_days: null,
+      expiry_offset_unit: "dias",
+      expiry_anchor_flight_id: null,
       expiry_date: ((formData.get("expiry_date") as string) || "").trim() || null,
     },
   } as const;
@@ -155,6 +176,7 @@ export async function upsertCmaDocument(expiryDate: string) {
     // fecha que el piloto acaba de escribir acá.
     expiry_rule: "fijo",
     expiry_offset_days: null,
+    expiry_anchor_flight_id: null,
     alert_days: [60, 30, 7],
   };
 
