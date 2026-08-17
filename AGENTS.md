@@ -1942,10 +1942,9 @@ movió a `X-Vector-Phone` en la misma tanda.
    devolvía cuando `secret` era obligatorio. Ese contraste es la prueba de que el
    código nuevo está vivo, y no hace falta credencial para medirlo.
 2. **El front manda cabeceras.** Desplegado.
-3. **El backend deja de aceptar query string.** Diferido a propósito, y al
-   2026-08-17 sigue sin hacerse: **es limpieza sin fecha, no una tarea a medias**.
-   La evidencia ya está juntada —ningún llamador de los dos repos usa query
-   string— y el detalle está en la entrada de `H1.1` más arriba.
+3. **El backend deja de aceptar query string.** **Hecho el 2026-08-17.** Los tres
+   endpoints leen `phone` y `secret` sólo por cabecera. El detalle está en la
+   entrada de `H1.1` más arriba.
 
 #### Migré seis de siete llamadas y verifiqué con el patrón equivocado
 
@@ -1993,7 +1992,7 @@ llamadas a Kapso para pelearle a quien la está mandando.
 | H1.1 pasos 1 y 2 · H1.2 | desplegado y verificado |
 | C1 | mergeado |
 | H1.3 | en PR |
-| H1.1 paso 3 | diferido: limpieza sin fecha, evidencia ya juntada |
+| H1.1 paso 3 | **hecho** el 2026-08-17 |
 | H1.4 · F1 · D1 | backlog sin fecha, no trabajo a medias |
 | T1 | **hecho**: la cuenta existe y el smoke autenticado corre en verde |
 
@@ -2065,15 +2064,11 @@ mi dev server roto.
 
 #### Diferido a propósito — estado al 2026-08-17
 
-- **`H1.1` paso 3** — sacarle al backend el soporte de query string en
-  `/whatsapp/user-data` y `/whatsapp/chat-history`. **No es una tarea a medias: es
-  limpieza sin fecha**, y la evidencia para hacerla ya está juntada. Verificado por
-  grep sobre los dos repos: **el único llamador manda todo por headers**
-  (`vectorHeaders()` en `src/app/api/webhooks/whatsapp/route.ts`), ninguno usa query
-  string. Lo único que faltaría para tener certeza absoluta es mirar los logs del
-  VPS (`pm2 flush`, después `grep -cE "whatsapp/(user-data|chat-history)\?"`, que
-  tiene que dar 0), y eso lo hace quien tenga acceso al servidor. Mientras tanto los
-  parámetros están de más pero no molestan a nadie.
+- **`H1.1` paso 3** — **hecho el 2026-08-17.** `/whatsapp/user-data` y
+  `/whatsapp/chat-history` ya no aceptan `phone` ni `secret` por query string:
+  `_secret_from` y `_phone_from` leen sólo cabeceras. El único llamador de los dos
+  repos —`src/app/api/webhooks/whatsapp/route.ts`, con `vectorHeaders()`— ya mandaba
+  todo por cabeceras, verificado por grep antes de tocar nada.
 - **`T1`** — el smoke autenticado. Bloqueado hasta que exista la cuenta de
   prueba, que **la crea Federico**: crear cuentas y manejar contraseñas queda
   fuera de lo que hace el agente, aun con autorización explícita. El script lee
@@ -3213,10 +3208,14 @@ entrada. Lo que aparece como backlog es backlog: ideas sin fecha, no trabajo a m
   86×429 contra `/auth/v1/token` que había antes de `auto_refresh_token=False`
   desaparecieron.
 
-**Lo único abierto, y no bloquea nada:** la causa raíz exacta de la carrera de
-`/dashboard` —qué excepción tiran esos hilos— vive en el log de pm2 del VPS, donde
-un agente no llega. El reintento secuencial tapa la consecuencia y el piloto no ve
-el problema. El comando para obtenerla está en el `AGENTS.md` del backend.
+**Nada abierto.** La causa raíz de las tandas incompletas de `/dashboard` se
+investigó hasta el final: la hipótesis de la carrera entre hilos **se puso a prueba
+y resultó falsa** —640 consultas concurrentes en un venv contra el proyecto real, en
+las dos variantes, cero fallos—. Lo que encaja con la evidencia es un fallo
+transitorio de conexión durante el arranque en frío, dos segundos después de un
+deploy, y eso es exactamente lo que el reintento arregla. Verificado en producción:
+~130 requests desde el despliegue, con un pico de 7 en 5 segundos, sin una sola
+tanda incompleta. El detalle está en el `AGENTS.md` del backend.
 
 **Deuda técnica anotada, sin urgencia:** `/flights` devuelve la bitácora entera sin
 paginar, y ya la piden el dashboard, el resumen y la configuración. Con 41 vuelos no
