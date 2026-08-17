@@ -5,11 +5,14 @@ import { Flight, Aircraft } from "@/types";
 import { Search, Plane, Plus } from "lucide-react";
 import Link from "next/link";
 import FlightCard from "@/components/dashboard/FlightCard";
+import { pesos } from "@/lib/costos";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface FlightListClientProps {
   flights: Flight[];
   aircraft: Aircraft[];
+  /** Lo cobrado por vuelo, por `flight_id`. Vacío en modo `packs`. Ver `lib/costos.ts`. */
+  costos?: Map<string, number>;
 }
 
 const MONTH_NAMES = [
@@ -17,7 +20,7 @@ const MONTH_NAMES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
-export default function FlightListClient({ flights, aircraft }: FlightListClientProps) {
+export default function FlightListClient({ flights, aircraft, costos = new Map() }: FlightListClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const aircraftMap = new Map(aircraft.map(a => [a.id, a]));
@@ -33,19 +36,20 @@ export default function FlightListClient({ flights, aircraft }: FlightListClient
 
   // Group into ledger pages by calendar month
   const monthGroups = useMemo(() => {
-    const groups = new Map<string, { label: string; flights: Flight[]; hours: number }>();
+    const groups = new Map<string, { label: string; flights: Flight[]; hours: number; pesos: number }>();
     for (const f of filteredFlights) {
       const d = new Date(f.date + 'T00:00:00');
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       if (!groups.has(key)) {
-        groups.set(key, { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, flights: [], hours: 0 });
+        groups.set(key, { label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`, flights: [], hours: 0, pesos: 0 });
       }
       const g = groups.get(key)!;
       g.flights.push(f);
       g.hours += f.duration;
+      g.pesos += costos.get(f.id) ?? 0;
     }
     return Array.from(groups.values());
-  }, [filteredFlights]);
+  }, [filteredFlights, costos]);
 
   return (
     <div className="space-y-6 md:space-y-8 w-full">
@@ -77,7 +81,12 @@ export default function FlightListClient({ flights, aircraft }: FlightListClient
                   <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-white tracking-tight capitalize">{group.label}</h3>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-sm font-bold font-display text-aviation-blue-dark dark:text-aviation-cyan">{group.hours.toFixed(1)}</span>
-                    <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">hs · {group.flights.length} {group.flights.length === 1 ? "vuelo" : "vuelos"}</span>
+                    <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                      hs · {group.flights.length} {group.flights.length === 1 ? "vuelo" : "vuelos"}
+                      {/* El total del mes, sólo si hubo cobros. Un "$ 0" en la
+                          cabecera de cada mes sería ruido para quien usa packs. */}
+                      {group.pesos > 0 && <> · <span className="data">{pesos(group.pesos)}</span></>}
+                    </span>
                   </div>
                 </div>
 
@@ -98,6 +107,7 @@ export default function FlightListClient({ flights, aircraft }: FlightListClient
                         flight={flight}
                         aircraft={flight.aircraft_id ? aircraftMap.get(flight.aircraft_id) : undefined}
                         allAircraft={aircraft}
+                        costo={costos.get(flight.id) ?? null}
                       />
                     ))}
                   </div>

@@ -3220,3 +3220,47 @@ tanda incompleta. El detalle está en el `AGENTS.md` del backend.
 **Deuda técnica anotada, sin urgencia:** `/flights` devuelve la bitácora entera sin
 paginar, y ya la piden el dashboard, el resumen y la configuración. Con 41 vuelos no
 se nota; con 2000 sí.
+
+---
+
+## Cuánto salió cada vuelo — 2026-08-17
+
+Vector tenía los dos factores desde siempre —`aircraft.cost_per_hour` y la
+transacción que `_sync_flight_transaction` graba por cada vuelo— y **nunca los
+mostraba juntos**. Para un alumno de escuela que paga la hora, "cuánto llevo
+gastado" es la pregunta del mes, y la contestaba a mano.
+
+Ahora aparece en tres lugares: la fila de "Últimos vuelos" del dashboard, la
+cabecera de cada mes del libro, y el detalle de cada vuelo. Más una tarjeta de "lo
+que va del mes" arriba de los packs.
+
+**El número sale de la transacción, no de una cuenta.** Es la decisión de fondo de
+`src/lib/costos.ts`: el backend calcula `duración × cost_per_hour − descuento` **en
+el momento de cargar el vuelo** y guarda el resultado. Recalcularlo al leer, con el
+`cost_per_hour` de hoy, mostraría el precio actual sobre un vuelo de hace seis meses
+— y en una escuela el precio de la hora sube. La transacción es el precio histórico;
+la cuenta sería una suposición.
+
+**Cero se trata como "no sé", no como "gratis".** Un cobro en cero sale de dos
+situaciones indistinguibles desde el frontend: la aeronave no tiene precio cargado
+—cuatro de las seis de Federico están en 0— o el vuelo tuvo 100% de descuento. La
+primera es mucho más común, y escribir "$ 0" sobre un vuelo que el piloto pagó es
+peor que no escribir nada. Por eso nada de esto se dibuja sin un cobro mayor a cero:
+en modo `packs` la app se ve exactamente igual que antes.
+
+**El gasto del mes se agrupa por la fecha del vuelo, no por `created_at` de la
+transacción.** Un vuelo de julio anotado en agosto —lo que pasa cuando alguien se
+pone al día con la bitácora— caería en el mes equivocado y haría mentir a los dos
+meses a la vez.
+
+**Lo que este cambio dejó a la vista, y es un agujero anterior:** Federico está en
+modo `balance` y **sólo 2 de sus 41 vuelos tienen cobro**. `_sync_flight_transaction`
+corre al crear o editar un vuelo, así que los 39 anteriores al cambio de modo nunca
+se cobraron. **No hay backfill al pasar de `packs` a `balance`**, y sin él la
+pantalla de saldo viene mostrando un número incompleto desde entonces. Es una
+decisión de producto —escribir 39 transacciones de plata retroactivas no es algo que
+un agente haga sin que se lo pidan— así que queda dicho acá, no hecho.
+
+**Verificación:** `tsc` 0 · **278 tests** (eran 265; 13 nuevos sobre `costos.ts`) ·
+build limpio. Contra la base: 2 cobros con vuelo asociado, los dos distintos de cero,
+$1.100.500 en total.

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { Flight, Aircraft } from "@/types";
 import { splitRoute } from "@/lib/route";
+import { costoDeVuelo, pesos } from "@/lib/costos";
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -20,10 +21,18 @@ export default function RecentFlights({
   flights,
   aircraft,
   limit = 5,
+  costos = new Map(),
 }: {
   flights: Flight[];
   aircraft: Aircraft[];
   limit?: number;
+  /**
+   * Lo cobrado por cada vuelo, por `flight_id`. Ver `src/lib/costos.ts`.
+   *
+   * Opcional y vacío por defecto: en modo `packs` no hay cobros, y esta tira tiene
+   * que verse igual de bien sin la columna de plata.
+   */
+  costos?: Map<string, number>;
 }) {
   if (flights.length === 0) return null;
 
@@ -81,9 +90,21 @@ export default function RecentFlights({
                 )}
               </span>
 
-              <span className="data text-sm font-bold text-zinc-900 dark:text-white text-right order-2 md:order-none">
-                {f.duration.toFixed(1)}
-                <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-600 ml-0.5">hs</span>
+              {/*
+                El costo va debajo de las horas y no en columna propia: una columna
+                vacía en cada fila del piloto que usa packs —o que no cargó el precio
+                de la aeronave— sería un hueco permanente en la pantalla principal.
+              */}
+              <span className="text-right order-2 md:order-none">
+                <span className="data text-sm font-bold text-zinc-900 dark:text-white block">
+                  {f.duration.toFixed(1)}
+                  <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-600 ml-0.5">hs</span>
+                </span>
+                {costoDeVuelo(f, costos) !== null && (
+                  <span className="data text-[11px] font-medium text-zinc-400 dark:text-zinc-500 block mt-0.5 whitespace-nowrap">
+                    {pesos(costoDeVuelo(f, costos)!)}
+                  </span>
+                )}
               </span>
 
               <ChevronRight className="hidden md:block w-4 h-4 text-zinc-300 dark:text-zinc-600" />

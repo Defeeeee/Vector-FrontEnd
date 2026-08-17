@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
-import { Flight, Aircraft, Profile } from "@/types";
+import { Flight, Aircraft, Profile, Transaction } from "@/types";
+import { costosPorVuelo } from "@/lib/costos";
 import { Plus, Clock, LandPlot, Plane } from "lucide-react";
 import Link from "next/link";
 import ExportFlightsButton from "@/components/dashboard/ExportFlightsButton";
@@ -17,19 +18,23 @@ async function getHistoryData() {
   }
 
   if (!response.ok) {
-    return { flights: [], aircraft: [], profile: null };
+    return { flights: [], aircraft: [], profile: null, transactions: [] as Transaction[] };
   }
 
   const data = await response.json();
   return {
     flights: (data.flights || []) as Flight[],
     aircraft: (data.aircraft || []) as Aircraft[],
-    profile: (data.profile || null) as Profile | null
+    profile: (data.profile || null) as Profile | null,
+    // Ya venían en el payload y se descartaban: son de dónde sale cuánto costó
+    // cada vuelo y cada mes del libro. Ver `src/lib/costos.ts`.
+    transactions: (data.transactions || []) as Transaction[]
   };
 }
 
 export default async function HistoryPage() {
-  const { flights, aircraft, profile } = await getHistoryData();
+  const { flights, aircraft, profile, transactions } = await getHistoryData();
+  const costos = costosPorVuelo(transactions);
 
   const sortedFlights = [...flights].sort(
     (a, b) => new Date(b.takeoff).getTime() - new Date(a.takeoff).getTime()
@@ -60,7 +65,7 @@ export default async function HistoryPage() {
         </div>
       </PageHeader>
 
-      <FlightListClient flights={sortedFlights} aircraft={aircraft} />
+      <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} />
     </div>
   );
 }

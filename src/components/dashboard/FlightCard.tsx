@@ -7,6 +7,7 @@ import { useState, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateFlightDuration } from "@/lib/utils";
 import { splitRoute } from "@/lib/route";
+import { pesos } from "@/lib/costos";
 
 const PURPOSE_OPTIONS = [
   { value: "ACR", label: "ACR – Acrobacia" },
@@ -37,9 +38,17 @@ interface FlightCardProps {
   flight: Flight;
   aircraft: Aircraft | undefined;
   allAircraft: Aircraft[];
+  /**
+   * Lo que se cobró por este vuelo, o `null` si no hay cobro registrado.
+   *
+   * **Es el precio histórico, no una cuenta con el `cost_per_hour` de hoy.** En una
+   * escuela el precio de la hora sube, y recalcular mostraría el valor actual sobre
+   * un vuelo de hace seis meses. Ver `src/lib/costos.ts`.
+   */
+  costo?: number | null;
 }
 
-export default function FlightCard({ flight, aircraft, allAircraft }: FlightCardProps) {
+export default function FlightCard({ flight, aircraft, allAircraft, costo = null }: FlightCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -214,6 +223,14 @@ export default function FlightCard({ flight, aircraft, allAircraft }: FlightCard
                 <DetailItem label="Landing" value={new Date(flight.landing).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })} />
                 <DetailItem label="Landings" value={`${flight.landings} ciclos`} />
                 <DetailItem label="Type ICAO" value={aircraft?.icao || "---"} />
+                {/* Sólo si hubo cobro: en modo `packs` el vuelo consume horas y no
+                    pesos, y un "$ 0" sería inventar un precio que nadie pagó. */}
+                {costo !== null && costo > 0 && (
+                  <DetailItem
+                    label="Costo"
+                    value={`${pesos(costo)}${flight.duration ? ` · ${pesos(costo / flight.duration)}/h` : ""}`}
+                  />
+                )}
               </div>
 
               {logs.length > 0 && (

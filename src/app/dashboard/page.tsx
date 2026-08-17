@@ -1,11 +1,12 @@
 import { MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { buildActivityHeatmap } from "@/lib/utils";
-import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument, Logbook, PlannedFlight } from "@/types";
+import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument, Logbook, PlannedFlight, Transaction } from "@/types";
 import DashboardCharts from "@/components/dashboard/DashboardChartsLazy";
 import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
 import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
+import GastoDelMes from "@/components/dashboard/GastoDelMes";
 import PCATracker from "@/components/dashboard/PCATracker";
 import WeatherWidget from "@/components/dashboard/WeatherWidget";
 import RecentFlights from "@/components/dashboard/RecentFlights";
@@ -50,7 +51,7 @@ async function getDashboardData() {
     return {
       flights: [], aircraft: [], profile: null, session: { active: false }, packs: [],
       audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [],
-      planned: [] as PlannedFlight[],
+      planned: [] as PlannedFlight[], transactions: [] as Transaction[],
       unavailable: ["profile", "aircraft", "flights", "session", "packs", "transactions", "audit", "documents"],
     };
   }
@@ -78,7 +79,10 @@ async function getDashboardData() {
     session: data.session || { active: false },
     packs: data.packs || [],
     audit: (data.audit as AuditSummary) || emptyAudit,
-    documents: (data.documents as PilotDocument[]) || []
+    documents: (data.documents as PilotDocument[]) || [],
+    // Ya venían en el payload de `/dashboard` y se descartaban. Son lo que hace
+    // posible mostrar cuánto salió cada vuelo. Ver `src/lib/costos.ts`.
+    transactions: (data.transactions as Transaction[]) || []
   };
 }
 
@@ -91,14 +95,20 @@ import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
 import CustomStatsRow from "@/components/dashboard/CustomStatsRow";
 import { listCustomStats } from "@/actions/custom-stat";
 import { splitRoute } from "@/lib/route";
+import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable } =
+  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable, transactions } =
     await getDashboardData();
 
   /** Si esa sección del payload se pudo leer. Ver `unavailable` más arriba. */
   const disponible = (seccion: string) => !unavailable.includes(seccion);
   const documentosDisponibles = disponible("documents");
+
+  // Cuánto salió cada vuelo, del cobro que quedó registrado. Vacío en modo `packs`,
+  // donde el vuelo consume horas y no pesos. Ver `src/lib/costos.ts`.
+  const costos = costosPorVuelo(transactions as Transaction[]);
+  const gastoMes = gastoDelMes(flights as Flight[], costos, new Date().toISOString().slice(0, 7));
 
   const totalFlights = flights.length;
   const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
@@ -337,6 +347,12 @@ export default async function Dashboard() {
       </div>
 
       {/* Flight Hours Packs */}
+      {/* La plata: lo que va del mes y, debajo, los packs. Van juntos porque
+          contestan la misma pregunta desde los dos modos de seguimiento —quien usa
+          saldo ve pesos, quien usa packs ve horas— y ninguno de los dos se dibuja
+          si no tiene nada que decir. */}
+      <GastoDelMes gasto={gastoMes} />
+
       <FlightPackWidget packs={packs} />
 
       {/* METAR/TAF Weather Widget - Full width horizontal card */}
@@ -375,7 +391,7 @@ export default async function Dashboard() {
 
       {/* Closes the dashboard on the logbook itself. Everything above is
           aggregate; this is the last thing that actually happened. */}
-      <RecentFlights flights={flights as Flight[]} aircraft={aircraft as Aircraft[]} />
+      <RecentFlights flights={flights as Flight[]} aircraft={aircraft as Aircraft[]} costos={costos} />
 
     </div>
   );
