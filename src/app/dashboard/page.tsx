@@ -344,7 +344,12 @@ export default async function Dashboard() {
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <PCATracker flights={flights} logbooks={logbooks as Logbook[]} />
+        <PCATracker
+          flights={flights}
+          logbooks={logbooks as Logbook[]}
+          aircraft={aircraft as Aircraft[]}
+          todayIso={new Date().toISOString().slice(0, 10)}
+        />
       )}
 
       {/* Analytics */}

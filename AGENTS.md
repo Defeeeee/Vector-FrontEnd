@@ -3092,3 +3092,45 @@ callejón sin salida.
 lista entera para el selector del ancla, y de ahí saca el último vuelo solo.
 
 **Estado:** pusheado, migraciones 011/012/013 aplicadas. Los cuatro modos guardan.
+
+---
+
+## El tracker de PCA pasa de informe a respuesta — 2026-08-14
+
+Seis diales y el piloto adivinando cuál pesa. El problema es que **el que pesa
+rota**: se puede estar al 97% del total y trabado por 2 hs de travesía, o sea con el
+medidor grande casi lleno y el dial chiquito decidiendo qué vuelo conviene hacer.
+
+Tres respuestas nuevas al pie de la card, con datos que ya estaban:
+
+- **Qué tenés más lejos**, comparando **en fracción y no en valor absoluto** — 3 hs
+  de travesía sobre 20 y 3 aterrizajes nocturnos sobre 5 no son comparables como
+  números sueltos.
+- **Cuándo se cierra**, con el ritmo **de ese requisito** y no de las horas totales:
+  quien vuela 8 hs por mes dando vueltas al aeródromo avanza cero en travesía, y
+  proyectar con el ritmo general daría una fecha optimista sobre justo lo que lo
+  tiene trabado. Sin ritmo devuelve `null`, no infinito: no haber volado eso en tres
+  meses no autoriza a contestar "nunca".
+- **Cuánto sale terminar**, `cost_per_hour` ponderado por horas voladas × las horas
+  que faltan. Es **un piso**: un mismo vuelo avanza varios requisitos a la vez, así
+  que lo mínimo es la brecha más grande, no la suma de las brechas.
+
+**El título cambia según cuántos falten.** Con uno pendiente es "Lo que te frena";
+con varios, "Lo que más lejos tenés". Medido contra los datos de producción, el
+piloto real tiene 5 requisitos pendientes y el que sale es nocturno (5 hs) mientras
+hay uno de 152 hs: llamar a eso "lo que te frena" sugeriría que cerrándolo terminó.
+
+**Toda la aritmética se mudó a `src/lib/pca-progress.ts`.** Estaba adentro del `.tsx`
+y por lo tanto **sin un solo test** —vitest corre en `environment: "node"` y no puede
+testear componentes—, así que los seis números de 61.620 nunca se habían verificado.
+Ahora tienen 24 tests, incluidos los dos que ya tenían comentarios de advertencia en
+el componente: el tope de 5 h del instrumento simulado se aplica **sobre el
+acumulado** y no vuelo por vuelo, y los aterrizajes de apertura **no** cuentan como
+nocturnos.
+
+También se fue la leyenda "(reducido: 150 hs)": el medidor dividía siempre por 200 y
+nunca usaba el 150, y Federico confirmó que ese piloto no existe entre sus usuarios.
+Ofrecer un camino que nadie va a tomar es ruido en la pantalla de todos.
+
+**Queda igual y a propósito:** el `subObjetivo` de PIC (70 sobre 100) tiene la misma
+forma que el 150 y sigue ahí. No lo toqué porque no está confirmado qué codifica.
