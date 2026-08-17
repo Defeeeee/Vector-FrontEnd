@@ -272,4 +272,41 @@ describe("pilotStatus", () => {
       expect(pilotStatus(docs, [vigente()], [vuelo("2026-08-01")], HOY).estado).not.toBe("documento_faltante");
     });
   });
+
+  /**
+   * El bug de "a veces me dice que no tengo CMA hasta que voy al Hangar".
+   *
+   * Las ocho consultas de `/dashboard` corren en paralelo sobre el mismo cliente
+   * de Supabase y una que falla se convertía en `[]`. Desde acá abajo esa lista
+   * vacía es indistinguible de un piloto sin documentos, y esta función resolvía
+   * la ambigüedad afirmando. Estos casos fijan que no vuelva a hacerlo.
+   */
+  describe("cuando no se pudieron leer los documentos", () => {
+    it("no dice que falta el CMA: dice que no sabe", () => {
+      const r = pilotStatus([], [vigente()], [vuelo("2026-08-01")], HOY, false);
+      expect(r.estado).toBe("datos_no_disponibles");
+      expect(r.detalle).toMatch(/falla nuestra/i);
+    });
+
+    it("tampoco dice que esté vigente", () => {
+      const r = pilotStatus(alDia, [vigente()], [vuelo("2026-08-01")], HOY, false);
+      expect(r.estado).toBe("datos_no_disponibles");
+    });
+
+    /**
+     * La inactividad sale de los vuelos, no de los documentos, así que sigue
+     * siendo verdad aunque los documentos no hayan llegado — y es más grave.
+     */
+    it("la inactividad prolongada gana, porque no depende de los documentos", () => {
+      const r = pilotStatus([], [vigente()], [vuelo("2023-01-05")], HOY, false);
+      expect(r.estado).toBe("inactividad_prolongada");
+    });
+
+    it("con los documentos disponibles el comportamiento no cambia", () => {
+      expect(pilotStatus([], [vigente()], [vuelo("2026-08-01")], HOY, true).estado)
+        .toBe("documento_faltante");
+      expect(pilotStatus(alDia, [vigente()], [vuelo("2026-08-01")], HOY).estado)
+        .toBe("vigente");
+    });
+  });
 });

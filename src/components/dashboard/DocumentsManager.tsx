@@ -2,8 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { CalendarClock, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
-import { DocumentKind, PilotDocument } from "@/types";
+import { DocumentKind, Flight, OffsetUnit, PilotDocument } from "@/types";
 import { documentStatus } from "@/lib/utils";
+import {
+  MAX_OFFSET,
+  ayudaAncla,
+  ayudaRegla,
+  descripcionRegla,
+  modoDe,
+  type ModoVencimiento,
+} from "@/lib/expiry-rules";
 import { createDocument, deleteDocument, updateDocument } from "@/actions/document";
 import StyledSelect from "./StyledSelect";
 
@@ -33,6 +41,33 @@ const QUICK_ADD: { kind: DocumentKind; label: string; name: string }[] = [
   { kind: "repaso_vuelo", label: "Repaso de vuelo", name: "Repaso de vuelo (RAAC 61.135)" },
 ];
 
+/**
+ * Los tres modos de vencimiento, en orden de qué tan común es cada uno.
+ *
+ * "En una fecha" es el CMA y la licencia, o sea casi todo. La regla derivada es
+ * para lo que no tiene fecha sino condición —"60 días sin volar y necesitás
+ * adaptación"—, y se guarda como regla justamente porque escrita a mano estaría mal
+ * al día siguiente. Ver `src/lib/expiry-rules.ts`.
+ */
+const MODO_OPTIONS: { value: ModoVencimiento; label: string }[] = [
+  { value: "fecha", label: "En una fecha" },
+  { value: "ultimo_vuelo", label: "Contado desde mi último vuelo" },
+  { value: "vuelo_ancla", label: "Contado desde un vuelo puntual" },
+  { value: "no_vence", label: "No vence" },
+];
+
+/**
+ * Días o meses.
+ *
+ * Los meses no son un lujo: el repaso de 61.135 son **24 meses calendario**, y
+ * resolverlo con 730 días se corre uno o dos según los bisiestos. En un vencimiento
+ * regulatorio esos dos días son poder volar o no.
+ */
+const UNIDAD_OPTIONS: { value: OffsetUnit; label: string }[] = [
+  { value: "dias", label: "días" },
+  { value: "meses", label: "meses" },
+];
+
 const KIND_LABEL = Object.fromEntries(KIND_OPTIONS.map((k) => [k.value, k.label])) as Record<DocumentKind, string>;
 
 const TONE_STYLES = {
@@ -48,8 +83,17 @@ const TONE_STYLES = {
 export default function DocumentsManager({
   documents,
   todayIso,
+  flights = [],
 }: {
   documents: PilotDocument[];
+  /**
+   * Los vuelos del piloto, para los vencimientos derivados.
+   *
+   * Acá se usan **sólo para explicar y para elegir**: la fecha que vale la calcula y
+   * la guarda el backend. Sirven para dos cosas —contestar "entonces hoy vence el
+   * ..." antes de guardar, y ofrecer la lista de la que se elige el vuelo ancla—.
+   */
+  flights?: Flight[];
   /**
    * "Today" as decided by the server, in YYYY-MM-DD.
    *
@@ -61,6 +105,14 @@ export default function DocumentsManager({
   todayIso: string;
 }) {
   const today = new Date(`${todayIso}T00:00:00Z`);
+
+  // Del más reciente al más viejo: es el orden en que un piloto busca un vuelo suyo,
+  // y deja el ancla más probable arriba de todo. Comparación de strings ISO, sin
+  // construir un `Date`.
+  const vuelosOrdenados = [...flights].sort((a, b) => b.date.localeCompare(a.date));
+  const ultimoVuelo = vuelosOrdenados[0]?.date ?? null;
+  const fechaPorVuelo = new Map(flights.map((f) => [f.id, f.date]));
+
   const [editing, setEditing] = useState<PilotDocument | null>(null);
   const [adding, setAdding] = useState(false);
   /** Category a quick-add chip preselected, if the form was opened by one. */
@@ -118,6 +170,7 @@ export default function DocumentsManager({
               <DocumentForm
                 key={doc.id}
                 document={doc}
+                vuelos={vuelosOrdenados}
                 onCancel={() => setEditing(null)}
                 onDone={() => setEditing(null)}
                 onError={setError}
@@ -151,6 +204,25 @@ export default function DocumentsManager({
                     : "No vence"}
                   {doc.notes ? ` · ${doc.notes}` : ""}
                 </p>
+                {/* La fecha de un vencimiento derivado se mueve sola. Sin la regla
+                    escrita al lado, el piloto ve un número distinto cada tanto y no
+                    tiene forma de saber por qué. */}
+                {descripcionRegla(
+                  doc,
+                  doc.expiry_anchor_flight_id
+                    ? fechaPorVuelo.get(doc.expiry_anchor_flight_id)
+                    : ultimoVuelo
+                ) && (
+                  <p className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+                    Se recalcula:{" "}
+                    {descripcionRegla(
+                      doc,
+                      doc.expiry_anchor_flight_id
+                        ? fechaPorVuelo.get(doc.expiry_anchor_flight_id)
+                        : ultimoVuelo
+                    )}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 shrink-0">
@@ -192,6 +264,7 @@ export default function DocumentsManager({
       {adding ? (
         <DocumentForm
           presetKind={presetKind}
+          vuelos={vuelosOrdenados}
           onCancel={closeForm}
           onDone={closeForm}
           onError={setError}
@@ -235,11 +308,14 @@ export default function DocumentsManager({
 function DocumentForm({
   document: doc,
   presetKind,
+  vuelos = [],
   onCancel,
   onDone,
   onError,
 }: {
   document?: PilotDocument;
+  /** Los vuelos, del más reciente al más viejo. Ver `DocumentsManager`. */
+  vuelos?: Flight[];
   /** Set when a quick-add chip opened this form. */
   presetKind?: DocumentKind | null;
   onCancel: () => void;
@@ -251,12 +327,24 @@ function DocumentForm({
   // pida. Cambiar eso haría que cargar un curso vencido apagara el semáforo sin
   // que nadie lo haya decidido.
   const [blocking, setBlocking] = useState<string>(doc?.blocking ?? "nada");
-  // "No vence" es una casilla y no "dejá la fecha vacía". Un <input type="date">
-  // con valor no se puede vaciar de forma confiable —en varios navegadores no hay
-  // forma, y en el teléfono el picker no ofrece "ninguna"—, así que pedir un campo
-  // vacío era pedir algo que el control no permite. Además hace descubrible la
-  // opción: nadie adivina que puede dejarlo en blanco.
-  const [noVence, setNoVence] = useState<boolean>(doc ? !doc.expiry_date : false);
+  // Un select de tres y no una casilla de "no vence".
+  //
+  // Empezó siendo esa casilla, por un motivo que sigue valiendo: un
+  // <input type="date"> con valor no se puede vaciar de forma confiable —en varios
+  // navegadores no hay forma, y en el teléfono el picker no ofrece "ninguna"—, así
+  // que "dejalo en blanco" era pedir algo que el control no permite, y encima nadie
+  // lo adivinaba. Con la migración 011 aparece un tercer caso —la fecha la calcula
+  // el backend desde el último vuelo— y tres estados no entran en una casilla.
+  const [modo, setModo] = useState<ModoVencimiento>(modoDe(doc));
+  const [offset, setOffset] = useState<string>(String(doc?.expiry_offset_days ?? 60));
+  const [unidad, setUnidad] = useState<OffsetUnit>(doc?.expiry_offset_unit ?? "dias");
+  const [ancla, setAncla] = useState<string>(
+    doc?.expiry_anchor_flight_id ?? vuelos[0]?.id ?? ""
+  );
+
+  const ultimoVuelo = vuelos[0]?.date ?? null;
+  const fechaAncla = vuelos.find((f) => f.id === ancla)?.date ?? null;
+  const cantidad = Number(offset) || 0;
   const presetName = presetKind ? QUICK_ADD.find((q) => q.kind === presetKind)?.name : undefined;
   const [pending, startTransition] = useTransition();
 
@@ -314,32 +402,89 @@ function DocumentForm({
 
         <div>
           <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-            Vence el
+            Cuándo vence
           </label>
-          {/*
-            Deshabilitado y no oculto: un input `disabled` no se envía, así que
-            `expiry_date` llega ausente y la server action lo manda como null.
-            Dejarlo a la vista en gris muestra qué se está descartando.
-          */}
-          <input
-            name="expiry_date"
-            type="date"
-            disabled={noVence}
-            required={!noVence}
-            defaultValue={doc?.expiry_date ?? ""}
-            className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]"
+          {/* El modo viaja como campo del form: la server action lo lee para armar
+              el trío regla/offset/fecha de una sola vez. Ver `parseVencimiento`. */}
+          <StyledSelect
+            name="expiry_mode"
+            value={modo}
+            onChange={(v) => setModo(v as ModoVencimiento)}
+            options={MODO_OPTIONS}
           />
-          <label className="mt-2 flex items-center gap-2 cursor-pointer select-none">
+
+          {modo === "fecha" && (
             <input
-              type="checkbox"
-              checked={noVence}
-              onChange={(e) => setNoVence(e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-300 dark:border-white/20 accent-zinc-900 dark:accent-white cursor-pointer"
+              name="expiry_date"
+              type="date"
+              required
+              defaultValue={doc?.expiry_date ?? ""}
+              className="mt-3 w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
             />
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              No vence
-            </span>
-          </label>
+          )}
+
+          {(modo === "ultimo_vuelo" || modo === "vuelo_ancla") && (
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  name="expiry_offset_days"
+                  type="number"
+                  min={1}
+                  max={MAX_OFFSET[unidad]}
+                  required
+                  value={offset}
+                  onChange={(e) => setOffset(e.target.value)}
+                  aria-label="Cantidad"
+                  className="w-20 bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-semibold data text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors"
+                />
+                <div className="w-28">
+                  <StyledSelect
+                    name="expiry_offset_unit"
+                    value={unidad}
+                    onChange={(v) => setUnidad(v as OffsetUnit)}
+                    options={UNIDAD_OPTIONS}
+                  />
+                </div>
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  {modo === "ultimo_vuelo" ? "después de tu último vuelo" : "después de:"}
+                </span>
+              </div>
+
+              {modo === "vuelo_ancla" &&
+                (vuelos.length === 0 ? (
+                  // Sin vuelos no hay ancla que elegir, y ofrecer un select vacío es
+                  // ofrecer un callejón sin salida.
+                  <p className="text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                    No tenés vuelos cargados todavía, así que no hay desde cuál contar.
+                    Cargá el vuelo primero y volvé.
+                  </p>
+                ) : (
+                  <StyledSelect
+                    name="expiry_anchor_flight_id"
+                    value={ancla}
+                    onChange={setAncla}
+                    options={vuelos.map((f) => ({
+                      value: f.id,
+                      label: `${f.date} · ${f.route || "sin ruta"}`,
+                    }))}
+                  />
+                ))}
+
+              {/*
+                Los dos textos dicen cosas opuestas y eso es el punto. Con el último
+                vuelo, volar **corre** la fecha —al revés que todos los otros
+                vencimientos de Vector, donde lo único que ayuda es un trámite—. Con
+                un vuelo puntual, no la mueve nada. Una vez guardado, esta línea es la
+                única diferencia visible entre los dos modos, y confundirlos es creer
+                que estás cubierto cuando no.
+              */}
+              <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                {modo === "ultimo_vuelo"
+                  ? ayudaRegla(cantidad, ultimoVuelo, unidad)
+                  : ayudaAncla(cantidad, fechaAncla, unidad)}
+              </p>
+            </div>
+          )}
         </div>
 
         {/*
@@ -348,7 +493,7 @@ function DocumentForm({
           documento que no caduca, ninguno de los dos se va a evaluar nunca.
           Dejarlos a la vista sugiere que hacen algo.
         */}
-        {!noVence && (
+        {modo !== "no_vence" && (
           <>
             <div>
               <label className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">

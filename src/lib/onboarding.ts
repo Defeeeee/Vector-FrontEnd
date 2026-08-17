@@ -17,11 +17,21 @@ import { Profile } from "@/types";
 /** El centinela que deja el backend al auto-crear un perfil. */
 const LICENCIA_SIN_CARGAR = "-";
 
+/**
+ * Un paso: hecho, pendiente, o **sin saber**.
+ *
+ * `null` es el tercer caso y existe porque el dashboard puede quedarse sin la
+ * respuesta de una sección. Un paso que no se pudo verificar no se muestra: ni
+ * tildado, que sería mentir, ni pendiente, que sería pedirle al piloto que cargue
+ * algo que probablemente ya tiene.
+ */
+export type PasoOnboarding = boolean | null;
+
 export interface EstadoOnboarding {
-  licencia: boolean;
-  cma: boolean;
-  aeronave: boolean;
-  vuelo: boolean;
+  licencia: PasoOnboarding;
+  cma: PasoOnboarding;
+  aeronave: PasoOnboarding;
+  vuelo: PasoOnboarding;
   /** Nada que mostrar: el piloto está operativo. */
   completo: boolean;
   pendientes: number;
@@ -29,7 +39,8 @@ export interface EstadoOnboarding {
 
 export function estadoOnboarding(input: {
   profile: Profile | null;
-  tieneCma: boolean;
+  /** `null` si no se pudieron leer los documentos. Ver `PasoOnboarding`. */
+  tieneCma: PasoOnboarding;
   aeronaves: number;
   vuelos: number;
 }): EstadoOnboarding {
@@ -41,7 +52,9 @@ export function estadoOnboarding(input: {
     vuelo: input.vuelos > 0,
   };
 
-  const pendientes = Object.values(pasos).filter((v) => !v).length;
+  // `=== false` y no `!v`: `null` también es falsy y contarlo haría que la
+  // tarjeta apareciera por un paso que ni se va a dibujar.
+  const pendientes = Object.values(pasos).filter((v) => v === false).length;
 
   return { ...pasos, completo: pendientes === 0, pendientes };
 }

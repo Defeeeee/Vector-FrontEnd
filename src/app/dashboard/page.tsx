@@ -44,7 +44,15 @@ async function getDashboardData() {
   const emptyAudit: AuditSummary = { critical: 0, warning: 0, suppressed: 0, open_total: 0, by_rule: {} };
 
   if (!response.ok) {
-    return { flights: [], aircraft: [], profile: null, session: { active: false }, packs: [], audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [], planned: [] as PlannedFlight[] };
+    // Nada de esto es "no hay": es "no pudimos preguntar". `unavailable` con
+    // todas las secciones para que abajo nadie saque conclusiones de las listas
+    // vacías. Ver `pilotStatus`.
+    return {
+      flights: [], aircraft: [], profile: null, session: { active: false }, packs: [],
+      audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [],
+      planned: [] as PlannedFlight[],
+      unavailable: ["profile", "aircraft", "flights", "session", "packs", "transactions", "audit", "documents"],
+    };
   }
 
   const data = await response.json();
@@ -57,6 +65,13 @@ async function getDashboardData() {
     logbooks,
     customStats,
     planned,
+    /**
+     * Qué secciones del payload no se pudieron leer. El backend las nombra en vez
+     * de mandar `[]` a secas: una consulta que falla y una tabla vacía llegaban
+     * idénticas, y el semáforo le decía "no tenés certificado médico" a pilotos
+     * que sí lo tienen cargado.
+     */
+    unavailable: (data.unavailable as string[]) || [],
     flights: data.flights || [],
     aircraft: data.aircraft || [],
     profile: data.profile || null,
@@ -78,8 +93,10 @@ import { listCustomStats } from "@/actions/custom-stat";
 import { splitRoute } from "@/lib/route";
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned } =
+  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable } =
     await getDashboardData();
+
+  const documentosDisponibles = !unavailable.includes("documents");
 
   const totalFlights = flights.length;
   const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
@@ -239,6 +256,7 @@ export default async function Dashboard() {
         aircraft={aircraft as Aircraft[]}
         documents={documents as PilotDocument[]}
         profile={profile}
+        documentosDisponibles={documentosDisponibles}
       />
 
       {/* "¿Volaste esto?" — el vuelo que el piloto programó y cuya fecha ya pasó.
@@ -269,7 +287,11 @@ export default async function Dashboard() {
       <PrimerosPasos
         estado={estadoOnboarding({
           profile,
-          tieneCma: (documents as PilotDocument[]).some((d) => d.kind === "cma"),
+          // `null` y no `false` si la consulta falló: el paso no se dibuja en vez
+          // de pedirle al piloto que cargue el CMA que probablemente ya tiene.
+          tieneCma: documentosDisponibles
+            ? (documents as PilotDocument[]).some((d) => d.kind === "cma")
+            : null,
           aeronaves: aircraft.length,
           vuelos: flights.length,
         })}
@@ -314,11 +336,20 @@ export default async function Dashboard() {
 
       {/* Logbook health + expiries — both answer "is anything wrong that the
           flight list won't show me", so they sit together above the PCA tracker. */}
-      <LogbookHealthCard audit={audit} documents={documents} />
+      <LogbookHealthCard
+        audit={audit}
+        documents={documents}
+        documentosDisponibles={documentosDisponibles}
+      />
 
       {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
-        <PCATracker flights={flights} logbooks={logbooks as Logbook[]} />
+        <PCATracker
+          flights={flights}
+          logbooks={logbooks as Logbook[]}
+          aircraft={aircraft as Aircraft[]}
+          todayIso={new Date().toISOString().slice(0, 10)}
+        />
       )}
 
       {/* Analytics */}

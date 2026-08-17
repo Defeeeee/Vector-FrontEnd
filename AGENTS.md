@@ -2970,3 +2970,167 @@ verdad a un PNG y se miró.
 correr localmente porque `litestar` no está instalado en este entorno y
 `pip install -r requirements.txt` falla por un `PyJWT` de Debian sin `RECORD`; sólo
 corrió `py_compile`. **Mirar el CI del backend en verde antes de mergear.**
+
+---
+
+## Una lista vacía no es una respuesta — 2026-08-14
+
+**El bug:** el semáforo del dashboard le decía a un piloto «no tenés un certificado
+médico cargado» cada tanto al entrar, teniéndolo cargado, y se arreglaba solo después
+de pasar por el Hangar.
+
+La causa raíz está del lado del backend (ver su `AGENTS.md`: una carrera entre los
+ocho hilos de `/dashboard` sobre el mismo cliente de Supabase). Lo que toca a este
+repo es la mitad de arriba: **`documents: []` llegaba igual si el piloto no tiene
+documentos que si la consulta se cayó**, y `pilotStatus` resolvía esa ambigüedad
+afirmando.
+
+`/dashboard` ahora manda `unavailable: string[]` con las secciones que no se pudieron
+leer, y eso baja como `documentosDisponibles` a los tres lugares que opinaban sobre
+documentos:
+
+- **`pilotStatus`** gana el estado `datos_no_disponibles` — "no pudimos leer tus
+  documentos, es una falla nuestra". Va después de `inactividad_prolongada`, que sale
+  de los vuelos y sigue siendo verdad, y antes de todo lo que mire la lista.
+- **`estadoOnboarding`** acepta `tieneCma: boolean | null`. `null` es "no sé" y ese
+  paso **no se dibuja** en `PrimerosPasos`: ni tildado, que sería mentir, ni
+  pendiente, que sería pedirle que cargue lo que ya tiene. Ojo con `!v` al contar
+  pendientes — `null` también es falsy.
+- **`LogbookHealthCard`** dice "no pudimos cargar tus vencimientos" en vez de "no hay
+  documentos cargados".
+
+Y `getDashboardData` marca **las ocho** secciones como no disponibles cuando
+`/dashboard` no responde ok, que es el mismo caso a mayor escala.
+
+**La regla:** antes de escribir una afirmación sobre el piloto a partir de una
+colección vacía, preguntar si esa colección puede estar vacía por una falla. Si puede,
+el estado "no sé" tiene que existir. `documento_faltante` se agregó justo para eso y
+aun así la capa de abajo le pasaba "no hay" cuando lo que había pasado era "no pude
+preguntar".
+
+---
+
+## Vencimientos que se mueven solos — 2026-08-14
+
+El pedido: «que se puedan setear vencimientos variables, por ejemplo en base a la
+fecha del último vuelo, que se actualiza constantemente». La mitad de fondo está en
+el backend (migración 011 y `src/services/derived_expiries.py`); acá va lo que toca
+a esta app.
+
+**El cálculo no vive acá.** `expiry_date` llega ya resuelta y todo lo que la lee
+—`documentStatus`, `pilotStatus`, `LogbookHealthCard`— sigue igual, sin enterarse de
+que existen reglas. `src/lib/expiry-rules.ts` hace otras dos cosas:
+
+- **Explicarle la regla al piloto.** Sin eso ve una fecha que se le mueve sola y no
+  sabe por qué. Por eso la fila del listado dice "Se recalcula: 60 días después de tu
+  último vuelo" debajo de la fecha.
+- **Previsualizar.** `vencimientoDerivado` repite la aritmética del backend para que
+  el formulario conteste "entonces hoy vence el ..." mientras el piloto escribe los
+  días.
+
+**El texto de ayuda dice que volar corre la fecha hacia adelante, y eso es
+deliberado.** Es al revés que todos los otros vencimientos de Vector, donde lo único
+que ayuda es un trámite. Sin decirlo, la cuenta regresiva se lee como una amenaza en
+vez de como lo que es.
+
+**El "No vence" dejó de ser una casilla y pasó a ser un select de tres.** El motivo
+original de la casilla sigue valiendo —un `<input type="date">` con valor no se puede
+vaciar de forma confiable, y nadie adivinaba que podía dejarlo en blanco—, pero
+ahora hay tres estados y tres no entran en una casilla.
+
+**`parseVencimiento` arma el trío regla/offset/fecha de una sola vez** porque los
+tres son incoherentes por separado: el CHECK rechaza una regla derivada sin offset y
+un offset sobre una regla fija. Con `ultimo_vuelo` **no manda `expiry_date`**: esa
+columna tiene un solo escritor, que es el backend. `upsertCmaDocument` manda
+`expiry_rule: "fijo"` explícito por lo mismo — sin eso, un CMA que hubiera quedado
+con regla derivada se comería la fecha que el piloto acaba de escribir en el
+onboarding, en el próximo vuelo.
+
+**El costo que quedó abierto:** `/dashboard/settings` ahora pide `/flights` para
+tener el ancla, y ese endpoint devuelve la bitácora entera sin paginar. Va en el
+`Promise.all` que ya estaba, así que no agrega latencia, pero sí una respuesta
+grande en una página que no la necesitaba. El día que ese endpoint pagine, pedirle el
+último vuelo y nada más.
+
+**Estado:** pusheado, y las migraciones 011 y 012 aplicadas. Los tres modos guardan.
+
+La 012 existe porque el CHECK de la 011 no rechazaba nada —`false or NULL` es NULL y
+un CHECK que da NULL pasa—, así que durante un rato la única validación real del
+trío regla/offset/fecha fue `_apply_expiry_rule` en el backend. Está en el `AGENTS.md`
+del backend con el detalle.
+
+---
+
+## Contar desde un vuelo puntual — 2026-08-14
+
+El cuarto modo del formulario de vencimientos: "Contado desde un vuelo puntual", que
+guarda `expiry_rule: 'vuelo_ancla'` con el id del vuelo. El porqué del modelo está en
+el `AGENTS.md` del backend; acá va lo que toca a esta app.
+
+**Los dos textos de ayuda dicen lo contrario a propósito.** Con `ultimo_vuelo`,
+volar **corre** la fecha hacia adelante; con `vuelo_ancla`, no la mueve nada. Una vez
+guardados, los dos modos se ven idénticos —una fecha y una leyenda— y esa línea es la
+única forma que tiene el piloto de saber cuál eligió. Confundirlos es creer que estás
+cubierto cuando no. Por eso son dos funciones separadas, `ayudaRegla` y `ayudaAncla`,
+y no una con un `if`.
+
+**`sumarOffset` está duplicada del backend** (`derived_expiries.sumar_offset`), y es
+duplicación deliberada: el formulario previsualiza la fecha mientras el piloto
+escribe la cantidad, y sin la cuenta acá esa previsualización no existe. Si las dos
+se separan, la pantalla muestra una fecha y la base guarda otra. **Los tests de los
+dos lados comparten los mismos cuatro casos**, incluido el que rompe cualquier
+implementación ingenua: 31 de enero + 1 mes es el 28 de febrero, no el 3 de marzo.
+
+**`descripcionRegla` no inventa cuál vuelo era.** Recibe la fecha del ancla como
+segundo argumento y, si no la tiene, dice "desde un vuelo que elegiste" en vez de
+nombrar uno. Es peor de leer y es lo único cierto.
+
+**Sin vuelos cargados el modo avisa en vez de ofrecer un select vacío**, que sería un
+callejón sin salida.
+
+`DocumentsManager` pasó de recibir `ultimoVuelo` a recibir `flights`: necesita la
+lista entera para el selector del ancla, y de ahí saca el último vuelo solo.
+
+**Estado:** pusheado, migraciones 011/012/013 aplicadas. Los cuatro modos guardan.
+
+---
+
+## El tracker de PCA pasa de informe a respuesta — 2026-08-14
+
+Seis diales y el piloto adivinando cuál pesa. El problema es que **el que pesa
+rota**: se puede estar al 97% del total y trabado por 2 hs de travesía, o sea con el
+medidor grande casi lleno y el dial chiquito decidiendo qué vuelo conviene hacer.
+
+Tres respuestas nuevas al pie de la card, con datos que ya estaban:
+
+- **Qué tenés más lejos**, comparando **en fracción y no en valor absoluto** — 3 hs
+  de travesía sobre 20 y 3 aterrizajes nocturnos sobre 5 no son comparables como
+  números sueltos.
+- **Cuándo se cierra**, con el ritmo **de ese requisito** y no de las horas totales:
+  quien vuela 8 hs por mes dando vueltas al aeródromo avanza cero en travesía, y
+  proyectar con el ritmo general daría una fecha optimista sobre justo lo que lo
+  tiene trabado. Sin ritmo devuelve `null`, no infinito: no haber volado eso en tres
+  meses no autoriza a contestar "nunca".
+- **Cuánto sale terminar**, `cost_per_hour` ponderado por horas voladas × las horas
+  que faltan. Es **un piso**: un mismo vuelo avanza varios requisitos a la vez, así
+  que lo mínimo es la brecha más grande, no la suma de las brechas.
+
+**El título cambia según cuántos falten.** Con uno pendiente es "Lo que te frena";
+con varios, "Lo que más lejos tenés". Medido contra los datos de producción, el
+piloto real tiene 5 requisitos pendientes y el que sale es nocturno (5 hs) mientras
+hay uno de 152 hs: llamar a eso "lo que te frena" sugeriría que cerrándolo terminó.
+
+**Toda la aritmética se mudó a `src/lib/pca-progress.ts`.** Estaba adentro del `.tsx`
+y por lo tanto **sin un solo test** —vitest corre en `environment: "node"` y no puede
+testear componentes—, así que los seis números de 61.620 nunca se habían verificado.
+Ahora tienen 24 tests, incluidos los dos que ya tenían comentarios de advertencia en
+el componente: el tope de 5 h del instrumento simulado se aplica **sobre el
+acumulado** y no vuelo por vuelo, y los aterrizajes de apertura **no** cuentan como
+nocturnos.
+
+También se fue la leyenda "(reducido: 150 hs)": el medidor dividía siempre por 200 y
+nunca usaba el 150, y Federico confirmó que ese piloto no existe entre sus usuarios.
+Ofrecer un camino que nadie va a tomar es ruido en la pantalla de todos.
+
+**Queda igual y a propósito:** el `subObjetivo` de PIC (70 sobre 100) tiene la misma
+forma que el 150 y sigue ahí. No lo toqué porque no está confirmado qué codifica.

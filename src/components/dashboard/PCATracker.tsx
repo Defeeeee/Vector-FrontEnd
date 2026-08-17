@@ -1,9 +1,31 @@
 "use client";
 
-import { Flight, Logbook } from "@/types";
-import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Target } from "lucide-react";
+import { Aircraft, Flight, Logbook } from "@/types";
+import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Target, TrendingUp, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
-import { totalNightLandings } from "@/lib/landings";
+import {
+  MESES_DE_RITMO,
+  costoPorHora,
+  horasQueFaltan,
+  loQueFrena,
+  mesesRestantes,
+  requisitosPCA,
+  ritmoMensual,
+} from "@/lib/pca-progress";
+
+/**
+ * El ícono de cada requisito, por clave.
+ *
+ * Fuera del módulo de aritmética a propósito: `lib/pca-progress.ts` no importa JSX
+ * ni lucide, y así se lo puede testear en `environment: "node"`.
+ */
+const ICONOS: Record<string, React.ReactNode> = {
+  pic: <Target className="w-4 h-4" />,
+  picTravesia: <Compass className="w-4 h-4" />,
+  instrumentos: <Navigation className="w-4 h-4" />,
+  nocturno: <Moon className="w-4 h-4" />,
+  aterrizajesNocturnos: <Award className="w-4 h-4" />,
+};
 
 interface PCATrackerProps {
   flights: Flight[];
@@ -16,59 +38,34 @@ interface PCATrackerProps {
    * further away than they are.
    */
   logbooks?: Logbook[];
+  /** Para estimar el precio de la hora. Sin esto, la card no habla de plata. */
+  aircraft?: Aircraft[];
+  /**
+   * "Hoy" resuelto en el server, "YYYY-MM-DD".
+   *
+   * El ritmo se mide sobre una ventana que termina hoy, y dejar que este componente
+   * llame a `new Date()` haría que el server (UTC) y el browser (UTC−3) puedan estar
+   * en días distintos y renderizar números distintos.
+   */
+  todayIso: string;
 }
 
-export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) {
-  const open = (pick: (l: Logbook) => number | undefined) =>
-    logbooks.reduce((acc, l) => acc + (Number(pick(l)) || 0), 0);
+export default function PCATracker({ flights, logbooks = [], aircraft = [], todayIso }: PCATrackerProps) {
+  // Toda la aritmética de 61.620 vive en `lib/pca-progress.ts`. Estaba acá adentro y
+  // por lo tanto sin un solo test: el proyecto corre vitest en `environment: "node"`
+  // y no puede testear componentes, así que lo que queda en un `.tsx` no se verifica.
+  const requisitos = requisitosPCA(flights, logbooks);
+  const porClave = (clave: string) => requisitos.find((r) => r.clave === clave)!;
 
-  const openingPic =
-    open((l) => l.opening_pic_day_loc) + open((l) => l.opening_pic_day_tra) +
-    open((l) => l.opening_pic_night_loc) + open((l) => l.opening_pic_night_tra);
-  const openingSic =
-    open((l) => l.opening_sic_day_loc) + open((l) => l.opening_sic_day_tra) +
-    open((l) => l.opening_sic_night_loc) + open((l) => l.opening_sic_night_tra);
+  const totalHours = porClave("total").actual;
 
-  const totalHours =
-    flights.reduce((acc, f) => acc + (f.duration || 0), 0) + openingPic + openingSic;
-
-  const picHours = flights.reduce((acc, f) => {
-    return acc + (f.pic_day_loc || 0) + (f.pic_day_tra || 0) + (f.pic_night_loc || 0) + (f.pic_night_tra || 0);
-  }, 0) + openingPic;
-
-  const picTravesia = flights.reduce((acc, f) => {
-    return acc + (f.pic_day_tra || 0) + (f.pic_night_tra || 0);
-  }, 0) + open((l) => l.opening_pic_day_tra) + open((l) => l.opening_pic_night_tra);
-
-  const realInstrument = flights.reduce((acc, f) => acc + (f.imc_pil || 0) + (f.capota || 0), 0)
-    + open((l) => l.opening_imc_pil) + open((l) => l.opening_capota);
-  const simInstrumentRaw = flights.reduce((acc, f) => acc + (f.sim_pil_en_inst || 0), 0);
-  const instrumentHours = realInstrument + Math.min(simInstrumentRaw, 5);
-
-  const nightHours = flights.reduce((acc, f) => {
-    return acc + (f.pic_night_loc || 0) + (f.pic_night_tra || 0);
-  }, 0) + open((l) => l.opening_pic_night_loc) + open((l) => l.opening_pic_night_tra);
-
-  // Opening landings are not split day/night, so they are NOT added here: a
-  // carried-forward landing count cannot be assumed to be nocturnal, and
-  // inflating a night-landing requirement is the kind of error that sends a
-  // pilot to a checkride short.
-  //
-  // Ese mismo razonamiento faltaba un renglón más abajo: la versión anterior
-  // sumaba **todos** los aterrizajes de cualquier vuelo con horas nocturnas, así
-  // que una sesión de circuitos que cruzaba el ocaso —seis aterrizajes, uno solo
-  // después de la puesta— sumaba seis. La regla vive ahora en lib/landings.ts,
-  // compartida con la experiencia reciente para que las dos pantallas no puedan
-  // dar distinto el mismo conteo.
-  const nightLandings = totalNightLandings(flights);
-
-  const requirements = [
-    { label: "PIC", current: picHours, target: 100, subTarget: 70, unit: "hs", icon: <Target className="w-4 h-4" /> },
-    { label: "PIC Travesía", current: picTravesia, target: 20, unit: "hs", icon: <Compass className="w-4 h-4" /> },
-    { label: "Instrumentos", current: instrumentHours, target: 10, unit: "hs", icon: <Navigation className="w-4 h-4" /> },
-    { label: "PIC Nocturno", current: nightHours, target: 5, unit: "hs", icon: <Moon className="w-4 h-4" /> },
-    { label: "Aterrizajes Noct.", current: nightLandings, target: 5, unit: "atrr", icon: <Award className="w-4 h-4" /> }
-  ];
+  // Las tres respuestas: qué frena, cuándo se cierra, cuánto sale.
+  const freno = loQueFrena(requisitos);
+  const pendientes = requisitos.filter((r) => r.actual < r.objetivo).length;
+  const ritmo = freno ? ritmoMensual(flights, freno.clave, todayIso) : 0;
+  const meses = freno ? mesesRestantes(freno.faltan, ritmo) : null;
+  const precioHora = costoPorHora(flights, aircraft, todayIso);
+  const horasFaltantes = horasQueFaltan(requisitos);
 
   const totalProgress = Math.min((totalHours / 200) * 100, 100);
 
@@ -110,15 +107,15 @@ export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) 
           </div>
           <div className="space-y-1">
              <h4 className="text-base md:text-lg font-bold text-zinc-900 dark:text-white tracking-tight">Experiencia total</h4>
-             <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed">Progreso hacia la meta <br className="hidden md:block"/> (reducido: 150 hs)</p>
+             <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed">Progreso hacia la meta</p>
           </div>
         </div>
 
         {/* Requirements — license stamps instead of progress bars: each requirement is an official stamp waiting to be earned */}
         <div className="flex-1 p-6 md:p-10 grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6 place-items-center">
-          {requirements.map((req, i) => {
-            const isComplete = req.current >= req.target;
-            const isSubComplete = req.subTarget ? req.current >= req.subTarget : false;
+          {requisitos.filter((r) => r.clave !== "total").map((req, i) => {
+            const isComplete = req.actual >= req.objetivo;
+            const isSubComplete = req.subObjetivo ? req.actual >= req.subObjetivo : false;
             const rotation = i % 3 === 0 ? -4 : i % 3 === 1 ? 3 : -2;
 
             return (
@@ -138,7 +135,7 @@ export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) 
                         : "border-zinc-300 dark:border-white/15 border-dashed text-zinc-400 dark:text-zinc-500"
                   }`}
                 >
-                  {req.icon}
+                  {ICONOS[req.clave]}
                   {isComplete && (
                     <span className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-500 text-white flex items-center justify-center border-2 border-white dark:border-[#111111]">
                       <CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
@@ -148,7 +145,7 @@ export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) 
                 <div>
                   <p className="text-xs font-semibold text-zinc-900 dark:text-white leading-tight">{req.label}</p>
                   <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    {req.current.toFixed(1)} / {req.target} {req.unit}
+                    {req.esHoras ? req.actual.toFixed(1) : Math.round(req.actual)} / {req.objetivo} {req.unidad}
                   </p>
                 </div>
                 {isComplete && (
@@ -164,6 +161,100 @@ export default function PCATracker({ flights, logbooks = [] }: PCATrackerProps) 
           })}
         </div>
 
+      </div>
+
+      {/*
+        La conclusión de los seis diales.
+
+        Sin esto la card es un informe: seis números y el piloto adivinando cuál pesa.
+        Y el que pesa **rota** — se puede estar al 97% del total y trabado por dos
+        horas de travesía, o sea con el medidor grande casi lleno y el dial chiquito
+        decidiendo qué vuelo conviene hacer.
+      */}
+      <div className="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-cal dark:shadow-none p-6 md:p-8 space-y-4">
+        {freno ? (
+          <>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-white/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+              </div>
+              <div className="min-w-0">
+                {/*
+                  El título depende de cuántos falten, porque "te frena" es una
+                  afirmación fuerte. Con uno solo pendiente es literal. Con cinco, el
+                  que sale acá es el que está más lejos en proporción, y puede ser una
+                  brecha de 5 hs mientras hay otra de 150: llamarlo "lo que te frena"
+                  sería sugerir que cerrándolo terminaste.
+                */}
+                <p className="eyebrow">{pendientes === 1 ? "Lo que te frena" : "Lo que más lejos tenés"}</p>
+                <p className="text-sm md:text-base font-bold text-zinc-900 dark:text-white leading-snug mt-0.5">
+                  Te faltan{" "}
+                  <span className="data">
+                    {freno.esHoras ? freno.faltan.toFixed(1) : Math.ceil(freno.faltan)}
+                  </span>{" "}
+                  {freno.unidad === "hs" ? "hs" : "aterrizajes"} de {freno.label}
+                  {/* "Lo único" sólo si de verdad es lo único: con dos pendientes,
+                      cerrar éste no habilita nada y decirlo sería mentir. */}
+                  {pendientes === 1 ? " — es lo único que te separa del examen." : "."}
+                </p>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed mt-1">
+                  {meses === null
+                    ? `No volaste nada de eso en los últimos ${MESES_DE_RITMO} meses, así que no hay ritmo del que proyectar.`
+                    : `A tu ritmo de los últimos ${MESES_DE_RITMO} meses, unos ${Math.ceil(meses)} ${
+                        Math.ceil(meses) === 1 ? "mes" : "meses"
+                      }.`}
+                </p>
+              </div>
+            </div>
+
+            {/*
+              La plata sólo si hay de dónde sacarla. Sin ningún `cost_per_hour`
+              cargado, un cero se leería como "gratis".
+            */}
+            {precioHora !== null && horasFaltantes > 0 && (
+              <div className="flex items-start gap-3 pt-4 border-t border-zinc-100 dark:border-white/5">
+                <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-white/10 flex items-center justify-center shrink-0">
+                  <Wallet className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="eyebrow">Cuánto sale terminar</p>
+                  <p className="text-sm md:text-base font-bold text-zinc-900 dark:text-white leading-snug mt-0.5">
+                    Al menos <span className="data">{horasFaltantes.toFixed(1)}</span> hs ·{" "}
+                    <span className="data">
+                      $ {Math.round(horasFaltantes * precioHora).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                    </span>
+                  </p>
+                  {/*
+                    "Al menos" no es una cortesía: un mismo vuelo avanza varios
+                    requisitos a la vez, así que lo mínimo que se puede volar es la
+                    brecha más grande, no la suma de las brechas. Y el precio es el
+                    promedio ponderado de lo que este piloto viene volando.
+                  */}
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed mt-1">
+                    Es un piso: un mismo vuelo puede cumplir varios requisitos a la vez.
+                    Calculado a{" "}
+                    <span className="data">
+                      $ {Math.round(precioHora).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                    </span>{" "}
+                    la hora, el promedio de lo que venís volando.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                Cumplís los requisitos de experiencia de 61.620.
+              </p>
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                Lo que sigue es el examen, que no sale de tu libro de vuelo.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
