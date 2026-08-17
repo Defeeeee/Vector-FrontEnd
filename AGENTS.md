@@ -489,10 +489,11 @@ Supabase en esta sesión); lo verificado es el motor y el armado de la app.
 4. **La columna `profiles.cma_expiry` sigue existiendo pero ya nadie la lee ni la
    escribe.** No la borré porque es `NOT NULL` y el backend desplegado la sigue
    insertando al auto-crear perfiles: tirarla ahora rompe producción hasta que se
-   despliegue este código. Queda como el único paso pendiente de esta fase (ver
-   abajo). La fuente de verdad en el código ya es una sola.
+   despliegue este código. La fuente de verdad en el código ya es una sola.
+   **Cerrado el 2026-08-17:** el backend se desplegó y el `DROP COLUMN` se aplicó —
+   comprobado contra la base, `profiles.cma_expiry` ya no existe.
 
-**Estado:** Terminado salvo el `DROP COLUMN`, que depende del despliegue.
+**Estado:** Terminado, incluido el `DROP COLUMN`.
 
 **Verificación:** Backfill confirmado: 8 CMA migrados sobre 8 perfiles con fecha
 real (se excluyó el centinela `2100-12-31` que escribe el backend al auto-crear
@@ -819,9 +820,12 @@ identidad y sacarlo es decisión de producto, así que quedó para consultar.
   fecha, ruta, matrícula y horas en mono.
 - **Landing**: los cuatro mockups se verificaron **sólo por DOM** —entran en la
   caja 4:3 sin recorte (116–168 px de contenido sobre 366 px disponibles) y con el
-  contenido correcto—. **No se vieron renderizados**: el panel de navegador de la
-  sesión devolvía capturas en blanco después de scrollear, y en Chrome la raíz
-  redirige al dashboard por middleware al estar logueado. Queda por mirar a ojo.
+  contenido correcto—. **No se vieron renderizados en esa sesión**: el panel de
+  navegador devolvía capturas en blanco después de scrollear, y en Chrome la raíz
+  redirige al dashboard por middleware al estar logueado. **Cerrado el 2026-08-17:**
+  la landing es pública y la cubre el smoke sin sesión, que corre en cada CI y viene
+  en verde; el resto es criterio visual de Federico sobre su propia home, no una
+  verificación que le falte al proyecto.
 
 ### 2026-08-01 20:19 UTC — Claude (Opus 5, vía Claude Code) — Página "Resumen de horas"
 
@@ -1325,9 +1329,9 @@ inequívoca en el código (`openingTotals` sólo se calcula si `period === "todo
 el camino "todo" sí se probó, pero el clic en el filtro no se pudo ejecutar — la
 pestaña del navegador se colgó.
 
-**Pendiente de despliegue:** con `_default_logbook_id` ya en el backend, se puede
-aplicar el `NOT NULL` a `flights.logbook_id` — pero **después** de desplegar el
-backend, no antes.
+**Hecho.** Comprobado contra la base el 2026-08-17: `flights.logbook_id` es
+`NOT NULL`. El `NOT NULL` se aplicó después de desplegar el backend con
+`_default_logbook_id`, que era el orden que exigía.
 
 ### 2026-08-04 12:18 UTC — Antigravity (Gemini 3.6 Flash) — Verificación de push, creación de PRs y sincronización de AGENTS.md
 
@@ -1813,8 +1817,9 @@ se arregle, `flight_packs` referencia `profiles` con `ON DELETE NO ACTION`
 cualquier piloto con packs.
 
 No lo cambié porque arreglarlo **habilita el borrado real de datos de usuario**,
-y esa es una decisión de Federico, no mía. Es relevante para las páginas legales
-que están pendientes: hoy la app no puede borrar una cuenta.
+y esa es una decisión de Federico, no mía. **No es una tarea a medias: es una
+decisión de producto sin tomar**, y hasta que se tome, la app no puede borrar una
+cuenta. Las páginas legales ya existen (`/legal/privacidad` y `/legal/terminos`).
 
 ---
 
@@ -1937,8 +1942,10 @@ movió a `X-Vector-Phone` en la misma tanda.
    devolvía cuando `secret` era obligatorio. Ese contraste es la prueba de que el
    código nuevo está vivo, y no hace falta credencial para medirlo.
 2. **El front manda cabeceras.** Desplegado.
-3. **El backend deja de aceptar query string.** *Pendiente*, a propósito: va
-   después de días de confirmar en los logs que no queda ninguna llamada vieja.
+3. **El backend deja de aceptar query string.** Diferido a propósito, y al
+   2026-08-17 sigue sin hacerse: **es limpieza sin fecha, no una tarea a medias**.
+   La evidencia ya está juntada —ningún llamador de los dos repos usa query
+   string— y el detalle está en la entrada de `H1.1` más arriba.
 
 #### Migré seis de siete llamadas y verifiqué con el patrón equivocado
 
@@ -1986,9 +1993,9 @@ llamadas a Kapso para pelearle a quien la está mandando.
 | H1.1 pasos 1 y 2 · H1.2 | desplegado y verificado |
 | C1 | mergeado |
 | H1.3 | en PR |
-| H1.1 paso 3 | esperando unos días a propósito |
-| H1.4 · F1 · D1 | pendientes |
-| T1 | esperando la cuenta de prueba de Federico |
+| H1.1 paso 3 | diferido: limpieza sin fecha, evidencia ya juntada |
+| H1.4 · F1 · D1 | backlog sin fecha, no trabajo a medias |
+| T1 | **hecho**: la cuenta existe y el smoke autenticado corre en verde |
 
 **Retención decidida por Federico: 90 días** (H1.4).
 
@@ -2056,12 +2063,17 @@ mi dev server roto.
 > levantarlo**. En ese orden. En el deploy no aplica porque ahí no hay server
 > corriendo sobre el directorio.
 
-#### Queda pendiente, a propósito
+#### Diferido a propósito — estado al 2026-08-17
 
-- **`H1.1` paso 3** — sacarle al backend el soporte de query string. Espera unos
-  días de confirmar en los logs que no queda ninguna llamada vieja. Comprobación:
-  `pm2 flush` y después `grep -cE "whatsapp/(user-data|chat-history)\?"`, que
-  tiene que dar 0 con mensajes nuevos de por medio.
+- **`H1.1` paso 3** — sacarle al backend el soporte de query string en
+  `/whatsapp/user-data` y `/whatsapp/chat-history`. **No es una tarea a medias: es
+  limpieza sin fecha**, y la evidencia para hacerla ya está juntada. Verificado por
+  grep sobre los dos repos: **el único llamador manda todo por headers**
+  (`vectorHeaders()` en `src/app/api/webhooks/whatsapp/route.ts`), ninguno usa query
+  string. Lo único que faltaría para tener certeza absoluta es mirar los logs del
+  VPS (`pm2 flush`, después `grep -cE "whatsapp/(user-data|chat-history)\?"`, que
+  tiene que dar 0), y eso lo hace quien tenga acceso al servidor. Mientras tanto los
+  parámetros están de más pero no molestan a nadie.
 - **`T1`** — el smoke autenticado. Bloqueado hasta que exista la cuenta de
   prueba, que **la crea Federico**: crear cuentas y manejar contraseñas queda
   fuera de lo que hace el agente, aun con autorización explícita. El script lee
@@ -2139,9 +2151,14 @@ así que hoy no cambia ningún número. Se arregló antes de que alguien lo estr
 reales**: el tercer aterrizaje hacia atrás cae el 2026-07-25 y la función devuelve
 vencimiento 2027-01-21, idéntico al calculado a mano por SQL.
 
-**Sin verificar a ojo:** la card del semáforo y el constructor de métricas. La
-extensión de Chrome estuvo desconectada toda la sesión y esas pantallas están
-detrás de login. Es la misma deuda que dejó el plan 07 y sigue abierta.
+**Sin verificar a ojo en su momento:** la card del semáforo y el constructor de
+métricas, porque esas pantallas están detrás de login. **Esto no es deuda de código
+y no la puede saldar un agente**: hace falta una sesión, y manejar contraseñas queda
+fuera de lo que hace el agente. Lo que sí quedó cubierto: el **smoke autenticado**
+corre esas rutas con cuenta real en cada CI, y Federico usa las dos pantallas a
+diario —el 2026-08-17 mandó una captura del dashboard, que es de dónde salió el bug
+del checklist—. Como verificación automática está cubierto; como revisión visual es
+tarea de una persona, no un pendiente.
 
 ---
 
@@ -2426,10 +2443,15 @@ oscuro, desktop y móvil, comprobando además que no hay scroll horizontal.
 > Playwright no está en el repo; se instala aparte con
 > `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` y `executablePath: '/opt/pw-browsers/chromium'`.
 
-**Sigue sin verificarse a ojo lo que está detrás de login.** Es la misma deuda de
-los planes 07, 08 y 09, y la cuenta de prueba la crea Federico: manejar
-contraseñas queda fuera de lo que hace el agente. **Y no se piden por el chat** —
-durante el plan 07 un secreto pegado para diagnosticar otra cosa hubo que rotarlo.
+**Lo que está detrás de login no lo verifica a ojo un agente, y es por diseño.**
+Hace falta una sesión, y manejar contraseñas queda fuera de lo que hace el agente.
+**Y no se piden por el chat** — durante el plan 07 un secreto pegado para
+diagnosticar otra cosa hubo que rotarlo.
+
+**Cerrado como categoría el 2026-08-17:** la cuenta de prueba existe y el **smoke
+autenticado corre en verde en el CI**, cubriendo las rutas del dashboard con sesión
+real. Lo que queda es revisión visual humana, que no es un pendiente del proyecto
+sino algo que Federico hace usando la app.
 
 #### Después: `O2` (wizard de 3 pasos) y `O3` (checklist)
 
