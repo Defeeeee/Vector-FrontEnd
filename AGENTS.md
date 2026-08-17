@@ -3052,6 +3052,9 @@ tener el ancla, y ese endpoint devuelve la bitácora entera sin paginar. Va en e
 grande en una página que no la necesitaba. El día que ese endpoint pagine, pedirle el
 último vuelo y nada más.
 
-**Estado:** pusheado. La migración 011 **no está aplicada**, así que hasta que lo
-esté el modo "Días después de mi último vuelo" va a fallar al guardar. Los otros dos
-modos andan igual que siempre.
+**Estado:** pusheado, y las migraciones 011 y 012 aplicadas. Los tres modos guardan.
+
+La 012 existe porque el CHECK de la 011 no rechazaba nada —`false or NULL` es NULL y
+un CHECK que da NULL pasa—, así que durante un rato la única validación real del
+trío regla/offset/fecha fue `_apply_expiry_rule` en el backend. Está en el `AGENTS.md`
+del backend con el detalle.
