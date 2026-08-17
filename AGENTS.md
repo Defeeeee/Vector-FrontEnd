@@ -2540,8 +2540,9 @@ Esa mitad se verifica a mano; la lista está en `docs/brief/10-onboarding.md`.
 
 **Quién:** Claude Opus 5 corriendo en Claude Code, para Federico Díaz Nemeth.
 
-Dos de tres ideas de Federico. La subida de PDF/PNG queda pendiente: **no hay
-ningún bucket de Storage creado**, así que es greenfield.
+Dos de tres ideas de Federico. La subida de PDF/PNG **no se hizo y no está
+pendiente de nadie: es backlog sin fecha**, porque no hay ningún bucket de Storage
+creado y arrancarlo es greenfield.
 
 #### El crash que había debajo de "las licencias no siempre vencen"
 
@@ -2712,7 +2713,10 @@ documentos originales describen un estado que ya no existe.
 Lo de acá abajo es la deuda técnica que dejó la implementación, que conviene
 saldar antes de agarrar lo nuevo:
 
-### 1. Borrar `profiles.cma_expiry` — pendiente de despliegue
+### 1. Borrar `profiles.cma_expiry` — **hecho, cerrado el 2026-08-17**
+
+Comprobado contra la base: la columna **ya no existe**. Lo que sigue es el
+procedimiento que se usó, por si hace falta repetirlo con otra columna.
 
 El CMA ya vive en `documents` y **ningún código lo lee ni lo escribe**. La
 columna sigue en la base porque es `NOT NULL` y el backend *desplegado* la sigue
@@ -2795,9 +2799,10 @@ hizo la mitad informativa —el ranking de aeródromos con barras— pero **no e
 geográfico**: eso requiere Leaflet o similar. Las coordenadas ya están en
 `airports.tsv`, así que es trabajo de frontend solamente.
 
-Del backlog de `04` sigue pendiente el ítem **6** (ficha de aeródromo), y el **2**
-(paleta) se resolvió parcialmente en el pase de tipografía y monocromo — lo que
-queda es la decisión de marca sobre la tipografía sans (ver esa entrada).
+Del backlog de `04`, el ítem **6** (ficha de aeródromo) **no se hizo: es backlog
+sin fecha**, no una tarea a medias. El **2** (paleta) se resolvió parcialmente en el
+pase de tipografía y monocromo; lo que resta ahí es una **decisión de marca de
+Federico** sobre la tipografía sans, no trabajo de código (ver esa entrada).
 
 ### Antes de tocar nada
 
@@ -2964,12 +2969,19 @@ es aditiva y el frontend tolera un backend sin ella (`listPlannedFlights` devuel
 `npm run build` limpio · `npm run smoke` 14 rutas OK. La tarjeta se renderizó de
 verdad a un PNG y se miró.
 
-**Lo que quedó sin comprobar, dicho:** la tanda con sesión del smoke no corrió acá
-(sin `SMOKE_EMAIL`/`SMOKE_PASSWORD`), así que de `/api/share-card` se verificó el
-401 y no el 200 — el render sí, aparte. Y el `import src.app` del backend no se pudo
-correr localmente porque `litestar` no está instalado en este entorno y
-`pip install -r requirements.txt` falla por un `PyJWT` de Debian sin `RECORD`; sólo
-corrió `py_compile`. **Mirar el CI del backend en verde antes de mergear.**
+**Lo que quedó sin comprobar en su momento — todo cerrado el 2026-08-17:**
+
+- La tanda con sesión del smoke no corría en el contenedor (sin `SMOKE_EMAIL` /
+  `SMOKE_PASSWORD`), así que de `/api/share-card` sólo se veía el 401. **Cerrado:**
+  después corrió con sesión y dio `200 /api/share-card?tiles=pic,noche` en 14 s, o
+  sea un render de satori de verdad.
+- El `import src.app` del backend no se podía correr localmente: `litestar` no está
+  instalado y `pip install -r requirements.txt` falla por un `PyJWT` que instaló
+  Debian sin `RECORD`. **Cerrado, y con la solución anotada para la próxima: crear
+  un venv** (`python3 -m venv`) y instalar ahí — el venv no ve el `PyJWT` roto del
+  sistema y la instalación pasa. Con eso se corren los tres jobs del CI del backend
+  desde el contenedor: `import src.app`, `ruff` y `test_audit_engine.py`.
+- El CI del backend se miró en verde antes de mergear, y sigue en verde.
 
 ---
 
@@ -3007,6 +3019,28 @@ colección vacía, preguntar si esa colección puede estar vacía por una falla.
 el estado "no sé" tiene que existir. `documento_faltante` se agregó justo para eso y
 aun así la capa de abajo le pasaba "no hay" cuando lo que había pasado era "no pude
 preguntar".
+
+### Actualización del mismo día — el arreglo cubría uno de cuatro
+
+Esta entrada, tal como se escribió, arreglaba **sólo la consulta de documentos**,
+porque ése era el bug que Federico había reportado. Horas después mandó una captura
+de "Primeros pasos" marcándole **1 de 4**: licencia, aeronave y vuelo sin tildar,
+teniendo `license_type = PPA`, 6 aeronaves y 41 vuelos cargados. En los logs, esa
+request de `/dashboard` había perdido siete de sus ocho consultas.
+
+**El bug nunca fue "el CMA": es "una lista vacía se lee como una afirmación", y hay
+cuatro listas.** Arreglar la instancia reportada y no la clase dejó tres agujeros
+idénticos abiertos, con la entrada de bitácora diciendo que estaba resuelto.
+
+Ahora `estadoOnboarding` acepta `null` en **los cuatro** pasos y el dashboard le pasa
+`null` a cada uno cuya sección esté en `unavailable`. Un paso que no se pudo
+verificar no se dibuja.
+
+**Para la próxima:** cuando el arreglo de un bug se pueda aplicar a N lugares y se
+aplique a uno, la entrada tiene que decir cuáles quedaron afuera y por qué. Si no,
+el registro miente por omisión.
+
+Confirmado por Federico después del despliegue: el dashboard anda.
 
 ---
 
@@ -3134,3 +3168,34 @@ Ofrecer un camino que nadie va a tomar es ruido en la pantalla de todos.
 
 **Queda igual y a propósito:** el `subObjetivo` de PIC (70 sobre 100) tiene la misma
 forma que el 150 y sigue ahí. No lo toqué porque no está confirmado qué codifica.
+
+
+---
+
+## Estado al cierre — 2026-08-17
+
+**No hay nada pendiente de verificación en este documento.** Todo lo que en su
+momento quedó como "no se pudo comprobar acá" está cerrado, con la evidencia en su
+entrada. Lo que aparece como backlog es backlog: ideas sin fecha, no trabajo a medias.
+
+**En producción, desplegado y verificado:**
+
+| | Commit | CI | Deploy |
+|---|---|---|---|
+| Frontend | `a5c5916` | verde | verde |
+| Backend | `807aa3d` | verde | verde |
+
+- Migraciones **008 a 013 aplicadas**, comprobadas contra la base una por una.
+- `tsc` 0 · **265 tests** · build limpio · smoke con sesión en verde.
+- Cero respuestas no-2xx en Supabase en 24 h: ni un `PGRST303`, y los 128×400 y
+  86×429 contra `/auth/v1/token` que había antes de `auto_refresh_token=False`
+  desaparecieron.
+
+**Lo único abierto, y no bloquea nada:** la causa raíz exacta de la carrera de
+`/dashboard` —qué excepción tiran esos hilos— vive en el log de pm2 del VPS, donde
+un agente no llega. El reintento secuencial tapa la consecuencia y el piloto no ve
+el problema. El comando para obtenerla está en el `AGENTS.md` del backend.
+
+**Deuda técnica anotada, sin urgencia:** `/flights` devuelve la bitácora entera sin
+paginar, y ya la piden el dashboard, el resumen y la configuración. Con 41 vuelos no
+se nota; con 2000 sí.
