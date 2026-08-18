@@ -8,10 +8,18 @@
  * against a POH or an E6B without reading any UI code.
  *
  * Sign conventions used throughout:
- *  - Directions are magnetic degrees, 0–360, wind expressed as the direction it
- *    blows FROM (the way ATIS and METAR report it).
+ *  - Directions are degrees 0–360, wind expressed as the direction it blows FROM
+ *    (the way ATIS and METAR report it).
  *  - Headwind positive = headwind, negative = tailwind.
  *  - Crosswind positive = from the right, negative = from the left.
+ *
+ * **Estas funciones son agnósticas del marco de referencia: no saben si les están
+ * pasando grados magnéticos o verdaderos, y devuelven lo que les dieron.** Hoy los
+ * calculadores le pasan lo que el piloto tipea, que ya es magnético, y por eso sale
+ * bien. Pero un curso derivado de coordenadas es **verdadero**, y el viento del METAR
+ * también: mezclar los dos marcos rompe el resultado en silencio, con todos los
+ * números corridos lo mismo. La regla para el planificador es toda la matemática en
+ * verdadero y la variación magnética aplicada una sola vez al mostrar.
  */
 
 /** Standard sea-level pressure. */
@@ -223,7 +231,11 @@ export function windComponents(course: number, windDir: number, windSpeed: numbe
 export interface WindTriangle extends WindComponents {
   /** Wind correction angle, degrees. Positive = crab right of course. */
   wca: number;
-  /** Magnetic heading to fly to hold the desired course. */
+  /**
+   * Heading to fly to hold the desired course, **en el mismo marco que `course`**.
+   * Curso magnético entra, rumbo magnético sale; curso verdadero entra, rumbo
+   * verdadero sale. Ver la nota de marco de referencia arriba de todo.
+   */
   heading: number;
   /** Resulting ground speed. */
   groundSpeed: number;

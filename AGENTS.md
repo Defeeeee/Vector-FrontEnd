@@ -3450,3 +3450,44 @@ hace falta.
 
 **Con esto la parte A del plan 12 está cerrada.** Queda la parte B: el planificador de
 vuelo, empezando por `aviation.test.ts`.
+
+## El motor de navegación, verificado antes de construirle encima — 2026-08-18
+
+`B0` del plan 12. `src/lib/aviation.ts` era **el archivo más matemático del repo y no
+tenía un solo test** — 411 líneas de trigonometría de las que come todo calculador
+operativo de Vector, y de las que va a comer el planificador entero. **41 tests.**
+
+**Los valores esperados salen de calcular a mano, no de correr el código y anotar lo
+que dio.** Un test escrito de la segunda forma no encuentra bugs: los fija.
+
+**El test que más importa es el más aburrido: viento cero.** Sin viento no hay
+corrección posible, así que la ground speed tiene que dar exactamente la TAS y el WCA
+exactamente cero. **Es la prueba que detecta un marco de referencia mal aplicado** —el
+único riesgo del plan 12 con consecuencia de navegación— porque cualquier desvío ahí es
+una variación magnética metida donde no va.
+
+Los otros casos que valen: viento de cola (headwind negativo, GS que sube), cruzado
+puro de 20 kt sobre 100 de TAS (WCA 11,54° y GS 97,98 — un cruzado casi no cuesta
+velocidad), simetría izquierda/derecha, el rumbo dando la vuelta por el norte en vez de
+salir negativo, y **los dos modos de fracaso, que son distintos**: el cruzado que supera
+la TAS (`asin` daría NaN) y el viento de frente más fuerte que el avión (la GS sale
+negativa, o sea que se vuela para atrás). Más `computeFuel` con la reserva mayor al
+combustible a bordo, `computeCloudBase` con rocío por encima de la temperatura —niebla,
+base en el suelo y no bajo tierra—, y `computeGlide` con la distinción de que **el viento
+mueve la distancia pero no el tiempo en el aire**.
+
+**La suite se verificó contra sí misma con cuatro mutantes**, porque una suite escrita
+después del código puede pasar sin probar nada: invertir el signo del headwind →
+6 fallas · sacar el wrap del rumbo → 2 · no descontar la reserva → 3 · `angleDelta`
+ingenuo sin cruzar el norte → 1. Las cuatro detectadas.
+
+**Y se corrigió el comentario que era la trampa.** `windTriangle` decía en su docstring
+*"Magnetic heading"* pero calcula `heading = course + wca`: **es agnóstico del marco**.
+Hoy funciona porque el piloto tipea un rumbo que ya es magnético. Un nav log que derive
+el curso de coordenadas le pasaría grados verdaderos y el resultado saldría mal **en
+silencio**, con todos los números corridos lo mismo. El docstring ahora lo dice, y deja
+escrita la regla de `B2`: toda la matemática en verdadero, la variación aplicada una
+sola vez al mostrar.
+
+**Verificación:** `tsc` 0 · **363 tests** · sin cambios de comportamiento — lo único que
+se tocó de `aviation.ts` son comentarios.
