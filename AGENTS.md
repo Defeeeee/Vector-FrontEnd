@@ -3369,3 +3369,84 @@ comprobaciones del plan.
 
 **Falta de esta mitad:** el refresh de sesión (A4/A5), que necesita un endpoint nuevo
 en el backend.
+
+## La sesión moría a la hora, no a las 24 — 2026-08-18
+
+Segunda mitad del plan 12, y cierra un agujero que llevaba meses abierto sin que nadie
+lo hubiera nombrado.
+
+**El `access_token` de Supabase vive una hora** (está documentado en
+`supabase_client.py:17`). **La cookie `session_token` vive veinticuatro.** En el medio
+había veintitrés horas en las que `src/proxy.ts` veía la cookie, dejaba pasar, y
+**todas las páginas pedían con un JWT vencido**: 401 y logout. La sesión no moría a
+las 24 h — moría a la hora, y de una forma que se leía como un bug de datos.
+
+Y lo peor: **el `refresh_token` se venía guardando en una cookie de 30 días desde hacía
+meses sin que existiera una sola línea, ni en el frontend ni en el backend, que lo
+canjeara.** Estaba la mitad de un mecanismo, sin la otra mitad.
+
+**`POST /auth/refresh` en el backend.** Sin guard a propósito: quien llama **no tiene**
+un access token válido, que es justamente el motivo por el que llama. La autorización
+es el refresh token mismo, que Supabase valida. Pasar el token explícito a
+`refresh_session(...)` evita el storage del cliente por completo
+(`supabase_auth/_sync/gotrue_client.py:760`), así que no hay estado compartido que
+contaminar — la lección de todo el episodio de sesiones cruzadas sigue valiendo.
+
+**El refresh vive en `src/proxy.ts` y no en `apiFetch`, y no es una preferencia.** Es
+la restricción de Next que el propio `api.ts` documenta desde hace meses: *"causes
+'Cookies can only be modified' error when called during Server Component rendering"*.
+El proxy es el único lugar donde se puede escribir una cookie.
+
+**Las dos mitades del arreglo, y la segunda es la que se olvida:**
+
+1. `response.cookies.set(...)` — para el navegador, o sea las navegaciones siguientes.
+2. `request.cookies.set(...)` + `NextResponse.next({ request: { headers } })` — para
+   **este** render. Sin esto, la página que se está por dibujar sigue leyendo el token
+   viejo de `cookies()` y hace todas sus llamadas con el JWT vencido: la renovación
+   funciona y el usuario ve un error igual, una vez por hora. `RequestCookies.set`
+   reescribe la cabecera `cookie` del request, y ahí es donde las dos líneas se
+   conectan.
+
+**El disparador no es "la cookie desapareció", como decía el plan.** Esa idea sólo
+funciona si la cookie caduca cuando caduca el token, y acá dura 24× más. Se decide por
+el `exp` del JWT, decodificado **sin verificar la firma** — de eso se ocupa el backend
+en cada request; acá el `exp` sólo dice *cuándo* renovar, y un token falsificado con un
+`exp` mentiroso no gana nada. Con **margen de 5 minutos**: un render que arranca con
+tres segundos de token por delante hace sus llamadas con el token ya muerto.
+
+**Un token ilegible no se renueva.** `vidaRestante` devuelve `null` —no "vencido"—
+ante cualquier cosa rara, y `necesitaRenovar` lo trata como "no sé, no toco". Es la
+misma disciplina de `unavailable` y `datos_no_disponibles`: **cuando no se sabe, no se
+afirma.**
+
+**Distinguir 401 de "no contestó" es lo que evita desloguear a alguien que estaba
+bien.** Sólo el 401 significa sesión muerta; un 500 o un timeout es un problema del
+servidor, y tratarlo como sesión muerta desloguearía a todos los pilotos ante un deploy
+roto. Borrar el refresh token obliga a escribir la contraseña de nuevo: fallar es
+recuperable, desloguear no.
+
+**La lógica salió del proxy a `src/lib/sesion.ts`** porque `vitest` corre con
+`include: ["src/**/*.test.ts"]` y no puede montar un proxy de Next: lo que queda en ese
+archivo **no se testea nunca**. 14 tests, incluido el del payload con acentos —el JWT
+trae el apellido del piloto, y `atob` devuelve bytes crudos, así que sin decodificar
+UTF-8 esto rompía sólo para algunas cuentas.
+
+**Verificación, y esta vez fue de verdad:** además de `tsc` 0 · 322 tests · build
+limpio, se levantó un stub de auth y un stub de API en local y se corrieron los seis
+caminos contra un `next start` real. El decisivo: con un `session_token` vencido y un
+refresh válido, **las seis llamadas del render salieron con el `exp` del token nuevo**,
+no del viejo. Ésa es la prueba de que la mitad 2 funciona, y es la que no se puede
+deducir leyendo el código. Los otros cinco: 401 → borra las dos cookies y manda a
+login · 500 → **no** desloguea · sin `session_token` con refresh bueno → renueva y
+sigue · token vivo → **cero** llamadas al servidor de auth · desde `/` → renueva y
+redirige a `/dashboard`. Contra producción se confirmó que el endpoint responde 401 con
+`Refresh token is not valid`, 400 si falta el campo y 404 en una ruta inexistente.
+
+**La carrera del token de un solo uso, dicho claro:** cada canje invalida el anterior.
+GoTrue tolera reusar el mismo durante ~10 s y en esa ventana devuelve la misma sesión,
+que es lo que salva el caso real —dos pestañas, o los prefetch de Next disparando
+juntos—. Fuera de esa ventana no hay simultaneidad que valga. **No hay lock**, y no
+hace falta.
+
+**Con esto la parte A del plan 12 está cerrada.** Queda la parte B: el planificador de
+vuelo, empezando por `aviation.test.ts`.
