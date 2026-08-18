@@ -8,18 +8,38 @@ import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
 import { AuditSummary, Profile } from "@/types";
 import ChatWidget from "@/components/dashboard/ChatWidget";
+import SinConexionBanner from "@/components/dashboard/SinConexionBanner";
 
 import { redirect } from "next/navigation";
 
-async function getProfile() {
+/**
+ * El perfil, y si se pudo preguntar por él.
+ *
+ * Devuelve las dos cosas y no sólo el perfil porque **`null` es ambiguo**: puede ser
+ * un piloto sin perfil o un servidor que no contestó. Es la misma distinción que
+ * `unavailable` hace en `dashboard/page.tsx`, y acá importa igual: sin ella el
+ * dashboard se dibuja en cero y el piloto no tiene forma de saber si perdió sus
+ * datos o si perdió la señal.
+ *
+ * Ya no puede tirar: `apiFetch` devuelve un 503 sintético ante fallo de red en vez
+ * de propagar la excepción. Antes, un corte de red acá reventaba el layout y con él
+ * **las trece páginas del dashboard**.
+ */
+async function getProfile(): Promise<{ profile: Profile | null; disponible: boolean }> {
   const res = await apiFetch("/profiles");
   if (res.status === 401) {
     console.log("DashboardLayout: 401 Unauthorized. Logging out...");
     redirect("/api/auth/logout?redirect=/?expired=true");
   }
-  if (!res.ok) return null;
-  const profiles: Profile[] = await res.json();
-  return profiles[0] || null;
+  if (!res.ok) return { profile: null, disponible: false };
+  try {
+    const profiles: Profile[] = await res.json();
+    return { profile: profiles[0] || null, disponible: true };
+  } catch {
+    // 200 con cuerpo ilegible: se pudo llegar, no se pudo entender. Cuenta como
+    // no disponible, que es lo único honesto.
+    return { profile: null, disponible: false };
+  }
 }
 
 /**
@@ -48,7 +68,7 @@ export default async function DashboardLayout({
   /** Intercepting-route slot — see dashboard/@modal. Empty on most routes. */
   modal: React.ReactNode;
 }) {
-  const [profile, auditCount] = await Promise.all([getProfile(), getAuditCount()]);
+  const [{ profile, disponible }, auditCount] = await Promise.all([getProfile(), getAuditCount()]);
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
@@ -141,6 +161,9 @@ export default async function DashboardLayout({
         {/* Main Content Area */}
         <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12 overflow-y-auto custom-scrollbar transition-colors">
           <div className="w-full max-w-6xl mx-auto">
+            {/* Arriba de todo: si la consulta base falló, el piloto tiene que
+                enterarse antes de leer un solo número de la pantalla. */}
+            {!disponible && <SinConexionBanner />}
             {children}
           </div>
         </main>

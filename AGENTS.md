@@ -3310,3 +3310,62 @@ entre un dato y un reproche:
 
 **Verificación:** `tsc` 0 · **308 tests** (eran 278; 30 nuevos en tres módulos) ·
 build limpio.
+
+---
+
+## Que la app no explote sin red — 2026-08-17
+
+Primera mitad del plan 12. Vector no degradaba ante un corte de red: **explotaba**.
+
+`src/lib/api.ts` no tenía `try/catch`, así que sin red el `fetch` tiraba
+`TypeError: fetch failed` y la excepción subía al render del server component. Y como
+`src/app/dashboard/layout.tsx` llama a `getProfile()` sin protección, **un corte de
+red reventaba el layout y con él las trece páginas del dashboard**. Lo que veía el
+piloto era una pantalla en blanco con "Application error: a server-side exception has
+occurred" — porque además **no existía ningún `error.tsx` en toda la app**.
+
+**El arreglo grande sale de una decisión chica: `apiFetch` devuelve un `Response`
+sintético con status 503 en vez de propagar la excepción.** Los doce llamadores ya
+hacen `if (!response.ok)`, así que un 503 fluye por caminos que ya están escritos
+**sin tocar un solo call site** — y en `dashboard/page.tsx` cae solo en el patrón
+`unavailable`, que ya distingue "no hay datos" de "no pudimos preguntar". Devolver
+`null` o dejar que tire habría obligado a tocar los doce archivos.
+
+Con **timeout de 8 s** (`AbortSignal.timeout`), porque un backend que acepta la
+conexión y no contesta cuelga el render hasta que la plataforma lo mate: "no explotar"
+con treinta segundos en blanco sigue siendo explotar, sólo que despacio.
+
+**Cuatro fronteras de error, y hacen falta las cuatro.** La que importa entender:
+`src/app/dashboard/error.tsx` **no captura lo que tira `src/app/dashboard/layout.tsx`**
+—un boundary no atrapa a su propio layout—, y ese layout es justo el que llamaba a
+`getProfile()`. Por eso también está `src/app/error.tsx`. Más `global-error.tsx`
+(reemplaza el documento entero, así que renderiza sus propios `<html>`/`<body>`) y un
+`not-found.tsx`.
+
+Los tres estados —sin red, sesión vencida, error real— existen porque **cada uno se
+resuelve distinto**: la red se espera, la sesión se renueva entrando de nuevo, el
+error se reintenta. La clasificación es por texto del mensaje y **es frágil a
+propósito**: en producción Next lo reemplaza por un digest, así que lo más probable es
+caer en el genérico. Por eso el genérico tiene que servir solo.
+
+**`getProfile` ahora devuelve `{profile, disponible}`**, no sólo el perfil: `null` era
+ambiguo entre "piloto sin perfil" y "servidor que no contestó". Con `disponible: false`
+el layout muestra `SinConexionBanner`, porque un dashboard en cero sin explicación se
+lee como "perdí mis datos" y no como "perdí la señal". Es la misma disciplina de
+`unavailable` y del estado `datos_no_disponibles` del semáforo.
+
+**Se borró `next.config.mjs`**: había dos configs y Next resuelve `.js` primero, así
+que el `.mjs` **nunca se leía**. Era una trampa para el próximo que editara el archivo
+equivocado.
+
+**Lo que NO se testeó automáticamente, dicho:** `apiFetch` importa `getSessionToken`,
+que es `"use server"` y usa `cookies()`, así que testearlo exige mockear ese módulo —
+y este repo no tiene un solo mock. Seis líneas de `try/catch` no justifican estrenar
+esa práctica. Se verifica a mano con el backend apagado, y está en la lista de
+comprobaciones del plan.
+
+**Verificación:** `tsc` 0 · 308 tests (sin cambios: nada de esto es testeable en
+`environment: "node"`) · build limpio.
+
+**Falta de esta mitad:** el refresh de sesión (A4/A5), que necesita un endpoint nuevo
+en el backend.
