@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { distanceNm, legDistanceNm } from "./distance";
+import { distanceNm, distanciaNmPrecisa, legDistanceNm } from "./distance";
 
 /**
  * Los aeródromos y sus coordenadas salen de `madhel.tsv`. Los valores esperados
@@ -25,6 +25,22 @@ describe("distanceNm", () => {
 
   it("da cero entre un punto y sí mismo", () => {
     expect(distanceNm(SADF.lat, SADF.lon, SADF.lat, SADF.lon)).toBe(0);
+  });
+
+  it("es el redondeo de la versión precisa", () => {
+    // Una sola fórmula con dos salidas, no dos implementaciones. Este archivo ya
+    // advierte que `splitRoute` llegó a existir cinco veces.
+    const crudo = distanciaNmPrecisa(SADF.lat, SADF.lon, SAZS.lat, SAZS.lon);
+    expect(distanceNm(SADF.lat, SADF.lon, SAZS.lat, SAZS.lon)).toBe(Math.round(crudo));
+    expect(Number.isInteger(crudo)).toBe(false);
+  });
+
+  it("la precisa no redondea, que es todo el punto", () => {
+    // 113,2855 NM de Morón a Junín. Encadenados por cuatro tramos, los redondeos de
+    // `distanceNm` se comen millas enteras del total.
+    const SADM = { lat: -34.6792, lon: -58.6436 };
+    const SAAJ = { lat: -34.5459, lon: -60.9305 };
+    expect(distanciaNmPrecisa(SADM.lat, SADM.lon, SAAJ.lat, SAAJ.lon)).toBeCloseTo(113.2855, 3);
   });
 
   it("es simétrica", () => {

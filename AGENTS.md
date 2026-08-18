@@ -3491,3 +3491,75 @@ sola vez al mostrar.
 
 **Verificación:** `tsc` 0 · **363 tests** · sin cambios de comportamiento — lo único que
 se tocó de `aviation.ts` son comentarios.
+
+## La planilla de navegación, y una decisión de geometría que no era obvia — 2026-08-18
+
+`B1` del plan 12: `src/lib/navegacion.ts`, la lógica pura del planificador. **27 tests**
+nuevos (25 propios más dos de `distance.ts`).
+
+**Lo que no existía en el repo:** ninguna función de bearing. `distance.ts` medía cuánto
+hay pero no para dónde, y encima **redondeaba a entero** — correcto para mostrar, malo
+para encadenar: cuatro tramos acumulan hasta 2 NM de error de redondeo antes de que
+empiece la aritmética de tiempos. Se agregó `distanciaNmPrecisa` **en el mismo archivo,
+con `distanceNm` pasando a ser su redondeo**, porque ese archivo ya advierte en su
+encabezado que `splitRoute` llegó a existir cinco veces.
+
+### Loxodrómica, no ortodrómica
+
+El plan decía "rumbo inicial de gran círculo" y **está mal para esto**. Una planilla de
+navegación existe para poner un número en el DG y sostenerlo hasta el próximo punto; el
+rumbo inicial del gran círculo cambia mientras avanzás, así que sostenerlo te deja al
+costado.
+
+Cuánto importa, con los números medidos: SADM→SAAJ (113 NM) da **274,05°** loxodrómico
+contra 273,40° ortodrómico — medio grado, ruido. Pero SADM→SAZN (524 NM) da **240,71°
+contra 237,93°**: casi tres grados. La diferencia crece con `Δλ · sen(latitud)`, o sea
+con los tramos largos este-oeste, que son justo los de travesía.
+
+Hay una propiedad que lo cierra y que además quedó como test: **el rumbo de vuelta es
+exactamente el recíproco, 180° justos.** En el gran círculo no lo es —SAAJ→SADM difiere
+en 178,70°— y una planilla donde ida y vuelta no son recíprocas está mal para cualquier
+piloto que la mire. La distancia sigue siendo ortodrómica: ahí la diferencia es de
+segundo orden y no justifica una segunda implementación.
+
+### El marco de referencia, resuelto en un solo lugar
+
+**Toda la matemática en verdadero; la variación se aplica una sola vez, al mostrar.** El
+curso sale de coordenadas (verdadero), el viento del METAR se reporta en grados
+verdaderos, y `windTriangle` devuelve el rumbo en el marco en que entró. Los campos
+`cursoMagnetico` y `rumboMagnetico` son los únicos que la ven.
+
+`aMagnetico(verdadero, variacionW)` toma **grados oeste positivos** —como los publica la
+carta argentina y como los lee el piloto— y los **suma**. El parámetro lleva la `W` en
+el nombre a propósito: **el WMM publica declinación con el signo al revés, positiva al
+este**, y un campo llamado `variacion` a secas sería una invitación a mezclarlos. Mezclar
+los signos no cancela el error: lo duplica, de 10 a 30° según la zona.
+
+### Nulls donde no se sabe
+
+Un tramo que no se puede volar devuelve `minutos: null` y `litros: null`, no cero — cero
+se leería como "no tarda nada". Y **los totales de tiempo y combustible se anulan si
+algún tramo es imposible**: sumar sólo los que cierran daría un número más chico que la
+realidad y con pinta de válido, que es exactamente el dato con el que alguien despega.
+La distancia total sí se conserva, porque no depende del viento. El tramo que traba
+queda identificable para que la pantalla lo señale.
+
+`calcularPlan` **no calcula reservas ni contesta "¿me alcanza el combustible?"**: eso es
+`computeFuel`, y la pantalla lo llama con `totales.minutos`. Meterlo acá sería tener la
+política de reservas escrita en dos lados.
+
+### Verificación
+
+`tsc` 0 · **390 tests** · build limpio. Los rumbos esperados salen de una implementación
+escrita aparte en otro lenguaje a partir de la fórmula, no del código de acá — comparar
+el código contra sí mismo no prueba nada. Las coordenadas son las de `madhel.tsv`, así
+que los valores se pueden contrastar contra una carta.
+
+Cuatro mutantes, las cuatro detectadas: variación con el signo invertido → 4 fallas ·
+rumbo pasado a ortodrómico → 6 · **variación aplicada antes del triángulo de viento
+—el bug silencioso— → 1**, justo el test escrito para eso · totales que ignoran el tramo
+imposible → 1.
+
+**Falta para el planificador:** `B2` (la columna de variación magnética en el TSV, hoy
+inexistente), `B3` (ruta multipunto), `B4` (migración 014 con TAS, consumo y tanques por
+aeronave) y `B5` (la pantalla).
