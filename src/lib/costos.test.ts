@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Flight, Transaction } from "@/types";
-import { costoDeVuelo, costosPorVuelo, gastoDelMes, pesos, precioPorHoraDe } from "./costos";
+import { costoDeVuelo, costosPorVuelo, gastoDelMes, pesos, precioPorHoraDe, precioPorMes } from "./costos";
 
 const vuelo = (id: string, date = "2026-08-01", duration = 1): Flight =>
   ({ id, user_id: "u", date, route: "SADM SADM", landings: 1, duration,
@@ -109,5 +109,45 @@ describe("pesos", () => {
   it("separa los miles y no muestra centavos", () => {
     expect(pesos(185000)).toBe("$ 185.000");
     expect(pesos(277499.6)).toBe("$ 277.500");
+  });
+});
+
+describe("precioPorMes", () => {
+  const flights = [
+    vuelo("f1", "2026-07-10", 1),
+    vuelo("f2", "2026-08-05", 2),
+    vuelo("f3", "2026-08-20", 1),
+  ];
+
+  it("devuelve la serie ordenada por mes", () => {
+    const costos = costosPorVuelo([cobro("f1", 150000), cobro("f2", 370000), cobro("f3", 185000)]);
+    const serie = precioPorMes(flights, costos);
+    expect(serie.map((s) => s.mes)).toEqual(["2026-07", "2026-08"]);
+    expect(serie[0].porHora).toBe(150000);
+    // (370000 + 185000) / 3 h = 185000: el aumento de la escuela, visible.
+    expect(serie[1].porHora).toBe(185000);
+  });
+
+  /**
+   * Ponderado por horas, no promedio de vuelos. Un vuelo corto en el avión caro no
+   * puede mover el mes tanto como uno largo en el barato.
+   */
+  it("pondera por horas y no por cantidad de vuelos", () => {
+    const f = [vuelo("a", "2026-08-01", 0.3), vuelo("b", "2026-08-02", 3)];
+    // 0,3 h a 1.000.000/h y 3 h a 100.000/h
+    const costos = costosPorVuelo([cobro("a", 300000), cobro("b", 300000)]);
+    // Ponderado: 600000 / 3,3 = 181.818. Un promedio simple habría dado 550.000.
+    expect(precioPorMes(f, costos)[0].porHora).toBeCloseTo(181818, 0);
+  });
+
+  /** Un mes sin cobros no es un mes a $0: metido como cero hundiría el gráfico. */
+  it("omite los meses sin cobros en vez de ponerlos en cero", () => {
+    const costos = costosPorVuelo([cobro("f2", 370000)]);
+    expect(precioPorMes(flights, costos).map((s) => s.mes)).toEqual(["2026-08"]);
+  });
+
+  it("ignora los vuelos de duración cero", () => {
+    const f = [vuelo("z", "2026-08-01", 0)];
+    expect(precioPorMes(f, costosPorVuelo([cobro("z", 1000)]))).toEqual([]);
   });
 });

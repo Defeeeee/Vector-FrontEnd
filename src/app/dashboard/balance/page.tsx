@@ -1,6 +1,10 @@
 import { apiFetch } from "@/lib/api";
 import { Aircraft, Profile, FlightPack, Transaction, Flight } from "@/types";
 import BalanceClient from "@/components/dashboard/BalanceClient";
+import BackfillCobros from "@/components/dashboard/BackfillCobros";
+import PrecioHoraChart from "@/components/dashboard/PrecioHoraChart";
+import { costosPorVuelo, precioPorMes } from "@/lib/costos";
+import { previewBackfillCobros } from "@/actions/balance";
 import { redirect } from "next/navigation";
 
 async function getBalanceData() {
@@ -34,9 +38,21 @@ async function getBalanceData() {
 }
 
 export default async function BalancePage() {
-  const { profile, aircraft, packs, transactions, balance, flights } = await getBalanceData();
+  const [{ profile, aircraft, packs, transactions, balance, flights }, backfill] =
+    await Promise.all([getBalanceData(), previewBackfillCobros()]);
 
   return (
+    <div className="space-y-6 md:space-y-8">
+      {/* Arriba del saldo a propósito: es una corrección de lo que el resto de la
+          pantalla muestra, así que verla después sería enterarse tarde. */}
+      {backfill.aplicable && (
+        <BackfillCobros vuelos={backfill.vuelos} total={backfill.total} />
+      )}
+
+      {/* El precio histórico de la hora, del propio registro de cobros. Se dibuja
+          solo cuando hay al menos dos meses con datos. */}
+      <PrecioHoraChart serie={precioPorMes(flights, costosPorVuelo(transactions))} />
+
     <BalanceClient
       profile={profile}
       aircraft={aircraft}
@@ -45,5 +61,6 @@ export default async function BalancePage() {
       initialBalance={balance}
       flights={flights}
     />
+    </div>
   );
 }

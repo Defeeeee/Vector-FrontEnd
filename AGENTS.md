@@ -3264,3 +3264,49 @@ un agente haga sin que se lo pidan— así que queda dicho acá, no hecho.
 **Verificación:** `tsc` 0 · **278 tests** (eran 265; 13 nuevos sobre `costos.ts`) ·
 build limpio. Contra la base: 2 cobros con vuelo asociado, los dos distintos de cero,
 $1.100.500 en total.
+
+---
+
+## Cuatro cosas que los datos ya sabían — 2026-08-17
+
+Todas salen de información que Vector tenía y no mostraba. Ninguna agregó una
+columna a la base.
+
+**Cobros históricos (`BackfillCobros`).** Una tarjeta en Saldo que incorpora los
+cobros de los vuelos que quedaron sin registrar. El detalle está en el `AGENTS.md`
+del backend; lo que importa acá es que **la tarjeta dice en negrita que el saldo no
+cambia**. Es la primera pregunta de cualquiera frente a un botón que escribe cobros
+retroactivos, y si la respuesta no está a la vista el botón no se toca.
+
+**El precio de la hora en el tiempo (`PrecioHoraChart`).** Cada transacción guardó el
+precio **del día en que se voló**, así que la serie muestra los aumentos reales de la
+escuela y no el precio de hoy proyectado hacia atrás. SVG a mano y no la librería de
+gráficos: `DashboardCharts` se carga en diferido justamente para no pagarla en el
+primer paint, y traerla a Saldo para dibujar seis puntos sería pagarla de nuevo.
+Ponderado por horas — un vuelo de 0,3 h en el avión caro no puede mover el mes tanto
+como uno de 3 h en el barato.
+
+**Buscar en la bitácora (`lib/busqueda-vuelos.ts`).** El filtro miraba ruta y
+matrícula. Ahora hay rango de fechas, aeronave, propósito, y el texto entra también
+en las **observaciones** — que es donde el piloto escribe "con Martín", "examen" o
+"primer solo", o sea exactamente lo que después busca. La lógica se fue a un módulo
+puro con 11 tests: **un filtro que se equivoca esconde vuelos sin avisar**, que en un
+registro regulatorio es la peor forma de fallar. Los campos extra van detrás de un
+botón; cuatro campos permanentes serían cuatro campos vacíos el 99% de las veces.
+
+**Racha y comparación (`lib/actividad.ts`, `ComoVenisVolando`).** El heatmap dibuja
+la actividad, pero dibujarla no es decirla: un piloto mira una grilla de cuadraditos
+y no sabe si viene mejor o peor que en marzo. Dos decisiones que hacen la diferencia
+entre un dato y un reproche:
+
+- **La semana en curso no corta la racha si todavía no volaste.** Es martes y no
+  volaste: la racha sigue viva desde la semana pasada, porque quedan cinco días.
+  Contarla como cortada convertiría el número en un reproche los lunes.
+- **Los meses sin volar cuentan como cero en el promedio.** Promediar sólo los meses
+  con actividad daría una vara artificialmente alta: quien voló en marzo y en julio
+  no tiene un promedio de sus dos mejores meses. Y sin ningún mes anterior no se
+  compara nada, porque un promedio de ceros diría "vas 8 horas mejor que siempre" en
+  el primer mes de uso.
+
+**Verificación:** `tsc` 0 · **308 tests** (eran 278; 30 nuevos en tres módulos) ·
+build limpio.

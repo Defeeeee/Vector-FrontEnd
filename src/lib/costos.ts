@@ -113,3 +113,42 @@ export function precioPorHoraDe(flight: Flight, costos: Map<string, number>): nu
   if (!monto || !flight.duration) return null;
   return monto / flight.duration;
 }
+
+export interface PrecioMensual {
+  /** "YYYY-MM". */
+  mes: string;
+  /** Promedio ponderado por horas de lo que salió la hora ese mes. */
+  porHora: number;
+  pesos: number;
+  horas: number;
+}
+
+/**
+ * Lo que costó la hora, mes a mes.
+ *
+ * Es una serie que ningún piloto tiene en ningún lado y que sale gratis de datos
+ * que ya están: cada transacción guarda el precio **del día en que se voló**, así
+ * que la serie muestra los aumentos reales de la escuela y no una proyección del
+ * precio de hoy hacia atrás.
+ *
+ * **Ponderado por horas y no promedio de vuelos**: un vuelo de 0,3 h en el avión
+ * caro no debería mover el mes tanto como uno de 3 h en el barato.
+ *
+ * Sólo devuelve los meses con cobros. Un mes sin datos no es un mes a $0, y meterlo
+ * como cero hundiría la línea del gráfico hasta el piso.
+ */
+export function precioPorMes(flights: Flight[], costos: Map<string, number>): PrecioMensual[] {
+  const acum = new Map<string, { pesos: number; horas: number }>();
+  for (const f of flights) {
+    const monto = costos.get(f.id);
+    if (!monto || !f.date || !f.duration) continue;
+    const mes = f.date.slice(0, 7);
+    const a = acum.get(mes) ?? { pesos: 0, horas: 0 };
+    a.pesos += monto;
+    a.horas += f.duration;
+    acum.set(mes, a);
+  }
+  return Array.from(acum.entries())
+    .map(([mes, a]) => ({ mes, pesos: a.pesos, horas: a.horas, porHora: a.pesos / a.horas }))
+    .sort((x, y) => x.mes.localeCompare(y.mes));
+}

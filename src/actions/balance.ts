@@ -87,3 +87,37 @@ export async function deleteTransactionAction(transactionId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/balance");
 }
+
+/**
+ * Cuántos vuelos quedaron sin cobro registrado, y por cuánta plata.
+ *
+ * Sólo consulta. El botón necesita poder decir "faltan 39 vuelos, $X" **antes** de
+ * que el piloto acepte, porque lo que sigue escribe en su historial de saldo.
+ */
+export async function previewBackfillCobros() {
+  const response = await apiFetch("/transactions/backfill");
+  if (!response.ok) return { vuelos: 0, total: 0, aplicable: false };
+  return (await response.json()) as { vuelos: number; total: number; aplicable: boolean };
+}
+
+/**
+ * Graba los cobros históricos que faltan, **sin mover el saldo**.
+ *
+ * Los vuelos cargados antes de pasar a modo saldo nunca generaron transacción, así
+ * que la bitácora no puede decir cuánto salió cada uno. Esto las escribe, y junto a
+ * ellas una única transacción de ajuste por la suma exacta: los cobros son un
+ * registro histórico del costo, no plata nueva que salió de la cuenta. El neto
+ * sobre el saldo es cero. Ver el docstring de `aplicar_backfill` en el backend.
+ */
+export async function aplicarBackfillCobros() {
+  const response = await apiFetch("/transactions/backfill", { method: "POST" });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    return { error: error.detail || "No se pudieron incorporar los cobros" };
+  }
+  const data = (await response.json()) as { vuelos: number; total: number };
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/balance");
+  revalidatePath("/dashboard/history");
+  return { success: true, ...data };
+}

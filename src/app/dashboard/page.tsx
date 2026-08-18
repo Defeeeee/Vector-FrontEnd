@@ -7,6 +7,7 @@ import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
 import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import GastoDelMes from "@/components/dashboard/GastoDelMes";
+import ComoVenisVolando from "@/components/dashboard/ComoVenisVolando";
 import PCATracker from "@/components/dashboard/PCATracker";
 import WeatherWidget from "@/components/dashboard/WeatherWidget";
 import RecentFlights from "@/components/dashboard/RecentFlights";
@@ -351,6 +352,11 @@ export default async function Dashboard() {
           contestan la misma pregunta desde los dos modos de seguimiento —quien usa
           saldo ve pesos, quien usa packs ve horas— y ninguno de los dos se dibuja
           si no tiene nada que decir. */}
+      {/* Cómo venís volando: la racha y este mes contra tu propio promedio. Van
+          antes de la plata porque son la causa — las horas primero, lo que
+          costaron después. */}
+      <ComoVenisVolando flights={flights as Flight[]} todayIso={new Date().toISOString().slice(0, 10)} />
+
       <GastoDelMes gasto={gastoMes} />
 
       <FlightPackWidget packs={packs} />
