@@ -259,6 +259,8 @@ export interface AirportRef {
    * indistinguible de un dato faltante.
    */
   variacionW?: number;
+  /** Pistas con rumbo verdadero. Vacío si el aeródromo no tiene ninguna publicada. */
+  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string }[];
   /** What MADHEL publishes about it. Absent for non-Argentine aerodromes. */
   madhel?: {
     province: string;

@@ -10,6 +10,7 @@
     "lint": "next lint",
     "build:airports": "node scripts/build-airports.mjs",
     "build:magvar": "node scripts/build-magvar.mjs",
+    "build:runways": "node scripts/build-runways.mjs",
     "build:changelog": "node scripts/build-changelog.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

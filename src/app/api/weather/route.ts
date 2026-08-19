@@ -59,6 +59,21 @@ export async function GET(req: NextRequest) {
     let temp: number | null = null;
     let windSpeed: number | null = null;
     let windDir: string | number | null = null;
+    /*
+      El upstream manda mucho más de lo que esta ruta leía: `altim` (QNH en hPa, el
+      mismo número que el `Q1024` del METAR crudo), `dewp`, `visib`, `clouds`, `elev`.
+      Se descartaban todos.
+
+      `altim` y `dewp` alimentan `computeAltitude` y `computeCloudBase` de `aviation.ts`
+      —que existen, están testeados y hoy piden el dato **tipeado a mano** en las
+      calculadoras—. Tomarlos del origen es más barato y más confiable que escribir un
+      parser de METAR.
+
+      ⚠️ `visib` viene como **string** (`"6+"`), no como número. Por eso no está acá:
+      exponerlo invitaría a un `Number()` que daría `NaN` los días de buena visibilidad.
+    */
+    let altimHpa: number | null = null;
+    let dewpointC: number | null = null;
     let nearestStation: { icao: string; name: string; distanceNm: number } | null = null;
 
     if (metarRes.ok) {
@@ -73,6 +88,8 @@ export async function GET(req: NextRequest) {
             temp = metarData.temp !== undefined ? metarData.temp : null;
             windSpeed = metarData.wspd !== undefined ? metarData.wspd : null;
             windDir = metarData.wdir !== undefined ? metarData.wdir : null;
+            altimHpa = typeof metarData.altim === "number" ? metarData.altim : null;
+            dewpointC = typeof metarData.dewp === "number" ? metarData.dewp : null;
           }
         } catch (parseErr) {
           console.error("Error parsing weather JSON:", parseErr);
@@ -112,6 +129,8 @@ export async function GET(req: NextRequest) {
                     temp = match.temp !== undefined ? match.temp : null;
                     windSpeed = match.wspd !== undefined ? match.wspd : null;
                     windDir = match.wdir !== undefined ? match.wdir : null;
+                    altimHpa = typeof match.altim === "number" ? match.altim : null;
+                    dewpointC = typeof match.dewp === "number" ? match.dewp : null;
                     nearestStation = {
                       icao: candidate.icao,
                       name: candidate.name,
@@ -144,6 +163,8 @@ export async function GET(req: NextRequest) {
       temp,
       windSpeed,
       windDir,
+      altimHpa,
+      dewpointC,
       nearestStation,
     });
   } catch (err: any) {

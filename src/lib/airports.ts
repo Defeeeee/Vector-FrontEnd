@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import type { Pista } from "./briefing";
 import path from "node:path";
 
 /**
@@ -58,6 +59,12 @@ export interface Airport {
    * punta a punta.
    */
   variacionW?: number;
+  /**
+   * Pistas con **rumbo verdadero**, de `runways.tsv`. Vacío —no `undefined`— cuando el
+   * aeródromo no tiene ninguna publicada, que es el caso de 618 de los 711 de MADHEL:
+   * OurAirports sólo conoce los que tienen indicador ICAO.
+   */
+  pistas?: Pista[];
   /**
    * ANAC's three-letter designator — GEZ for General Rodríguez, MOR for Morón.
    * Argentine aerodromes only, and it is how pilots here actually refer to the
@@ -176,7 +183,40 @@ function titleCase(s: string): string {
  *   "SAN FERNANDO" would throw away the better string.
  * - For one it does not have, MADHEL supplies everything.
  */
+/**
+ * Pistas por ICAO, leídas una vez.
+ *
+ * Archivo aparte y no una columna más de `madhel.tsv` porque la relación es de uno a
+ * muchos: SAEZ tiene dos pistas y SACO también. Meterlas en una celda obligaría a
+ * inventar un separador adentro de un TSV.
+ */
+function leerPistas(): Map<string, Pista[]> {
+  const mapa = new Map<string, Pista[]>();
+  const archivo = path.join(process.cwd(), "src", "data", "runways.tsv");
+  if (!fs.existsSync(archivo)) return mapa;
+
+  for (const linea of fs.readFileSync(archivo, "utf8").split("\n")) {
+    if (!linea.trim()) continue;
+    const [icao, le, he, rumbo, largo, superficie] = linea.split("\t");
+    const rumboT = Number.parseFloat(rumbo);
+    if (!icao || !Number.isFinite(rumboT)) continue;
+
+    const largoFt = Number.parseFloat(largo);
+    const lista = mapa.get(icao) ?? [];
+    lista.push({
+      le,
+      he,
+      rumboT,
+      largoFt: Number.isFinite(largoFt) ? largoFt : undefined,
+      superficie: superficie || undefined,
+    });
+    mapa.set(icao, lista);
+  }
+  return mapa;
+}
+
 function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
+  const pistasPorIcao = leerPistas();
   const file = path.join(process.cwd(), "src", "data", "madhel.tsv");
   if (!fs.existsSync(file)) return;
 
@@ -211,6 +251,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
       existing.local = local;
       existing.madhel = madhel;
       existing.variacionW = asNum(magvarW);
+      existing.pistas = pistasPorIcao.get(canonical) ?? [];
       if (existing.elevation === undefined && metres !== undefined) {
         existing.elevation = Math.round(metres / 0.3048);
       }
@@ -236,6 +277,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
       local,
       madhel,
       variacionW: asNum(magvarW),
+      pistas: pistasPorIcao.get(canonical) ?? [],
     };
 
     byIcao.set(canonical, airport);
