@@ -5,6 +5,9 @@ import {
   MAX_PUNTOS,
   aCampoRoute,
   dispersionDeVariacion,
+  MAX_PUNTOS_EXPANDIDOS,
+  esAerovia,
+  expandirAerovias,
   parsearRuta,
   puntosCalculables,
   puntosConBriefing,
@@ -222,5 +225,123 @@ describe("dispersionDeVariacion", () => {
   it("null cuando no hay con qué comparar", () => {
     expect(dispersionDeVariacion([punto()])).toBeNull();
     expect(dispersionDeVariacion([punto({ variacionW: undefined }), punto({ variacionW: undefined })])).toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * La tabla de prueba es chica a propósito: la función recibe su catálogo justamente para
+ * poder testearla con tres aerovías inventadas en vez de con las 220 reales. Que el
+ * catálogo real esté bien lo comprueba `aerovias.test.ts`; que la expansión esté bien, esto.
+ */
+const AEROVIAS: Record<string, string[]> = {
+  // Como la UM424 de verdad, recortada.
+  UM424: ["ALBAL", "KOTNI", "BOBAP", "ETALU", "EZE"],
+  A305: ["EZE", "DORVO"],
+  W67: ["BCA", "AKNOS", "OGLER", "OSA"],
+};
+const buscar = (a: string) => AEROVIAS[a] ?? null;
+
+describe("esAerovia", () => {
+  it("reconoce la forma de un designador de ruta ATS", () => {
+    expect(esAerovia("A305")).toBe(true);
+    expect(esAerovia("W67")).toBe(true);
+    expect(esAerovia("UM424")).toBe(true);
+    expect(esAerovia("UL211F")).toBe(true);
+  });
+
+  it("y no la confunde con lo demás", () => {
+    // Los códigos de aeródromo y los fixes no llevan dígitos; las coordenadas y los
+    // radiales llevan barra.
+    expect(esAerovia("SADM")).toBe(false);
+    expect(esAerovia("DORVO")).toBe(false);
+    expect(esAerovia("BAR")).toBe(false);
+    expect(esAerovia("BAR/045/25")).toBe(false);
+    expect(esAerovia("")).toBe(false);
+  });
+});
+
+describe("expandirAerovias", () => {
+  it("reemplaza la aerovía por los puntos que hay entre la entrada y la salida", () => {
+    const r = expandirAerovias(["SADM", "ALBAL", "UM424", "EZE", "SAZS"], buscar);
+    expect(r.error).toBeNull();
+    expect(r.puntos).toEqual(["SADM", "ALBAL", "KOTNI", "BOBAP", "ETALU", "EZE", "SAZS"]);
+    expect(r.expandidas).toEqual([{ aerovia: "UM424", desde: "ALBAL", hasta: "EZE", intermedios: 3 }]);
+  });
+
+  it("se puede recorrer al revés", () => {
+    /*
+      El AIP lista los puntos en un sentido, pero la aerovía se vuela en los dos: la
+      dirección sólo decide los niveles de crucero pares o impares, que es asunto de un
+      plan IFR y no de esta planilla.
+    */
+    const r = expandirAerovias(["EZE", "UM424", "ALBAL"], buscar);
+    expect(r.puntos).toEqual(["EZE", "ETALU", "BOBAP", "KOTNI", "ALBAL"]);
+  });
+
+  it("dos aerovías en la misma ruta", () => {
+    const r = expandirAerovias(["ALBAL", "UM424", "EZE", "A305", "DORVO"], buscar);
+    expect(r.puntos).toEqual(["ALBAL", "KOTNI", "BOBAP", "ETALU", "EZE", "DORVO"]);
+    expect(r.expandidas.map((e) => e.aerovia)).toEqual(["UM424", "A305"]);
+  });
+
+  it("una ruta sin aerovías queda igual", () => {
+    const r = expandirAerovias(["SADM", "DORVO", "SAZS"], buscar);
+    expect(r.puntos).toEqual(["SADM", "DORVO", "SAZS"]);
+    expect(r.expandidas).toEqual([]);
+  });
+
+  it("normaliza y descarta vacíos", () => {
+    expect(expandirAerovias([" sadm ", "", "dorvo"], buscar).puntos).toEqual(["SADM", "DORVO"]);
+  });
+
+  it("una aerovía que no publicamos pasa como código y falla más adelante", () => {
+    /*
+      De las 258 que nombra el AIP publicamos 220: las otras no pasaron la validación
+      cruzada. Un `T100` tiene que llegar al resolutor de puntos y decir "no lo
+      reconocemos" —que es cierto y accionable— en vez de "aerovía inválida", que
+      insinuaría que el problema es la sintaxis.
+    */
+    const r = expandirAerovias(["SADM", "T100", "SAZS"], buscar);
+    expect(r.error).toBeNull();
+    expect(r.puntos).toEqual(["SADM", "T100", "SAZS"]);
+  });
+
+  it("sin punto de entrada o de salida no expande, y explica cómo se escribe", () => {
+    expect(expandirAerovias(["UM424", "EZE"], buscar).error).toContain("necesita un punto antes");
+    expect(expandirAerovias(["ALBAL", "UM424"], buscar).error).toContain("necesita un punto antes");
+  });
+
+  it("**si el punto no está en la aerovía, no adivina**", () => {
+    /*
+      La alternativa sería tomar la aerovía entera, o el pedazo más parecido. Las dos
+      meten en la planilla un tramo que el piloto no escribió, y con pinta de válido. Un
+      error visible es mejor que una ruta que no es la que se pidió.
+    */
+    const r = expandirAerovias(["SADM", "UM424", "EZE"], buscar);
+    expect(r.puntos).toEqual([]);
+    expect(r.error).toContain("SADM no está en UM424");
+    // Y dice por dónde sí pasa, que es lo que hace falta para corregirlo.
+    expect(r.error).toContain("ALBAL");
+  });
+
+  it("el que falla puede ser el de salida", () => {
+    expect(expandirAerovias(["ALBAL", "UM424", "SAZS"], buscar).error).toContain("SAZS no está en UM424");
+  });
+
+  it("entrada y salida contiguas no agregan nada", () => {
+    const r = expandirAerovias(["ALBAL", "UM424", "KOTNI"], buscar);
+    expect(r.puntos).toEqual(["ALBAL", "KOTNI"]);
+    expect(r.expandidas[0].intermedios).toBe(0);
+  });
+
+  it("corta cuando la ruta expandida no entra en una planilla", () => {
+    const larga: Record<string, string[]> = {
+      X1: Array.from({ length: 40 }, (_, i) => `P${String(i).padStart(2, "0")}`),
+    };
+    const r = expandirAerovias(["P00", "X1", "P39"], (a) => larga[a] ?? null);
+    expect(r.puntos).toEqual([]);
+    expect(r.error).toContain(String(MAX_PUNTOS_EXPANDIDOS));
   });
 });

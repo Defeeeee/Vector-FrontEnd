@@ -189,3 +189,119 @@ export function dispersionDeVariacion(puntos: PuntoRuta[]): number | null {
 
 /** A partir de acá una variación única deja de ser inocente. Tres grados de rumbo. */
 export const DISPERSION_TOLERABLE = 3;
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Tope de puntos **después** de expandir aerovías.
+ *
+ * `MAX_PUNTOS` sigue siendo doce para lo que se tipea, y ese número no cambió de sentido:
+ * doce tokens es lo que se escribe cómodo y lo que entra en un link. Pero `ALBAL UM424
+ * EZE` son tres tokens que valen catorce puntos, y esa planilla es legítima — es
+ * exactamente la travesía larga que la aerovía viene a hacer fácil de escribir.
+ *
+ * Treinta es donde una planilla deja de servir para lo que sirve: leerla de reojo en
+ * vuelo. Más que eso no es una ruta, es un listado.
+ */
+export const MAX_PUNTOS_EXPANDIDOS = 30;
+
+/** Un token de aerovía: `A305`, `W67`, `UM424`. */
+export function esAerovia(token: string): boolean {
+  return /^U?[A-Z]\d{1,3}[A-Z]?$/.test((token ?? "").trim().toUpperCase());
+}
+
+export interface ExpansionRuta {
+  /** La ruta con las aerovías reemplazadas por sus puntos. */
+  puntos: string[];
+  /** Qué se expandió, para poder contarlo en pantalla. */
+  expandidas: { aerovia: string; desde: string; hasta: string; intermedios: number }[];
+  /** Por qué no se pudo, si no se pudo. La pantalla lo muestra tal cual. */
+  error: string | null;
+}
+
+/**
+ * Reemplaza `PUNTO AEROVIA PUNTO` por la secuencia de puntos de esa aerovía.
+ *
+ * Es la convención del plan de vuelo OACI: una aerovía se escribe entre el punto por
+ * donde se entra y el punto por donde se sale, y lo del medio se sobreentiende. `ALBAL
+ * UM424 EZE` son catorce puntos escritos en tres palabras.
+ *
+ * ## Es pura: la tabla se pasa
+ *
+ * `buscar` devuelve los puntos de una aerovía en orden, o `null`. Vive así porque el
+ * catálogo se lee del disco y esto lo usa también el cliente — y porque una función que
+ * recibe su tabla se testea con tablas de tres puntos en vez de con las 220 reales.
+ *
+ * ## Se puede recorrer al revés
+ *
+ * El AIP lista los puntos en un sentido, pero una aerovía se vuela en los dos: la
+ * dirección sólo decide los niveles de crucero pares o impares, que es asunto de un plan
+ * IFR y no de esta planilla. Si el punto de salida aparece antes que el de entrada, la
+ * secuencia se da vuelta.
+ *
+ * ## Cuando no se puede, no se adivina
+ *
+ * Si el punto de entrada o el de salida no están en la aerovía, **no expande y lo dice**.
+ * La alternativa sería tomar la aerovía entera o el pedazo más parecido, y las dos
+ * versiones meten en la planilla un tramo que el piloto no escribió. Un error visible es
+ * mejor que una ruta que no es la que se pidió.
+ */
+export function expandirAerovias(
+  tokens: string[],
+  buscar: (aerovia: string) => string[] | null
+): ExpansionRuta {
+  const limpios = (tokens ?? []).map((t) => (t ?? "").trim().toUpperCase()).filter(Boolean);
+  const puntos: string[] = [];
+  const expandidas: ExpansionRuta["expandidas"] = [];
+
+  for (let i = 0; i < limpios.length; i++) {
+    const token = limpios[i];
+
+    // Sólo es aerovía si además existe en el catálogo: `W67` lo es, `SADM` no, y un
+    // `T100` que no publicamos tampoco — se deja pasar y falla como código desconocido,
+    // que es más claro que "aerovía inválida".
+    const secuencia = esAerovia(token) ? buscar(token) : null;
+    if (!secuencia) {
+      puntos.push(token);
+      continue;
+    }
+
+    const desde = puntos[puntos.length - 1];
+    const hasta = limpios[i + 1];
+    if (!desde || !hasta) {
+      return {
+        puntos: [],
+        expandidas: [],
+        error: `${token} necesita un punto antes y otro después: se escribe "ALBAL ${token} EZE".`,
+      };
+    }
+
+    const a = secuencia.indexOf(desde);
+    const b = secuencia.indexOf(hasta);
+    if (a < 0 || b < 0) {
+      const cual = a < 0 ? desde : hasta;
+      return {
+        puntos: [],
+        expandidas: [],
+        error: `${cual} no está en ${token}. La aerovía pasa por ${secuencia.join(", ")}.`,
+      };
+    }
+
+    // Del punto siguiente al de entrada hasta el de salida inclusive; `hasta` ya queda
+    // puesto acá, así que el bucle lo saltea abajo.
+    const tramo = a <= b ? secuencia.slice(a + 1, b + 1) : secuencia.slice(b, a).reverse();
+    puntos.push(...tramo);
+    expandidas.push({ aerovia: token, desde, hasta, intermedios: Math.max(tramo.length - 1, 0) });
+    i++; // el punto de salida ya entró
+  }
+
+  if (puntos.length > MAX_PUNTOS_EXPANDIDOS) {
+    return {
+      puntos: [],
+      expandidas: [],
+      error: `Esta ruta son ${puntos.length} puntos y el tope es ${MAX_PUNTOS_EXPANDIDOS}. Partila en dos tramos.`,
+    };
+  }
+
+  return { puntos, expandidas, error: null };
+}

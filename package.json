@@ -1,6 +1,6 @@
 {
   "name": "FlightLog-FrontEnd",
-  "version": "2.11.0",
+  "version": "2.12.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -14,6 +14,7 @@
     "build:navaids": "node scripts/build-navaids.mjs",
     "build:aip": "node scripts/build-aip.mjs",
     "build:fixes": "node scripts/build-fixes.mjs",
+    "build:aerovias": "node scripts/build-aerovias.mjs",
     "build:changelog": "node scripts/build-changelog.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

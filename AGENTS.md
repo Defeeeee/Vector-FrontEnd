@@ -4227,3 +4227,65 @@ PDF. Ciclo AIRAC de 28 días: un punto de aerovía sin fecha obliga al piloto a 
 sigue vigente.
 
 **620 tests.**
+
+## Rutas por aerovía — 2026-08-19
+
+Pedido: *"y permite plantear rutas en el planificador con aerovías para evitar poner todos
+los wpt?"*.
+
+Sí, y hacía falta un dato que no estaba. `fixes.tsv` sabía **a qué** aerovías pertenece
+cada punto —eso sale de ENR 4.4— pero no **en qué orden**, y una aerovía es exactamente
+una secuencia. El orden está en **ENR 3.1** (convencionales) y **ENR 3.2** (RNAV 5). Las
+dos hacen falta: con ENR 3.1 sola faltaban 147 de las 258 que ENR 4.4 nombra, y 102 de
+esas empiezan con `U` porque viven en el espacio superior.
+
+### La validación cruzada, que es lo único que hace publicable a esto
+
+Un parser de PDF que se saltea una fila **no falla**: devuelve una aerovía con un punto
+menos. Expandida, eso es una travesía más corta que la real y con pinta de válida — la
+misma clase de error silencioso que las frecuencias escritas a mano.
+
+Por eso cada secuencia se contrasta contra **el otro documento**: ENR 4.4 declara, punto
+por punto, a qué aerovías pertenece. Si un fix dice estar en `W18` y la secuencia de `W18`
+no lo tiene, la secuencia está incompleta y **la aerovía se descarta entera**. Son dos
+tablas del AIP escritas por separado; que coincidan no es comprobar el código contra sí
+mismo.
+
+**De 258 se publican 220.** Se descartan 29 por tener un punto que no resuelve
+—radioayudas extranjeras como `FOZ VOR/DME FOZ`, o militares que no están en
+`navaids.tsv`— y 8 por secuencia incompleta. **Lo que no pasa la validación no resuelve, y
+eso se ve.** Un `T100` que no existe se nota; uno que existe con cuatro puntos de menos, no.
+
+### Decisiones de la expansión
+
+- **Se puede recorrer al revés.** El AIP lista en un sentido, pero la dirección sólo decide
+  los niveles de crucero pares o impares, que es asunto de un plan IFR y no de esta
+  planilla.
+- **Si el punto de entrada o salida no está en la aerovía, no adivina.** Tomar la aerovía
+  entera o el pedazo más parecido mete en la planilla un tramo que el piloto no escribió.
+  Devuelve el error con la lista de puntos por los que sí pasa, y **deja la ruta anterior**
+  en vez de dejar la pantalla en blanco.
+- **`MAX_PUNTOS` sigue en 12 para lo que se tipea y hay un tope aparte de 30 para lo
+  expandido.** `ALBAL UM424 EZE` son tres tokens que valen trece puntos, y esa planilla es
+  legítima: es la travesía larga que la aerovía viene a hacer fácil de escribir.
+- **La expansión vive en `/api/ruta`, no en `/api/puntos`.** Una aerovía no se resuelve
+  sola: necesita el punto de antes y el de después. Y por eso corre cuando la ruta se fija,
+  no en cada tecla.
+- **La lógica es pura y recibe el catálogo.** Se testea con tres aerovías inventadas en vez
+  de con las 220 reales, y puede correr en el cliente. Cinco mutantes, los cinco cazados.
+
+### Lo que la pantalla aclara, y por qué
+
+De la aerovía **se usa la geometría y nada más**. Los límites verticales, la clase de
+espacio aéreo y la dirección de los niveles de crucero están en ENR 3 y no se leen acá. Un
+piloto que ve "A305" en una planilla podría suponer que alguien verificó que puede volarla
+a la altura que cargó, así que la pantalla dice que no, con enlace al documento.
+
+### Un detalle de extracción que costó una corrida
+
+`unpdf` devuelve el texto **más limpio** que pypdf, y el prototipo se había hecho con
+pypdf: la recomposición que arreglaba la primera página de pypdf —unir el salto de línea
+que precede a un dígito— con unpdf pegaba cada coordenada a su nombre y el parser
+encontraba cero secuencias. Herramienta distinta, preprocesado distinto.
+
+**643 tests.**

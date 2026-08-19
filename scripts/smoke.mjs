@@ -67,6 +67,12 @@ const ROUTES = [
   },
   { path: "/api/puntos?q=S34.68%2FW58.64", expect: (s) => s === 200, json: (b) => b.punto?.lat === -34.68 },
   // Un punto de aerovía del AIP. Lee un TSV más, así que si el build no lo copió, acá se ve.
+  // Una aerovía expandida: lee aerovias.tsv y cruza con fixes/navaids.
+  {
+    path: "/api/ruta?q=BCA%20W67%20OSA",
+    expect: (s) => s === 200,
+    json: (b) => b.puntos?.join(",") === "BCA,AKNOS,OGLER,OSA" && b.expandidas?.[0]?.intermedios === 2,
+  },
   {
     path: "/api/puntos?q=DORVO",
     expect: (s) => s === 200,

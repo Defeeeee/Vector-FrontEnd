@@ -73,6 +73,27 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.12.0",
+    fecha: "2026-08-19",
+    titulo: "Rutas por aerovía, sin escribir todos los puntos",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Escribí la aerovía y listo",
+        texto:
+          "En el campo de pegar la ruta podés poner ALBAL UM424 EZE y te carga los once puntos del medio, como en un plan de vuelo. Si el punto por el que entrás no está en esa aerovía te lo dice y te muestra por dónde pasa, en vez de armarte una ruta que no pediste.",
+        href: "/dashboard/planificador",
+        cta: "Probar una aerovía",
+      },
+      {
+        icono: "lupa",
+        titulo: "220 aerovías, y las que no verificamos no aparecen",
+        texto:
+          "Salen del ENR 3 del AIP y cada secuencia se contrasta contra el ENR 4.4: si a una le falta un punto, no la publicamos. Una aerovía incompleta daría una travesía más corta que la real y con pinta de válida. De la aerovía se usa sólo por dónde pasa: los niveles y la clase de espacio aéreo hay que consultarlos aparte.",
+      },
+    ],
+  },
+  {
     version: "2.11.0",
     fecha: "2026-08-19",
     titulo: "Los puntos de aerovía, en el planificador",

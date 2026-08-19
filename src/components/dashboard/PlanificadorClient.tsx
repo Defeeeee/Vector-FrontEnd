@@ -22,6 +22,7 @@ import {
   DISPERSION_TOLERABLE,
   MAX_PUNTOS,
   dispersionDeVariacion,
+  esAerovia,
   parsearRuta,
   puntosConBriefing,
   rutaAUrl,
@@ -88,6 +89,13 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     Array(Math.max(rutaInicial.length, 2)).fill(null)
   );
   const [aeronaveId, setAeronaveId] = useState(aeronaveInicial);
+
+  /** Qué aerovías se expandieron y qué falló, para poder decirlo en pantalla. */
+  const [aerovias, setAerovias] = useState<{
+    expandidas: { aerovia: string; desde: string; hasta: string; intermedios: number }[];
+    error: string | null;
+    vigencia: { documento: string; edicion: string; vigenteDesde: string; url: string } | null;
+  }>({ expandidas: [], error: null, vigencia: null });
 
   const [tas, setTas] = useState("");
   const [consumo, setConsumo] = useState("");
@@ -344,17 +352,52 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
    * —el SADM de salida, casi siempre— nunca vuelve a avisar y el plan se queda
    * diciendo "no reconocemos SADM" para siempre. Se remapea por código.
    */
-  const pegarRuta = (texto: string) => {
+  const aplicarRuta = useCallback(
+    (nuevos: string[]) => {
+      const porCodigo = new Map<string, PuntoResuelto>();
+      resueltos.forEach((ref, i) => {
+        if (ref) porCodigo.set(codigos[i].trim().toUpperCase(), ref);
+      });
+      setCodigos(nuevos);
+      setResueltos(nuevos.map((c) => porCodigo.get(c) ?? null));
+    },
+    [codigos, resueltos]
+  );
+
+  /**
+   * Pega una ruta entera, expandiendo las aerovías que traiga.
+   *
+   * **La expansión va acá y no en el campo de cada punto**, porque una aerovía no se
+   * resuelve sola: `UM424` necesita saber el punto de antes y el de después. Es también la
+   * razón por la que esto no corre en cada tecla — es un reemplazo de la ruta completa, no
+   * un valor.
+   */
+  const pegarRuta = async (texto: string) => {
     const nuevos = parsearRuta(texto);
     if (nuevos.length < 2) return;
 
-    const porCodigo = new Map<string, PuntoResuelto>();
-    resueltos.forEach((ref, i) => {
-      if (ref) porCodigo.set(codigos[i].trim().toUpperCase(), ref);
-    });
+    // Sin aerovías no hace falta salir a la red: la ruta ya es la lista de puntos.
+    if (!nuevos.some(esAerovia)) {
+      setAerovias({ expandidas: [], error: null, vigencia: null });
+      aplicarRuta(nuevos);
+      return;
+    }
 
-    setCodigos(nuevos);
-    setResueltos(nuevos.map((c) => porCodigo.get(c) ?? null));
+    try {
+      const res = await fetch(`/api/ruta?q=${encodeURIComponent(nuevos.join(" "))}`);
+      if (!res.ok) return;
+      const datos = await res.json();
+      setAerovias({
+        expandidas: datos.expandidas ?? [],
+        error: datos.error ?? null,
+        vigencia: datos.vigencia ?? null,
+      });
+      // Con error la ruta vieja se queda: es preferible a dejar la pantalla en blanco
+      // mientras se corrige el punto de entrada.
+      if (!datos.error && (datos.puntos ?? []).length >= 2) aplicarRuta(datos.puntos);
+    } catch {
+      // Sin señal se deja la ruta como está. Es la misma regla que el resto de la pantalla.
+    }
   };
 
   const puntosMapa = cargados
@@ -456,7 +499,65 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                 }}
                 className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
               />
+              <span className="block mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
+                Podés usar aerovías: <span className="data">ALBAL UM424 EZE</span> escribe los catorce puntos
+                del medio.
+              </span>
             </label>
+
+            {/*
+              Qué pasó con las aerovías.
+
+              **El error se muestra y la ruta vieja se queda.** Una aerovía expandida por la
+              mitad daría una travesía más corta que la real y con pinta de válida, así que
+              cuando el punto de entrada o de salida no está, no se expande nada y se dice
+              cuál falta y por dónde pasa la aerovía.
+            */}
+            {aerovias.error && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3.5 py-3">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
+                <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300">{aerovias.error}</p>
+              </div>
+            )}
+
+            {aerovias.expandidas.length > 0 && !aerovias.error && (
+              <div className="rounded-xl border border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-white/[0.03] px-3.5 py-3 space-y-1.5">
+                {aerovias.expandidas.map((e) => (
+                  <p key={e.aerovia} className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                    <span className="data font-bold text-zinc-900 dark:text-white">{e.aerovia}</span> agregó{" "}
+                    {e.intermedios === 0
+                      ? "ningún punto: " + e.desde + " y " + e.hasta + " son contiguos"
+                      : `${e.intermedios} ${e.intermedios === 1 ? "punto" : "puntos"} entre ${e.desde} y ${e.hasta}`}
+                    .
+                  </p>
+                ))}
+                {/*
+                  **Lo que la planilla NO sabe de la aerovía.** Un piloto que ve "A305" en una
+                  planilla podría suponer que alguien verificó que puede volarla a la altura
+                  que cargó. De la aerovía se usa la geometría y nada más: los límites
+                  verticales, la clase de espacio aéreo y la dirección de los niveles de
+                  crucero están en ENR 3 y no se leen acá.
+                */}
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1">
+                  Se usa sólo por dónde pasa la aerovía. Los niveles, la clase de espacio aéreo y la dirección
+                  de crucero están en{" "}
+                  {aerovias.vigencia ? (
+                    <a
+                      href={aerovias.vigencia.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-aviation-blue hover:underline"
+                    >
+                      {aerovias.vigencia.documento}
+                    </a>
+                  ) : (
+                    "ENR 3"
+                  )}{" "}
+                  del AIP{aerovias.vigencia ? `, edición ${aerovias.vigencia.edicion}` : ""} y hay que
+                  consultarlos aparte.
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="space-y-4">
@@ -642,7 +743,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
                 {faltantes.length > 0
                   ? "El plan no se calcula salteando un punto: uniría los vecinos con una recta que no vas a volar y el total saldría más corto de lo que es."
-                  : "Indicador ICAO (SADM), designador de ANAC (MOR), un punto de aerovía del AIP (DORVO), una coordenada propia (S34.68/W58.64) o un punto por radial y distancia (BAR/045/25)."}
+                  : "Indicador ICAO (SADM), designador de ANAC (MOR), un punto de aerovía del AIP (DORVO), una coordenada propia (S34.68/W58.64) o un punto por radial y distancia (BAR/045/25). En el campo de abajo también entran aerovías enteras."}
               </p>
             </div>
           ) : (
