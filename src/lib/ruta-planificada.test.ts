@@ -6,7 +6,10 @@ import {
   aCampoRoute,
   dispersionDeVariacion,
   MAX_PUNTOS_EXPANDIDOS,
+  elementosDeRuta,
   esAerovia,
+  moverElemento,
+  posicionDespuesDe,
   salidasDesde,
   tramoDeAerovia,
   parsearRuta,
@@ -331,5 +334,113 @@ describe("salidasDesde", () => {
   it("un punto que no está en la aerovía no tiene salidas", () => {
     expect(salidasDesde(W67, "SADM")).toEqual([]);
     expect(salidasDesde(W67, "")).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+
+describe("elementosDeRuta", () => {
+  it("una ruta de puntos es un elemento por punto", () => {
+    expect(elementosDeRuta(["SADM", "BCA", "SAZS"])).toEqual([
+      { tipo: "punto", indices: [0] },
+      { tipo: "punto", indices: [1] },
+      { tipo: "punto", indices: [2] },
+    ]);
+  });
+
+  it("**la aerovía se lleva su punto de salida**", () => {
+    /*
+      `W67` y `OSA` no son dos cosas independientes: la aerovía *lleva* a OSA. Meter un
+      punto entre las dos, o mover una sin la otra, da una ruta que no quiere decir nada.
+      Y es además lo que la pantalla ya muestra: la banda se ve como una sola cosa.
+    */
+    expect(elementosDeRuta(["SADM", "BCA", "W67", "OSA", "SAZS"])).toEqual([
+      { tipo: "punto", indices: [0] },
+      { tipo: "punto", indices: [1] },
+      { tipo: "aerovia", indices: [2, 3] },
+      { tipo: "punto", indices: [4] },
+    ]);
+  });
+
+  it("una banda recién insertada, sin designador todavía, también agrupa", () => {
+    // El hueco se marca aparte porque hasta que se elige la aerovía el token está vacío y
+    // `esAerovia("")` es falso.
+    expect(elementosDeRuta(["SADM", "", "", "SAZS"], new Set([1]))).toEqual([
+      { tipo: "punto", indices: [0] },
+      { tipo: "aerovia", indices: [1, 2] },
+      { tipo: "punto", indices: [3] },
+    ]);
+  });
+
+  it("una aerovía al final sin salida va sola y no rompe", () => {
+    expect(elementosDeRuta(["SADM", "W67"])).toEqual([
+      { tipo: "punto", indices: [0] },
+      { tipo: "aerovia", indices: [1] },
+    ]);
+  });
+});
+
+describe("moverElemento", () => {
+  const ruta = ["SADM", "BCA", "SAZS"];
+
+  it("intercambia dos puntos", () => {
+    expect(moverElemento(ruta, new Set(), 1, -1)).toEqual([1, 0, 2]);
+    expect(moverElemento(ruta, new Set(), 0, 1)).toEqual([1, 0, 2]);
+  });
+
+  it("**devuelve una permutación de índices, no una ruta**", () => {
+    /*
+      Quien llama la aplica igual a `codigos` y a `resueltos`. Cuando esas dos listas se
+      movían por separado, un punto terminaba con la resolución de otro — que en esta
+      pantalla significa mostrar el nombre de un aeródromo arriba del código de otro.
+    */
+    const orden = moverElemento(ruta, new Set(), 2, -1)!;
+    expect(orden.map((i) => ruta[i])).toEqual(["SADM", "SAZS", "BCA"]);
+  });
+
+  it("la aerovía se mueve entera, con su salida", () => {
+    const conAwy = ["SADM", "BCA", "W67", "OSA", "SAZS"];
+    const orden = moverElemento(conAwy, new Set(), 2, 1)!;
+    expect(orden.map((i) => conAwy[i])).toEqual(["SADM", "BCA", "SAZS", "W67", "OSA"]);
+  });
+
+  it("y un punto la saltea entera en vez de caer en el medio", () => {
+    const conAwy = ["SADM", "BCA", "W67", "OSA", "SAZS"];
+    const orden = moverElemento(conAwy, new Set(), 3, -1)!;
+    // SAZS pasa por encima del bloque W67+OSA, no entre los dos.
+    expect(orden.map((i) => conAwy[i])).toEqual(["SADM", "BCA", "SAZS", "W67", "OSA"]);
+  });
+
+  it("contra el borde no hace nada", () => {
+    expect(moverElemento(ruta, new Set(), 0, -1)).toBeNull();
+    expect(moverElemento(ruta, new Set(), 2, 1)).toBeNull();
+    expect(moverElemento(ruta, new Set(), 9, -1)).toBeNull();
+  });
+
+  it("**no deja una aerovía primera**", () => {
+    /*
+      Una aerovía necesita un punto de entrada antes que ella; sin él no hay tramo posible
+      y la banda quedaría pidiendo algo que no puede existir.
+    */
+    const conAwy = ["SADM", "W67", "OSA", "SAZS"];
+    expect(moverElemento(conAwy, new Set(), 1, -1)).toBeNull();
+    // Y tampoco moviendo el punto de salida hacia abajo.
+    expect(moverElemento(conAwy, new Set(), 0, 1)).toBeNull();
+  });
+});
+
+describe("posicionDespuesDe", () => {
+  it("un punto se inserta justo detrás", () => {
+    expect(posicionDespuesDe(["SADM", "BCA", "SAZS"], new Set(), 0)).toBe(1);
+    expect(posicionDespuesDe(["SADM", "BCA", "SAZS"], new Set(), 1)).toBe(2);
+  });
+
+  it("detrás de una aerovía se inserta después de su salida, no en el medio", () => {
+    expect(posicionDespuesDe(["SADM", "BCA", "W67", "OSA", "SAZS"], new Set(), 2)).toBe(4);
+  });
+
+  it("al final de todo", () => {
+    expect(posicionDespuesDe(["SADM", "SAZS"], new Set(), 1)).toBe(2);
+    expect(posicionDespuesDe(["SADM", "SAZS"], new Set(), 9)).toBe(2);
   });
 });

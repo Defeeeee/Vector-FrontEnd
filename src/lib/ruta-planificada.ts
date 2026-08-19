@@ -288,3 +288,95 @@ export function salidasDesde(secuencia: string[], desde: string): string[] {
   if (!secuencia.includes(d)) return [];
   return secuencia.filter((p) => p !== d);
 }
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Un elemento de la ruta tal como se manipula: **un punto, o una aerovía con su salida**.
+ *
+ * La ruta se guarda como una lista plana de tokens —`SADM · BCA · W67 · OSA · SAZS`— pero
+ * no se puede reordenar así. `W67` y `OSA` no son dos cosas independientes: la aerovía
+ * *lleva* a OSA, y meter un punto entre las dos, o mover una sin la otra, produce una ruta
+ * que no quiere decir nada.
+ *
+ * Así que reordenar opera sobre elementos, no sobre tokens. Es además lo que la pantalla ya
+ * muestra: la banda de aerovía se ve como **una** cosa.
+ */
+export interface ElementoRuta {
+  tipo: "punto" | "aerovia";
+  /** Los índices de `codigos` que ocupa: uno si es punto, dos si es aerovía. */
+  indices: number[];
+}
+
+/**
+ * La ruta agrupada en elementos.
+ *
+ * `huecosAerovia` son las posiciones que ya se marcaron como aerovía aunque todavía no
+ * tengan designador — una banda recién insertada, antes de elegir cuál.
+ */
+export function elementosDeRuta(codigos: string[], huecosAerovia: Set<number> = new Set()): ElementoRuta[] {
+  const elementos: ElementoRuta[] = [];
+  for (let i = 0; i < codigos.length; i++) {
+    if (esAerovia(codigos[i]) || huecosAerovia.has(i)) {
+      // La aerovía se lleva su punto de salida. Si no hay —ruta a medio armar— va sola, y
+      // la pantalla la muestra incompleta en vez de romperse.
+      const indices = i + 1 < codigos.length ? [i, i + 1] : [i];
+      elementos.push({ tipo: "aerovia", indices });
+      i += indices.length - 1;
+    } else {
+      elementos.push({ tipo: "punto", indices: [i] });
+    }
+  }
+  return elementos;
+}
+
+/**
+ * El orden de índices que resulta de mover un elemento un lugar.
+ *
+ * Devuelve una **permutación de los índices originales**, no una ruta nueva: quien llama
+ * la aplica igual a `codigos` y a `resueltos`, y así las dos listas no se pueden
+ * desincronizar. Cuando se movían por separado, un punto quedaba con la resolución de otro
+ * — que en esta pantalla significa mostrar el nombre de un aeródromo arriba del código de
+ * otro.
+ *
+ * `null` cuando el movimiento no se puede hacer:
+ *
+ * - Contra el borde de la lista.
+ * - Si dejaría una **aerovía primera**. Una aerovía necesita un punto de entrada antes; sin
+ *   él no hay tramo posible y la banda quedaría pidiendo algo que no existe.
+ */
+export function moverElemento(
+  codigos: string[],
+  huecosAerovia: Set<number>,
+  elemento: number,
+  direccion: -1 | 1
+): number[] | null {
+  const elementos = elementosDeRuta(codigos, huecosAerovia);
+  const destino = elemento + direccion;
+  if (elemento < 0 || elemento >= elementos.length || destino < 0 || destino >= elementos.length) return null;
+
+  const orden = [...elementos];
+  [orden[elemento], orden[destino]] = [orden[destino], orden[elemento]];
+
+  if (orden[0]?.tipo === "aerovia") return null;
+
+  return orden.flatMap((e) => e.indices);
+}
+
+/**
+ * Dónde cae un token nuevo si se inserta **después** del elemento `elemento`.
+ *
+ * Existe para que "agregar un punto acá" sea una posición y no un `push` al final. La
+ * versión anterior de la pantalla sólo sabía agregar al final, así que para meter un punto
+ * en el medio había que borrar todo lo que venía después y volver a escribirlo.
+ */
+export function posicionDespuesDe(
+  codigos: string[],
+  huecosAerovia: Set<number>,
+  elemento: number
+): number {
+  const elementos = elementosDeRuta(codigos, huecosAerovia);
+  if (elemento < 0) return 0;
+  const e = elementos[Math.min(elemento, elementos.length - 1)];
+  return e ? e.indices[e.indices.length - 1] + 1 : codigos.length;
+}

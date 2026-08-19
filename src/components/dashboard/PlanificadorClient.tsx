@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Compass, Info, Plus, Printer, Route, Trash2, Wind } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Compass, Info, Plus, Printer, Route, Trash2, Wind } from "lucide-react";
 import type { Aircraft } from "@/types";
 import type { PuntoResuelto } from "@/app/api/puntos/route";
 import PuntoResolver from "./PuntoResolver";
@@ -23,8 +23,11 @@ import {
   DISPERSION_TOLERABLE,
   MAX_PUNTOS,
   dispersionDeVariacion,
+  elementosDeRuta,
   esAerovia,
+  moverElemento,
   parsearRuta,
+  posicionDespuesDe,
   puntosConBriefing,
   rutaAUrl,
   type PuntoRuta,
@@ -267,6 +270,10 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
             setResueltos((prev) => {
               const copia = [...prev];
               copia[i] = datos.punto;
+              // El punto de salida no tiene campo propio —lo elige el desplegable de la
+              // banda— así que su resolución llega con la de la aerovía. Sin esto, el
+              // último punto del tramo queda sin posición y el plan entero no se calcula.
+              if (datos.salida && i + 1 < copia.length) copia[i + 1] = datos.salida;
               return copia;
             });
             setErroresAerovia((prev) => {
@@ -346,6 +353,11 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     [codigos, resueltos]
   );
 
+  const elementos = useMemo(
+    () => elementosDeRuta(codigos, huecosAerovia),
+    [codigos, huecosAerovia]
+  );
+
   const cargados = puntos.filter((p) => p.codigo.trim());
   const faltantes = cargados.filter((p) => p.lat === undefined || p.lon === undefined);
   const listos = faltantes.length === 0 && cargados.length >= 2;
@@ -404,10 +416,50 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     });
   }, []);
 
-  const agregarPunto = () => {
+  /**
+   * Mete un punto vacío en la posición `en`.
+   *
+   * Antes esto era un `push` y el botón decía "Agregar punto intermedio" cuando en realidad
+   * agregaba **al final**: para meter un punto en el medio había que borrar todo lo que
+   * venía después y volver a escribirlo. Ahora la acción vive entre cada par de puntos y la
+   * posición es la que se clickeó.
+   */
+  const insertarPunto = (en: number) => {
     if (codigos.length >= MAX_PUNTOS) return;
-    setCodigos((prev) => [...prev, ""]);
-    setResueltos((prev) => [...prev, null]);
+    setCodigos((prev) => [...prev.slice(0, en), "", ...prev.slice(en)]);
+    setResueltos((prev) => [...prev.slice(0, en), null, ...prev.slice(en)]);
+    setHuecosAerovia((prev) => {
+      const nuevo = new Set<number>();
+      for (const h of prev) nuevo.add(h >= en ? h + 1 : h);
+      return nuevo;
+    });
+  };
+
+  /**
+   * Sube o baja un elemento de la ruta.
+   *
+   * **Se mueve el orden, no los textos.** `moverElemento` devuelve una permutación de
+   * índices que se aplica igual a `codigos`, a `resueltos` y a los huecos: si se movieran
+   * por separado, un punto terminaría con la resolución de otro, que en esta pantalla
+   * significa mostrar el nombre de un aeródromo arriba del código de otro.
+   *
+   * Las resoluciones de las aerovías se descartan a propósito: al cambiar de vecinos, el
+   * tramo que tenían calculado ya no es el que corresponde, y el efecto lo vuelve a pedir.
+   */
+  const mover = (elemento: number, direccion: -1 | 1) => {
+    const orden = moverElemento(codigos, huecosAerovia, elemento, direccion);
+    if (!orden) return;
+
+    const eraAerovia = new Set(
+      elementosDeRuta(codigos, huecosAerovia)
+        .filter((e) => e.tipo === "aerovia")
+        .map((e) => e.indices[0])
+    );
+
+    setCodigos(orden.map((i) => codigos[i]));
+    setResueltos(orden.map((i) => (eraAerovia.has(i) ? null : resueltos[i])));
+    setHuecosAerovia(new Set(orden.map((viejo, nuevo) => (eraAerovia.has(viejo) ? nuevo : -1)).filter((i) => i >= 0)));
+    setErroresAerovia({});
   };
 
   const quitarPunto = (i: number) => {
@@ -545,34 +597,101 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
           <section className="space-y-4">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Ruta</h3>
 
-            <div className="space-y-3">
-              {codigos.map((codigo, i) => {
+            {/*
+              La ruta se dibuja **por elementos**, no por token: una aerovía y su punto de
+              salida son una sola fila. Es lo que permite reordenar sin que la banda se
+              separe de su destino y sin que un punto caiga en el medio de las dos.
+            */}
+            <div className="space-y-2">
+              {elementos.map((elemento, e) => {
+                const i = elemento.indices[0];
+                const codigo = codigos[i];
+                const puedeSubir = moverElemento(codigos, huecosAerovia, e, -1) !== null;
+                const puedeBajar = moverElemento(codigos, huecosAerovia, e, 1) !== null;
+
+                const flechas = (
+                  <div className="flex flex-col shrink-0" data-imprimir="no">
+                    <button
+                      type="button"
+                      onClick={() => mover(e, -1)}
+                      disabled={!puedeSubir}
+                      aria-label={`Subir ${codigo || "este punto"}`}
+                      className="p-1 rounded-md text-zinc-300 dark:text-zinc-600 enabled:hover:text-aviation-blue enabled:hover:bg-aviation-blue/10 disabled:opacity-30 transition-colors"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => mover(e, 1)}
+                      disabled={!puedeBajar}
+                      aria-label={`Bajar ${codigo || "este punto"}`}
+                      className="p-1 rounded-md text-zinc-300 dark:text-zinc-600 enabled:hover:text-aviation-blue enabled:hover:bg-aviation-blue/10 disabled:opacity-30 transition-colors"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+
                 /*
-                  Una posición es aerovía si ya lo es —`esAerovia`— o si se acaba de
-                  insertar y todavía no se eligió cuál. Sin lo segundo, el hueco recién
-                  creado se dibujaría como un campo de punto vacío y no habría por dónde
-                  elegir.
+                  Las acciones van **entre** dos elementos, que es donde cae lo que se
+                  agrega. No se ofrecen después del último: ahí ya está el botón de abajo, y
+                  dos formas de hacer lo mismo en el mismo lugar no ayudan a nadie.
                 */
-                const esBanda = esAerovia(codigo) || huecosAerovia.has(i);
-                if (esBanda) {
+                const entreMedio = e < elementos.length - 1 && (
+                  <div className="flex items-center gap-3 pl-1" data-imprimir="no">
+                    {codigos.length < MAX_PUNTOS && (
+                      <button
+                        type="button"
+                        onClick={() => insertarPunto(posicionDespuesDe(codigos, huecosAerovia, e))}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 hover:text-aviation-blue transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Punto acá
+                      </button>
+                    )}
+                    {elemento.tipo === "punto" &&
+                      resueltos[i] &&
+                      elementos[e + 1]?.tipo === "punto" &&
+                      codigos.length + 2 <= MAX_PUNTOS && (
+                        <button
+                          type="button"
+                          onClick={() => agregarAerovia(i)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 hover:text-aviation-blue transition-colors"
+                        >
+                          <Route className="w-3.5 h-3.5" />
+                          Por aerovía desde {codigo}
+                        </button>
+                      )}
+                  </div>
+                );
+
+                if (elemento.tipo === "aerovia") {
                   const ref = resueltos[i];
                   return (
-                    <TramoAerovia
-                      key={i}
-                      desde={codigos[i - 1] ?? ""}
-                      aerovia={codigo}
-                      hasta={codigos[i + 1] ?? ""}
-                      intermedios={(ref?.tramo ?? []).map((p) => p.codigo)}
-                      error={erroresAerovia[i] ?? null}
-                      onCambiar={(a, h) => cambiarAerovia(i, a, h)}
-                      onQuitar={() => quitarPunto(i)}
-                    />
+                    <div key={i} className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        {flechas}
+                        <div className="flex-1 min-w-0">
+                          <TramoAerovia
+                            desde={codigos[i - 1] ?? ""}
+                            aerovia={codigo}
+                            hasta={codigos[i + 1] ?? ""}
+                            intermedios={(ref?.tramo ?? []).map((p) => p.codigo)}
+                            error={erroresAerovia[i] ?? null}
+                            onCambiar={(a, h) => cambiarAerovia(i, a, h)}
+                            onQuitar={() => quitarPunto(i)}
+                          />
+                        </div>
+                      </div>
+                      {entreMedio}
+                    </div>
                   );
                 }
 
                 return (
-                  <div key={i}>
-                    <div className="flex items-end gap-2">
+                  <div key={i} className="space-y-2">
+                    <div className="flex items-end gap-1.5">
+                      <div className="pb-5">{flechas}</div>
                       <div className="flex-1 min-w-0">
                         <PuntoResolver
                           label={etiquetaPunto(codigos, i)}
@@ -582,39 +701,19 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                           autoFocus={i === 0 && !codigo}
                         />
                       </div>
-                      {codigos.length > 2 && (
+                      {elementos.length > 2 && (
                         <button
                           type="button"
                           onClick={() => quitarPunto(i)}
                           aria-label={`Quitar ${codigo || "punto"}`}
                           className="mb-1 p-2.5 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          data-imprimir="no"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
-
-                    {/*
-                      La acción vive **entre** dos puntos, que es donde va una aerovía. Antes
-                      había que saber la sintaxis y escribirla en el campo de abajo; acá se
-                      ofrece justo donde tiene sentido y sólo cuando puede funcionar: hace
-                      falta un punto resuelto de este lado y otro token del otro.
-                    */}
-                    {resueltos[i] &&
-                      resueltos[i]?.clase !== "aerovia" &&
-                      i + 1 < codigos.length &&
-                      !esAerovia(codigos[i + 1]) &&
-                      !huecosAerovia.has(i + 1) &&
-                      codigos.length < MAX_PUNTOS && (
-                        <button
-                          type="button"
-                          onClick={() => agregarAerovia(i)}
-                          className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 hover:text-aviation-blue transition-colors"
-                        >
-                          <Route className="w-3.5 h-3.5" />
-                          Ir por aerovía desde {codigo}
-                        </button>
-                      )}
+                    {entreMedio}
                   </div>
                 );
               })}
@@ -623,11 +722,11 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
             {codigos.length < MAX_PUNTOS && (
               <button
                 type="button"
-                onClick={agregarPunto}
+                onClick={() => insertarPunto(codigos.length)}
                 className="inline-flex items-center gap-2 text-sm font-semibold text-aviation-blue hover:underline"
               >
                 <Plus className="w-4 h-4" />
-                Agregar punto intermedio
+                Agregar punto al final
               </button>
             )}
 

@@ -204,7 +204,13 @@ export async function GET(req: NextRequest) {
         ? { documento: "ENR 3", edicion: fuente.edicion, vigenteDesde: fuente.vigenteDesde, url: fuente.url }
         : undefined,
     };
-    return NextResponse.json({ punto, sugerencias: [], error: null }, cache);
+    /*
+      La salida viaja aparte porque **la banda se come su casillero**: el punto de salida se
+      elige en el desplegable de la aerovía y no tiene campo propio, así que nadie lo
+      resolvía y la planilla se quedaba sin calcular sin decir por qué. Se manda ya resuelto
+      para que el planificador lo guarde en su lugar de la ruta.
+    */
+    return NextResponse.json({ punto, salida, sugerencias: [], error: null }, cache);
   }
 
   const token = clasificarToken(q);

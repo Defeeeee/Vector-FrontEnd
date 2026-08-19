@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.13.0 — La ruta se reordena, y los puntos entran donde quieras
+
+_19 de agosto de 2026_
+
+- **Meté un punto en el medio sin borrar nada** — Entre cada par de puntos ahora hay un "Punto acá": el punto nuevo entra ahí y no al final. Antes, para agregar una escala en el medio había que borrar todo lo que venía después y volver a escribirlo.
+- **Y se puede subir y bajar** — Cada punto tiene flechas para moverlo de lugar. Si la ruta tiene una aerovía, se mueve entera con su punto de salida — no se puede partir al medio ni dejarla sin el punto por donde entrás.
+
 ## v2.12.1 — Rutas por aerovía, eligiendo en vez de escribiendo
 
 _19 de agosto de 2026_

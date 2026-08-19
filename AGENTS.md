@@ -4356,3 +4356,53 @@ sólo por dónde pasa**. Los límites verticales, la clase de espacio aéreo y l
 los niveles de crucero están en ENR 3 y no se leen acá.
 
 **648 tests.**
+
+## Reordenar la ruta, y meter un punto donde va — 2026-08-19
+
+Pedido: *"me gustaría poder reordenar los puntos para no tener que borrar para poner puntos
+en el medio"*.
+
+El botón decía **"Agregar punto intermedio"** y hacía un `push`: agregaba al final. Para
+meter una escala en el medio había que borrar todo lo que venía después y volver a
+escribirlo. Y no había forma de mover nada.
+
+### La ruta se manipula por elementos, no por token
+
+**Es lo que hace que las aerovías no se rompan.** `W67` y `OSA` no son dos cosas
+independientes: la aerovía *lleva* a OSA. Meter un punto entre las dos, o mover una sin la
+otra, da una ruta que no quiere decir nada.
+
+Así que `elementosDeRuta` agrupa la lista plana en elementos —un punto, o una aerovía con
+su salida— y reordenar opera sobre eso. Es además lo que la pantalla ya mostraba: la banda
+se ve como **una** cosa.
+
+Dos reglas más, las dos con test:
+
+- **Un punto saltea el bloque entero** en vez de caer entre la aerovía y su salida.
+- **Una aerovía no puede quedar primera.** Necesita un punto de entrada antes; sin él la
+  banda pediría algo que no puede existir. La flecha queda deshabilitada.
+
+### `moverElemento` devuelve una permutación, no una ruta
+
+Se aplica igual a `codigos`, a `resueltos` y a los huecos. Si esas listas se movieran por
+separado, un punto terminaría con la resolución de otro — que en esta pantalla significa
+**mostrar el nombre de un aeródromo arriba del código de otro**, que se ve perfectamente
+razonable. Verificado en el navegador moviendo un punto y comprobando que los nombres
+resueltos lo siguen.
+
+Las resoluciones de las aerovías sí se descartan al mover, a propósito: cambiaron de
+vecinos, así que el tramo que tenían calculado ya no es el que corresponde.
+
+### Un bug que salió de este cambio
+
+**El punto de salida de una aerovía se quedaba sin resolver.** Al agrupar, su casillero lo
+absorbe la banda —se elige en el desplegable, que es lo correcto: tiene que ser un punto de
+la aerovía, no texto libre— y con eso dejó de tener campo propio. Nadie lo resolvía, quedaba
+sin posición y **la planilla entera no se calculaba, sin decir por qué**. Ahora la
+resolución del punto de salida viaja junto con la de la aerovía.
+
+Es el mismo modo de falla que ya había aparecido dos veces en esta pantalla: algo deja de
+calcularse y la única señal es una tabla vacía. Vale la pena anotarlo: **cuando un punto de
+la ruta pierde su campo, hay que preguntarse quién lo resuelve.**
+
+**661 tests.**

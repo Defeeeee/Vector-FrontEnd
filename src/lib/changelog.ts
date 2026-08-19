@@ -73,6 +73,27 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.13.0",
+    fecha: "2026-08-19",
+    titulo: "La ruta se reordena, y los puntos entran donde quieras",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Meté un punto en el medio sin borrar nada",
+        texto:
+          "Entre cada par de puntos ahora hay un \"Punto acá\": el punto nuevo entra ahí y no al final. Antes, para agregar una escala en el medio había que borrar todo lo que venía después y volver a escribirlo.",
+        href: "/dashboard/planificador",
+        cta: "Armar una ruta",
+      },
+      {
+        icono: "reloj",
+        titulo: "Y se puede subir y bajar",
+        texto:
+          "Cada punto tiene flechas para moverlo de lugar. Si la ruta tiene una aerovía, se mueve entera con su punto de salida — no se puede partir al medio ni dejarla sin el punto por donde entrás.",
+      },
+    ],
+  },
+  {
     version: "2.12.1",
     fecha: "2026-08-19",
     titulo: "Rutas por aerovía, eligiendo en vez de escribiendo",
