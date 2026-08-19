@@ -4570,3 +4570,45 @@ la key**, y anunciar una feature que no manda es exactamente la clase de cosa qu
 proyecto viene corrigiendo. Cuando se encienda, entra con su versión.
 
 **956 tests.**
+
+## El link del briefing, y el horario "inválido" del calendario — 2026-08-19
+
+Tres cosas del mismo reporte.
+
+### El link al briefing
+
+Ya estaba, escondido en una frase del pie. Ahora es un botón, dice **qué hay del otro
+lado** —METAR y TAF actualizados, NOTAM, viento cruzado, planilla y aeródromos cerca— y el
+texto plano lo anuncia igual, no como una URL suelta.
+
+### El horario que el calendario decía inválido
+
+**No pude reproducirlo desde el código de Vector**, y conviene dejar anotado hasta dónde
+llegó la búsqueda:
+
+- `leerForm` nunca manda una hora vacía: convierte `""` en `null` antes de postear.
+- El backend acepta `HH:MM` sin chistar. Lo comprobé instanciando el modelo con los cuatro
+  payloads que el formulario puede producir.
+- No hay ninguna validación de horas escrita en el frontend. Un `grep` de "válid" por todo
+  `src/` no devuelve nada del calendario.
+
+Lo que sí se comprobó: **el backend contesta exactamente `Input should be in a valid time
+format` cuando la hora llega vacía.** Y hay un camino por el que llega vacía sin que el
+código la vacíe: un `<input type="time">` a medio completar —el caso típico es el AM/PM sin
+elegir, en un navegador con reloj de 12 horas— tiene `value === ""` **aunque la hora y los
+minutos se vean puestos**. El navegador además bloquea el envío con su propio mensaje
+genérico.
+
+O sea que el piloto ve un horario escrito y un cartel que le dice que es inválido, sin que
+nada le diga qué falta. Sea ése el caso o no, **el mensaje genérico no puede quedar**:
+`problemaDeHoras` valida antes de postear y dice cuál de los dos campos está incompleto.
+
+**No valida que el aterrizaje sea posterior al despegue**, y es a propósito: un vuelo que
+sale 23:30 y aterriza 00:40 cruza la medianoche y es normal. Son horas tentativas de un
+plan, no el registro de un vuelo.
+
+Queda pedido al usuario el texto exacto del cartel y si aparece en el recuadro rojo de
+Vector o como globo del navegador: son dos causas distintas y la de arriba es una hipótesis,
+no un diagnóstico cerrado.
+
+**960 tests.**

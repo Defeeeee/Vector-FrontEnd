@@ -115,7 +115,7 @@ describe("armarMensaje", () => {
       expect(cuerpo).toContain("19 de agosto a las 18:00");
       expect(cuerpo).toContain("https://vector.example/dashboard/planificador?ruta=SADM-SAAJ");
     }
-    expect(m.texto).toContain("El clima cambia");
+    expect(m.texto).toContain("el clima cambia");
   });
 
   it("el texto plano tiene lo mismo que el HTML, no un resumen", () => {

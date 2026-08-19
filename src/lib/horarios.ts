@@ -71,3 +71,30 @@ export function soloHoraYMinuto(valor: string | null | undefined): string {
   const m = /^(\d{2}:\d{2})/.exec(valor);
   return m ? m[1] : "";
 }
+
+/**
+ * Qué anda mal con las horas de un vuelo programado, o `null` si están bien.
+ *
+ * ## Por qué la validación es nuestra y no del navegador
+ *
+ * Un `<input type="time">` a medio completar —el caso típico es el AM/PM sin elegir en un
+ * navegador con reloj de 12 horas— queda en estado `badInput`: **su `value` es la cadena
+ * vacía aunque la hora y los minutos se vean puestos**, y el navegador bloquea el envío con
+ * su mensaje genérico. El piloto ve un horario escrito y un cartel que le dice que es
+ * inválido, sin decirle qué le falta.
+ *
+ * Con esto el formulario valida antes y el mensaje lo ponemos nosotros, en castellano y
+ * diciendo cuál de los dos campos es.
+ *
+ * ## Qué **no** valida
+ *
+ * No exige que el aterrizaje sea posterior al despegue. Un vuelo que sale 23:30 y aterriza
+ * 00:40 cruza la medianoche y es perfectamente normal; rechazarlo obligaría a cargar el
+ * plan mal a propósito. Y son horas tentativas de un plan, no el registro de un vuelo.
+ */
+export function problemaDeHoras(despegue: string, aterrizaje: string): string | null {
+  const roto = (v: string) => v.trim() !== "" && !esHora(v);
+  if (roto(despegue)) return "El horario de despegue quedó incompleto. Completá hora y minutos.";
+  if (roto(aterrizaje)) return "El horario de aterrizaje quedó incompleto. Completá hora y minutos.";
+  return null;
+}

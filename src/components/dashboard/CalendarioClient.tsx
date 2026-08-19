@@ -9,7 +9,7 @@ import {
   updatePlannedFlight,
 } from "@/actions/planned-flight";
 import BotonPendiente from "@/components/BotonPendiente";
-import { aLocal, aUtc, soloHoraYMinuto } from "@/lib/horarios";
+import { aLocal, aUtc, problemaDeHoras, soloHoraYMinuto } from "@/lib/horarios";
 import {
   horasDelMes,
   mesDe,
@@ -88,6 +88,11 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
 
   async function programar(formData: FormData) {
     setError(null);
+    const mal = problemaDeHoras(
+      String(formData.get("takeoff_time") || ""),
+      String(formData.get("landing_time") || "")
+    );
+    if (mal) return setError(mal);
     const res = await createPlannedFlight(leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
     else setAlta(null);
@@ -96,6 +101,11 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
   async function guardarEdicion(formData: FormData) {
     if (!editando) return;
     setError(null);
+    const mal = problemaDeHoras(
+      String(formData.get("takeoff_time") || ""),
+      String(formData.get("landing_time") || "")
+    );
+    if (mal) return setError(mal);
     const res = await updatePlannedFlight(editando.id, leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
     else setEditando(null);

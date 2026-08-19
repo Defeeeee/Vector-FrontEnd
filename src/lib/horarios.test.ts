@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { UTC_OFFSET_ARG, aLocal, aUtc, correrReloj, esHora, soloHoraYMinuto } from "./horarios";
+import { UTC_OFFSET_ARG, aLocal, aUtc, correrReloj, esHora, soloHoraYMinuto, problemaDeHoras } from "./horarios";
 
 describe("esHora", () => {
   it("acepta horas de reloj y rechaza el resto", () => {
@@ -76,5 +76,39 @@ describe("soloHoraYMinuto", () => {
     expect(soloHoraYMinuto(undefined)).toBe("");
     expect(soloHoraYMinuto("")).toBe("");
     expect(soloHoraYMinuto("basura")).toBe("");
+  });
+});
+
+describe("problemaDeHoras", () => {
+  it("dos horas bien no son problema", () => {
+    expect(problemaDeHoras("14:30", "16:00")).toBeNull();
+  });
+
+  it("vacías tampoco: son opcionales en un plan", () => {
+    expect(problemaDeHoras("", "")).toBeNull();
+    expect(problemaDeHoras("14:30", "")).toBeNull();
+  });
+
+  it("**una hora a medio completar se explica, no se rechaza en genérico**", () => {
+    /*
+      Es el caso real: un `<input type="time">` con el AM/PM sin elegir deja el `value` en
+      cadena vacía **aunque la hora y los minutos se vean puestos**, y el navegador bloquea
+      el envío con su mensaje genérico. El piloto ve un horario escrito y un cartel que le
+      dice que es inválido, sin decirle qué le falta.
+
+      Acá el estado roto llega como un valor que no es `HH:MM`, y el mensaje dice cuál de
+      los dos campos es.
+    */
+    expect(problemaDeHoras("14", "16:00")).toContain("despegue");
+    expect(problemaDeHoras("14:30", "16")).toContain("aterrizaje");
+    expect(problemaDeHoras("25:00", "")).toContain("despegue");
+  });
+
+  it("no exige que el aterrizaje sea posterior", () => {
+    /*
+      Un vuelo que sale 23:30 y aterriza 00:40 cruza la medianoche y es normal. Rechazarlo
+      obligaría a cargar el plan mal a propósito — y son horas tentativas, no el registro.
+    */
+    expect(problemaDeHoras("23:30", "00:40")).toBeNull();
   });
 });

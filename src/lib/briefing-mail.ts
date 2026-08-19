@@ -184,8 +184,11 @@ export function armarMensaje(datos: DatosBriefing): Mensaje {
       leído a la mañana tiene medio día encima, y presentado como definitivo reemplaza una
       consulta que el piloto iba a hacer igual.
     */
-    `Esto se armó el ${datos.armadoA}. El clima cambia: mirá el briefing en vivo antes de salir.`,
+    "Ver el briefing completo — METAR y TAF actualizados, NOTAM, viento cruzado, planilla de navegación",
+    "y aeródromos cerca:",
     datos.urlPlanificador,
+    "",
+    `Esto se armó el ${datos.armadoA} y el clima cambia. Mirá el briefing en vivo antes de salir.`,
     "",
     "Vector"
   );
@@ -230,10 +233,16 @@ export function armarMensaje(datos: DatosBriefing): Mensaje {
     )
     .join("")}
 
-  <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#71717a;border-top:1px solid #e4e4e7;padding-top:16px">
-    Esto se armó el ${escapar(datos.armadoA)}. <strong>El clima cambia.</strong>
-    <a href="${escapar(datos.urlPlanificador)}" style="color:#2563eb">Mirá el briefing en vivo antes de salir</a>.
-  </p>
+  <div style="margin:24px 0 0;border-top:1px solid #e4e4e7;padding-top:20px">
+    <a href="${escapar(datos.urlPlanificador)}"
+       style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;font-size:14px">
+      Ver el briefing completo
+    </a>
+    <p style="margin:12px 0 0;font-size:12px;line-height:1.6;color:#71717a">
+      Ahí están el METAR y el TAF actualizados, los NOTAM, el viento cruzado sobre la pista, la planilla de
+      navegación y los aeródromos cerca. <strong>Esto se armó el ${escapar(datos.armadoA)} y el clima cambia.</strong>
+    </p>
+  </div>
 </div>`;
 
   return { asunto, texto: lineas.join("\n"), html };
