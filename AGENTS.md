@@ -3801,3 +3801,57 @@ sesión de agente**. El proxy deja pasar los push que avanzan una rama y devuelv
 el `git-receive-pack` cuando el payload es una deleción. Crear refs sí pasa —los dos tags
 se pudieron haber creado desde acá—. Si hace falta borrar, se le pasa el comando a la
 persona; no hay forma de rodearlo y no hay que intentarlo.
+
+## La tarjeta de novedades mentía, y ahora no puede — 2026-08-19
+
+`C` del plan 13. Vector tenía **tres fuentes de verdad para su versión y ninguna
+conectada**: `package.json` decía 2.7.0 y nadie lo leía —`next.config.js` sólo tenía
+`allowedDevOrigins`—, `ChangelogNotice.tsx` hardcodeaba `"v2.7.0"` por su cuenta, y no
+existía ni `CHANGELOG.md` ni un tag de versión en git.
+
+**El síntoma:** la tarjeta del dashboard anunciaba "¿Podés volar hoy?" y "Tus propias
+métricas" mientras se habían publicado los costos por vuelo, el precio de la hora, la
+búsqueda, la racha, el calendario, la tarjeta compartible, los vencimientos variables,
+la resiliencia sin red, el arreglo de la sesión, el planificador y la performance por
+aeronave. **Diez features de atraso.** Un piloto que entraba veía las novedades de tres
+semanas antes.
+
+**El arreglo no es actualizar la tarjeta: es que no pueda volver a pasar.**
+
+`src/lib/changelog.ts` tiene las novedades como **datos**, así que agregar una feature
+deja de ser editar un componente. Y como es un `.ts` puro, se testea — que es lo único
+que ata el contenido a la realidad:
+
+- **La versión más nueva del changelog tiene que ser la de `package.json`.** Si alguien
+  sube la versión sin escribir las novedades, CI lo frena en vez de publicar una versión
+  que anuncia lo viejo.
+- **Cada `href` tiene que existir**: el test abre `src/app/` y busca el `page.tsx`. Una
+  novedad no puede linkear con entusiasmo a una pantalla que se renombró.
+- Orden descendente de versión y de fecha, sin duplicados, semver y fecha ISO válidas, y
+  `href` y `cta` siempre juntos.
+
+**Los íconos se nombran, no se importan.** `changelog.ts` corre en `environment: "node"`
+y no puede traer React, así que exporta un `NombreIcono` y `NovedadCard` lo mapea con un
+`Record<NombreIcono, LucideIcon>`. **TypeScript obliga a que estén todos**: agregar un
+nombre sin su ícono no compila. Es una garantía más fuerte que un test y sale gratis.
+
+**Lo que se conservó del diseño viejo, porque estaba bien:** el descarte es por versión
+(`vector_dismissed_changelog_v2.8.0`), así que al publicar una nueva la tarjeta vuelve
+sola. Y arranca oculta, mostrándose recién en el efecto: el servidor no puede leer
+`localStorage`, así que empezar visible le parpadearía la tarjeta en la cara a quien ya
+la cerró, en cada carga.
+
+**Nuevo:** `/dashboard/novedades` con el histórico —para no tener que elegir entre
+contar todo y no molestar—, la versión al pie del Hangar —cuando alguien escribe "no me
+anda", saberla junto al `ref:` de `ErrorEstado` es la diferencia entre diagnosticar y
+adivinar— y `scripts/build-changelog.mjs`, que genera `CHANGELOG.md` **del mismo dato**.
+Una fuente, dos salidas; escribirlo dos veces sería garantizar que diverjan.
+
+**Un tropiezo del script, anotado porque es sutil:** buscaba el array con
+`indexOf("[", inicio)` y agarraba el `[` de la anotación de tipo `VersionPublicada[]`,
+no el del literal. Hay que buscar después del `=`.
+
+**Verificación:** `tsc` 0 · **433 tests** (12 nuevos) · build limpio · smoke 16 rutas.
+Y en navegador de verdad: tarjeta con las 4 novedades, descarte que persiste y guarda
+`vector_dismissed_changelog_v2.8.0`, histórico con las dos versiones y sus fechas,
+`Vector v2.8.0 · novedades` al pie del Hangar, cero errores de JS.

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { Aircraft, Profile, FlightPack, PilotDocument, Logbook, Flight } from "@/types";
 import { Plane, User, Package, CalendarClock, BookOpen, Download, Gauge } from "lucide-react";
@@ -216,6 +217,21 @@ export default async function SettingsPage() {
             </a>
           </div>
         </section>
+
+        {/*
+          La versión, al pie.
+
+          No es decoración: cuando alguien escribe "no me anda", saber en qué versión
+          está —junto al `ref:` que ya muestra `ErrorEstado`— es la diferencia entre
+          diagnosticar y adivinar. Sale de `package.json` vía `next.config.js`, así que
+          es la que se construyó de verdad y no un número escrito a mano.
+        */}
+        <p className="text-center font-mono text-[10px] text-zinc-300 dark:text-zinc-600 pt-2">
+          Vector v{process.env.NEXT_PUBLIC_APP_VERSION ?? "?"} ·{" "}
+          <Link href="/dashboard/novedades" className="hover:underline">
+            novedades
+          </Link>
+        </p>
       </div>
     </div>
   );
