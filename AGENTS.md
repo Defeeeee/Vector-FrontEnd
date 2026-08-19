@@ -4629,3 +4629,23 @@ este repo —`horasIncompletas` recibe un `HTMLFormElement` y `vitest` corre en
 (son opcionales), y cada uno a medio completar da nuestro mensaje diciendo cuál es.
 
 **960 tests.**
+
+## El `/api` de más en el cron del briefing — 2026-08-19
+
+Encontrado verificando el deploy en producción, no en el sandbox.
+
+El barrido pedía `${API_URL}/api/flight-briefings/pending` y daba **404**. La primera
+lectura fue "el endpoint no se desplegó", y era falsa: probando también `/api/health` y
+`/api/document-alerts/pending` —que funciona hace meses— **los tres daban 404**. Sin el
+prefijo, `/flight-briefings/pending` contesta **401**, o sea que estaba desplegado y
+rechazando bien.
+
+`NEXT_PUBLIC_API_URL` ya apunta a la raíz de la API: el prefijo `/api` existe en el router
+de Litestar pero nginx lo absorbe. El cron de vencimientos, que es el modelo a copiar, pide
+`${API_URL}/document-alerts/pending`.
+
+Vale la pena anotar **cómo se habría visto el bug**: el barrido devuelve 502 ante cualquier
+respuesta que no sea OK, así que en los logs habría figurado como *"el backend contestó
+404"* — que se lee como un problema del backend y no como una URL mal armada de este lado.
+La lección es la de siempre en este repo: **cuando hay un endpoint parecido que ya
+funciona, copiarle la forma antes de inventarla.**

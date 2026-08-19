@@ -122,7 +122,15 @@ export async function POST(req: NextRequest) {
 
   let pendientes: Pendiente[] = [];
   try {
-    const res = await fetch(`${API_URL}/api/flight-briefings/pending`, {
+    /*
+      **Sin `/api` adelante.** `NEXT_PUBLIC_API_URL` ya apunta a la raíz de la API: el cron
+      de vencimientos pide `${API_URL}/document-alerts/pending` y así funciona hace meses.
+      El prefijo `/api` existe en el router de Litestar pero nginx lo absorbe, así que
+      agregarlo daba 404 — y como el barrido devuelve 502 ante cualquier respuesta que no
+      sea OK, se habría visto como "el backend no contesta" en vez de como una URL mal
+      armada.
+    */
+    const res = await fetch(`${API_URL}/flight-briefings/pending`, {
       headers: { "X-Cron-Secret": esperado },
       cache: "no-store",
     });
