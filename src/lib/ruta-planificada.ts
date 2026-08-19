@@ -89,6 +89,10 @@ export interface PuntoRuta {
   variacionW?: number;
   /** `false` cuando el código no existe en el directorio. */
   resuelto: boolean;
+  /** Elevación en pies. Alimenta la densidad de altitud del briefing. */
+  elevacionFt?: number;
+  /** Pistas con rumbo verdadero, para el viento cruzado. Vacío en la mayoría. */
+  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string }[];
 }
 
 /**

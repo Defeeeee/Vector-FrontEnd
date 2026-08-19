@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2, CalendarDays, Compass } from "lucide-react";
+import { LayoutDashboard, History, Wallet, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2, CalendarDays, Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,7 +10,11 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/history", icon: History, label: "Bitácora" },
   { href: "/dashboard/balance", icon: Wallet, label: "Balance" },
-  { href: "/dashboard/route-weather", icon: CloudRain, label: "Ruta METAR" },
+  // Ocupa el slot que dejó "Ruta METAR", que se absorbió acá adentro: el planificador
+  // ahora hace la planilla de navegación **y** el briefing de la ruta. Es el único
+  // movimiento de la barra, y va al lugar exacto del que salió el ícono viejo, así que
+  // la memoria muscular sigue apuntando a "preparar un vuelo".
+  { href: "/dashboard/planificador", icon: Compass, label: "Planificador" },
   { href: "/dashboard/tools", icon: Ruler, label: "Herramientas" },
   { href: "/dashboard/audit", icon: ShieldCheck, label: "Auditoría" },
   // Appended rather than slotted next to "Bitácora", where it belongs
@@ -23,10 +27,6 @@ const navItems = [
   // pegado a "Bitácora": entrar entre los primeros cinco empujaría a otro a la
   // hoja "Más" y movería un ícono que la gente ya tiene en la memoria muscular.
   { href: "/dashboard/calendario", icon: CalendarDays, label: "Calendario" },
-  // Y éste al final por lo mismo. Temáticamente iría al lado de "Ruta METAR" —las dos
-  // son de preparar un vuelo— pero meterlo entre los primeros cinco empujaría a otro a
-  // la hoja "Más" y movería un ícono que la gente ya tiene en la memoria muscular.
-  { href: "/dashboard/planificador", icon: Compass, label: "Planificador" },
 ];
 
 const AUDIT_HREF = "/dashboard/audit";

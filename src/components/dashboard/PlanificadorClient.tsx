@@ -6,6 +6,7 @@ import type { Aircraft, AirportRef } from "@/types";
 import AirportResolver from "./AirportResolver";
 import PageHeader from "./PageHeader";
 import PlanMapa from "./PlanMapa";
+import BriefingRuta from "./BriefingRuta";
 import StyledSelect from "./StyledSelect";
 import { fmt, hoursToHm, num, NumberField, ToolNote } from "./tools/ToolPrimitives";
 import { calcularPlan, type ParametrosTramo } from "@/lib/navegacion";
@@ -176,6 +177,8 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
           lon: ref?.lon,
           variacionW: ref?.variacionW,
           resuelto: !!ref,
+          elevacionFt: ref?.elevation,
+          pistas: ref?.pistas,
         };
       }),
     [codigos, resueltos]
@@ -602,6 +605,21 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <div data-imprimir="no">
                 <PlanMapa puntos={puntosMapa} />
               </div>
+
+              {/*
+                El briefing absorbido de la pantalla de Ruta METAR. Antes el piloto
+                tipeaba la misma ruta dos veces, en dos pantallas distintas.
+              */}
+              <BriefingRuta
+                puntos={cargados.map((p) => ({
+                  codigo: p.codigo,
+                  label: p.label,
+                  lat: p.lat,
+                  lon: p.lon,
+                  elevacionFt: p.elevacionFt,
+                  pistas: p.pistas,
+                }))}
+              />
 
               {metar && (
                 <details className="text-[11px]" data-imprimir="no">

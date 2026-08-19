@@ -168,7 +168,7 @@ function WeatherMock() {
     { k: "QNH", v: "1012" },
   ];
   return (
-    <BrowserFrame url="vector.fdiaznem.com.ar/dashboard/route-weather">
+    <BrowserFrame url="vector.fdiaznem.com.ar/dashboard/planificador">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-2">
           <div>

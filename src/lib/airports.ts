@@ -301,6 +301,18 @@ export function getAirport(icao: string): Airport | null {
   return load().byIcao.get(normalize(icao)) ?? null;
 }
 
+/**
+ * Todos los aeródromos del directorio.
+ *
+ * Existe para `/api/airports/near`, que necesita recorrerlos para medir distancias. Es
+ * el array vivo del índice y no una copia: **no lo mutes.** Devolver una copia de 711
+ * objetos en cada request para protegerse de un `push` que nadie va a escribir sería
+ * pagar por una precaución imaginaria.
+ */
+export function allAirports(): Airport[] {
+  return load().all;
+}
+
 const SIZE_RANK: Record<Airport["size"], number> = { L: 0, M: 1, S: 2, H: 3 };
 
 /**

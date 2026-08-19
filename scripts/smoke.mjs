@@ -77,7 +77,6 @@ const AUTH_ROUTES = [
   "/dashboard/balance",
   "/dashboard/airports",
   "/dashboard/tools",
-  "/dashboard/route-weather",
   "/dashboard/calendario",
   "/dashboard/planificador",
   "/dashboard/novedades",
