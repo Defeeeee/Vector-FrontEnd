@@ -3635,3 +3635,101 @@ una referencia oficial casi siempre es el arnés, no la librería.
 
 Los nueve tests de `magvar.test.ts` leen el TSV real a propósito: lo que puede romperse
 acá no es una fórmula sino que alguien regenere los datos y se olvide del segundo paso.
+
+## El planificador de navegación — 2026-08-18
+
+`B3` y `B5`, y con esto **el plan 12 queda cerrado entero**.
+
+Vector entraba recién cuando el vuelo había terminado. Los tramos, rumbos, tiempos y
+combustible se hacían la noche anterior en una planilla fotocopiada — y para el usuario
+de esta app eso pesa doble: es un PPA juntando horas de travesía para el PCA, o sea que
+planificar es lo que más hace.
+
+### B3 — La ruta multipunto, sin tocar `splitRoute`
+
+`splitRoute` devuelve **exactamente dos elementos**, tiene doce consumidores y un test
+que le fija el contrato. **No se tocó.** Ese contrato es correcto para lo que hace: el
+campo `route` describe de dónde salió y dónde terminó un vuelo, y todas las agregaciones
+—mapa, resumen, estadísticas— cuentan sobre esa base.
+
+Un plan es otra cosa: SADM → San Fernando → Junín es **un** vuelo con **tres** puntos, y
+el del medio no es ni origen ni destino. `src/lib/ruta-planificada.ts` modela eso, y en
+el borde `aCampoRoute` traduce al formato de siempre: primero y último. **Los puntos
+intermedios se pierden ahí, y está dicho en el código** en vez de disimulado. Una ida y
+vuelta devuelve un solo código, como un circuito local — repetirlo haría que las
+agregaciones contaran ese aeródromo dos veces.
+
+**Un punto sin resolver no se saltea: anula el cálculo.** Saltearlo uniría los vecinos
+con una recta que nadie va a volar y el total saldría más corto que la realidad con
+pinta de válido. La pantalla dice cuál falta.
+
+### B5 — La pantalla
+
+Ruta nueva `/dashboard/planificador`. Sin botón "Calcular", como todos los calculadores
+(`ToolPrimitives`). Estado en la URL vía `history.replaceState` y no `router.replace`:
+esto corre con cada tecla y `router.replace` dispararía un render del server component
+en cada una.
+
+Se autocompleta solo y **no pisa lo que el piloto escribió**: tres flags de "ya lo
+tocó" separan el autocompletado (performance desde la aeronave, viento desde el METAR
+de salida, variación desde el aeródromo) de la edición manual.
+
+`RouteWeatherClient` **no se tocó** —846 líneas, el peor archivo del área—. Que
+convivan; absorberlo es otro plan.
+
+### Dos bugs que sólo aparecieron manejando la pantalla de verdad
+
+**1. Pegar la ruta entera dejaba todo sin resolver.** `AirportResolver` avisa su
+resolución sólo cuando su `value` cambia. Al reemplazar la ruta yo borraba todas las
+resoluciones, así que un código que quedaba en la misma posición —el SADM de salida,
+casi siempre— **nunca volvía a avisar** y el plan decía "no reconocemos SADM" para
+siempre. Se remapean por código.
+
+**2. El campo de pegar aplicaba en vivo.** Tecla por tecla, escribir "SADM SADF" pasaba
+por el estado "SADM S" y tiraba la ruta abajo a mitad de tipeo. Es el único campo de la
+pantalla que **no** va en vivo, porque no es un valor: es un reemplazo masivo. Aplica al
+salir o con Enter.
+
+Ninguno de los dos se veía en el código ni los habría agarrado un test unitario —
+`vitest` corre en `environment: "node"` y no puede montar componentes.
+
+### La impresión, que tampoco salió bien de una
+
+La planilla tiene que poder volver a ser papel: se lleva al avión y no depende de que el
+teléfono tenga batería. El primer intento imprimía **la tabla cortada en la columna RM**
+y los totales encimados: esconder la columna de entradas no alcanza, **su track del grid
+sigue ocupando lugar**. En papel va a una sola columna.
+
+También se sacaron el mapa —las reglas de impresión quitan los fondos para no gastar
+tinta, y con ellos los tiles: quedaba un rectángulo vacío ocupando un tercio de la hoja—
+y el globo del copiloto, que vive en el layout y salía en la esquina de cualquier página
+impresa.
+
+Y se agregó la línea de condiciones —matrícula, TAS, viento, variación, consumo—, que
+**en papel es imprescindible**: un rumbo sin saber con qué viento salió no se puede
+corregir cuando el viento cambia.
+
+### Verificación
+
+`tsc` 0 · **421 tests** · build limpio · smoke 15 rutas.
+
+La pantalla se manejó con un navegador de verdad contra un `next start`, porque es la
+única forma: los componentes no se pueden testear en este repo. Nueve escenarios, y los
+números contrastados a mano:
+
+- SADM→SAAJ sin viento: 113,3 NM · CV 274 · CM 284 (274,05 + 10 de Morón) · GS 110 ·
+  62′ · 33,0 L. **Los seis calculados aparte y coincidentes.**
+- Con viento 004/30: WCA +16, RM 300, GS 106.
+- Tres puntos: dos tramos y los totales igual a la suma.
+- Código inexistente en el medio: no calcula y nombra el que falta.
+- Combustible insuficiente: "faltan 129,9 L".
+- Viento cruzado mayor que la TAS: "no vuela" en el tramo, totales anulados, distancia
+  conservada.
+- Variación SADM→SAZS: avisa que cambia **15,4°** entre las puntas — el caso exacto que
+  la premisa falsa del plan habría tapado.
+- Claro, oscuro, móvil (sin scroll horizontal) e impresión.
+- **Cero errores de JavaScript** en todos.
+
+Un caso del arnés estuvo mal elegido y vale anotarlo: probé "viento imposible" con
+200 kt del 090 sobre un rumbo 237 y el tramo salió volable — es viento de **cola**, no
+cruzado. El bug estaba en mi prueba, no en el código.

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, History, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2, CalendarDays } from "lucide-react";
+import { LayoutDashboard, History, Wallet, CloudRain, Ruler, ShieldCheck, MoreHorizontal, PieChart, Building2, CalendarDays, Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,10 @@ const navItems = [
   // pegado a "Bitácora": entrar entre los primeros cinco empujaría a otro a la
   // hoja "Más" y movería un ícono que la gente ya tiene en la memoria muscular.
   { href: "/dashboard/calendario", icon: CalendarDays, label: "Calendario" },
+  // Y éste al final por lo mismo. Temáticamente iría al lado de "Ruta METAR" —las dos
+  // son de preparar un vuelo— pero meterlo entre los primeros cinco empujaría a otro a
+  // la hoja "Más" y movería un ícono que la gente ya tiene en la memoria muscular.
+  { href: "/dashboard/planificador", icon: Compass, label: "Planificador" },
 ];
 
 const AUDIT_HREF = "/dashboard/audit";

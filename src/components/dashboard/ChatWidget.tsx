@@ -137,7 +137,10 @@ export default function ChatWidget() {
   const showSuggestions = messages.length <= 1 && !loading;
 
   return (
-    <>
+    // `data-imprimir="no"` porque esto vive en el layout del dashboard y aparecería en
+    // cualquier página impresa. La planilla del planificador es la primera que se
+    // imprime de verdad, y el globo del copiloto salía en la esquina.
+    <div data-imprimir="no" className="contents">
       {/* Desktop floating trigger */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -289,6 +292,6 @@ export default function ChatWidget() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

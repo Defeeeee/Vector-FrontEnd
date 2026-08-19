@@ -235,3 +235,77 @@
     animation: blip 2.4s ease-in-out infinite;
   }
 }
+
+/**
+ * Impresión: la planilla de navegación en papel.
+ *
+ * El planificador existe para reemplazar una planilla fotocopiada, así que tiene que
+ * poder volver a ser papel — se lleva al avión, se apoya en la pierna y no depende de
+ * que el teléfono tenga batería.
+ *
+ * Las reglas viven acá y no en el componente porque **lo que hay que esconder no es
+ * suyo**: el rail, la barra de abajo, el header y el widget de chat los pone
+ * `dashboard/layout.tsx`, y un `print:hidden` en el planificador no los alcanza.
+ * Se apuntan por rol, no por clase de Tailwind, para que sobrevivan a un rediseño.
+ */
+@media print {
+  aside,
+  header,
+  nav,
+  [data-imprimir="no"] {
+    display: none !important;
+  }
+
+  /* El scroll del main y el alto fijo del layout cortan la tabla en la primera
+     página. En papel no hay viewport: que fluya. */
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Tinta. Los fondos oscuros del tema se comen un cartucho y se leen peor. */
+  * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Una fila de la planilla partida entre dos hojas es ilegible justo cuando más
+     se la necesita. */
+  tr,
+  [data-imprimir="junto"] {
+    break-inside: avoid;
+  }
+
+  /*
+    El planificador se arma en dos columnas: entradas a la izquierda, planilla a la
+    derecha. Esconder la izquierda **no alcanza**: su track del grid sigue ocupando
+    lugar y estrangula la planilla a media hoja — se veía con la tabla cortada en la
+    columna RM y los totales encimados. En papel va a una sola columna.
+  */
+  [data-imprimir="planilla"] {
+    display: block !important;
+  }
+
+  /* Sin viewport no hay scroll horizontal que valga: lo que no entra, no se ve. */
+  [data-imprimir="planilla"] * {
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
