@@ -12,7 +12,14 @@ import {
   RefreshCw,
   Wind,
 } from "lucide-react";
-import { componentesDePista, mejorPista, veredictoDeRuta, type CategoriaVuelo, type EstacionRuta, type Pista } from "@/lib/briefing";
+import {
+  mejorPista,
+  pistasDesdeMadhel,
+  veredictoDeRuta,
+  type CategoriaVuelo,
+  type EstacionRuta,
+  type Pista,
+} from "@/lib/briefing";
 import { computeAltitude } from "@/lib/aviation";
 import { fmt } from "./tools/ToolPrimitives";
 
@@ -46,6 +53,8 @@ interface Punto {
   lon?: number;
   elevacionFt?: number;
   pistas?: Pista[];
+  /** Variación magnética, para poder derivar rumbos de los designadores de MADHEL. */
+  variacionW?: number;
 }
 
 interface Notam {
@@ -67,7 +76,14 @@ interface DatosEstacion {
   /** De qué estación salió el METAR, si no es del aeródromo pedido. */
   estacionCercana: { icao: string; name: string; distanceNm: number } | null;
   notams: Notam[] | null;
-  madhel: { particularNorms?: string; generalNorms?: string; radio?: string[]; fuel?: string } | null;
+  madhel: {
+    particularNorms?: string;
+    generalNorms?: string;
+    radio?: string[];
+    fuel?: string;
+    /** Texto libre: "18/36 1080x30 M - ASPH…". Se parsea si no hay pistas medidas. */
+    runways?: string[];
+  } | null;
   respondio: boolean;
 }
 
@@ -258,7 +274,25 @@ function TarjetaEstacion({ punto, datos }: { punto: Punto; datos: DatosEstacion 
     navigator.clipboard.writeText(datos.metar).then(() => setCopiado(true)).catch(() => {});
   }, [datos.metar]);
 
-  const cruzado = mejorPista(punto.pistas ?? [], datos.vientoDir, datos.vientoKt);
+  /*
+    Dos fuentes de pista, en orden de calidad:
+
+    1. `runways.tsv` (OurAirports) — rumbo verdadero publicado. Sólo 93 aeródromos,
+       porque OurAirports únicamente conoce los que tienen indicador ICAO.
+    2. El texto de MADHEL, derivando el rumbo del designador con la variación magnética.
+       Cubre el resto — **558 de los 711 no tienen ICAO**, y San Nicolás (SNY) es uno:
+       su ficha publica dos pistas y el planificador decía que no tenía ninguna.
+
+    La segunda es menos precisa y la pantalla lo dice, pero un cruzado con ±5° de error
+    es infinitamente más útil que ningún cruzado.
+  */
+  const pistas =
+    punto.pistas && punto.pistas.length > 0
+      ? punto.pistas
+      : pistasDesdeMadhel(datos.madhel?.runways ?? [], punto.variacionW);
+
+  const cruzado = mejorPista(pistas, datos.vientoDir, datos.vientoKt);
+  const estimada = pistas.some((p) => p.fuente === "estimada");
 
   // Densidad de altitud: `computeAltitude` existía y nadie la usaba en el preflight.
   // Ahora el QNH viene del METAR en vez de tipearse a mano.
@@ -302,9 +336,14 @@ function TarjetaEstacion({ punto, datos }: { punto: Punto; datos: DatosEstacion 
         <p className="text-[12px] text-zinc-700 dark:text-zinc-200 mt-2">
           Pista <strong>{cruzado.cabecera}</strong>: {fmt(cruzado.cruzadoKt, 0)} kt cruzado por la{" "}
           {cruzado.desde}, {fmt(cruzado.frenteKt, 0)} kt de frente.
+          {estimada && (
+            <span className="text-zinc-400 dark:text-zinc-500">
+              {" "}— rumbo estimado del designador, ±5°.
+            </span>
+          )}
         </p>
       ) : (
-        punto.pistas?.length === 0 &&
+        pistas.length === 0 &&
         datos.vientoKt !== null &&
         datos.vientoKt > 0 && (
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-2">

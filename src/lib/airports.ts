@@ -209,6 +209,8 @@ function leerPistas(): Map<string, Pista[]> {
       rumboT,
       largoFt: Number.isFinite(largoFt) ? largoFt : undefined,
       superficie: superficie || undefined,
+      // De OurAirports: rumbo verdadero publicado, no derivado del designador.
+      fuente: "medida",
     });
     mapa.set(icao, lista);
   }

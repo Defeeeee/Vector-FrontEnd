@@ -3971,3 +3971,48 @@ a internet. La API en sí se probó con `curl`: 200 y datos buenos.
 
 **Cuatro mutantes sobre `briefing.ts`, las cuatro cazadas**, incluida la que restaura el
 bug original de `UNK`.
+
+## SNY tenía pistas y le decíamos que no — 2026-08-19
+
+Reporte de uso, y una premisa mía que estaba mal.
+
+El planificador decía que **San Nicolás de los Arroyos (SNY) no tiene pistas
+registradas**, mientras la pantalla de Aeropuertos mostraba las dos que publica ANAC:
+`18/36 1080x30 M - ASPH` y `09/27 809x23 M - Tierra`.
+
+**Las dos pantallas decían la verdad, y por eso el bug era mío.** `runways.tsv` sale de
+OurAirports, que **sólo conoce aeródromos con indicador ICAO**. SNY no tiene: se
+identifica sólo con su designador ANAC. Y **558 de los 711 aeródromos de MADHEL están en
+esa situación** — o sea que la cobertura de 93 no era una limitación de los datos, era
+una limitación de la fuente que yo había elegido.
+
+Lo que hacía peor el error: **el dato ya estaba llegando**. `/api/notams` devuelve
+`madhel.runways` como texto libre, y el briefing ya pedía ese endpoint. Estaba tirando
+el campo.
+
+**El arreglo, con dos fuentes en orden de calidad:**
+
+1. `runways.tsv` — rumbo **verdadero medido**, de OurAirports. Exacto, 93 aeródromos.
+2. El texto de MADHEL, derivando el rumbo del designador con nuestra columna de variación
+   magnética. Cubre cualquier aeródromo cuya ficha publique pistas.
+
+La conversión es la inversa exacta de `aMagnetico`: el designador es **magnético**, así
+que al verdadero se llega **restando** la variación oeste. SNY con 9,5° W: `180 − 9,5 =
+170,5T` y `090 − 9,5 = 80,5T`.
+
+**La segunda fuente vale menos y la pantalla lo dice.** El designador viene redondeado a
+la decena y pintado hace años, así que arrastra ±5° de redondeo más la deriva de la
+variación desde entonces. El campo `fuente: "medida" | "estimada"` viaja con la pista y
+el texto agrega *"rumbo estimado del designador, ±5°"*. Con 15 kt de viento eso son un
+par de nudos de error en el cruzado — infinitamente más útil que ningún cruzado.
+
+**Sin variación magnética no se estima nada.** Suponer cero sería inventar: en Misiones
+son 17,8° de error.
+
+**Verificado con la ficha real de SNY y viento 260/14:** elige la pista 27 —0 kt cruzado,
+14 de frente, porque 260,5T está casi alineada con el viento— y descarta la 18/36. En el
+mismo plan, SADM elige la 20 con 13 kt cruzado y **sin** la advertencia, porque su rumbo
+sí es medido. Los cuatro números contrastados a mano.
+
+**14 tests nuevos** sobre el parser, con las líneas literales de la ficha de ANAC.
+**508 tests** en total.

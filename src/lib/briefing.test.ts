@@ -3,6 +3,7 @@ import {
   VIENTO_ATENCION_KT,
   componentesDePista,
   mejorPista,
+  pistasDesdeMadhel,
   severidadDe,
   veredictoDeRuta,
   type EstacionRuta,
@@ -276,5 +277,119 @@ describe("mejorPista", () => {
 
   it("con calma también devuelve null aunque haya pistas", () => {
     expect(mejorPista(saez, 90, 0)).toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+
+describe("pistasDesdeMadhel", () => {
+  /*
+    El caso que lo motivó: San Nicolás de los Arroyos (SNY) **no tiene indicador ICAO**,
+    así que OurAirports no lo conoce y `runways.tsv` no lo cubre — 558 de los 711
+    aeródromos de MADHEL están en esa situación. Pero la ficha de ANAC publica las dos
+    pistas, y ese texto ya llegaba al briefing sin usarse.
+
+    Las líneas son literales de la ficha real de SNY.
+  */
+  const SNY = [
+    "18/36 1080x30 M - ASPH – AUW 23t/1 30t/2 - Limitada a aeronaves reactores y turbohélices.",
+    "09/27 809x23 M - Tierra.",
+  ];
+  const VAR_SNY = 9.5;
+
+  it("saca las dos pistas de la ficha de SNY", () => {
+    const p = pistasDesdeMadhel(SNY, VAR_SNY);
+    expect(p).toHaveLength(2);
+    expect(p.map((x) => `${x.le}/${x.he}`)).toEqual(["18/36", "09/27"]);
+  });
+
+  it("convierte el designador magnético a rumbo verdadero", () => {
+    // El designador es magnético: 18 son 180°M. Con 9,5° W de variación, el verdadero es
+    // 180 − 9,5 = 170,5. Es la operación inversa exacta de `aMagnetico`.
+    const p = pistasDesdeMadhel(SNY, VAR_SNY);
+    expect(p[0].rumboT).toBeCloseTo(170.5, 6);
+    expect(p[1].rumboT).toBeCloseTo(80.5, 6);
+  });
+
+  it("con variación este suma en vez de restar", () => {
+    // Bariloche tiene variación negativa (este). 180 − (−5,4) = 185,4.
+    expect(pistasDesdeMadhel(["18/36 1500x30 M - ASPH"], -5.4)[0].rumboT).toBeCloseTo(185.4, 6);
+  });
+
+  it("da la vuelta por el norte sin salirse del rango", () => {
+    const p = pistasDesdeMadhel(["01/19 900x20 M - Tierra."], 9.5);
+    expect(p[0].rumboT).toBeCloseTo(0.5, 6);
+    const q = pistasDesdeMadhel(["36/18 900x20 M - Tierra."], -5);
+    expect(q[0].rumboT).toBeGreaterThanOrEqual(0);
+    expect(q[0].rumboT).toBeLessThan(360);
+  });
+
+  it("las marca como estimadas, no como medidas", () => {
+    /*
+      El designador viene redondeado a la decena y se pintó hace años, así que arrastra
+      ±5° de redondeo más la deriva de la variación. Sirve, pero **no es lo mismo** que
+      el rumbo verdadero publicado, y la pantalla lo dice.
+    */
+    for (const p of pistasDesdeMadhel(SNY, VAR_SNY)) {
+      expect(p.fuente).toBe("estimada");
+    }
+  });
+
+  it("saca el largo en pies de las dimensiones en metros", () => {
+    // 1080 m → 3543 ft.
+    expect(pistasDesdeMadhel(SNY, VAR_SNY)[0].largoFt).toBe(3543);
+    expect(pistasDesdeMadhel(SNY, VAR_SNY)[1].largoFt).toBe(2654);
+  });
+
+  it("reconoce la superficie", () => {
+    const p = pistasDesdeMadhel(SNY, VAR_SNY);
+    expect(p[0].superficie).toBe("ASP");
+    expect(p[1].superficie).toBe("TIERRA");
+  });
+
+  it("acepta sufijos de pista paralela", () => {
+    const p = pistasDesdeMadhel(["01L/19R 2000x45 M - ASPH"], 10);
+    expect(p[0].le).toBe("01L");
+    expect(p[0].he).toBe("19R");
+  });
+
+  it("rellena a dos dígitos", () => {
+    expect(pistasDesdeMadhel(["9/27 800x20 M - Tierra."], 0)[0].le).toBe("09");
+  });
+
+  it("ignora líneas que no son pistas", () => {
+    const p = pistasDesdeMadhel(["Sin datos publicados.", "VER NOTAM", ""], 10);
+    expect(p).toEqual([]);
+  });
+
+  it("descarta designadores imposibles", () => {
+    // No existe la pista 45. Un dato así es basura, no una pista con rumbo raro.
+    expect(pistasDesdeMadhel(["45/99 800x20 M"], 10)).toEqual([]);
+    expect(pistasDesdeMadhel(["00/18 800x20 M"], 10)).toEqual([]);
+  });
+
+  it("sin variación magnética no estima nada", () => {
+    /*
+      **Es la regla de siempre.** Sin variación no se puede pasar de magnético a
+      verdadero, y suponer cero sería inventar un rumbo — en Misiones son 17,8° de error,
+      que con 15 kt de viento cambia el cruzado en varios nudos.
+    */
+    expect(pistasDesdeMadhel(SNY, undefined)).toEqual([]);
+  });
+
+  it("sin líneas devuelve vacío y no rompe", () => {
+    expect(pistasDesdeMadhel([], 10)).toEqual([]);
+    expect(pistasDesdeMadhel(undefined as never, 10)).toEqual([]);
+  });
+
+  it("las pistas estimadas sirven para calcular el cruzado", () => {
+    // La cadena completa: texto de MADHEL → pistas → componentes.
+    const p = pistasDesdeMadhel(SNY, VAR_SNY);
+    // Viento perpendicular a la 18 (170,5T): 170,5 + 90 = 260,5.
+    const c = mejorPista(p, 260.5, 20);
+    expect(c).not.toBeNull();
+    // Con dos pistas casi perpendiculares entre sí, la 09/27 queda casi alineada con
+    // ese viento, así que es la que menos cruzado tiene: por eso `mejorPista` la elige.
+    expect(c!.cruzadoKt).toBeLessThan(20);
   });
 });

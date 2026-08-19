@@ -221,7 +221,7 @@ export function veredictoDeRuta(estaciones: EstacionRuta[]): Veredicto {
 /* -------------------------------------------------------------------------- */
 
 export interface Pista {
-  /** Designador de una cabecera, "02". Magnético y posiblemente viejo: sólo se muestra. */
+  /** Designador de una cabecera, "02". Magnético y posiblemente viejo. */
   le: string;
   /** El designador opuesto, "20". */
   he: string;
@@ -229,6 +229,69 @@ export interface Pista {
   rumboT: number;
   largoFt?: number;
   superficie?: string;
+  /**
+   * De dónde salió `rumboT`, porque las dos fuentes no valen lo mismo:
+   *
+   * - `"medida"` — de OurAirports, que publica el rumbo verdadero real. Exacta.
+   * - `"estimada"` — derivada del designador de MADHEL más la variación magnética. El
+   *   designador viene redondeado a la decena y pintado hace años, así que arrastra
+   *   ±5° de redondeo más la deriva de la variación desde que se pintó. Sirve —con
+   *   15 kt de viento son un par de nudos de error en el cruzado— pero no es lo mismo,
+   *   y la pantalla lo dice.
+   */
+  fuente?: "medida" | "estimada";
+}
+
+/**
+ * Pistas a partir de lo que publica MADHEL, que es **texto libre**.
+ *
+ * Existe porque `runways.tsv` sólo cubre 93 aeródromos: OurAirports conoce únicamente
+ * los que tienen indicador ICAO, y **558 de los 711 de MADHEL no tienen**. San Nicolás
+ * de los Arroyos (SNY) es uno: la ficha de ANAC publica sus dos pistas y el planificador
+ * decía que no tenía ninguna.
+ *
+ * MADHEL las manda así:
+ *
+ *     "18/36 1080x30 M - ASPH – AUW 23t/1 30t/2 - Limitada a aeronaves…"
+ *     "09/27 809x23 M - Tierra."
+ *
+ * El designador es **magnético**, así que para llevarlo al marco verdadero —el único
+ * que usa el resto del código— hay que **restarle** la variación oeste. Es la operación
+ * inversa de `aMagnetico`.
+ */
+export function pistasDesdeMadhel(lineas: string[], variacionW: number | undefined): Pista[] {
+  if (variacionW === undefined) return [];
+
+  const pistas: Pista[] = [];
+
+  for (const linea of lineas ?? []) {
+    // "18/36", "09/27", "01L/19R". Al principio de la línea, que es donde MADHEL lo pone.
+    const m = /^\s*(\d{1,2})([LRC]?)\s*\/\s*(\d{1,2})([LRC]?)/.exec(linea);
+    if (!m) continue;
+
+    const numero = Number(m[1]);
+    if (!Number.isFinite(numero) || numero < 1 || numero > 36) continue;
+
+    // Dimensiones: "1080x30 M" en metros. Sólo interesa el largo.
+    const dim = /(\d{3,5})\s*[xX×]\s*\d{1,3}\s*M/.exec(linea);
+    const largoM = dim ? Number(dim[1]) : NaN;
+
+    pistas.push({
+      le: `${m[1].padStart(2, "0")}${m[2]}`,
+      he: `${m[3].padStart(2, "0")}${m[4]}`,
+      // magnético → verdadero. La inversa exacta de `aMagnetico`.
+      rumboT: ((numero * 10 - variacionW) % 360 + 360) % 360,
+      largoFt: Number.isFinite(largoM) ? Math.round(largoM * 3.28084) : undefined,
+      superficie: /ASPH|ASFAL/i.test(linea)
+        ? "ASP"
+        : /TIERRA|GRAVA|CESPED|CÉSPED|PASTO/i.test(linea)
+          ? "TIERRA"
+          : undefined,
+      fuente: "estimada",
+    });
+  }
+
+  return pistas;
 }
 
 export interface ComponentesPista {

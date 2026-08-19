@@ -260,7 +260,7 @@ export interface AirportRef {
    */
   variacionW?: number;
   /** Pistas con rumbo verdadero. Vacío si el aeródromo no tiene ninguna publicada. */
-  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string }[];
+  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string; fuente?: "medida" | "estimada" }[];
   /** What MADHEL publishes about it. Absent for non-Argentine aerodromes. */
   madhel?: {
     province: string;

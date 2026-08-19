@@ -716,6 +716,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                   lon: p.lon,
                   elevacionFt: p.elevacionFt,
                   pistas: p.pistas,
+                  variacionW: p.variacionW,
                 }))}
               />
 

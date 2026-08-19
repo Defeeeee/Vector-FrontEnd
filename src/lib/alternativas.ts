@@ -28,7 +28,7 @@ export interface CandidatoAlternativa {
   /** Designador ANAC, si tiene. Es como se lo nombra en muchos de estos campos. */
   local?: string;
   /** Pistas conocidas. Vacío en la mayoría: sólo 93 de 711 tienen datos. */
-  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string }[];
+  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string; fuente?: "medida" | "estimada" }[];
 }
 
 export interface Alternativa extends CandidatoAlternativa {

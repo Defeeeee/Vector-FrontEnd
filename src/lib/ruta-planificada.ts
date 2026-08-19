@@ -92,7 +92,7 @@ export interface PuntoRuta {
   /** Elevación en pies. Alimenta la densidad de altitud del briefing. */
   elevacionFt?: number;
   /** Pistas con rumbo verdadero, para el viento cruzado. Vacío en la mayoría. */
-  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string }[];
+  pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string; fuente?: "medida" | "estimada" }[];
 }
 
 /**
