@@ -3733,3 +3733,32 @@ números contrastados a mano:
 Un caso del arnés estuvo mal elegido y vale anotarlo: probé "viento imposible" con
 200 kt del 090 sobre un rumbo 237 y el tramo salió volable — es viento de **cola**, no
 cruzado. El bug estaba en mi prueba, no en el código.
+
+## El timeout que puse a ojo rompió la tarjeta — 2026-08-19
+
+Al mergear el plan 12 a `main`, el deploy salió bien y **CI quedó en rojo**. Venía en
+rojo desde `d236a85`, que es mío.
+
+Tipos, tests y build en verde; fallaba una sola cosa del smoke:
+`✗ 502 /api/share-card?tiles=pic,noche`, exactamente **8,0 segundos** después de
+empezar. Ése es el timeout que yo mismo había puesto en `apiFetch`.
+
+**El número lo inventé.** El comentario que lo justificaba estaba bien razonado —un
+backend que acepta la conexión y no contesta cuelga el render— pero los 8 s no salieron
+de ninguna medición.
+
+La medición sale de la última corrida verde: entre `/dashboard/calendario` y la tarjeta
+pasaron **12,6 s**. La tarjeta pide con `cache: "no-store"` a propósito —para no dibujar
+un total viejo en una imagen que ya no puede volver atrás— así que va siempre al backend
+en frío, sin el `revalidate: 20` que salva a las páginas. Con 8 s, las dos llamadas se
+abortaban y la tarjeta salía 502.
+
+**El arreglo no es subir el número, es dejar de tener uno solo.** El presupuesto pasa a
+ser por llamador: 15 s por defecto —holgado contra los 3,5 s que tarda de verdad un
+render de página en el mismo entorno, y sigue acotando el caso del backend colgado— y
+25 s para el generador de imágenes, donde una tarjeta lenta es infinitamente mejor que
+ninguna tarjeta.
+
+**La lección, y es la misma de siempre en esta bitácora:** un número plausible con un
+comentario convincente al lado sigue siendo un número inventado. El smoke lo agarró
+porque prueba contra el backend real; ningún test unitario lo habría visto.

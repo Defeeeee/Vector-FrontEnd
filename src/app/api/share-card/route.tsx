@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, TIMEOUT_IMAGEN_MS } from "@/lib/api";
 import { getSessionToken } from "@/actions/auth";
 import { datosTarjeta, parseTiles } from "@/lib/share-card";
 import type { Aircraft, Flight, Logbook } from "@/types";
@@ -106,9 +106,12 @@ export async function GET(req: NextRequest) {
   // los GET. Un piloto que registra un vuelo y comparte enseguida se llevaría un
   // total viejo **en una imagen que ya no puede volver atrás**. `apiFetch` esparce
   // las opciones después del default, así que esto gana.
+  // Presupuesto propio, más largo que el de una página: con `no-store` estas dos van
+  // siempre al backend en frío, y el camino completo se midió en **12,6 s** contra
+  // producción. Con el timeout de página quedaban abortadas y la tarjeta salía 502.
   const [dashRes, lbRes] = await Promise.all([
-    apiFetch("/dashboard", { cache: "no-store" }),
-    apiFetch("/logbooks", { cache: "no-store" }),
+    apiFetch("/dashboard", { cache: "no-store" }, { timeoutMs: TIMEOUT_IMAGEN_MS }),
+    apiFetch("/logbooks", { cache: "no-store" }, { timeoutMs: TIMEOUT_IMAGEN_MS }),
   ]);
   if (dashRes.status === 401 || lbRes.status === 401) {
     return new Response("Unauthorized", { status: 401 });

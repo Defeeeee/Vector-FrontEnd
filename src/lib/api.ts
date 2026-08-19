@@ -3,7 +3,32 @@ import { redirect } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
 
-export async function apiFetch(endpoint: string, options: RequestInit = {}) {
+/**
+ * Cuánto se espera antes de dar por muerta una respuesta.
+ *
+ * **El primer número acá fue 8 s y estaba mal, medido contra producción.** Lo puso este
+ * mismo archivo sin medir nada, y rompió `/api/share-card` en CI: la tarjeta hace dos
+ * llamadas con `cache: "no-store"` —a propósito, para no dibujar un total viejo en una
+ * imagen que no puede volver atrás— y el camino completo tarda **12,6 s** contra el
+ * backend real. Los 8 s las abortaban y la tarjeta salía 502.
+ *
+ * 15 s es holgado para lo que de verdad tarda un render de página —3,5 s medidos en el
+ * mismo entorno— y sigue acotando el caso que el timeout existe para atajar: un backend
+ * que acepta la conexión y no contesta nunca.
+ */
+const TIMEOUT_POR_DEFECTO_MS = 15000;
+
+/**
+ * Para el generador de imágenes, que legítimamente tarda más y donde una tarjeta lenta
+ * es infinitamente mejor que ninguna tarjeta.
+ */
+export const TIMEOUT_IMAGEN_MS = 25000;
+
+export async function apiFetch(
+  endpoint: string,
+  options: RequestInit = {},
+  { timeoutMs = TIMEOUT_POR_DEFECTO_MS }: { timeoutMs?: number } = {}
+) {
   const token = await getSessionToken();
 
   const headers = {
@@ -24,12 +49,14 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   try {
     response = await fetch(`${API_URL}${endpoint}`, {
       /*
-        Un backend que acepta la conexión y no contesta cuelga el render hasta que
-        la plataforma lo mate. "No explotar" con treinta segundos de pantalla en
-        blanco sigue siendo explotar, sólo que despacio. El timeout cae en el mismo
-        `catch` de abajo y produce el mismo 503.
+        Un backend que acepta la conexión y no contesta cuelga el render hasta que la
+        plataforma lo mate. "No explotar" con treinta segundos de pantalla en blanco
+        sigue siendo explotar, sólo que despacio. El timeout cae en el mismo `catch` de
+        abajo y produce el mismo 503.
+
+        El presupuesto es por llamador, no único: ver `TIMEOUT_POR_DEFECTO_MS`.
       */
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(timeoutMs),
       ...defaultCache,
       ...options,
       headers,
