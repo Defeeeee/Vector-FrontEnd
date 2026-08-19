@@ -3855,3 +3855,119 @@ no el del literal. Hay que buscar después del `=`.
 Y en navegador de verdad: tarjeta con las 4 novedades, descarte que persiste y guarda
 `vector_dismissed_changelog_v2.8.0`, histórico con las dos versiones y sus fechas,
 `Vector v2.8.0 · novedades` al pie del Hangar, cero errores de JS.
+
+## Un solo preflight: el plan 13, entero — 2026-08-19
+
+`A`, `B` y `C`. Vector tenía dos pantallas que pedían la misma ruta y una tarjeta de
+novedades diez features atrasada. Quedó una sola pantalla de preflight y un versionado
+que no puede volver a mentir.
+
+### El bug que ordenó todo el plan
+
+En `RouteWeatherClient`, `categoryConfig` daba a `UNK` la misma `severity: 0` que a
+`VFR`. Y cuando una estación no contestaba, el fetch la marcaba `UNK`. O sea:
+
+> Si se caía el servicio de meteorología para **toda** la ruta, la pantalla anunciaba
+> **"Ruta 100% VFR habilitada — condiciones meteorológicas excelentes"**.
+
+Afirmar cuando no se sabe, y encima afirmar lo tranquilizador, en la única lógica de la
+app con consecuencia de vuelo — y en el único lugar donde no se podía testear, porque
+`vitest` corre en `environment: "node"`.
+
+`src/lib/briefing.ts` la saca del `.tsx`, la ata a tests y la arregla contando
+estaciones: **el veredicto sabe de cuántas habló y lo muestra siempre**. Se verificó en
+vivo: el sandbox no llega a `aviationweather.gov`, y la pantalla nueva dice *"No pudimos
+consultar el estado meteorológico — 0 de 2 estaciones respondieron"*. Ese caso exacto es
+el que antes daba el visto bueno.
+
+### Los otros tres bugs que arrastraba la pantalla vieja
+
+Quedaron listados en el encabezado de `BriefingRuta.tsx` para que no vuelvan:
+
+- **Las normas ANAC nunca se mostraron.** El render pedía `madhel.norms`; la API devuelve
+  `particularNorms` y `generalNorms`. Bloque muerto durante meses.
+- **`nearestStation` se ignoraba**: cuando un aeródromo no tiene METAR propio la API
+  devuelve el de otra estación, y la pantalla lo pintaba como si fuera de ahí.
+- **Sin timeout ni cancelación**: al cambiar de ruta, las respuestas viejas pisaban el
+  estado nuevo.
+
+Y uno nuevo que apareció mirando: `/api/weather` devuelve el **string** `"No disponible"`
+cuando no hay METAR. Es truthy, así que se renderizaba en la caja monoespaciada con la
+misma pinta que un reporte real. Se normaliza en el borde.
+
+### El viento cruzado, y por qué el designador de pista no sirve
+
+`runways.tsv`: 117 pistas en 93 aeródromos, desde OurAirports, con `le_heading_degT` —
+**rumbo verdadero**. El designador es magnético y viejo: se pinta al habilitar la pista y
+la variación se mueve 0,15°/año, así que en SADF implica 6° W cuando hoy son 10,2°, unos
+27 años de deriva. Como el METAR escrito también reporta en verdadero, el cruzado sale
+**sin una sola conversión**.
+
+**618 de 711 aeródromos no tienen pista publicada** — OurAirports sólo conoce los que
+tienen ICAO. Ahí no se estima: se dice.
+
+### El viento en altura es el mayor salto del planificador
+
+Open-Meteo (GFS), **sin API key y sin registro**, verificado con un request real antes de
+escribir una línea. Devuelve nudos si se piden, dirección en grados verdaderos —el mismo
+marco de `navegacion.ts`— y `geopotential_height`, que es la altura **real** de cada
+nivel. Eso último importa: la correspondencia hPa ↔ pies **no es fija**, así que una
+tabla de conversión sería precisión inventada.
+
+Cuánto cambia, medido en SADM→SAAJ con datos reales de Morón:
+
+| Altitud | Viento | GS | Tramo |
+|---|---|---|---|
+| superficie | 120/3 | 113 | 60′ |
+| 3.000 ft | 155/14 | 116 | 59′ |
+| 5.000 ft | 174/13 | 112 | 61′ |
+| 10.000 ft | 242/16 | **96** | **71′** |
+
+**Once minutos de diferencia** que el viento de superficie escondía: a 10.000 ft el 242
+le pega casi de frente a un rumbo 274. Verificado a mano: WCA −4,43° y GS 96,1.
+
+Un nivel con **cualquier** campo en `null` se descarta entero. Open-Meteo contesta 200 con
+nulls en los niveles que no publica, y un `Number(null)` daría 0 — o sea "calmo del
+norte", el dato faltante disfrazado del más tranquilizador posible.
+
+### Aeródromos cerca, y por qué no se llaman "alternativas"
+
+Con la ruta y el combustible ya calculados, cruzar contra el directorio salía casi gratis.
+Pero **no sabe** si la pista alcanza, si el campo opera hoy o si tiene combustible, así
+que prometer "alternativa" sería prometer una validación que no existe.
+
+La primera prueba devolvió **tres helipuertos entre los cinco más cercanos a Morón**. Se
+filtran del lado del servidor: un helipuerto no es donde baja un avión.
+
+### Densidad de altitud, que ya estaba pago
+
+`computeAltitude` y `computeCloudBase` existían, testeados, y **nadie los usaba en el
+preflight**: el QNH y el rocío se tipeaban a mano. `/api/weather` leía cinco campos del
+upstream y descartaba el resto, incluido `altim` (hPa, el mismo `Q1024` del METAR crudo) y
+`dewp`. Dos líneas y la densidad de altitud aparece sola en cada tarjeta.
+
+⚠️ `visib` viene como **string** (`"6+"`), no número. Por eso no se expuso: invitaría a un
+`Number()` que daría `NaN` justo los días de buena visibilidad.
+
+### El versionado
+
+Tres fuentes de verdad y ninguna conectada. Ahora `package.json` es la única, un test la
+ata al changelog, otro abre `src/app/` para verificar que cada link exista, y el
+`Record<NombreIcono, LucideIcon>` hace que agregar una novedad sin ícono **no compile**.
+Más `/dashboard/novedades`, la versión al pie del Hangar y `CHANGELOG.md` generado del
+mismo dato.
+
+### Verificación
+
+`tsc` 0 · **494 tests** (eran 421) · build limpio · smoke 16 rutas.
+
+En navegador de verdad: la planilla intacta, el briefing cargando, el veredicto honesto
+con el servicio caído, las alternativas sin helipuertos, la ruta vieja en 404, el nav con
+Planificador en el slot que dejó Ruta METAR, y **cero errores de JS** en todo.
+
+El camino feliz del viento en altura se verificó interceptando la red en el navegador con
+los niveles reales medidos en Morón, porque desde este sandbox el `fetch` de Node no sale
+a internet. La API en sí se probó con `curl`: 200 y datos buenos.
+
+**Cuatro mutantes sobre `briefing.ts`, las cuatro cazadas**, incluida la que restaura el
+bug original de `UNK`.

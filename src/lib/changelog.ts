@@ -73,9 +73,9 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
-    version: "2.8.0",
+    version: "2.9.0",
     fecha: "2026-08-19",
-    titulo: "Vector ahora te acompaña antes de despegar",
+    titulo: "Todo el preflight en una sola pantalla",
     novedades: [
       {
         icono: "brujula",
@@ -94,18 +94,18 @@ export const CHANGELOG: VersionPublicada[] = [
         cta: "Completar el Hangar",
       },
       {
+        icono: "nube",
+        titulo: "Briefing y planificación en la misma pantalla",
+        texto:
+          "El planificador ahora trae también el METAR, el TAF y los NOTAM de cada punto, el viento cruzado sobre la pista y la densidad de altitud. Y podés tomar el viento del modelo en altura en vez del de superficie, que a 10.000 ft puede cambiar el tiempo de un tramo diez minutos.",
+        href: "/dashboard/planificador",
+        cta: "Ver el briefing",
+      },
+      {
         icono: "llave",
         titulo: "La sesión dejó de caerse",
         texto:
           "Vector te echaba más o menos cada hora, sin aviso y sin motivo aparente. Ahora se renueva sola y aguanta treinta días.",
-      },
-      {
-        icono: "billetera",
-        titulo: "Cuánto te sale volar",
-        texto:
-          "Cada vuelo muestra lo que costó, el dashboard resume el gasto del mes y hay un gráfico de cómo evolucionó el precio de tu hora.",
-        href: "/dashboard/balance",
-        cta: "Ver mi saldo",
       },
     ],
   },

@@ -7,10 +7,16 @@ import AirportResolver from "./AirportResolver";
 import PageHeader from "./PageHeader";
 import PlanMapa from "./PlanMapa";
 import BriefingRuta from "./BriefingRuta";
+import AlternativasCerca from "./AlternativasCerca";
 import StyledSelect from "./StyledSelect";
 import { fmt, hoursToHm, num, NumberField, ToolNote } from "./tools/ToolPrimitives";
 import { calcularPlan, type ParametrosTramo } from "@/lib/navegacion";
 import { computeFuel } from "@/lib/aviation";
+import {
+  diferenciaConSuperficie,
+  nivelParaAltitud,
+  type NivelViento,
+} from "@/lib/vientos-altura";
 import {
   DISPERSION_TOLERABLE,
   MAX_PUNTOS,
@@ -89,6 +95,12 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
 
   const [metar, setMetar] = useState<{ estacion: string; texto: string } | null>(null);
 
+  /** Altitud de crucero. Es lo que decide qué nivel de viento en altura corresponde. */
+  const [altitud, setAltitud] = useState("");
+  const [niveles, setNiveles] = useState<NivelViento[]>([]);
+  /** El viento de superficie que trajo el METAR, para poder compararlo con el de altura. */
+  const vientoSuperficie = useRef<{ direccion: number; velocidad: number } | null>(null);
+
   const aeronave = aeronaves.find((a) => a.id === aeronaveId) ?? null;
 
   /* ---------------------------------------------------------------------- */
@@ -127,8 +139,12 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
         // no hay rumbo que corregir: se deja el campo vacío en vez de inventar un cero,
         // que sería viento del norte.
         const dir = Number(datos.windDir);
+        const vel = Number(datos.windSpeed);
         if (Number.isFinite(dir)) setVientoDir(String(dir));
-        if (Number.isFinite(Number(datos.windSpeed))) setVientoVel(String(datos.windSpeed));
+        if (Number.isFinite(vel)) setVientoVel(String(vel));
+        if (Number.isFinite(dir) && Number.isFinite(vel)) {
+          vientoSuperficie.current = { direccion: dir, velocidad: vel };
+        }
         if (datos.metar) {
           setMetar({ estacion: datos.nearestStation?.icao || salida.icao, texto: datos.metar });
         }
@@ -142,6 +158,44 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
       cancelado = true;
     };
   }, [salida?.icao]);
+
+  // Viento en altura para el punto de salida.
+  useEffect(() => {
+    if (salida?.lat === undefined || salida?.lon === undefined) return;
+    let cancelado = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/winds-aloft?lat=${salida.lat}&lon=${salida.lon}`);
+        if (!res.ok || cancelado) return;
+        const datos = await res.json();
+        if (!cancelado) setNiveles(datos.niveles ?? []);
+      } catch {
+        // Sin viento en altura se planifica con el de superficie, que es lo que se venía
+        // haciendo. No es un error que valga la pena mostrar.
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [salida?.lat, salida?.lon]);
+
+  /*
+    Cuando hay altitud de crucero y hay niveles, el viento sale del nivel que corresponde
+    en vez del METAR de superficie. **Es el salto de calidad del planificador**: a 3.000 ft
+    el viento suele rolar 20-30° a la derecha y soplar 10-15 kt más que en la pista.
+
+    Respeta `tocoViento` igual que el METAR: si el piloto escribió un viento, manda el suyo.
+  */
+  const altitudNum = num(altitud);
+  const nivelElegido = altitudNum > 0 ? nivelParaAltitud(niveles, altitudNum) : null;
+
+  useEffect(() => {
+    if (!nivelElegido || tocoViento.current) return;
+    setVientoDir(String(nivelElegido.direccion));
+    setVientoVel(String(nivelElegido.velocidad));
+  }, [nivelElegido]);
 
   /* ---------------------------------------------------------------------- */
   /* Estado en la URL                                                        */
@@ -479,6 +533,15 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
             </div>
 
             <NumberField
+              label="Altitud de crucero"
+              suffix="ft"
+              value={altitud}
+              onChange={setAltitud}
+              placeholder="4500"
+              min={0}
+            />
+
+            <NumberField
               label="Variación magnética (W positiva)"
               suffix="°"
               value={variacion}
@@ -488,11 +551,42 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               }}
             />
 
-            {metar && (
+            {/*
+              De dónde salió el viento que está en los campos. Antes decía siempre "del
+              METAR"; ahora puede venir del modelo en altura, y **el piloto tiene que
+              saber cuál está usando**: son números distintos y llevan a rumbos distintos.
+            */}
+            {nivelElegido ? (
+              <ToolNote>
+                Viento a {fmt(nivelElegido.altitudFt, 0)} ft ({nivelElegido.hPa} hPa) del modelo GFS.
+                {(() => {
+                  const sup = vientoSuperficie.current;
+                  if (!sup) return null;
+                  const d = diferenciaConSuperficie(sup, nivelElegido);
+                  return (
+                    <>
+                      {" "}Contra la superficie{" "}
+                      <strong>
+                        {d.giroGrados === 0
+                          ? "no rola"
+                          : `rola ${fmt(Math.abs(d.giroGrados), 0)}° a la ${d.giroGrados > 0 ? "derecha" : "izquierda"}`}
+                      </strong>{" "}
+                      y sopla {d.masNudos >= 0 ? `${fmt(d.masNudos, 0)} kt más` : `${fmt(-d.masNudos, 0)} kt menos`}.
+                    </>
+                  );
+                })()}
+              </ToolNote>
+            ) : metar ? (
               <ToolNote>
                 Viento tomado del METAR de {metar.estacion}. <strong>Es viento de superficie</strong>, y
-                se está usando para crucero: en altura suele rolar a la derecha y soplar más fuerte.
-                Editalo si tenés un pronóstico mejor.
+                se está usando para crucero. Cargá la altitud de crucero y lo tomamos del modelo en
+                altura, que es bastante distinto: suele rolar a la derecha y soplar más fuerte.
+              </ToolNote>
+            ) : null}
+
+            {altitudNum > 0 && niveles.length === 0 && (
+              <ToolNote>
+                No pudimos traer el viento en altura para esta zona. Se sigue usando el de superficie.
               </ToolNote>
             )}
 
@@ -543,6 +637,10 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                   Var {fmt(Math.abs(num(variacion)), 1)}° {num(variacion) >= 0 ? "W" : "E"}
                 </span>
                 <span>Consumo {fmt(consumoNum, 0)} L/h</span>
+                {altitudNum > 0 && <span>{fmt(altitudNum, 0)} ft</span>}
+                <span>
+                  Viento {nivelElegido ? `de altura (${nivelElegido.hPa} hPa)` : "de superficie"}
+                </span>
               </p>
 
               <PlanillaTramos plan={plan!} puntos={cargados} />
@@ -619,6 +717,11 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                   elevacionFt: p.elevacionFt,
                   pistas: p.pistas,
                 }))}
+              />
+
+              <AlternativasCerca
+                puntos={cargados.map((p) => ({ codigo: p.codigo, lat: p.lat, lon: p.lon }))}
+                groundSpeedKt={plan!.tramos[0]?.groundSpeed ?? null}
               />
 
               {metar && (
