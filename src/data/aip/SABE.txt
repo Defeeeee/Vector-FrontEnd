@@ -1,0 +1,246 @@
+# SABE — extraído de https://ais.anac.gob.ar/descarga/aip-6a10684a7a5bd
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 343335S 0582454W Centro geométrico de pista /
+(*) 343335S 0582454W Runway geometric center
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+2 km al NE del centro de la Ciudad Autónoma de Buenos Aires /
+2 km at NE of the center of the Autonomous city of Buenos Aires
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+6 m (20 ft), 28.4C - 8.4°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+16 m (52 ft)
+5 VAR, cambio anual / VAR, annual change 10° W, 9´ W (Año/year 2026)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. Rafael
+Obligado S/N°, Edificio Multinivel 1er Piso, CP 1425, CABA
+(+54 11) 4773 1660, Jefatura (+54 11) 45141620, (+54 11)
+45141630, SABEYDYX, ydaer@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Rafael Obligado
+Avenue, Multilevel Building 1st Floor, Zip Code 1425, CABA
+(+54 11) 4773 1660, Head Office (+54 11) 45141620, (+54 11)
+45141630, SABEYDYX, ydaer@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 11) 54803000,
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA) - ARO-AIS
+(+54 11) 45141513 / 1611, acaer@eana.com.ar, MET (+54 11)
+45141617 - (+54 11) 4317 6001/6 - INT. 61142, TWR (+54 11)
+45141628, www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA) - ARO-AIS (+54 11)
+45141513 / 1611, acaer@eana.com.ar, MET (+54 11) 45141617 -
+(+54 11) 4317 6001/6 - INT. 61142, TWR (+54 11) 45141628,
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Sí, auto elevadores hasta 1.5 t / Yes, forklifts up to 1,5 t
+2
+Tipos de combustible, lubricantes / Fuel and oil types JET A-1: Provisión de lubricantes aeronáuticos, con requerimiento
+previo /
+JET A-1: Provision of aeronautical lubricants, with prior request.
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+JET A-1, Capacidad máxima de Instalaciones: 2.520.000 litros.
+Abastecimiento de combustible con Camiones Cisterna,
+capacidad 352.000 litros /
+JET A-1, Maximum Capacity of Facilities: 2,520,000 liters. Fuel
+supply with Tanker Trucks, capacity 352,000 liters
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6
+Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Sí, dependiendo del tipo de aeronaves (mantenimiento de
+Aerolíneas Argentinas) /
+Yes, depending on the type of aircraft (Aerolíneas Argentinas
+maintenance)
+7 Observaciones / Remarks Sin disponibilidad de espacio para pernoctes en APN /
+No space available for overnight stays at APN
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de RWY-
+SWY /
+Slope of RWY-SWY
+1 2 3 4 5 6 7
+13 124.01°
+133.76° 2.350x45
+(*)
+1170/R/C/W/T
+CONC
+343314.16S
+0582530.91W
+6 m
+20 ft -0.05%
+31 304.00°
+313.75°
+343349.97S
+0582426.74W
+4.75 m
+16 ft +0.05%
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en
+qué extremo de
+pista) Descripción
+del sistema de
+parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No No 2.470x260
+(**)
+90x90 No No (***)
+No No 280x90 No No
+(***) Observaciones
+Extremo RWY 13 343355.54S 0582416.76W - ELEV 5.25 m (17 ft)
+Inicio RWY 31 - 343356.81S 0582414.48W – ELEV 5.25 m (17 ft). THR 31 MOV 377 m
+(*) Extensión de Pista (RSE) de 340x45 m disponible para despegues de RWY 13 exclusivamente con aprobación previa de factibilidad
+horaria (Resolución N° 180/19 ANAC o documento que la reemplace). Ver AD 2.20 Y AD 2.23
+Franja de RSE: ancho 110 m
+(**) Franja de RWY sector E reducida a 100 m desde inicio en el Norte de THR 13 hasta progr. 150 de THR 13
+Franja de RWY sector W reducida a 120 m en toda su extensión
+Aeronaves de Fuselaje Ancho (wide body) deberán realizar giro de 180° exclusivamente en plataformas de viraje de RWY 13 y 31 /
+(***) Remarks:
+RWY 13 End 343355.54S 0582416.76W - ELEV 5.25 m (17 ft)
+Beginning of RWY 31 - 343356.81S 0582414.48W – ELEV 5.25 m (17 ft). THR 31 MOV 377 m
+(*) Runway Extension (RSE) of 340x45 m available for RWY 13 takeoffs only with prior approval of schedule feasibility (Resolution No.
+180/19 ANAC or document replacing it). See AD 2.20 and AD 2.23
+RSE strip: 110 m width
+(**) Strip of RWY E sector reduced to 100 m from the beginning in the North of THR 13 to progressive 150 of THR 13
+Strip of RWY, W sector, reduced to 120 m in all its extension
+Wide body aircraft must make a 180° turn only on RWY 13 and 31 runway turn pads
+AIP ARGENTINA SABE AD 2.9
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 2/2024 28 NOVIEMBRE 2024
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+funcionamiento /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR Aeroparque Torre / Aeroparque Tower
+CPPL 118.85 MHz
+H24CAUX I 118.25 MHz
+CAUX II 128.85 MHz
+SMC Aeroparque Rodaje o Superficie /
+Aeroparque Taxi or Surface 121.90 MHz H24 Ver/See GEN 3.4
+APP Aeroparque Aproximación /
+Aeroparque Approach
+CPPL 120.60 MHz
+CAUX 119.50 MHz
+CLRD Aeroparque Autorizaciones (*) /
+Aeroparque Clearances (*)
+129.30 MHz
+09:00-03:30 UTC
+Entrega de autorizaciones
+ATC.
+(*) Ver disposiciones
+particulares en SABE AD 2.23
+Información Adicional /
+Delivery of ATC clearances
+(*) See particular provisions in
+SABE AD 2.23 Additional
+Information
+H24
+Sistema DCL Ver GEN
+3.4:4.2.5.5 Enlace de datos /
+DCL System. See GEN 3.
+3.4:4.2.5.5 Datalink
+EMERG 121.50 MHz H24 Ver/See GEN 3.4
+ATIS ATIS Aeroparque / Aeroparque ATIS
+127.60 MHz
+09:00-03:45 UTC
+Idioma español - inglés.
+Ver GEN 3.4 /
+Spanish - English language
+See GEN 3.4
+127.90 MHz

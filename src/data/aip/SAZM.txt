@@ -1,0 +1,193 @@
+# SAZM — extraído de https://ais.anac.gob.ar/descarga/aip-69e1232468b6a
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 375603S - 0573424W Centro geométrico de pista /
+(*) 375603S - 0573424W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+7 km al N de la ciudad de Mar del Plata. /
+7 km N of the city of Mar del Plata.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+21.5 m (71 ft) / 26.4°C, 3.2°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+14.5 m (48 ft)
+5 VAR, cambio anual / VAR, annual change 9° W, 9´ W (AÑO/ YEAR 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACION NACIONAL DE AVIACIÓN CIVIL, Aeródromo
+Mar del Plata, RP 2 KM 398.5, CP 7600, Mar de Plata - Pcia. de
+Buenos Aires.
+Jefatura móvil (+54 9 11) 23786467, SAZMZTZX /
+NATIONAL CIVIL AVIATION ADMINISTRA TION, Mar del Plata
+Aerodrome, Provincial Route 2 KM 398.5, Zip Code 7600 - Mar de
+Plata, Province of Buenos Aires.
+AD Head Office mobile (+54 9 11) 23786467, SAZMZTZX
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina - Administración Mar del Plata (+54 223)
+4785811 / 5879 / 5817 int. 101 –
+www.aeropuertosargentina.com /
+Aeropuertos Argentina - Mar del Plata Administrative office (+54
+223) 4785811 /5879 /5817 ext. 101-
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A) / Argentine
+Air Navigation Company (EANA S.A)-www.eana.com.ar
+ARO AIS (+54 223) 4786444 ext 53530, móvil (+54 9 223)
+5015359, acmdp@eana.com.ar; MET (+54 223) 4780106; (+54
+223) 4783810.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+HS – O/R
+TCA: Cámara de Frio / Cold chamber.
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL JET A-1 / HD 1.080, 1.100, 1.120, 1.004, 1.005, 1.001
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL 20.000 litros - AVGAS 100LL 30.000 litros - JET A-1
+424.000 litros /
+AVGAS 100LL 20,000 liters - AVGAS 100LL 30,000 liters - JET A-1
+424,000 liters.
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCR)
+y superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV
+of TDZ of
+precision APP
+RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+13 122.68°
+132°
+2.200x45
+450/R/B/W/T
+Rigido / Rigid
+350/F/BF/X/T
+Flexible/flexible
+375543.88S
+0573501.65W
+GUND 14.50 m (48 ft)
+21.50 m
+71 ft NIL
+31 302.66°
+312°
+375622.40S
+0573345.82W
+GUND 14.50 m (48 ft)
+18.75 m
+62 ft NIL
+Dimensione
+s SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m)
+/
+Dimensions of
+strips (m)
+RESA
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end) and Description of
+arresting system
+OFZ Observaciones /
+Remarks(*)
+8 9 10 11 12 13 14
+NIL NIL 2.320x280 90x90 NIL NIL
+NIL NIL 2.390x280 NIL NIL NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales
+/
+Channe
+ls
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR/APP/TMA Mar del Plata Torre/
+Mar del Plata Tower
+CPPL 118.75 MHz
+H24
+CAUX 118.20 MHz
+EMERG 121.50 MHz Ver GEN 3.4/ See GEN 3.4
+SMC Mar del Plata Rodaje / Superficie/
+Mar del Plata Taxiing / Surface 121.70 MHz

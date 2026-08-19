@@ -1,0 +1,220 @@
+# SACO — extraído de https://ais.anac.gob.ar/descarga/aip-69e1078aa7f9d
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 311836S 0641230W Centro geométrico de pista 01/19 /
+(*) 311836S 0641230W Geometric center of runway 01/19
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+9 km al NNW de la ciudad de Córdoba /
+9 km at NNW of the city of Córdoba
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+489 m (1604 ft), 29.9C - 3.7°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+26 m (85 ft)
+5 VAR, cambio anual / VAR, annual change 7° W, 12´ W (Año/year 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. La Voz del
+Interior 8500, CP X5008HMH, Pcia. de Córdoba.
+Jefatura AD (+54 351) 4753843, Conmutador (+54 351) 4756400,
+móvil (+54 9 351) 7065830, SACOYDYX, ydcba@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, La Voz del Interior
+ave. 8500, Zip code X5008HMH, Province of Córdoba.
+AD Head Office (+54 351) 4753843, Switchboard (+54 351)
+4756400, mobile (+54 9 351) 7065830, SACOYDYX,
+ydcba@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 351) 4750392, (+54 351) 4750242,
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A.) / ARO-AIS
+(+54 351) 4756428, accba@eana.com.ar; MET (+54 351)
+4753882; www.eana.com.ar
+Argentine Air Navigation Company (EANA S.A.), ARO-AIS (+54
+351) 4756428, accba@eana.com.ar; MET (+54 351) 4753882;
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Sí, (tipo toneladas) General – 6.1 y 13 t /
+Yes, (ton type) General – 6.1 and 13 t
+2
+Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL 20.000 litros - JET A-1 600.000 litros - HDL 1080 1100
+- AF 1004 / AVGAS 100LL 20,000 liters - JET A-1 600,000 liters -
+HDL 1080 1100 - AF 1004
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+Camiones Cisterna JET A-1 (3 x 25.000 litros - 1 x 24.000 litros – 1
+x 15.400 litros – 1 x 20.800 litros – 1 x 14.000 litros y 1 x 26.000
+litros). Camión Cisterna AVGAS 100 LL (1 x 5.000 litros) /
+Tanker trucks JET A-1 (3 x 25,000 liters - 1 x 24,000 liters – 1 x
+15,400 liters – 1 x 20,800 liters – 1 x 14,000 liters and 1 x 26,000
+liters). Tanker truck AVGAS 100 LL (1 x 5,000 liters)
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Sí/Yes
+7
+Observaciones / Remarks Carga HGT MAX de entrega 5.60 m - MNM 0.17 m - Equipo FMC
+COMANDER 30 /
+Load MAX HGT of delivery 5,60 m - MNM 0.17 m - FMC
+COMANDER Equipment 30
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+05 044.2°,
+051 2.200x45 395/F/A/X/T
+ASPH
+311923.40S
+0641227.01W
+465.5 m
+1.527 ft 0.2%
+23 224.2°,
+231
+311832.13S
+0641128.99W
+470 m
+1.542 ft -0.2%
+01 359.2,
+006 3.200x45 680/R/B/W/T
+CONC
+311928.31S
+0641229.16W
+465 m
+1.526 ft 0.75%
+19 179.2,
+186
+311744.36S
+0641230.86W
+489 m
+1.604 ft -0.75%
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end) and Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No No 2.320x300 90x90 No No NIL
+No No 90x90 No No NIL
+No No 3.320x300 90x90 No No NIL
+No No 90x90 No No NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR/APP Córdoba Torre / Córdoba Tower
+CPPL 118.30 MHz
+H24
+No.
+CAUX I 118.55 MHz No.
+CAUX II 119.45 MHz No.
+SMC Córdoba Rodaje o Superficie /
+Córdoba Taxiing or Surface CPPL 121.75 MHz Ver/See GEN 3.4.
+CLRD Córdoba Autorizaciones /
+Córdoba Clearances CPPL 129.30 MHz Entrega de autorizaciones ATC. /
+Delivery of ATC clearances.
+ATIS ATIS Córdoba / Córdoba ATIS CPPL 127.50 MHz
+Ver GEN 3.4. Radiodifusión
+automática de información
+terminal (ATIS) /
+See GEN 3.4. Automatic Terminal
+Information Service (ATIS)
+TMA Córdoba Control CPPL 119.10 MHZ No.
+CAUX 120.65 MHZ No.
+EMERG 121.50 MHz Ver/See GEN 3.4.
+AIP ARGENTINA SACO AD 2.9
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026

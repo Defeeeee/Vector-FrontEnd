@@ -1,0 +1,217 @@
+# SADF — extraído de https://ais.anac.gob.ar/descarga/aip-6a68fbe672145
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 342718S 0583529W Centro geométrico de pista /
+(*) 342718S 0583529W Runway geometric center
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+2 km al SW de la ciudad de San Fernando /
+2 km at SW of the city of San Fernando
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+3.25 m (11 ft), 29.5°C - 6.2°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+16 m (52 ft)
+5 VAR, cambio anual / VAR, annual change 10°W, 10´W (Año/year2023)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Ruta 202 y
+Balcarce, CP 1646, San Fernando
+Jefatura (+54 11) 43176000 extensión 67112, SADFYDYX,
+ydFDO@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Route 202 and
+Balcarce, Zip Code 1646, San Fernando
+AD Head Office (+54 11) 43176000 extension 67112, SADFYDYX,
+ydFDO@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina - (+54 11) 47147858 / 7859 / 7860,
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), ARO-AIS y
+TWR (+54 11) 45800261, acfdo@eana.com.ar, MET (+54 11)
+45199376, www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA), ARO-AIS y TWR
+(+54 11) 45800261, acfdo@eana.com.ar, MET (+54 11) 45199376,
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2
+Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL, JET A-1, JET OIL 2, PRIST (Anti-icing Aviation Fuel
+Additive), W100 Aeroshell, W100 PLUS Aeroshell, W15W-50
+Aeroshell
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+Tanques aéreos; AVGAS 100LL, 2 x 30.000 litros c/u, JET A-1 2 x
+100.000 litros c/u. Unidades abastecedoras: 3 x 10.000 litros c/u
+de JET A-1, 2 x 5.000 litros c/u de AVGAS 100LL. En planta: 2
+surtidores AVGAS 100LL, 1 surtidor JET A-1. (*) /
+Air tanks; AVGAS 100LL, 2 x 30,000 liters each, JET A-1 2 x 100,000
+liters each. Supply units: 3 x 10,000 liters each of JET A-1, 2 x 5,000
+liters each of AVGAS 100LL. In plant: 2 pumps AVGAS 100LL, 1
+Pump JET A-1. (*)
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+Sí, en hangares privados / Yes, in private hangars
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Sí, en hangares privados / Yes, in private hangars
+7
+Observaciones / Remarks Las reparaciones y guarda de ACFT en hangares privados, se
+deberá pactar su uso y pago con los permisionarios.
+(*) Abastecedora Julem S.R.L /
+Repairs and storage of ACFT in private hangars, their use and
+payment must be agreed with the permit holders.
+(*) Supplier Julem S.R.L
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and
+SWY strength
+(PCN) and
+surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de RWY-
+SWY /
+Slope of RWY-SWY
+1 2 3 4 5 6 7
+05 044.19°
+053.85°
+1.690x30 18 F/C/X/U
+ASPH
+342732.81S
+0583546.43W
+342653.53S
+0583500.34W
+16 m (52 ft)
+3 m
+10 ft 0.02%
+23 224.18°
+233.8°
+342659.94S
+0583507.86W
+342732.81S
+0583546.43W
+16 m (52 ft)
+3.25 m
+11 ft -0.02%
+AIP ARGENTINA SADF AD 2.8
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2024 11 JULIO 2024
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS (cont.)
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m)
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en
+qué extremo de
+pista) Descripción
+del sistema de
+parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No No
+1.810x280
+90x60 No No NIL
+No No 90x60 No No DTHR 23 275 m
+por/per OBST.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+funcionamiento /
+Hours of operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR Fernando Torre / Fernando Tower
+CPPL 119.00 MHz
+H24
+CAUX 120.05 MHz
+EMERG 121.5 MHz Ver/See GEN 3.4.
+SMC Fernando Rodaje o Superficie /
+Fernando Taxiing or Surface 121.85 MHz
+CLRD Autorizaciones San Fernando
+San Fernando Clearances 129.50 MHz
+Entrega de autorizaciones
+ATC /
+Delivery of ATC clearances
+ATIS 127.65 MHz
+Idioma: español e inglés /
+Language: Spanish and
+English
+AIP ARGENTINA SADF AD 2.12
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025

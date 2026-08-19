@@ -5,7 +5,8 @@ import { Flight, Aircraft, Profile, PilotDocument } from "@/types";
 import { breakdownError, buildFlightBody, isAffirmation, proposalSummary } from "@/lib/copilot-guards";
 import { canonicalRoute } from "@/lib/madhel-reference";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
-import { anacIndicator, controlledFallback } from "@/lib/madhel-reference";
+import { anacIndicator } from "@/lib/madhel-reference";
+import { componerFicha, datosAip } from "@/lib/aip";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -170,7 +171,12 @@ async function getAirportInfoHelper(icao: string) {
     if (madhelRes.ok) {
       const mJson = await madhelRes.json();
       if (mJson && mJson.metadata) {
-        const fallback = controlledFallback(code) ?? controlledFallback(mJson.metadata.identifiers?.icao ?? "");
+        /*
+          El AIP rellena lo que MADHEL deja vacío en los aeródromos controlados, y **nunca
+          lo pisa**. Ver `lib/aip.ts`: antes acá había una tabla escrita a mano que sí lo
+          pisaba, y le dictaba al modelo frecuencias que no existen.
+        */
+        const aip = datosAip(code) ?? datosAip(mJson.metadata.identifiers?.icao ?? "");
         let radioList: string[] = [];
         if (mJson.data?.helpers_system?.radio && mJson.data.helpers_system.radio.length > 0) {
           radioList = mJson.data.helpers_system.radio;
@@ -182,6 +188,17 @@ async function getAirportInfoHelper(icao: string) {
         let locStr = mJson.data?.human_readable_localization || "";
         if (locStr.includes("***Consultar en el sitio web")) locStr = "";
 
+        const ficha = componerFicha(
+          {
+            runways: mJson.data?.rwy || [],
+            radio: radioList,
+            localization: locStr,
+            fuel: mJson.data?.fuel || "",
+            telephone: mJson.data?.telephone || [],
+          },
+          aip
+        );
+
         const m = {
           fullName: mJson.human_readable_identifier || mJson.the_geom?.properties?.name || code,
           state: mJson.metadata.localization?.state || "",
@@ -190,11 +207,11 @@ async function getAirportInfoHelper(icao: string) {
           condition: mJson.metadata.condition || "",
           control: mJson.metadata.control || "",
           traffic: mJson.metadata.traffic || "",
-          runways: fallback ? fallback.rwy : (mJson.data?.rwy || []),
-          radio: fallback ? fallback.radio : radioList,
-          localization: fallback ? fallback.localization : locStr,
-          fuel: fallback ? fallback.fuel : (mJson.data?.fuel || "No especificado"),
-          telephone: mJson.data?.telephone || [],
+          runways: ficha.runways,
+          radio: ficha.radio,
+          localization: ficha.localization,
+          fuel: ficha.fuel || "No especificado",
+          telephone: ficha.telephone,
           norms: mJson.data?.norms?.particular?.content || ""
         };
 

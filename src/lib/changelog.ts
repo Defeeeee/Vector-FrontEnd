@@ -73,6 +73,27 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.10.1",
+    fecha: "2026-08-19",
+    titulo: "Las frecuencias de los aeródromos controlados estaban mal",
+    novedades: [
+      {
+        icono: "nube",
+        titulo: "Corregimos las frecuencias, las pistas y el combustible",
+        texto:
+          "De los ocho aeródromos controlados que mostrábamos —Aeroparque, Ezeiza, San Fernando, El Palomar, Córdoba, Rosario, Mar del Plata y Bariloche— casi todos los datos estaban equivocados: la torre de San Fernando figuraba en 118.45 y son 119.00 y 120.05, El Palomar tenía la pista 17/35 anotada como 16/34, y Ezeiza aparecía con AVGAS cuando sólo hay JET A-1. Ahora salen del AIP de ANAC, con la fecha de vigencia a la vista. Si planificaste con esos números, revisalos.",
+        href: "/dashboard/airports",
+        cta: "Ver un aeródromo",
+      },
+      {
+        icono: "lupa",
+        titulo: "Y ahora se puede verificar",
+        texto:
+          "Cada frecuencia y cada medida que ves de esos aeródromos tiene que aparecer en el PDF oficial de ANAC, y hay una prueba automática que lo comprueba en cada cambio. Los teléfonos de esos ocho se sacaron: no teníamos de dónde confirmarlos.",
+      },
+    ],
+  },
+  {
     version: "2.10.0",
     fecha: "2026-08-19",
     titulo: "Un punto de la ruta ya no tiene que ser un aeródromo",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anacIndicator, controlledFallback } from "@/lib/madhel-reference";
+import { anacIndicator } from "@/lib/madhel-reference";
+import { componerFicha, datosAip } from "@/lib/aip";
 
 
 
@@ -28,6 +29,8 @@ interface MadhelData {
   telephone: string[];
   particularNorms: string;
   generalNorms: string;
+  /** De dónde salió lo de arriba, y de cuándo es. `null` cuando todo vino de MADHEL. */
+  aip: { edicion: string; vigenteDesde: string; url: string } | null;
 }
 
 export async function GET(req: NextRequest) {
@@ -56,8 +59,6 @@ export async function GET(req: NextRequest) {
     if (madhelRes.ok) {
       const mJson = await madhelRes.json();
       if (mJson && mJson.metadata) {
-        const fallback = controlledFallback(icao);
-
         const particularContent = mJson.data?.norms?.particular?.content || "";
         const generalContent = mJson.data?.norms?.general?.content || "";
 
@@ -77,6 +78,28 @@ export async function GET(req: NextRequest) {
           locStr = ""; // Clear the useless AIP reference string
         }
 
+        /*
+          **El AIP rellena, nunca pisa.** Para un aeródromo controlado MADHEL devuelve
+          `rwy: []`, `radio: []`, `fuel: ""` y `telephone: []` —ANAC publica eso en el AIP
+          y no acá—, así que el hueco es real y hay que llenarlo. Lo que no se puede es
+          llenarlo cuando MADHEL sí contestó: la versión anterior de esto hacía
+          `fallback ? fallback.rwy : ...`, y con eso La Plata mostraba una pista de tierra
+          escrita a mano en vez de la de asfalto que ANAC publica.
+
+          Se elige por campo y no por aeródromo, que es lo que hace que la regla se sostenga
+          sola cuando MADHEL empiece a publicar alguno de estos datos.
+        */
+        const ficha = componerFicha(
+          {
+            runways: mJson.data?.rwy || [],
+            radio: radioList,
+            localization: locStr,
+            fuel: mJson.data?.fuel || "",
+            telephone: mJson.data?.telephone || [],
+          },
+          datosAip(icao)
+        );
+
         madhel = {
           name: mJson.metadata.identifiers?.icao || icao,
           fullName: mJson.human_readable_identifier || mJson.the_geom?.properties?.name || "",
@@ -89,13 +112,14 @@ export async function GET(req: NextRequest) {
           status: mJson.metadata.status || "OK",
           
           // Detail fields
-          runways: fallback ? fallback.rwy : (mJson.data?.rwy || []),
-          radio: fallback ? fallback.radio : radioList,
-          localization: fallback ? fallback.localization : locStr,
-          fuel: fallback ? fallback.fuel : (mJson.data?.fuel || "No especificado"),
-          telephone: fallback ? fallback.telephone : (mJson.data?.telephone || []),
+          runways: ficha.runways,
+          radio: ficha.radio,
+          localization: ficha.localization,
+          fuel: ficha.fuel || "No especificado",
+          telephone: ficha.telephone,
           particularNorms: particularContent,
-          generalNorms: generalContent
+          generalNorms: generalContent,
+          aip: ficha.aip
         };
       }
     }

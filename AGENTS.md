@@ -4103,3 +4103,78 @@ se quedaba mirando un campo inerte. Ahora cualquier token con barra que no resue
 explica qué le falta.
 
 **556 tests** en total.
+
+## Las frecuencias de los controlados estaban mal — 2026-08-19
+
+Reporte de uso, con capturas: *"las frecuencias de San Fernando están incorrectas… no sé
+qué otros aeropuertos estarán incorrectos, por favor revisar"*. Vector mostraba TWR
+118.45 / GND 121.90 / COOP 123.50; el AIP AD 2.18 dice TWR 119.00 y 120.05, SMC 121.85,
+CLRD 129.50, ATIS 127.65.
+
+### De dónde salían
+
+De `CONTROLLED_FALLBACKS` en `lib/madhel-reference.ts`: nueve aeródromos escritos a mano,
+que la pantalla rotulaba **"Ficha Operativa Oficial ANAC MADHEL"**. El propio comentario
+de la tabla avisaba del riesgo — *"nadie revalida contra el AIP"*—. Se cumplió.
+
+Contrastando los nueve contra el AIP, **de veintiséis frecuencias sólo tres coincidían.**
+Y no eran sólo las frecuencias:
+
+| | Mostrábamos | AIP |
+|---|---|---|
+| SADP pista | **16/34** 2110x48 | **17/35** 2.110x45 |
+| SABE pista | 2700x45 | **2.350x45** |
+| SADF pista | 1800x30 | **1.690x30** (AD 2.13: TORA 1.690) |
+| SAZS pista | 2200x45 | **2.348x48** |
+| SAEZ combustible | JET A-1, **AVGAS 100LL** | JET A-1 — su AD 2 **no nombra AVGAS ni una vez** |
+| SAAR ubicación | 11 km al W | 13 km al WNW |
+
+El designador de El Palomar es el peor: es el número pintado en el umbral. Y el AVGAS de
+Ezeiza deja a un piloto de pistón planificando una escala que no existe.
+
+### El segundo bug, que el usuario no vio y era peor
+
+El código hacía `fallback ? fallback.rwy : mJson.data.rwy`. **Cuando había entrada a mano,
+el dato de ANAC se descartaba.** No rellenaba un hueco: lo pisaba.
+
+Para los ocho controlados daba igual —MADHEL les devuelve `radio: []`, `rwy: []`,
+`fuel: ""`, `telephone: []`, porque ANAC eso lo publica en el AIP— pero **La Plata no es
+controlado y MADHEL publica todo de él**. Mostrábamos una pista de **tierra de 1435 m**
+donde ANAC publica **asfalto de 1427 m**, una segunda pista 14/32 que hoy no lista, y uno
+de sus siete teléfonos. La Plata ni siquiera tiene documento AD 2 en el AIP, justamente
+por no ser controlado.
+
+Y la regla estaba copiada en tres rutas: `/api/notams`, `/api/chat` y el webhook de
+WhatsApp. Ahora vive una vez, en `componerFicha`, con tests.
+
+### La regla que lo hace no repetible
+
+`aip.test.ts` verifica que **cada frecuencia y cada medida que la app muestra aparezca
+literalmente en el texto extraído del PDF oficial**, commiteado en `src/data/aip/`. No se
+puede escribir un número que el AIP no diga. Los seis mutantes que se probaron son los
+errores reales de la tabla vieja, y los seis dan rojo.
+
+Dos cosas que el propio test encontró mientras se escribía:
+
+1. **El AIP de Córdoba escribe `119.10 MHZ`** con la unidad en mayúscula. La comparación
+   pasó a ser insensible a caja — una errata de ANAC no es un dato equivocado nuestro.
+2. **`textoPista` iba a producir una pista de 690 metros.** El AIP escribe `1.690x30` con
+   punto de millar, y `pistasDesdeMadhel` busca de tres a cinco dígitos seguidos: contra
+   esa cadena engancha `690x30`. Un tercio del largo real, en el número que decide si el
+   avión entra. Se descubrió cruzando el formato nuevo con el parser viejo, que es
+   exactamente lo que ninguna de las dos funciones muestra por separado.
+
+### Lo que se sacó y no se reemplazó
+
+**Los teléfonos de los ocho controlados.** El AIP no los publica en un campo propio y
+MADHEL no devuelve ninguno, así que no hay de dónde confirmarlos. Se muestran vacíos.
+Prometer menos y cumplirlo.
+
+### Sobre los fixes de aerovía
+
+Quedó investigado y **no** implementado en este cambio: `ENR 4.4 Designadores o nombres en
+clave para los puntos significativos`, edición 01/26 vigente desde 11-Jun-26, 20 páginas,
+`https://ais.anac.gob.ar/descarga/aip-69e1200e54990`. Existe y es alcanzable con la
+infraestructura de `build-aip.mjs`. No se mezcló con una corrección de datos de seguridad.
+
+**606 tests.**

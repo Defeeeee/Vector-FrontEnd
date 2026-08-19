@@ -46,6 +46,11 @@ export interface MadhelFull {
   telephone: string[];
   particularNorms: string;
   generalNorms: string;
+  /**
+   * De dónde salieron las pistas, las frecuencias y el combustible cuando MADHEL no los
+   * publica, y **de cuándo son**. `null` si todo vino de MADHEL.
+   */
+  aip: { edicion: string; vigenteDesde: string; url: string } | null;
 }
 
 /** What the pilot has flown at this aerodrome, precomputed on the server. */
@@ -314,13 +319,26 @@ export default function AirportsClient({
             />
           </div>
 
-          {/* Ficha Operativa ANAC MADHEL Completa */}
+          {/*
+            La ficha operativa.
+
+            **El rótulo depende de la fuente, y ése era el bug.** Esta tarjeta decía
+            siempre "Ficha Operativa Oficial ANAC MADHEL" — también arriba de datos que no
+            venían de MADHEL sino de una tabla escrita a mano, y que estaban mal: San
+            Fernando con la torre en 118.45 cuando son 119.00 y 120.05. Un piloto no tiene
+            forma de dudar de algo rotulado "oficial".
+
+            Ahora, cuando los datos salen del AIP, lo dice, muestra la edición y desde
+            cuándo rige, y enlaza el documento para que se pueda contrastar.
+          */}
           {(madhelFull || selected.madhel) && (
             <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-6 md:p-8 space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 dark:border-white/10 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="eyebrow text-aviation-blue">Ficha Operativa Oficial ANAC MADHEL</span>
+                    <span className="eyebrow text-aviation-blue">
+                      {madhelFull?.aip ? "Ficha Operativa Oficial ANAC — MADHEL y AIP" : "Ficha Operativa Oficial ANAC MADHEL"}
+                    </span>
                     {madhelFull?.status && (
                       <span
                         className={`data text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
@@ -463,6 +481,35 @@ export default function AirportsClient({
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                     {madhelFull.generalNorms}
+                  </p>
+                </div>
+              )}
+
+              {/*
+                De cuándo es el dato.
+
+                **Sin fecha, un dato de navegación obliga al piloto a suponer, y lo que
+                suponga va a ser optimista.** El AIP se enmienda cada 28 días (ciclo
+                AIRAC), así que la edición y la fecha de vigencia son parte del dato, no
+                una nota al pie. El enlace va al PDF de ANAC para poder contrastar.
+              */}
+              {madhelFull?.aip && (
+                <div className="pt-4 border-t border-zinc-100 dark:border-white/10 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                    Pistas, frecuencias y combustible de este aeródromo controlado salen del{" "}
+                    <a
+                      href={madhelFull.aip.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-aviation-blue hover:underline"
+                    >
+                      AIP Argentina AD 2
+                    </a>{" "}
+                    — MADHEL no los publica. Edición{" "}
+                    <span className="data font-semibold text-zinc-700 dark:text-zinc-200">{madhelFull.aip.edicion}</span>,
+                    vigente desde{" "}
+                    <span className="data font-semibold text-zinc-700 dark:text-zinc-200">{madhelFull.aip.vigenteDesde}</span>.
+                    Verificá contra los NOTAM antes de volar.
                   </p>
                 </div>
               )}

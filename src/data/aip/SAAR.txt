@@ -1,0 +1,220 @@
+# SAAR — extraído de https://ais.anac.gob.ar/descarga/aip-69e105dba2f99
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 325413S 0604704W Centro geométrico de pista /
+(*) 325413S 40604704W Runway geometric center
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+13 km al WNW de la ciudad de Rosario /
+13 km at WNW of the city of Rosario
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+26,25 m (86ft), 30.9°C - 4.9° C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+17 m (56 ft)
+5 VAR, cambio anual / VAR, anual change 9° W, 9´ W (Año/Year 2026)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, telephone, FAX, AFS, e-mail and website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. Jorge
+Newbery S/N, CP 2000, C.C. 7, Rosario, Fisherton, Pcia. de Santa
+Fe. Jefatura (+54 341) 4807482, Conmutador (+54 341) 4512997 /
+32 / 20, (+54 341) 4511226, SAARYDYX, ydros@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Jorge Newbery
+Avenue S/N, Zip Code 2000, Mailbox 7, Rosario, Fisherton,
+Province of Santa Fe
+Head office (+54 341) 4807482, Switch (+54 341) 4512997 / 32 /
+20, (+54 341) 4511226, SAARYDYX, ydros@anac.gob.ar
+Explotador, dirección, teléfono, FAX, AFS, correo electrónico y
+sitio web /
+AD Operator, Address, Telephone, FAX, AFS, e-mail and website
+Aeropuerto Internacional Rosario (AIR) - Islas Malvinas, Av. Jorge
+Newbery S/N, CP 2000, Rosario, Pcia. de Santa Fe
+(+54 341) 4513220/6300/1226/2997/9478, (+54 341)
+4520172/0241
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), Conmutador
+(+54 341) 4513220, ARO-AIS Ext 1120 / 1134, Fax (+54 341)
+4513202, acros@eana.com.ar, www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA), switch telephone
+(+54 341) 4513220, ARO-AIS Ext 1120 /1134, Fax (+54 341)
+4513202, acros@eana.com.ar, www.eana.com.ar.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1
+Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No se dispone de depósito. Sí de equipamiento para su
+manipulación. /
+No warehouse available. Equipment for handling is available.
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS100LL - JET A-1
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+8 hidrantes (tanque aéreo) 6 de 25.000 y 2 de 100.000 litros.
+Camión cisterna (abastecedor 2 de 15.000 litros). Tanque
+subterráneo 20.000 litros /
+8 hydrants (aerial tank), 6 of 25,000 and 2 of 100,000 liters. Tanker
+truck (supplying 2 of 15,000 liters). Underground tank 20,000 liters
+4 Servicios e instalaciones de deshielo /De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6
+Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Taller aeronáutico habilitado para preparación de aeronaves de
+pequeño porte /
+Aeronautical repair station authorized for the preparation of small
+aircraft
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+GEO BRG,
+MAG BRG
+(to one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and
+SWY strength
+(PCR) and
+surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slopeof RWY-
+SWY
+1 2 3 4 5 6 7
+02 10.87°,
+20°
+3.001x45
+RWY
+1.230/R/C/W/
+T CONC
+983/F/C/X/T
+ASPH
+325500.36S
+0604715.61W
+25,25 m
+(83 ft)
++0,10%325324.67S
+0604653.83W
+26,25 m
+(86 ft)
+GUND 17 m (56 ft)
+20 190.87°,
+200°
+325324.67S
+0604653.83W
+24 m
+(79 ft)
++0,07%325500.36S
+0604715.61W
+24,50 m
+(80 ft)
+GUND 17 m (56 ft)
+AIP ARGENTINA SAAR AD 2.6
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS (cont.)
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m)
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end)
+Description of arresting
+system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No 250x150 3.120x260 240x90 No No
+Ancho Franja 280
+m hasta
+progresiva 1.781 /
+Strip width 280 m
+until 1,781
+progressive
+No 240x90 No No No
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia/
+Frequency
+Horas de
+operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA Rosario Control CPPL 125.40 MHz
+H24
+CAUX 123.75 MHz
+APP/TWR ROSARIO TORRE / ROSARIO TOWER CPPL 118.70 MHz
+CAUX 119.75 MHz
+EMERG 121.50 MHz Ver/See GEN 3.4.
+SMC Rosario Rodaje o Superficie /
+Rosario Taxiway or Surface CPPL 121.85 MHz Ver/See GEN 3.4.
+ATIS ATIS Rosario CPPL 127.40 MHz Ver/See GEN 3.4.
+AIP ARGENTINA SAAR AD 2.8
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 2/2024 28 NOVIEMBRE 2024

@@ -1,6 +1,6 @@
 {
   "name": "FlightLog-FrontEnd",
-  "version": "2.10.0",
+  "version": "2.10.1",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -12,6 +12,7 @@
     "build:magvar": "node scripts/build-magvar.mjs",
     "build:runways": "node scripts/build-runways.mjs",
     "build:navaids": "node scripts/build-navaids.mjs",
+    "build:aip": "node scripts/build-aip.mjs",
     "build:changelog": "node scripts/build-changelog.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -43,6 +44,7 @@
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
+    "unpdf": "^1.8.1",
     "vitest": "^4.1.10"
   },
   "private": true

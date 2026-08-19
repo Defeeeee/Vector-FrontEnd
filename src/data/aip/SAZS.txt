@@ -1,0 +1,206 @@
+# SAZS — extraído de https://ais.anac.gob.ar/descarga/aip-69e8bacf19c28
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 410904S - 0710928W Centro geométrico de pista. /
+(*) 410904S - 0710928W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+13 km al E de la ciudad de San Carlos de Bariloche. /
+13 km at E of the city of San Carlos de Bariloche.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+842 m (2.762 ft) /23.2° C, -1.6° C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+22 m (72 ft)
+5 VAR, cambio anual / VAR, annual change 6° E, 8´ W AÑO/YEAR 2026
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL - Aeropuerto
+San Carlos de Bariloche - C.C. 148 – CP 8400 - S. C. de Bariloche -
+Pcia. de Río Negro. Conmutador (+54 294) 4405029 / 4405030 –
+SAZSYDYX /
+NATIONAL CIVIL AVIATION ADMINISTRATION - San Carlos de
+Bariloche Airport - Mailbox 148 – Zip code 8400 - S. C. de Bariloche
+Province of Río Negro. Switchboard (+54 294) 4405029 / 4405030
+– SAZSYDYX
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website Aeropuertos Argentina- Administración San Carlos de Bariloche
+(+54 294) 4405016 - Int. 108. www.aeropuertosargentina.com /
+Aeropuertos Argentina - San Carlos de Bariloche Administrative
+office (+54 294) 4405016 - Extension 108.
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A)
+www.eana.com.ar; ANS (+54 9 2944) 311147; TWR-ARO/AIS (+54
+294) 4405029-4405030 ext 57870, acbar@eana.com.ar; MET (+54
+9 11) 62132813./
+Argentine Air Navigation Company (EANA S.A).
+www.eana.com.ar; ANS (+54 9 2944) 311147; TWR-ARO/AIS (+54
+294) 4405029-4405030 ext 57870, acbar@eana.com.ar; MET (+54
+9 11) 62132813.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete. / (*) Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1
+Elementos disponibles para el manejo de carga /
+Cargo-handling facilities Todas son instalaciones modernas que permiten manipular cargas
+de hasta 7 TN. /
+All of them are modern installations that can handle loads of up
+to 7 TN.
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL, JET A-1 / ELITE 20 W 50
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity JET A-1 610.000 litros - Abastecedora JET A cinco (5) 94.000 litros
+en total. AVGAS 100LL 20.000 litros - Un (1) surtido /
+JET A-1 610,000 liters - JET A five (5) 94,000 liters total. AVGAS
+100LLL 20,000 liters - One (1) assortment
+4
+Servicios e instalaciones de deshielo / De-icing facilities Anticongelantes líquidos y sólido para RWY/ APN / Rodajes.
+Un (1) camión de deshielo para aeronaves. /
+Liquid / solid de-icers for RWY/ APN / Bearings.
+One (1) aircraft de-icing truck.
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredthof a
+degree)
+Dimensiones
+de RWY (m)
+/Dimensions
+of RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and
+SWY strength
+(PCR) and
+surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /THR
+GEO COORD, RWY
+end COORD, THR
+GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /THR
+ELEV and highest
+ELEV of TDZ of
+precision APP RWY
+Pendiente de
+RWY-SWY /Slope
+of RWY-SWY
+1 2 3 4 5 6 7
+11 114,74°
+109°
+2.348x48
+720/R/A/W/T
+ASPH, base
+CONC
+410848S
+0711014.20W
+22 m (72 ft)
+835 m
+2.739 ft NIL
+29 294,73°
+289°
+410919.84S
+0710842.75W
+22 m (72 ft)
+841.5 m
+2.761 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m)
+/
+Dimensions of
+strips (m)
+RESA(m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada
+/Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks (*)
+8 9 10 11 12 13 14
+NIL 250x150 2.468x280 90x96 NIL NIL NIL
+NIL 250x150 NIL NIL NIL
+(*) Margen de pista asfaltado, ancho 6 m a cada lado. /
+Margin of asphalted runway, 6 m wide on each side.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio / Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TMA/APP/TWR Bariloche Torre/
+Bariloche Tower
+CPPL 119.10 MHz
+H24
+CAUX 118.65 MHz
+EMERG 121.50 MHz Ver GEN 3.4. / See GEN 3.4.
+SMC Bariloche Rodaje o Superficie /
+Bariloche Taxiing or Surface 119.10 MHz
+ATIS Bariloche ATIS 127.90 MHz
+Ver GEN 3.4: Radiodifusión
+automática de información
+terminal (ATIS). /
+See GEN 3.4. Automatic
+Terminal Information Service
+(ATIS).
+AIP ARGENTINA SAZS AD 2.9
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025

@@ -39,91 +39,29 @@ export function anacIndicator(code: string): string {
 }
 
 /**
- * Datos operativos de aeródromos controlados que MADHEL no publica en el mismo
- * lugar que el resto.
+ * Antes acá vivía `CONTROLLED_FALLBACKS`: pistas, frecuencias, combustible y teléfonos
+ * de nueve aeródromos, **escritos a mano**, que las tres rutas de API metían en la ficha
+ * y la pantalla rotulaba "Ficha Operativa Oficial ANAC MADHEL".
  *
- * Escritos a mano, y eso es un riesgo que conviene tener presente: son pistas,
- * frecuencias y teléfonos que un piloto puede llegar a usar y que nadie
- * revalida contra el AIP. Estaban duplicados en tres archivos y SADP/SADL
- * estaban intercambiados en dos de ellos — el piloto que preguntaba por El
- * Palomar recibía la torre de La Plata. Acá viven una sola vez.
+ * Se fue entera, y conviene dejar anotado por qué:
+ *
+ * - **No eran correctos.** De sus veintiséis frecuencias, tres coincidían con el AIP. San
+ *   Fernando tenía la torre en 118.45 cuando son 119.00 y 120.05. El Palomar tenía la
+ *   pista 17/35 anotada como **16/34** — el número pintado en el umbral. Aeroparque, 2350
+ *   metros de pista escritos como 2700. Ezeiza figuraba con AVGAS 100LL y su AD 2 no
+ *   nombra AVGAS ni una vez.
+ * - **Pisaban el dato bueno.** El código hacía `fallback ? fallback.radio : radioList`, o
+ *   sea que donde había entrada a mano, lo que ANAC devolvía se descartaba. La Plata —que
+ *   ni siquiera es controlado, y del que MADHEL publica todo— mostraba una pista de tierra
+ *   de 1435 m que en realidad es asfalto de 1427, y uno de sus siete teléfonos.
+ * - **Nadie las podía revisar.** El propio comentario de la tabla avisaba del riesgo. Lo
+ *   encontró un piloto cruzando la pantalla con la carta, que es la peor forma de
+ *   encontrarlo.
+ *
+ * Ahora el hueco —real: para un aeródromo controlado MADHEL devuelve todo vacío— lo llena
+ * `lib/aip.ts`, con datos extraídos del AIP, con la fecha de vigencia a la vista y con un
+ * test que verifica que cada número aparezca literalmente en el PDF de ANAC.
  */
-const CONTROLLED_FALLBACKS: Record<string, {
-  rwy: string[];
-  radio: string[];
-  localization: string;
-  fuel: string;
-  telephone: string[];
-}> = {
-  SADF: {
-    rwy: ["05/23 1800x30 M - Asfalto/Hormigón - Capacidad de soporte: 25t/1 38t/2 70t/4."],
-    radio: ["TWR (Torre San Fernando): 118.45 MHz", "GND (Superficie): 121.90 MHz", "COOP (Frec. Común): 123.50 MHz"],
-    localization: "3 KM al SO de la ciudad de San Fernando (Pcia. de Buenos Aires)",
-    fuel: "AVGAS 100LL, JET A-1",
-    telephone: ["(011) 4714-6002 (Torre)", "(011) 4714-6003 (ANAC)"]
-  },
-  SABE: {
-    rwy: ["13/31 2700x45 M - Hormigón - Capacidad de soporte: PCN 60/R/A/W/T."],
-    radio: ["TWR (Torre Aeroparque): 119.90 MHz / 120.40 MHz", "GND (Superficie): 121.70 MHz", "ATIS: 127.60 MHz"],
-    localization: "En la Ciudad Autónoma de Buenos Aires (Costanera Norte)",
-    fuel: "JET A-1",
-    telephone: ["(011) 5480-6111 (ANAC)", "(011) 4514-1515 (EANA)"]
-  },
-  SAEZ: {
-    rwy: ["11/29 3300x60 M - Asfalto", "17/35 3105x45 M - Hormigón."],
-    radio: ["TWR (Torre Ezeiza): 118.15 MHz / 118.85 MHz", "GND (Superficie): 121.90 MHz", "ATIS: 127.80 MHz", "APP (Control Baires): 124.90 MHz"],
-    localization: "2 KM al SW de la ciudad de Ezeiza (Pcia. de Buenos Aires)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(011) 5480-2555 (Torre)", "(011) 5480-2666 (AIS/ARO)"]
-  },
-  SADP: {
-    rwy: ["16/34 2110x48 M - Hormigón."],
-    radio: ["TWR (Torre Palomar): 120.60 MHz", "GND (Superficie): 121.90 MHz"],
-    localization: "En El Palomar (Pcia. de Buenos Aires), partido de Morón",
-    fuel: "JET A-1",
-    telephone: ["(011) 4751-0011 (Fuerza Aérea)"]
-  },
-  SADL: {
-    rwy: ["02/20 1435x50 M - Tierra", "14/32 1435x30 M - Asfalto (Uso restringido)."],
-    radio: ["TWR (Torre La Plata): 118.90 MHz", "COOP (Frec. Común): 123.50 MHz"],
-    localization: "7 KM al SE de la ciudad de La Plata (Pcia. de Buenos Aires)",
-    fuel: "AVGAS 100LL",
-    telephone: ["(0221) 486-1554 (Jefatura de Aeródromo)"]
-  },
-  SAZM: {
-    rwy: ["13/31 2200x45 M - Hormigón", "03/21 700x30 M - Tierra."],
-    radio: ["TWR (Torre Mar del Plata): 118.30 MHz", "ATIS: 127.70 MHz"],
-    localization: "7 KM al N de la ciudad de Mar del Plata (Pcia. de Buenos Aires)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0223) 478-5800 (Torre)"]
-  },
-  SAZS: {
-    rwy: ["11/29 2200x45 M - Hormigón."],
-    radio: ["TWR (Torre Bariloche): 118.00 MHz", "ATIS: 127.90 MHz", "APP (Aproximación): 120.10 MHz"],
-    localization: "13 KM al E de la ciudad de San Carlos de Bariloche (Pcia. de Río Negro)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0294) 440-5016 (AIS/ARO)"]
-  },
-  SACO: {
-    rwy: ["01/19 3200x45 M - Hormigón", "05/23 2280x45 M - Asfalto."],
-    radio: ["TWR (Torre Córdoba): 118.50 MHz / 118.95 MHz", "GND: 121.90 MHz", "ATIS: 127.60 MHz", "APP (Córdoba Radar): 119.10 MHz"],
-    localization: "9 KM al N de la ciudad de Córdoba (Pcia. de Córdoba)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0351) 475-0214 (AIS/ARO)"]
-  },
-  SAAR: {
-    rwy: ["02/20 3000x45 M - Hormigón."],
-    radio: ["TWR (Torre Rosario): 118.20 MHz", "GND: 121.75 MHz", "ATIS: 127.90 MHz"],
-    localization: "11 KM al W de la ciudad de Rosario (Pcia. de Santa Fe)",
-    fuel: "JET A-1, AVGAS 100LL",
-    telephone: ["(0341) 451-6300 (Jefatura de Aeródromo)"]
-  }
-};
-/** Acepta ICAO o designador ANAC: GEZ y SRDR devuelven lo mismo. */
-export function controlledFallback(code: string) {
-  const clean = (code ?? "").trim().toUpperCase();
-  return CONTROLLED_FALLBACKS[getAirport(clean)?.icao ?? clean];
-}
 
 /**
  * Normaliza la ruta que escribe un piloto —o que devuelve un modelo— a los
