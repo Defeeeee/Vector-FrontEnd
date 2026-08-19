@@ -4406,3 +4406,61 @@ calcularse y la única señal es una tabla vacía. Vale la pena anotarlo: **cuan
 la ruta pierde su campo, hay que preguntarse quién lo resuelve.**
 
 **661 tests.**
+
+## Las cartas del AIP, y el parser que reemplaza la transcripción — 2026-08-19
+
+Primera mitad del pedido de sumar las cartas oficiales y extender los datos del AIP de 8
+aeródromos a los 51 que tienen ficha AD 2.0.
+
+### Por qué un parser y no más transcripción
+
+Los ocho originales se transcribieron a mano y salió bien, pero **51 aeródromos son unas
+300 frecuencias**: transcribir eso es reintroducir exactamente el riesgo que la corrección
+de frecuencias vino a eliminar.
+
+Así que el dato pasa a salir de un parser. Y para poder confiar en él **se lo contrastó
+contra verdad conocida antes de usarlo**: reproduce las 46 frecuencias y las 10 pistas ya
+verificadas a mano, exactas, con su servicio y su canal. Un parser de PDF que nadie cruzó
+contra algo verificado es lo mismo que la tabla que reemplazó.
+
+### El test se vuelve bidireccional
+
+- **Ida** (ya estaba): cada valor que la app muestra aparece literalmente en el PDF.
+- **Vuelta** (nueva): cada frecuencia y cada medida que el PDF publica está en el TSV.
+
+La vuelta hace falta **porque el dato ya no se escribe a mano**. Un parser que se saltea un
+renglón no falla: devuelve un aeródromo con una frecuencia menos, que se ve perfectamente
+normal. Con las dos direcciones, el TSV y la sección del documento contienen exactamente lo
+mismo.
+
+### Cuatro cosas que encontró el proceso
+
+1. **`EMERG 121.5` se caía por accidente.** El patrón pedía dos decimales y San Fernando la
+   escribe con uno, así que **cualquier frecuencia de un decimal se perdía en silencio**.
+   Ahora se aceptan uno a tres y la emergencia se descarta explícitamente: 121.500 es la
+   misma en todo el mundo y listarla por aeródromo es ruido.
+2. **`CPPL` pasaba por servicio.** Es el nombre del canal principal y aparece al principio
+   del renglón; con un `[A-Z]{3,4}` genérico el parser lo tomaba como si fuera la torre. La
+   lista de servicios es cerrada. Una etiqueta equivocada es tan mala como un número.
+3. **El orden alfabético ponía `CAUX` antes que `CPPL`** — la auxiliar arriba de la
+   principal. Se respeta el orden del propio AIP, que ya es el operativo.
+4. **Córdoba escribe la demora de la 01/19 sin el símbolo de grado.** Exigirlo perdía media
+   Córdoba. Lo constante no es el grado sino el separador, porque en la celda van las dos
+   demoras.
+
+Y una de estructura: **la dimensión se publica una vez por pista, no por cabecera**. Buscar
+hacia adelante desde cada cabecera le daba a la 23 la medida de la pista siguiente —Córdoba
+salía con la 23 de 3.200 m cuando mide 2.200—. Se recogen las dos listas por separado y se
+aparean.
+
+### Las cartas
+
+246 documentos: plano de aeródromo, estacionamiento, obstáculos, SID, STAR y aproximación
+por instrumentos. **Se guarda el enlace y la fecha, no el PDF**: son megabytes por hoja y
+cambian cada ciclo AIRAC, así que una copia nuestra envejecería sin avisar — que es el
+problema del que viene todo este módulo. Lo que aporta Vector es no tener que buscarlas.
+
+La lista de aeródromos también dejó de estar escrita a mano: sale del listado del AIP, así
+que si ANAC publica una ficha nueva entra sola en la próxima corrida.
+
+**678 tests.**

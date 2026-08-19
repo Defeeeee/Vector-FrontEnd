@@ -1,7 +1,7 @@
 # SACO — extraído de https://ais.anac.gob.ar/descarga/aip-69e1078aa7f9d
 # AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
 # Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
-# la que aip.test.ts contrasta src/data/aip-ad.tsv.
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
 AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
 1 COORD GEO del ARP y emplazamiento en el AD /
 ARP GEO COORD and location in the AD

@@ -51,6 +51,8 @@ export interface MadhelFull {
    * publica, y **de cuándo son**. `null` si todo vino de MADHEL.
    */
   aip: { edicion: string; vigenteDesde: string; url: string } | null;
+  /** Las cartas oficiales del AIP. Vacío si el aeródromo no tiene ninguna publicada. */
+  cartas: { letra: string; titulo: string; edicion: string; vigenteDesde: string; url: string }[];
 }
 
 /** What the pilot has flown at this aerodrome, precomputed on the server. */
@@ -482,6 +484,48 @@ export default function AirportsClient({
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                     {madhelFull.generalNorms}
                   </p>
+                </div>
+              )}
+
+              {/*
+                Las cartas oficiales.
+
+                **Es lo que hoy se busca en otra pestaña.** El plano de aeródromo y la carta
+                de aproximación son las dos hojas que un piloto abre siempre, y estaban a
+                tres clicks en el sitio de ANAC. Van con su edición y su fecha de vigencia
+                al lado, porque una carta sin fecha no se puede usar: el AIP se enmienda
+                cada 28 días y la que tenés descargada puede no ser la que rige.
+
+                Se enlaza, no se copia: son megabytes por hoja y una copia nuestra
+                envejecería en silencio.
+              */}
+              {madhelFull?.cartas && madhelFull.cartas.length > 0 && (
+                <div className="pt-4 border-t border-zinc-100 dark:border-white/10 space-y-2">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-aviation-blue" />
+                    Cartas oficiales del AIP
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {madhelFull.cartas.map((carta) => (
+                      <a
+                        key={carta.letra}
+                        href={carta.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-baseline gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/10 hover:border-aviation-blue/40 transition-colors"
+                      >
+                        <span className="data text-[10px] font-bold text-aviation-blue shrink-0">
+                          AD 2.{carta.letra}
+                        </span>
+                        <span className="text-xs font-semibold text-zinc-900 dark:text-white group-hover:underline truncate">
+                          {carta.titulo}
+                        </span>
+                        <span className="ml-auto data text-[10px] text-zinc-400 dark:text-zinc-500 shrink-0">
+                          {carta.edicion}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
 

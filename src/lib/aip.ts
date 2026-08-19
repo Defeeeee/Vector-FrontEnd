@@ -71,9 +71,27 @@ export interface FuenteAip {
   url: string;
 }
 
+export interface CartaAip {
+  /** La letra del documento: `A` plano de aeródromo, `M` aproximación. */
+  letra: string;
+  titulo: string;
+  edicion: string;
+  vigenteDesde: string;
+  url: string;
+}
+
 export interface DatosAip {
   frecuencias: FrecuenciaAip[];
   pistas: PistaAip[];
+  /**
+   * Las cartas oficiales del aeródromo.
+   *
+   * **Se guarda el enlace y la fecha, no el PDF.** Son megabytes por hoja y cambian cada
+   * ciclo AIRAC: una copia nuestra envejecería sin avisar, que es exactamente el problema
+   * del que viene todo este módulo. Lo que sí aporta Vector es no tener que buscarlas —
+   * están en la ficha, con su edición, en vez de en otra pestaña del sitio de ANAC.
+   */
+  cartas: CartaAip[];
   /** "2 km al SW de la ciudad de San Fernando", de AD 2.2. Vacío si el AIP no lo da. */
   ubicacion: string;
   /** Los tipos que publica AD 2.4, separados por coma. Vacío = el AIP no lista ninguno. */
@@ -94,6 +112,7 @@ export interface DatosAip {
 interface Indice {
   frecuencias: Map<string, FrecuenciaAip[]>;
   pistas: Map<string, PistaAip[]>;
+  cartas: Map<string, CartaAip[]>;
   servicios: Map<string, { ubicacion: string; combustible: string }>;
   fuentes: Map<string, FuenteAip>;
 }
@@ -136,6 +155,14 @@ function cargar(): Indice {
     pistas.set(icao, lista);
   }
 
+  const cartas = new Map<string, CartaAip[]>();
+  for (const [icao, letra, titulo, edicion, vigenteDesde, url] of leer("aip-cartas.tsv")) {
+    if (!icao || !url) continue;
+    const lista = cartas.get(icao) ?? [];
+    lista.push({ letra: letra ?? "", titulo: titulo ?? "", edicion: edicion ?? "", vigenteDesde: vigenteDesde ?? "", url });
+    cartas.set(icao, lista);
+  }
+
   const servicios = new Map<string, { ubicacion: string; combustible: string }>();
   for (const [icao, ubicacion, combustible] of leer("aip-servicios.tsv")) {
     if (!icao) continue;
@@ -148,7 +175,7 @@ function cargar(): Indice {
     fuentes.set(icao, { documento: documento ?? "", edicion: edicion ?? "", vigenteDesde: vigenteDesde ?? "", url: url ?? "" });
   }
 
-  indice = { frecuencias, pistas, servicios, fuentes };
+  indice = { frecuencias, pistas, cartas, servicios, fuentes };
   return indice;
 }
 
@@ -161,14 +188,21 @@ function cargar(): Indice {
  */
 export function datosAip(icao: string): DatosAip | null {
   const clave = (icao ?? "").trim().toUpperCase();
-  const { frecuencias, pistas, servicios, fuentes } = cargar();
+  const { frecuencias, pistas, cartas, servicios, fuentes } = cargar();
   const f = frecuencias.get(clave);
   const p = pistas.get(clave);
-  if (!f && !p) return null;
+  const c = cartas.get(clave);
+  /*
+    Alcanza con **cualquiera** de los tres para que el aeródromo tenga datos del AIP. Hay
+    fichas con carta y sin AD 2.18 legible, y devolver `null` ahí escondería la carta por
+    un motivo que no tiene nada que ver con ella.
+  */
+  if (!f && !p && !c) return null;
   const s = servicios.get(clave);
   return {
     frecuencias: f ?? [],
     pistas: p ?? [],
+    cartas: c ?? [],
     ubicacion: s?.ubicacion ?? "",
     combustible: s?.combustible ?? "",
     fuente: fuentes.get(clave) ?? null,

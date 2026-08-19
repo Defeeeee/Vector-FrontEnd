@@ -1,46 +1,46 @@
-SAAR	TMA	Rosario Control	CPPL	125.40	H24	
-SAAR	TMA	Rosario Control	CAUX	123.75	H24	
-SAAR	APP/TWR	Rosario Torre	CPPL	118.70	H24	
-SAAR	APP/TWR	Rosario Torre	CAUX	119.75	H24	
-SAAR	SMC	Rosario Rodaje o Superficie	CPPL	121.85	H24	
-SAAR	ATIS	ATIS Rosario	CPPL	127.40	H24	
-SABE	TWR	Aeroparque Torre	CPPL	118.85	H24	
-SABE	TWR	Aeroparque Torre	CAUX I	118.25	H24	
-SABE	TWR	Aeroparque Torre	CAUX II	128.85	H24	
-SABE	SMC	Aeroparque Rodaje o Superficie		121.90	H24	
-SABE	APP	Aeroparque Aproximación	CPPL	120.60	H24	
-SABE	APP	Aeroparque Aproximación	CAUX	119.50	H24	
-SABE	CLRD	Aeroparque Autorizaciones		129.30	09:00-03:30 UTC	Entrega de autorizaciones ATC. Ver SABE AD 2.23.
-SABE	ATIS	ATIS Aeroparque		127.60	09:00-03:45 UTC	Español e inglés.
-SABE	ATIS	ATIS Aeroparque		127.90		
-SACO	TWR/APP	Córdoba Torre	CPPL	118.30	H24	
-SACO	TWR/APP	Córdoba Torre	CAUX I	118.55	H24	
-SACO	TWR/APP	Córdoba Torre	CAUX II	119.45	H24	
-SACO	SMC	Córdoba Rodaje o Superficie	CPPL	121.75	H24	
-SACO	CLRD	Córdoba Autorizaciones	CPPL	129.30	H24	Entrega de autorizaciones ATC.
-SACO	ATIS	ATIS Córdoba	CPPL	127.50	H24	
-SACO	TMA	Córdoba Control	CPPL	119.10	H24	
-SACO	TMA	Córdoba Control	CAUX	120.65	H24	
-SADF	TWR	Fernando Torre	CPPL	119.00	H24	
-SADF	TWR	Fernando Torre	CAUX	120.05	H24	
-SADF	SMC	Fernando Rodaje o Superficie		121.85	H24	
-SADF	CLRD	Autorizaciones San Fernando		129.50	H24	Entrega de autorizaciones ATC.
-SADF	ATIS	ATIS San Fernando		127.65	H24	Español e inglés.
-SADP	TWR	El Palomar Torre	CPPL	120.30	H24	
-SADP	TWR	El Palomar Torre	CAUX	118.90	H24	
-SADP	SMC	El Palomar Rodaje o Superficie		121.95	H24	
-SADP	DIF/ATIS	ATIS El Palomar		127.625	H24	
-SAEZ	TWR	Ezeiza Torre	CPPL	118.60	H24	
-SAEZ	TWR	Ezeiza Torre	CAUX	118.05	H24	
-SAEZ	SMC	Ezeiza Rodaje o Superficie		121.75	H24	
-SAEZ	APP	Ezeiza Aproximación	CPPL	119.90	H24	
-SAEZ	APP	Ezeiza Aproximación	CAUX	120.45	H24	
-SAEZ	ATIS	ATIS Ezeiza		127.80	H24	
-SAEZ	CLRD	Ezeiza Autorizaciones		127.10	09:00-01:00 UTC	Entrega de autorizaciones ATC.
-SAZM	TWR/APP/TMA	Mar del Plata Torre	CPPL	118.75	H24	
-SAZM	TWR/APP/TMA	Mar del Plata Torre	CAUX	118.20	H24	
-SAZM	SMC	Mar del Plata Rodaje o Superficie		121.70	H24	
-SAZS	TMA/APP/TWR	Bariloche Torre	CPPL	119.10	H24	
-SAZS	TMA/APP/TWR	Bariloche Torre	CAUX	118.65	H24	
-SAZS	SMC	Bariloche Rodaje o Superficie		119.10	H24	
-SAZS	ATIS	Bariloche ATIS		127.90	H24	
+SAAR	TMA	Rosario Control	CPPL	125.40
+SAAR	TMA	Rosario Control	CAUX	123.75
+SAAR	APP/TWR	ROSARIO TORRE / ROSARIO TOWER	CPPL	118.70
+SAAR	APP/TWR	ROSARIO TORRE / ROSARIO TOWER	CAUX	119.75
+SAAR	SMC	Rosario Rodaje o Superficie	CPPL	121.85
+SAAR	ATIS	ATIS Rosario	CPPL	127.40
+SABE	TWR	Aeroparque Torre / Aeroparque Tower	CPPL	118.85
+SABE	TWR	Aeroparque Torre / Aeroparque Tower	CAUX I	118.25
+SABE	TWR	Aeroparque Torre / Aeroparque Tower	CAUX II	128.85
+SABE	SMC	Aeroparque Rodaje o Superficie		121.90
+SABE	APP	Aeroparque Aproximación	CPPL	120.60
+SABE	APP	Aeroparque Aproximación	CAUX	119.50
+SABE	CLRD	Aeroparque Autorizaciones (*)		129.30
+SABE	ATIS	ATIS Aeroparque / Aeroparque ATIS		127.60
+SABE	ATIS	ATIS Aeroparque / Aeroparque ATIS		127.90
+SACO	TWR/APP	Córdoba Torre / Córdoba Tower	CPPL	118.30
+SACO	TWR/APP	Córdoba Torre / Córdoba Tower	CAUX I	118.55
+SACO	TWR/APP	Córdoba Torre / Córdoba Tower	CAUX II	119.45
+SACO	SMC	Córdoba Rodaje o Superficie	CPPL	121.75
+SACO	CLRD	Córdoba Autorizaciones	CPPL	129.30
+SACO	ATIS	ATIS Córdoba / Córdoba ATIS	CPPL	127.50
+SACO	TMA	Córdoba Control	CPPL	119.10
+SACO	TMA	Córdoba Control	CAUX	120.65
+SADF	TWR	Fernando Torre / Fernando Tower	CPPL	119.00
+SADF	TWR	Fernando Torre / Fernando Tower	CAUX	120.05
+SADF	SMC	Fernando Rodaje o Superficie		121.85
+SADF	CLRD	Autorizaciones San Fernando		129.50
+SADF	ATIS			127.65
+SADP	TWR	EL PALOMAR TORRE / EL PALOMAR TOWER	CPPL	120.30
+SADP	TWR	EL PALOMAR TORRE / EL PALOMAR TOWER	CAUX	118.90
+SADP	SMC	El Palomar Rodaje o Superficie		121.95
+SADP	DIF/ATIS	ATIS El Palomar / El Palomar ATIS		127.625
+SAEZ	TWR	EZEIZA TORRE / EZEIZA TOWER	CPPL	118.60
+SAEZ	TWR	EZEIZA TORRE / EZEIZA TOWER	CAUX	118.05
+SAEZ	SMC	Ezeiza Rodaje o Superficie		121.75
+SAEZ	APP	Ezeiza Aproximación	CPPL	119.90
+SAEZ	APP	Ezeiza Aproximación	CAUX	120.45
+SAEZ	ATIS	ATIS Ezeiza / Ezeiza ATIS		127.80
+SAEZ	CLRD	Ezeiza Autorizaciones		127.10
+SAZM	TWR/APP/TMA	Mar del Plata Torre	CPPL	118.75
+SAZM	TWR/APP/TMA	Mar del Plata Torre	CAUX	118.20
+SAZM	SMC	Mar del Plata Rodaje / Superficie		121.70
+SAZS	TMA/APP/TWR	Bariloche Torre	CPPL	119.10
+SAZS	TMA/APP/TWR	Bariloche Torre	CAUX	118.65
+SAZS	SMC	Bariloche Rodaje o Superficie		119.10
+SAZS	ATIS	Bariloche ATIS		127.90

@@ -31,6 +31,8 @@ interface MadhelData {
   generalNorms: string;
   /** De dónde salió lo de arriba, y de cuándo es. `null` cuando todo vino de MADHEL. */
   aip: { edicion: string; vigenteDesde: string; url: string } | null;
+  /** Las cartas oficiales del AIP, con su edición. Vacío si el aeródromo no tiene. */
+  cartas: { letra: string; titulo: string; edicion: string; vigenteDesde: string; url: string }[];
 }
 
 export async function GET(req: NextRequest) {
@@ -89,6 +91,7 @@ export async function GET(req: NextRequest) {
           Se elige por campo y no por aeródromo, que es lo que hace que la regla se sostenga
           sola cuando MADHEL empiece a publicar alguno de estos datos.
         */
+        const datosDelAip = datosAip(icao);
         const ficha = componerFicha(
           {
             runways: mJson.data?.rwy || [],
@@ -97,7 +100,7 @@ export async function GET(req: NextRequest) {
             fuel: mJson.data?.fuel || "",
             telephone: mJson.data?.telephone || [],
           },
-          datosAip(icao)
+          datosDelAip
         );
 
         madhel = {
@@ -119,7 +122,8 @@ export async function GET(req: NextRequest) {
           telephone: ficha.telephone,
           particularNorms: particularContent,
           generalNorms: generalContent,
-          aip: ficha.aip
+          aip: ficha.aip,
+          cartas: datosDelAip?.cartas ?? []
         };
       }
     }

@@ -28,6 +28,34 @@ import { pistasDesdeMadhel } from "./briefing";
 
 const RAIZ = process.cwd();
 
+/** Un bloque del documento, del encabezado dado al siguiente. */
+function seccion(texto: string, desde: string, hasta: string): string {
+  const i = texto.indexOf(desde);
+  if (i < 0) return "";
+  const j = texto.indexOf(hasta, i + desde.length);
+  return j > i ? texto.slice(i, j) : texto.slice(i);
+}
+
+/**
+ * La primera tabla de AD 2.12, del encabezado de columnas `1 2 3 …` al de la continuación
+ * `8 9 10 …`.
+ *
+ * **Es el mismo corte que hace el generador y por el mismo motivo**: la continuación trae
+ * las dimensiones de la franja y de la SWY, y un `1.810x280` ahí adentro se parece
+ * muchísimo a una pista de 1810 metros — que es justamente el número que la tabla vieja
+ * tenía mal en San Fernando.
+ *
+ * El primer intento cortaba con `/\n8( \d)+\n/` y no servía: `( \d)+` sólo toma dígitos
+ * sueltos, así que contra `8 9 10 11 12 13 14` fallaba en el 10 y no cortaba nada.
+ */
+function primeraTablaDePistas(texto: string): string {
+  const lineas = seccion(texto, "AD 2.12", "AD 2.13").split("\n").map((l) => l.trim());
+  const desde = lineas.findIndex((l) => /^1( \d{1,2})+$/.test(l));
+  if (desde < 0) return "";
+  const hasta = lineas.findIndex((l, i) => i > desde && /^8( \d{1,2})+$/.test(l));
+  return lineas.slice(desde, hasta > desde ? hasta : lineas.length).join("\n");
+}
+
 function textoDelAip(icao: string): string {
   const archivo = path.join(RAIZ, "src", "data", "aip", `${icao}.txt`);
   return fs.readFileSync(archivo, "utf8");
@@ -119,6 +147,42 @@ describe("los datos del AIP están respaldados por el PDF oficial", () => {
     expect(datosAip("SAEZ")!.combustible).toBe("JET A-1");
   });
 
+  it.each(icaos)("%s: **ninguna frecuencia del AIP se quedó afuera**", (icao) => {
+    /*
+      **La otra mitad del contrato, y la que el parseo automático hizo imprescindible.**
+      El test de arriba comprueba que nada de lo que mostramos esté inventado; éste, que
+      nada de lo que el AIP publica se haya perdido.
+      
+      Hace falta porque los datos ya no se transcriben a mano: los saca un parser de un PDF,
+      y un parser que se saltea un renglón **no falla** — devuelve un aeródromo con una
+      frecuencia menos, que se ve perfectamente normal. Con las dos direcciones, el TSV y la
+      sección AD 2.18 del documento tienen que contener exactamente las mismas frecuencias.
+
+      La emergencia se excluye a los dos lados: 121.500 es la misma en todo el mundo y no se
+      lista por aeródromo.
+    */
+    const bloque = seccion(textoDelAip(icao), "AD 2.18", "AD 2.19");
+    const enElPdf = new Set(
+      [...bloque.matchAll(/(\d{3}\.\d{1,3})\s*MHZ/gi)].map((m) => m[1]).filter((f) => !f.startsWith("121.5"))
+    );
+    const enElTsv = new Set(datosAip(icao)!.frecuencias.map((f) => f.mhz));
+
+    const perdidas = [...enElPdf].filter((f) => !enElTsv.has(f));
+    expect(perdidas, `${icao}: el AIP las publica y no las mostramos`).toEqual([]);
+  });
+
+  it.each(icaos)("%s: ninguna pista del AIP se quedó afuera", (icao) => {
+    const enElPdf = new Set(
+      [...primeraTablaDePistas(textoDelAip(icao)).matchAll(/(\d\.\d{3}|\d{3,4})\s*x\s*(\d{2,3})(?!\d)/gi)].map(
+        (m) => `${m[1]}x${m[2]}`
+      )
+    );
+    const enElTsv = new Set(datosAip(icao)!.pistas.map((p) => p.dimensiones));
+
+    const perdidas = [...enElPdf].filter((d) => !enElTsv.has(d));
+    expect(perdidas, `${icao}: el AIP las publica y no las mostramos`).toEqual([]);
+  });
+
   it("las frecuencias que mostrábamos mal no están en el AIP", () => {
     /*
       Las cuatro que el piloto cruzó contra la carta. Ninguna aparece en el documento
@@ -159,8 +223,18 @@ describe("datosAip", () => {
       dato de ANAC llegue a la pantalla en vez de ser pisado, que era el segundo bug.
     */
     expect(datosAip("SADL")).toBeNull();
-    expect(datosAip("SADM")).toBeNull();
     expect(datosAip("")).toBeNull();
+  });
+
+  it("un aeródromo con carta y sin ficha igual devuelve datos", () => {
+    /*
+      Morón tiene plano de aeródromo en el AIP. Alcanza con **cualquiera** de las tres
+      cosas —frecuencias, pistas o cartas— para que haya algo que mostrar: exigir las tres
+      escondería la carta por un motivo que no tiene nada que ver con ella.
+    */
+    const moron = datosAip("SADM");
+    expect(moron).not.toBeNull();
+    expect(moron!.cartas.length).toBeGreaterThan(0);
   });
 
   it("San Fernando tiene las frecuencias que dice el AIP y no las que mostrábamos", () => {

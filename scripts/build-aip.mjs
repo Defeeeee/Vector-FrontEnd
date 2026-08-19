@@ -54,14 +54,66 @@ const SALIDA = path.join(RAIZ, "src", "data", "aip");
 const FUENTES = path.join(RAIZ, "src", "data", "aip-fuentes.tsv");
 
 /**
- * Los aeródromos controlados que MADHEL deja vacíos.
+ * Los aeródromos salen **del propio listado del AIP**: todos los que tienen ficha AD 2.0.
  *
- * No es una lista arbitraria: son exactamente los que tenían entrada en la tabla vieja,
- * menos La Plata. **La Plata no va**, y el motivo es la corrección del otro bug: no es
- * controlado, MADHEL sí publica sus datos, y la tabla escrita a mano se los estaba
- * pisando con una pista de tierra de 1435 m que en realidad es asfalto de 1427 m.
+ * Son 51 y cubren la red controlada del país, Morón incluido. Antes esto era una lista de
+ * ocho escrita a mano —los que tenían entrada en la tabla vieja de frecuencias— y esa
+ * lista tenía el mismo problema que los datos que reemplazó: envejecía sola. Si ANAC
+ * publica la ficha de un aeródromo nuevo, entra en la próxima corrida sin que nadie toque
+ * el código.
+ *
+ * **La Plata sigue afuera y no por omisión**: no es controlado, así que no tiene AD 2 en el
+ * AIP, y MADHEL sí publica todos sus datos. Es el aeródromo que la tabla vieja pisaba con
+ * una pista de tierra de 1435 m que en realidad es asfalto de 1427.
  */
-const AERODROMOS = ["SABE", "SAAR", "SACO", "SADF", "SADP", "SAEZ", "SAZM", "SAZS"];
+function aerodromosDelListado(html) {
+  const vistos = new Map();
+  for (const fila of html.match(/<tr[\s\S]*?<\/tr>/g) ?? []) {
+    const texto = fila.replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ").trim();
+    const m = /^([A-Z]{4})-AD-2\.0\s/.exec(texto);
+    if (!m) continue;
+    const href = /href="([^"]+)"/.exec(fila);
+    const sello = /(\d{2}\/\d{2})\s+(\d{2}-[A-Za-z]{3}-\d{2})/.exec(texto);
+    if (href && sello) {
+      vistos.set(m[1], { url: BASE + href[1], edicion: sello[1], vigenteDesde: sello[2] });
+    }
+  }
+  return vistos;
+}
+
+/**
+ * Las cartas de cada aeródromo, con su edición.
+ *
+ * `AD 2.A` es el plano de aeródromo y `AD 2.M` la carta de aproximación por instrumentos:
+ * son las dos hojas que el piloto abre en otra pestaña del sitio de ANAC cada vez. Se
+ * guarda el enlace y la fecha, no el PDF: son megabytes por hoja y cambian cada ciclo.
+ */
+const CARTAS = {
+  A: "Plano de aeródromo",
+  B: "Estacionamiento y atraque",
+  C: "Movimientos en tierra",
+  D: "Obstáculos tipo A",
+  E: "Obstáculos tipo B",
+  G: "Topográfica de precisión",
+  I: "Salida normalizada (SID)",
+  K: "Llegada normalizada (STAR)",
+  M: "Aproximación por instrumentos",
+};
+
+function cartasDelListado(html) {
+  const filas = [];
+  for (const fila of html.match(/<tr[\s\S]*?<\/tr>/g) ?? []) {
+    const texto = fila.replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ").trim();
+    const m = /^([A-Z]{4})-AD-2\.([A-Z])\s/.exec(texto);
+    if (!m || !CARTAS[m[2]]) continue;
+    const href = /href="([^"]+)"/.exec(fila);
+    const sello = /(\d{2}\/\d{2})\s+(\d{2}-[A-Za-z]{3}-\d{2})/.exec(texto);
+    if (href && sello) {
+      filas.push([m[1], m[2], CARTAS[m[2]], sello[1], sello[2], BASE + href[1]].join("\t"));
+    }
+  }
+  return filas.sort();
+}
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -113,6 +165,184 @@ function bloque(texto, desde, hasta) {
   return (j > i ? texto.slice(i, j) : texto.slice(i)).replace(/\n{3,}/g, "\n\n").trimEnd();
 }
 
+/* ------------------------------------------------------------------ parser --- */
+
+/**
+ * Las designaciones de servicio ATS, como **lista cerrada**.
+ *
+ * Cerrada y no un `[A-Z]{3,4}` genérico, porque con el genérico `CPPL` pasaba por
+ * servicio: es el nombre del canal principal, aparece al principio del renglón de la
+ * frecuencia, y el parser lo tomaba como si fuera la torre. Una etiqueta equivocada acá es
+ * tan mala como un número equivocado — el piloto necesita saber cuál es la torre.
+ */
+const SERVICIOS = ["TWR", "SMC", "APP", "ATIS", "CLRD", "TMA", "AFIS", "ACC", "FIS", "GND", "DIF", "RDO", "D-ATIS"];
+const RE_SERVICIO = new RegExp(`^((?:${SERVICIOS.join("|")})(?:\\s*/\\s*(?:${SERVICIOS.join("|")}))*)(?=\\s|$)`);
+const RE_CANAL = /^(CPPL|CAUX(?:\s+(?:I{1,3}|IV))?|EMERG|DCL)\b/i;
+const RE_ENCABEZADO =
+  /^(AIP ARGENTINA|DEPARTAMENTO|Designaci|del Servicio|Service|Distintivo|Call sign|Canales|Channels|Frecuencia|Frequency|Horas|Hours|Observaciones|Remarks|designation|operation|AD 2\.18)/i;
+
+/**
+ * Las frecuencias de AD 2.18.
+ *
+ * **Se validó reproduciendo las 46 que ya estaban transcritas a mano** para los ocho
+ * aeródromos originales, y las da todas idénticas, con su servicio y su canal. Recién
+ * después se aplicó a los 51: un parser de PDF que nadie contrastó contra verdad conocida
+ * es exactamente lo que este archivo vino a reemplazar.
+ */
+function frecuenciasDe(blk) {
+  if (!blk) return [];
+  const filas = [];
+  let servicio = "";
+  let distintivo = "";
+
+  for (const cruda of blk.split("\n")) {
+    const l = cruda.trim();
+    if (!l || RE_ENCABEZADO.test(l) || /^\d( \d)+$/.test(l)) continue;
+
+    const s = RE_SERVICIO.exec(l);
+    if (s) {
+      servicio = s[1].replace(/\s*\/\s*/g, "/");
+      distintivo = l
+        .slice(s[0].length)
+        .replace(/(CPPL|CAUX.*|EMERG.*|DCL.*)/i, "")
+        .replace(/\d{3}\.\d{1,3}\s*MHZ.*/i, "")
+        .replace(/\s*\/\s*$/, "")
+        .trim();
+    } else if (!RE_CANAL.test(l) && !/^\d/.test(l) && servicio && !distintivo) {
+      distintivo = l.replace(/\s*\/\s*$/, "").trim();
+    }
+
+    /*
+      El canal se busca **sin exigir espacio delante**: la extracción pega las celdas y en
+      Aeroparque y El Palomar sale `H24CAUX I 118.25 MHz`. Con el ancla de espacio la
+      frecuencia salía bien pero el canal quedaba vacío, y ahí la etiqueta importa: CPPL es
+      la principal y CAUX la auxiliar.
+
+      **EMERG se descarta a propósito.** 121.500 es la frecuencia internacional de
+      emergencia, la misma en todo el mundo, y listarla por aeródromo es ruido. Antes se
+      caía sola porque el patrón pedía dos decimales y San Fernando la escribe `121.5` — o
+      sea que cualquier frecuencia de un decimal se perdía en silencio.
+    */
+    const f = /(CPPL|CAUX(?:\s+(?:I{1,3}|IV))?|EMERG|DCL)?\s*(\d{3}\.\d{1,3})\s*MHZ/i.exec(l.toUpperCase());
+    if (f && servicio && !/^EMERG$/i.test(f[1] ?? "")) {
+      filas.push({ servicio, distintivo, canal: (f[1] ?? "").trim().replace(/\s+/g, " "), mhz: f[2] });
+    }
+  }
+  return filas;
+}
+
+/**
+ * Las pistas de AD 2.12: designador y dimensiones.
+ *
+ * **Sólo la primera tabla.** La continuación —`(cont.)`, columnas 8 a 14— trae las
+ * dimensiones de la franja y de la SWY, y un `1.810x280` ahí adentro se parece muchísimo a
+ * una pista de 1810 metros. En San Fernando ése es justamente el número que la tabla vieja
+ * tenía mal.
+ */
+function pistasDe(blk) {
+  if (!blk) return [];
+  const lineas = blk.split("\n").map((l) => l.trim());
+  const desde = lineas.findIndex((l) => /^1( \d)+$/.test(l));
+  if (desde < 0) return [];
+  /*
+    La tabla sigue en una continuación cuyo encabezado de columnas empieza en 8, y ahí
+    están las dimensiones de la **franja** y de la SWY. Un `2.470x260` de esa tabla se
+    parece muchísimo a una pista, y cortar por el literal `(cont.)` no alcanzaba: no todos
+    los aeródromos lo escriben.
+  */
+  const hasta = lineas.findIndex((l, i) => i > desde && /^8( \d)+$/.test(l));
+  const fin = hasta > desde ? hasta : lineas.length;
+
+  /*
+    **Las cabeceras van de a pares y la dimensión se publica una sola vez por pista.**
+    El AIP escribe `05 / 044.19° / 1.690x30 / …` y después `23 / 224.18° / …` sin repetir
+    la medida. Buscar la dimensión hacia adelante desde cada cabecera le daba a la 23 la
+    medida de la pista siguiente: Córdoba salía con la 23 de 3.200 m cuando mide 2.200.
+
+    Así que se recogen las dos listas por separado —cabeceras en orden y dimensiones en
+    orden— y se aparean: la enésima dimensión es la de la enésima pista.
+  */
+  const cabeceras = [];
+  const dimensiones = [];
+  for (let i = desde + 1; i < fin; i++) {
+    const l = lineas[i];
+
+    const d = /(\d\.\d{3}|\d{3,4})\s*x\s*(\d{2,3})(?!\d)/i.exec(l);
+    if (d) dimensiones.push(`${d[1]}x${d[2]}`);
+
+    const cab = /^(\d{1,2}[LRC]?)(?:\s|$)/.exec(l);
+    if (!cab) continue;
+    const n = Number(cab[1].replace(/\D/g, ""));
+    if (!(n >= 1 && n <= 36)) continue;
+    // `20 m`, `16 ft`, `12.75 m`: elevaciones y pendientes, no cabeceras.
+    if (/^\d{1,2}[LRC]?\s+(m|ft|NM|%)/i.test(l)) continue;
+
+    /*
+      **El discriminador es la demora**, en el mismo renglón o en el siguiente. La columna
+      2 de una fila de pista es el rumbo —`044.19°`, `051`— y ninguna otra fila lo tiene.
+      Sin esto entraba como pista hasta un `20 ft` de elevación: Ezeiza aparecía con una
+      pista 20 que no existe.
+    */
+    if (!lineas.slice(i, i + 2).some((x) => RE_DEMORA.test(x))) continue;
+
+    cabeceras.push(cab[1].padStart(2, "0"));
+  }
+
+  const pistas = [];
+  for (let k = 0; k * 2 + 1 < cabeceras.length; k++) {
+    const dim = dimensiones[k];
+    if (!dim) break;
+    pistas.push({ designador: `${cabeceras[k * 2]}/${cabeceras[k * 2 + 1]}`, dimensiones: dim });
+  }
+  return pistas;
+}
+
+/**
+ * Una demora de pista: `044.19°`, `224.2°,`, `359.2,`.
+ *
+ * **El símbolo de grado no se puede exigir.** Córdoba lo pone en la 05/23 y lo omite en la
+ * 01/19 —`359.2,`— así que pidiéndolo se perdía media Córdoba. Lo que sí es constante es
+ * que la demora viene seguida de un separador, grado o coma, porque en la celda van las
+ * dos: la geográfica y la magnética.
+ *
+ * Ese separador es lo que la distingue de una elevación (`465.5 m`) o de una pendiente
+ * (`0.2%`), que es de lo que hay que distinguirla.
+ */
+const RE_DEMORA = /\d{2,3}[.,]\d+\s*[°,]|\d{3}\s*°/;
+
+/**
+ * Los combustibles de aviación de la celda de AD 2.4.
+ *
+ * **Se extraen los tipos, no se copia la celda.** El AIP mezcla ahí los lubricantes y los
+ * aditivos: San Fernando dice `AVGAS 100LL, JET A-1, JET OIL 2, PRIST (Anti-icing Aviation
+ * Fuel Additive), W100 Aeroshell, W100 PLUS Aeroshell, W15W-50 Aeroshell`. Lo que el
+ * piloto pregunta es si hay nafta o jet, y todo lo demás empuja esa respuesta fuera de
+ * pantalla.
+ *
+ * Sigue siendo verificable: `aip.test.ts` comprueba que cada tipo que se muestra aparezca
+ * en el documento, y la comparación ignora espacios — que hace falta, porque la extracción
+ * del PDF parte `JET A-1` en `JET A -1`.
+ */
+function combustiblesDe(celda) {
+  const plano = (celda ?? "").toUpperCase().replace(/\s+/g, "");
+  const tipos = [];
+  if (/AVGAS100LL/.test(plano)) tipos.push("AVGAS 100LL");
+  else if (/AVGAS100/.test(plano)) tipos.push("AVGAS 100");
+  else if (/AVGAS/.test(plano)) tipos.push("AVGAS");
+  if (/JETA-?1/.test(plano)) tipos.push("JET A-1");
+  else if (/JETA/.test(plano)) tipos.push("JET A");
+  return tipos.join(", ");
+}
+
+/** Una línea con etiqueta y valor de AD 2.2 o AD 2.4, aplanada. */
+function campoDe(blk, etiqueta) {
+  if (!blk) return "";
+  const plano = blk.replace(/\s+/g, " ");
+  const i = plano.indexOf(etiqueta);
+  if (i < 0) return "";
+  return plano.slice(i + etiqueta.length);
+}
+
 async function textoDelPdf(bytes) {
   const pdf = await getDocumentProxy(new Uint8Array(bytes));
   const { text } = await extractText(pdf, { mergePages: true });
@@ -129,34 +359,37 @@ async function main() {
     html = await listadoAd();
   } else {
     console.log(`Leyendo PDF de ${local}`);
+    const guardado = path.join(local, "ad.html");
+    if (fs.existsSync(guardado)) html = fs.readFileSync(guardado, "utf8");
+  }
+
+  const fichas = html ? aerodromosDelListado(html) : new Map();
+  if (local && fichas.size === 0) {
+    // Sin el listado, se toman los PDF que haya en la carpeta.
+    for (const f of fs.readdirSync(local).filter((f) => f.endsWith(".pdf"))) {
+      fichas.set(path.basename(f, ".pdf"), { url: "", edicion: "", vigenteDesde: "" });
+    }
   }
 
   const fuentes = [];
+  const frecuencias = [];
+  const pistas = [];
+  const servicios = [];
+  let sinFrecuencias = 0;
 
-  for (const icao of AERODROMOS) {
+  for (const [icao, meta] of [...fichas].sort()) {
     let bytes;
-    let meta = { edicion: "", vigenteDesde: "", url: "" };
-
     if (local) {
       const archivo = path.join(local, `${icao}.pdf`);
-      if (!fs.existsSync(archivo)) {
-        console.error(`  ${icao}: falta ${archivo}`);
-        continue;
-      }
+      if (!fs.existsSync(archivo)) continue;
       bytes = fs.readFileSync(archivo);
       const sidecar = path.join(local, `${icao}.meta`);
       if (fs.existsSync(sidecar)) {
         const [edicion, vigenteDesde, url] = fs.readFileSync(sidecar, "utf8").trim().split("\t");
-        meta = { edicion, vigenteDesde, url };
+        Object.assign(meta, { edicion, vigenteDesde, url });
       }
     } else {
-      const doc = documentoDe(html, icao);
-      if (!doc) {
-        console.error(`  ${icao}: no aparece en el listado AD`);
-        continue;
-      }
-      meta = doc;
-      const res = await fetch(doc.url, { headers: { "User-Agent": UA, Referer: `${BASE}/aip` } });
+      const res = await fetch(meta.url, { headers: { "User-Agent": UA, Referer: `${BASE}/aip` } });
       if (!res.ok) {
         console.error(`  ${icao}: la descarga contestó ${res.status}`);
         continue;
@@ -171,49 +404,87 @@ async function main() {
       ["AD 2.12", "AD 2.13"],
       ["AD 2.18", "AD 2.19"],
     ].map(([desde, hasta]) => [desde, bloque(texto, desde, hasta)]);
-
-    const comunicaciones = secciones.find(([d]) => d === "AD 2.18")?.[1];
-    if (!comunicaciones) {
-      console.error(`  ${icao}: el PDF no trae AD 2.18`);
-      continue;
-    }
+    const seccion = (n) => secciones.find(([d]) => d === n)?.[1] ?? null;
 
     const cabecera = [
       `# ${icao} — extraído de ${meta.url || "(PDF local)"}`,
       `# AIP ARGENTINA, AD 2.0 · edición ${meta.edicion || "?"} · vigente desde ${meta.vigenteDesde || "?"}`,
       `# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra`,
-      `# la que aip.test.ts contrasta src/data/aip-ad.tsv.`,
+      `# la que aip.test.ts contrasta los TSV, en los dos sentidos.`,
       "",
     ].join("\n");
-
-    const cuerpo = secciones
-      .map(([desde, texto]) => texto ?? `${desde} (no aparece en el documento)`)
-      .join("\n\n");
+    const cuerpo = secciones.map(([d, t]) => t ?? `${d} (no aparece en el documento)`).join("\n\n");
     fs.writeFileSync(path.join(SALIDA, `${icao}.txt`), `${cabecera}${cuerpo}\n`);
 
+    for (const f of frecuenciasDe(seccion("AD 2.18"))) {
+      frecuencias.push([icao, f.servicio, f.distintivo, f.canal, f.mhz].join("\t"));
+    }
+    for (const p of pistasDe(seccion("AD 2.12"))) {
+      pistas.push([icao, p.designador, p.dimensiones].join("\t"));
+    }
+
+    /*
+      La ubicación y el combustible se guardan **como los escribe el AIP**, cortados en el
+      próximo número de ítem. Son texto libre y no vale la pena adivinarles estructura: el
+      test comprueba que lo que se muestra esté en el documento, que es lo que importa.
+    */
+    const ubicacion = campoDe(seccion("AD 2.2"), "Direction and distance from city")
+      .split(/\s+\d\s+ELEV/)[0]
+      .split(" / ")[0]
+      .trim()
+      .slice(0, 90);
+    const combustible = combustiblesDe(campoDe(seccion("AD 2.4"), "Fuel and oil types").split(/\s+3\s+Instalaciones/)[0]);
+    if (ubicacion || combustible) servicios.push([icao, ubicacion, combustible].join("\t"));
+
     fuentes.push([icao, "AD 2.0", meta.edicion, meta.vigenteDesde, meta.url].join("\t"));
-    const faltan = secciones.filter(([, t]) => !t).map(([d]) => d);
-    console.log(
-      `  ${icao}: ${meta.edicion} ${meta.vigenteDesde}` + (faltan.length ? `  (faltan ${faltan.join(", ")})` : "")
-    );
+    const n = frecuenciasDe(seccion("AD 2.18")).length;
+    if (n === 0) sinFrecuencias++;
+    console.log(`  ${icao}: ${n} frecuencias · ${pistasDe(seccion("AD 2.12")).length} pistas · ${meta.edicion || "?"}`);
   }
 
   /*
-    Se **fusiona**, no se sobrescribe. `aip-fuentes.tsv` es la tabla única de procedencia
-    de todo lo que sale del AIP y la escriben dos generadores: éste pone una fila por
-    aeródromo y `build-fixes.mjs` pone la de ENR 4.4. Si cualquiera de los dos pisara el
-    archivo entero, el otro perdería su fecha de vigencia sin hacer ruido — y una fecha de
-    vigencia que desaparece en silencio es exactamente la clase de dato que después nadie
-    nota que falta.
+    **Se ordena por aeródromo pero se respeta el orden del AIP adentro de cada uno.**
+    Ordenar la línea entera alfabéticamente ponía `CAUX 120.05` antes que `CPPL 119.00`: la
+    frecuencia auxiliar arriba de la principal, que es exactamente al revés de como se
+    sintoniza. El AIP ya las lista en orden operativo —torre, rodaje, autorizaciones,
+    ATIS—; no hay mejor criterio que ése y no hace falta inventar uno.
   */
-  const mias = new Set(AERODROMOS);
+  const porAerodromo = (filas) => {
+    const grupos = new Map();
+    for (const f of filas) {
+      const icao = f.split("\t")[0];
+      if (!grupos.has(icao)) grupos.set(icao, []);
+      grupos.get(icao).push(f);
+    }
+    return [...grupos.keys()].sort().flatMap((k) => grupos.get(k));
+  };
+
+  fs.writeFileSync(path.join(RAIZ, "src", "data", "aip-frecuencias.tsv"), porAerodromo(frecuencias).join("\n") + "\n");
+  fs.writeFileSync(path.join(RAIZ, "src", "data", "aip-pistas.tsv"), porAerodromo(pistas).join("\n") + "\n");
+  fs.writeFileSync(path.join(RAIZ, "src", "data", "aip-servicios.tsv"), porAerodromo(servicios).join("\n") + "\n");
+
+  if (html) {
+    const cartas = cartasDelListado(html);
+    fs.writeFileSync(path.join(RAIZ, "src", "data", "aip-cartas.tsv"), cartas.join("\n") + "\n");
+    console.log(`\naip-cartas.tsv: ${cartas.length} cartas.`);
+  }
+
+  /*
+    Se **fusiona**, no se sobrescribe. `aip-fuentes.tsv` es la tabla única de procedencia de
+    todo lo que sale del AIP y la escriben tres generadores: éste pone una fila por
+    aeródromo, `build-fixes.mjs` la de ENR 4.4 y `build-aerovias.mjs` las de ENR 3. Si
+    alguno pisara el archivo entero, los otros perderían su fecha de vigencia sin hacer
+    ruido — y una fecha que desaparece en silencio es la clase de dato que nadie nota que
+    falta.
+  */
+  const mias = new Set(fuentes.map((f) => f.split("\t")[0]));
   const previas = fs.existsSync(FUENTES)
     ? fs.readFileSync(FUENTES, "utf8").split("\n").filter((l) => l.trim() && !mias.has(l.split("\t")[0]))
     : [];
-  const todas = [...previas, ...fuentes].sort();
-  fs.writeFileSync(FUENTES, todas.join("\n") + "\n");
-  console.log(`\naip-fuentes.tsv: ${fuentes.length} documentos.`);
-  console.log(`  Columnas: icao documento edicion vigenteDesde url`);
+  fs.writeFileSync(FUENTES, [...previas, ...fuentes].sort().join("\n") + "\n");
+
+  console.log(`\n${fuentes.length} aeródromos · ${frecuencias.length} frecuencias · ${pistas.length} pistas.`);
+  if (sinFrecuencias) console.log(`  sin AD 2.18 legible: ${sinFrecuencias}`);
 }
 
 main();
