@@ -4289,3 +4289,70 @@ que precede a un dígito— con unpdf pegaba cada coordenada a su nombre y el pa
 encontraba cero secuencias. Herramienta distinta, preprocesado distinto.
 
 **643 tests.**
+
+## La aerovía deja de ser un punto — 2026-08-19
+
+Reporte de uso sobre la feature de la entrada anterior: *"no me gusta la UX/UI cuando se
+usa la AWY, además quiero que se pueda poner como más integrado en la UI y no tener que sí
+o sí escribirlo en el campo de la ruta"*.
+
+Tenía razón, y el problema era de modelo, no de estética. **Una aerovía no es un punto, es
+un tramo**, y yo la había metido a la fuerza en una lista de puntos. De ahí salían los tres
+síntomas:
+
+1. Había que **saberse la aerovía de memoria** —o tener la carta al lado— para escribir
+   `BCA W67 OSA`. No había forma de averiguar que W67 pasa por BCA ni que del otro lado
+   está OSA. La pantalla existe justamente para no tener que hacer eso.
+2. Vivía en el campo de pegar la ruta, secundario y con una sintaxis que no se anuncia.
+3. Al aplicarse **desaparecía**: quedaban trece campos sueltos y cambiar el punto de salida
+   obligaba a borrar once a mano.
+
+### Lo que cambió
+
+**La aerovía se queda en el modelo.** `codigos` guarda `SADM · BCA · W67 · OSA · SAZS`
+—cinco tokens, link corto, plan editable— y los trece puntos existen sólo del lado del
+cálculo, en un `flatMap` sobre `resueltos`. Antes la expansión pisaba `codigos`.
+
+**Se elige, no se escribe.** `/api/aerovias?punto=BCA` devuelve las aerovías que pasan por
+ahí y, por cada una, a dónde se llega. Dos desplegables, ninguno tipeado. El botón "Ir por
+aerovía desde X" aparece **entre** dos puntos, que es donde va una aerovía, y sólo cuando
+puede funcionar.
+
+**Es una franja, no un campo.** `TramoAerovia` muestra el designador, hasta dónde llega y
+cuántos puntos agrega, desplegable para ver cuáles.
+
+Se borró `/api/ruta` y `expandirAerovias` se redujo a `tramoDeAerovia`: cada aerovía se
+resuelve sola contra sus vecinos, que es lo que permite que el modelo sea uniforme por las
+dos puertas —el botón y la ruta pegada—.
+
+### Tres bugs que sólo aparecieron manejando la pantalla
+
+Los tres son de esta iteración y ninguno se ve leyendo el código:
+
+1. **`OSA → OSA`, un tramo de cero millas.** `tramoDeAerovia` devolvía el punto de salida y
+   ese punto ya estaba en la ruta como token propio. Ahora devuelve **sólo los del medio**.
+2. **La aerovía se comía el destino.** Insertar una banda ocupaba un solo casillero, así
+   que al elegir la salida se pisaba el aeródromo de llegada: `SADM · BCA · SAZS` quedaba
+   `SADM · BCA · W67 · OSA` y **SAZS desaparecía**. Se insertan dos casilleros: la aerovía
+   y su punto de salida.
+3. **Un tramo contiguo reventaba con un 500.** `W67` de BCA a AKNOS no tiene puntos en el
+   medio, el tramo venía vacío y leer `tramo[tramo.length - 1].lat` tiraba. La posición
+   nominal de la aerovía ahora es la de su punto de salida, que además es lo correcto: es
+   donde deja al avión.
+
+Y uno de redacción: con cero puntos la banda decía "0 puntos en el medio", que suena a que
+algo no cargó. Dice "BCA y AKNOS son contiguos", que es lo que pasa y además es información
+útil.
+
+### La nota de vigencia, corregida
+
+Mostraba **un solo documento** —el primero que encontrara— y una ruta por aerovía se apoya
+en dos: los puntos salen de ENR 4.4 y las aerovías de ENR 3. Ahora lista un renglón por
+documento. Las aerovías no están en `puntos` —ahí ya se abrieron— así que su procedencia
+hay que buscarla en las referencias sin expandir.
+
+Y volvió la advertencia que se había perdido al rehacer el bloque: **de la aerovía se usa
+sólo por dónde pasa**. Los límites verticales, la clase de espacio aéreo y la dirección de
+los niveles de crucero están en ENR 3 y no se leen acá.
+
+**648 tests.**

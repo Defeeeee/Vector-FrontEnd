@@ -76,3 +76,22 @@ export function puntosDeAerovia(designador: string): string[] | null {
 export function allAerovias(): Aerovia[] {
   return [...cargar().values()];
 }
+
+/**
+ * Las aerovías que pasan por un punto.
+ *
+ * **Es lo que convierte esto en algo elegible en vez de algo que hay que saberse.** La
+ * primera versión obligaba a tipear `BCA W67 OSA` sin ninguna forma de averiguar que `W67`
+ * pasa por BCA ni que del otro lado está OSA: había que tener la carta al lado, que es
+ * justo lo que la pantalla viene a evitar.
+ *
+ * Ordenadas por designador. Un punto está en pocas —la mediana es dos— así que no hace
+ * falta ni paginar ni recortar.
+ */
+export function aeroviasPorPunto(punto: string): Aerovia[] {
+  const p = (punto ?? "").trim().toUpperCase();
+  if (!p) return [];
+  return allAerovias()
+    .filter((a) => a.puntos.includes(p))
+    .sort((x, y) => x.designador.localeCompare(y.designador));
+}

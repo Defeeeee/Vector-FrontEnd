@@ -92,7 +92,7 @@ export function aCampoRoute(codigos: string[]): string {
  * NOTAM y pista en uso; a una coordenada en el medio del campo, nada de eso. Ver
  * `puntosConBriefing`.
  */
-export type ClasePunto = "aerodromo" | "radioayuda" | "fix" | "coordenada" | "radial";
+export type ClasePunto = "aerodromo" | "radioayuda" | "fix" | "coordenada" | "radial" | "aerovia";
 
 /** Un punto del plan, ya resuelto contra el directorio. */
 export interface PuntoRuta {
@@ -210,27 +210,25 @@ export function esAerovia(token: string): boolean {
   return /^U?[A-Z]\d{1,3}[A-Z]?$/.test((token ?? "").trim().toUpperCase());
 }
 
-export interface ExpansionRuta {
-  /** La ruta con las aerovías reemplazadas por sus puntos. */
+export interface TramoAerovia {
+  /** Los puntos que la aerovía aporta: **los del medio, sin la entrada ni la salida**. */
   puntos: string[];
-  /** Qué se expandió, para poder contarlo en pantalla. */
-  expandidas: { aerovia: string; desde: string; hasta: string; intermedios: number }[];
-  /** Por qué no se pudo, si no se pudo. La pantalla lo muestra tal cual. */
+  /** Por qué no se pudo, si no se pudo. Va tal cual a la pantalla. */
   error: string | null;
 }
 
 /**
- * Reemplaza `PUNTO AEROVIA PUNTO` por la secuencia de puntos de esa aerovía.
+ * El pedazo de una aerovía entre dos de sus puntos.
  *
- * Es la convención del plan de vuelo OACI: una aerovía se escribe entre el punto por
- * donde se entra y el punto por donde se sale, y lo del medio se sobreentiende. `ALBAL
- * UM424 EZE` son catorce puntos escritos en tres palabras.
+ * Es el corazón de la feature y lo único que hace falta saber de una aerovía para armar
+ * una planilla: por dónde pasa entre donde entrás y donde salís.
  *
- * ## Es pura: la tabla se pasa
+ * ## Devuelve sólo los del medio
  *
- * `buscar` devuelve los puntos de una aerovía en orden, o `null`. Vive así porque el
- * catálogo se lee del disco y esto lo usa también el cliente — y porque una función que
- * recibe su tabla se testea con tablas de tres puntos en vez de con las 220 reales.
+ * Ni el de entrada ni el de salida: **los dos ya están en la ruta**, uno de cada lado de
+ * la aerovía. Incluir cualquiera de los dos daría un tramo de cero millas —distancia 0,
+ * rumbo indefinido, tiempo cero— justo en el medio de la planilla. Se vio manejando la
+ * pantalla con un navegador: la última fila decía `OSA → OSA`.
  *
  * ## Se puede recorrer al revés
  *
@@ -241,67 +239,52 @@ export interface ExpansionRuta {
  *
  * ## Cuando no se puede, no se adivina
  *
- * Si el punto de entrada o el de salida no están en la aerovía, **no expande y lo dice**.
- * La alternativa sería tomar la aerovía entera o el pedazo más parecido, y las dos
- * versiones meten en la planilla un tramo que el piloto no escribió. Un error visible es
- * mejor que una ruta que no es la que se pidió.
+ * Si alguno de los dos puntos no está en la aerovía, devuelve el error con la lista de los
+ * que sí. La alternativa sería tomar la aerovía entera o el pedazo más parecido, y las dos
+ * versiones meten en la planilla un tramo que el piloto no eligió.
+ *
+ * Es pura y recibe la secuencia: se testea con tres puntos inventados en vez de con las
+ * 220 aerovías reales, y puede correr en el cliente.
  */
-export function expandirAerovias(
-  tokens: string[],
-  buscar: (aerovia: string) => string[] | null
-): ExpansionRuta {
-  const limpios = (tokens ?? []).map((t) => (t ?? "").trim().toUpperCase()).filter(Boolean);
-  const puntos: string[] = [];
-  const expandidas: ExpansionRuta["expandidas"] = [];
+export function tramoDeAerovia(
+  secuencia: string[],
+  desde: string,
+  hasta: string,
+  designador = "la aerovía"
+): TramoAerovia {
+  const d = (desde ?? "").trim().toUpperCase();
+  const h = (hasta ?? "").trim().toUpperCase();
 
-  for (let i = 0; i < limpios.length; i++) {
-    const token = limpios[i];
-
-    // Sólo es aerovía si además existe en el catálogo: `W67` lo es, `SADM` no, y un
-    // `T100` que no publicamos tampoco — se deja pasar y falla como código desconocido,
-    // que es más claro que "aerovía inválida".
-    const secuencia = esAerovia(token) ? buscar(token) : null;
-    if (!secuencia) {
-      puntos.push(token);
-      continue;
-    }
-
-    const desde = puntos[puntos.length - 1];
-    const hasta = limpios[i + 1];
-    if (!desde || !hasta) {
-      return {
-        puntos: [],
-        expandidas: [],
-        error: `${token} necesita un punto antes y otro después: se escribe "ALBAL ${token} EZE".`,
-      };
-    }
-
-    const a = secuencia.indexOf(desde);
-    const b = secuencia.indexOf(hasta);
-    if (a < 0 || b < 0) {
-      const cual = a < 0 ? desde : hasta;
-      return {
-        puntos: [],
-        expandidas: [],
-        error: `${cual} no está en ${token}. La aerovía pasa por ${secuencia.join(", ")}.`,
-      };
-    }
-
-    // Del punto siguiente al de entrada hasta el de salida inclusive; `hasta` ya queda
-    // puesto acá, así que el bucle lo saltea abajo.
-    const tramo = a <= b ? secuencia.slice(a + 1, b + 1) : secuencia.slice(b, a).reverse();
-    puntos.push(...tramo);
-    expandidas.push({ aerovia: token, desde, hasta, intermedios: Math.max(tramo.length - 1, 0) });
-    i++; // el punto de salida ya entró
+  const a = secuencia.indexOf(d);
+  const b = secuencia.indexOf(h);
+  if (a < 0 || b < 0) {
+    const cual = a < 0 ? d || "(sin punto de entrada)" : h || "(sin punto de salida)";
+    return { puntos: [], error: `${cual} no está en ${designador}. Pasa por ${secuencia.join(", ")}.` };
+  }
+  if (a === b) {
+    return { puntos: [], error: `${designador} tiene que ir de un punto a otro distinto.` };
   }
 
+  const puntos = a < b ? secuencia.slice(a + 1, b) : secuencia.slice(b + 1, a).reverse();
   if (puntos.length > MAX_PUNTOS_EXPANDIDOS) {
     return {
       puntos: [],
-      expandidas: [],
-      error: `Esta ruta son ${puntos.length} puntos y el tope es ${MAX_PUNTOS_EXPANDIDOS}. Partila en dos tramos.`,
+      error: `Ese tramo de ${designador} son ${puntos.length} puntos y el tope es ${MAX_PUNTOS_EXPANDIDOS}.`,
     };
   }
+  return { puntos, error: null };
+}
 
-  return { puntos, expandidas, error: null };
+/**
+ * Hasta dónde se puede ir por una aerovía desde un punto suyo.
+ *
+ * Es lo que llena el segundo desplegable del selector: **todos los puntos de la aerovía
+ * menos aquel del que salís**. Existe para que no haya que saberse la aerovía de memoria —
+ * el modo anterior obligaba a tipear `BCA W67 OSA` sin ninguna forma de averiguar que
+ * `OSA` estaba ahí.
+ */
+export function salidasDesde(secuencia: string[], desde: string): string[] {
+  const d = (desde ?? "").trim().toUpperCase();
+  if (!secuencia.includes(d)) return [];
+  return secuencia.filter((p) => p !== d);
 }

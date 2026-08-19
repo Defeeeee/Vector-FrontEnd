@@ -7,7 +7,8 @@ import {
   dispersionDeVariacion,
   MAX_PUNTOS_EXPANDIDOS,
   esAerovia,
-  expandirAerovias,
+  salidasDesde,
+  tramoDeAerovia,
   parsearRuta,
   puntosCalculables,
   puntosConBriefing,
@@ -231,17 +232,12 @@ describe("dispersionDeVariacion", () => {
 /* -------------------------------------------------------------------------- */
 
 /**
- * La tabla de prueba es chica a propósito: la función recibe su catálogo justamente para
- * poder testearla con tres aerovías inventadas en vez de con las 220 reales. Que el
- * catálogo real esté bien lo comprueba `aerovias.test.ts`; que la expansión esté bien, esto.
+ * La tabla de prueba es chica a propósito: la función recibe su secuencia justamente para
+ * poder testearla con cuatro puntos inventados en vez de con las 220 aerovías reales. Que
+ * el catálogo real esté bien lo comprueba `aerovias.test.ts`; que el recorte esté bien,
+ * esto.
  */
-const AEROVIAS: Record<string, string[]> = {
-  // Como la UM424 de verdad, recortada.
-  UM424: ["ALBAL", "KOTNI", "BOBAP", "ETALU", "EZE"],
-  A305: ["EZE", "DORVO"],
-  W67: ["BCA", "AKNOS", "OGLER", "OSA"],
-};
-const buscar = (a: string) => AEROVIAS[a] ?? null;
+const W67 = ["BCA", "AKNOS", "OGLER", "OSA"];
 
 describe("esAerovia", () => {
   it("reconoce la forma de un designador de ruta ATS", () => {
@@ -262,12 +258,18 @@ describe("esAerovia", () => {
   });
 });
 
-describe("expandirAerovias", () => {
-  it("reemplaza la aerovía por los puntos que hay entre la entrada y la salida", () => {
-    const r = expandirAerovias(["SADM", "ALBAL", "UM424", "EZE", "SAZS"], buscar);
-    expect(r.error).toBeNull();
-    expect(r.puntos).toEqual(["SADM", "ALBAL", "KOTNI", "BOBAP", "ETALU", "EZE", "SAZS"]);
-    expect(r.expandidas).toEqual([{ aerovia: "UM424", desde: "ALBAL", hasta: "EZE", intermedios: 3 }]);
+describe("tramoDeAerovia", () => {
+  it("devuelve **sólo los puntos del medio**", () => {
+    /*
+      Ni la entrada ni la salida: los dos ya están en la ruta, uno de cada lado de la
+      aerovía. Incluir cualquiera daría un tramo de cero millas —distancia 0, rumbo
+      indefinido, tiempo cero— justo en el medio de la planilla. Apareció manejando la
+      pantalla con un navegador: la última fila decía `OSA → OSA`.
+    */
+    expect(tramoDeAerovia(W67, "BCA", "OSA", "W67")).toEqual({
+      puntos: ["AKNOS", "OGLER"],
+      error: null,
+    });
   });
 
   it("se puede recorrer al revés", () => {
@@ -276,72 +278,58 @@ describe("expandirAerovias", () => {
       dirección sólo decide los niveles de crucero pares o impares, que es asunto de un
       plan IFR y no de esta planilla.
     */
-    const r = expandirAerovias(["EZE", "UM424", "ALBAL"], buscar);
-    expect(r.puntos).toEqual(["EZE", "ETALU", "BOBAP", "KOTNI", "ALBAL"]);
+    expect(tramoDeAerovia(W67, "OSA", "BCA").puntos).toEqual(["OGLER", "AKNOS"]);
   });
 
-  it("dos aerovías en la misma ruta", () => {
-    const r = expandirAerovias(["ALBAL", "UM424", "EZE", "A305", "DORVO"], buscar);
-    expect(r.puntos).toEqual(["ALBAL", "KOTNI", "BOBAP", "ETALU", "EZE", "DORVO"]);
-    expect(r.expandidas.map((e) => e.aerovia)).toEqual(["UM424", "A305"]);
+  it("dos puntos contiguos no agregan nada", () => {
+    expect(tramoDeAerovia(W67, "BCA", "AKNOS").puntos).toEqual([]);
+    expect(tramoDeAerovia(W67, "AKNOS", "BCA").puntos).toEqual([]);
   });
 
-  it("una ruta sin aerovías queda igual", () => {
-    const r = expandirAerovias(["SADM", "DORVO", "SAZS"], buscar);
-    expect(r.puntos).toEqual(["SADM", "DORVO", "SAZS"]);
-    expect(r.expandidas).toEqual([]);
-  });
-
-  it("normaliza y descarta vacíos", () => {
-    expect(expandirAerovias([" sadm ", "", "dorvo"], buscar).puntos).toEqual(["SADM", "DORVO"]);
-  });
-
-  it("una aerovía que no publicamos pasa como código y falla más adelante", () => {
-    /*
-      De las 258 que nombra el AIP publicamos 220: las otras no pasaron la validación
-      cruzada. Un `T100` tiene que llegar al resolutor de puntos y decir "no lo
-      reconocemos" —que es cierto y accionable— en vez de "aerovía inválida", que
-      insinuaría que el problema es la sintaxis.
-    */
-    const r = expandirAerovias(["SADM", "T100", "SAZS"], buscar);
-    expect(r.error).toBeNull();
-    expect(r.puntos).toEqual(["SADM", "T100", "SAZS"]);
-  });
-
-  it("sin punto de entrada o de salida no expande, y explica cómo se escribe", () => {
-    expect(expandirAerovias(["UM424", "EZE"], buscar).error).toContain("necesita un punto antes");
-    expect(expandirAerovias(["ALBAL", "UM424"], buscar).error).toContain("necesita un punto antes");
+  it("normaliza la caja", () => {
+    expect(tramoDeAerovia(W67, " bca ", "osa").puntos).toEqual(["AKNOS", "OGLER"]);
   });
 
   it("**si el punto no está en la aerovía, no adivina**", () => {
     /*
-      La alternativa sería tomar la aerovía entera, o el pedazo más parecido. Las dos
-      meten en la planilla un tramo que el piloto no escribió, y con pinta de válido. Un
-      error visible es mejor que una ruta que no es la que se pidió.
+      La alternativa sería tomar la aerovía entera, o el pedazo más parecido. Las dos meten
+      en la planilla un tramo que el piloto no eligió, y con pinta de válido.
     */
-    const r = expandirAerovias(["SADM", "UM424", "EZE"], buscar);
+    const r = tramoDeAerovia(W67, "SADM", "OSA", "W67");
     expect(r.puntos).toEqual([]);
-    expect(r.error).toContain("SADM no está en UM424");
+    expect(r.error).toContain("SADM no está en W67");
     // Y dice por dónde sí pasa, que es lo que hace falta para corregirlo.
-    expect(r.error).toContain("ALBAL");
+    expect(r.error).toContain("BCA, AKNOS, OGLER, OSA");
   });
 
   it("el que falla puede ser el de salida", () => {
-    expect(expandirAerovias(["ALBAL", "UM424", "SAZS"], buscar).error).toContain("SAZS no está en UM424");
+    expect(tramoDeAerovia(W67, "BCA", "SAZS", "W67").error).toContain("SAZS no está en W67");
   });
 
-  it("entrada y salida contiguas no agregan nada", () => {
-    const r = expandirAerovias(["ALBAL", "UM424", "KOTNI"], buscar);
-    expect(r.puntos).toEqual(["ALBAL", "KOTNI"]);
-    expect(r.expandidas[0].intermedios).toBe(0);
+  it("entrar y salir por el mismo punto no es un tramo", () => {
+    expect(tramoDeAerovia(W67, "BCA", "BCA", "W67").error).toContain("a otro distinto");
   });
 
-  it("corta cuando la ruta expandida no entra en una planilla", () => {
-    const larga: Record<string, string[]> = {
-      X1: Array.from({ length: 40 }, (_, i) => `P${String(i).padStart(2, "0")}`),
-    };
-    const r = expandirAerovias(["P00", "X1", "P39"], (a) => larga[a] ?? null);
+  it("corta cuando el tramo no entra en una planilla", () => {
+    const larga = Array.from({ length: 40 }, (_, i) => `P${String(i).padStart(2, "0")}`);
+    const r = tramoDeAerovia(larga, "P00", "P39", "X1");
     expect(r.puntos).toEqual([]);
     expect(r.error).toContain(String(MAX_PUNTOS_EXPANDIDOS));
+  });
+});
+
+describe("salidasDesde", () => {
+  it("son todos los puntos menos aquel del que salís", () => {
+    expect(salidasDesde(W67, "BCA")).toEqual(["AKNOS", "OGLER", "OSA"]);
+    expect(salidasDesde(W67, "OGLER")).toEqual(["BCA", "AKNOS", "OSA"]);
+  });
+
+  it("incluye los que quedan para atrás, porque la aerovía se vuela en los dos sentidos", () => {
+    expect(salidasDesde(W67, "OSA")).toContain("BCA");
+  });
+
+  it("un punto que no está en la aerovía no tiene salidas", () => {
+    expect(salidasDesde(W67, "SADM")).toEqual([]);
+    expect(salidasDesde(W67, "")).toEqual([]);
   });
 });

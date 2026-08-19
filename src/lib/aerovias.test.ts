@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { allAerovias, puntosDeAerovia } from "./aerovias";
-import { expandirAerovias, esAerovia } from "./ruta-planificada";
+import { aeroviasPorPunto, allAerovias, puntosDeAerovia } from "./aerovias";
+import { esAerovia, salidasDesde, tramoDeAerovia } from "./ruta-planificada";
 import { getFix } from "./fixes";
 import { getRadioayuda } from "./radioayudas";
 
@@ -82,33 +82,77 @@ describe("el catálogo de aerovías", () => {
   });
 });
 
-describe("expandir contra el catálogo real", () => {
-  it("una aerovía de verdad se expande de punta a punta", () => {
-    const r = expandirAerovias(["BCA", "W67", "OSA"], puntosDeAerovia);
-    expect(r.error).toBeNull();
-    expect(r.puntos).toEqual(["BCA", "AKNOS", "OGLER", "OSA"]);
-    expect(r.expandidas[0]).toEqual({ aerovia: "W67", desde: "BCA", hasta: "OSA", intermedios: 2 });
+describe("recortar tramos contra el catálogo real", () => {
+  it("una aerovía de verdad se recorta de punta a punta", () => {
+    expect(tramoDeAerovia(puntosDeAerovia("W67")!, "BCA", "OSA", "W67")).toEqual({
+      puntos: ["AKNOS", "OGLER"],
+      error: null,
+    });
   });
 
   it("y al revés también", () => {
-    expect(expandirAerovias(["OSA", "W67", "BCA"], puntosDeAerovia).puntos).toEqual([
-      "OSA",
-      "OGLER",
-      "AKNOS",
-      "BCA",
-    ]);
+    expect(tramoDeAerovia(puntosDeAerovia("W67")!, "OSA", "BCA").puntos).toEqual(["OGLER", "AKNOS"]);
   });
 
-  it("todos los puntos de la ruta expandida se pueden ubicar", () => {
+  it("desde cualquier punto de una aerovía se puede llegar a todos los demás", () => {
     /*
-      La propiedad que le importa al planificador: si un punto no tiene posición,
-      `puntosCalculables` anula el plan entero. Se prueba de punta a punta sobre las 220.
+      La propiedad que hace usable al selector: el segundo desplegable se llena con
+      `salidasDesde`, y cada opción tiene que producir un tramo válido. Si alguna no lo
+      hiciera, la pantalla ofrecería un destino que después falla.
     */
     for (const a of allAerovias()) {
-      const r = expandirAerovias([a.puntos[0], a.designador, a.puntos[a.puntos.length - 1]], puntosDeAerovia);
-      if (r.error) continue; // las de más de 30 puntos, que la pantalla rechaza aparte
+      const entrada = a.puntos[0];
+      for (const salida of salidasDesde(a.puntos, entrada)) {
+        const r = tramoDeAerovia(a.puntos, entrada, salida, a.designador);
+        // Las de más de 30 puntos las rechaza el tope, y eso es correcto.
+        if (r.error) {
+          expect(r.error, `${a.designador} ${entrada}→${salida}`).toContain("tope");
+          continue;
+        }
+        // Los puntos del medio nunca incluyen las puntas.
+        expect(r.puntos, `${a.designador} ${entrada}→${salida}`).not.toContain(entrada);
+        expect(r.puntos, `${a.designador} ${entrada}→${salida}`).not.toContain(salida);
+      }
+    }
+  });
+
+  it("todos los puntos de todos los tramos se pueden ubicar", () => {
+    /*
+      Si un punto no tiene posición, `puntosCalculables` anula el plan entero: una aerovía
+      con un punto fantasma convertiría una ruta válida en una pantalla que dice "no
+      reconocemos X" sin que el piloto haya escrito X.
+    */
+    for (const a of allAerovias()) {
+      const r = tramoDeAerovia(a.puntos, a.puntos[0], a.puntos[a.puntos.length - 1], a.designador);
+      if (r.error) continue;
       for (const p of r.puntos) {
         expect(getFix(p) ?? getRadioayuda(p), `${a.designador} → ${p}`).not.toBeNull();
+      }
+    }
+  });
+});
+
+describe("aeroviasPorPunto", () => {
+  it("encuentra las aerovías que pasan por un punto", () => {
+    const r = aeroviasPorPunto("AKNOS").map((a) => a.designador);
+    expect(r).toContain("W67");
+  });
+
+  it("viene ordenado y sin repetir", () => {
+    const r = aeroviasPorPunto("EZE").map((a) => a.designador);
+    expect(r).toEqual([...r].sort());
+    expect(new Set(r).size).toBe(r.length);
+  });
+
+  it("un punto que no está en ninguna devuelve vacío", () => {
+    expect(aeroviasPorPunto("SADM")).toEqual([]);
+    expect(aeroviasPorPunto("")).toEqual([]);
+  });
+
+  it("cada aerovía que devuelve realmente contiene el punto", () => {
+    for (const p of ["EZE", "AKNOS", "BCA", "DORVO"]) {
+      for (const a of aeroviasPorPunto(p)) {
+        expect(a.puntos, `${a.designador} debería contener ${p}`).toContain(p);
       }
     }
   });

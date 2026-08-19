@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Compass, Info, Plus, Printer, Trash2, Wind } from "lucide-react";
+import { AlertTriangle, Compass, Info, Plus, Printer, Route, Trash2, Wind } from "lucide-react";
 import type { Aircraft } from "@/types";
 import type { PuntoResuelto } from "@/app/api/puntos/route";
 import PuntoResolver from "./PuntoResolver";
+import TramoAerovia from "./TramoAerovia";
 import PageHeader from "./PageHeader";
 import PlanMapa from "./PlanMapa";
 import BriefingRuta from "./BriefingRuta";
@@ -90,12 +91,24 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
   );
   const [aeronaveId, setAeronaveId] = useState(aeronaveInicial);
 
-  /** Qué aerovías se expandieron y qué falló, para poder decirlo en pantalla. */
-  const [aerovias, setAerovias] = useState<{
-    expandidas: { aerovia: string; desde: string; hasta: string; intermedios: number }[];
-    error: string | null;
-    vigencia: { documento: string; edicion: string; vigenteDesde: string; url: string } | null;
-  }>({ expandidas: [], error: null, vigencia: null });
+  /**
+   * Por qué no se pudo armar el tramo de una aerovía, por índice de la ruta.
+   *
+   * Vive acá y no adentro de `resueltos` porque un tramo que falla **no es un punto sin
+   * resolver**: la aerovía existe y el error dice qué le falta. Mezclarlos haría que la
+   * pantalla dijera "no reconocemos W67" cuando el problema es el punto de entrada.
+   */
+  const [erroresAerovia, setErroresAerovia] = useState<Record<number, string>>({});
+
+  /**
+   * Qué posiciones de la ruta son una aerovía **todavía sin elegir**.
+   *
+   * Hace falta porque hasta que el piloto elige, el token está vacío y no hay forma de
+   * saber si esa fila es un punto a medio escribir o una banda de aerovía esperando. Una
+   * vez elegido, `esAerovia(codigo)` alcanza y este conjunto deja de importar para esa
+   * posición.
+   */
+  const [huecosAerovia, setHuecosAerovia] = useState<Set<number>>(new Set());
 
   const [tas, setTas] = useState("");
   const [consumo, setConsumo] = useState("");
@@ -226,6 +239,55 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     setVientoVel(String(nivelElegido.velocidad));
   }, [nivelElegido]);
 
+  /**
+   * Resuelve cada aerovía de la ruta contra sus vecinos.
+   *
+   * Va en un efecto y no en el campo porque **una aerovía es la única cosa de la ruta que
+   * no se resuelve sola**: `W67` no significa nada sin saber por dónde se entra y por dónde
+   * se sale, y esos dos son los tokens de al lado. Cuando cambia cualquiera de los tres,
+   * este efecto vuelve a pedir el tramo.
+   */
+  useEffect(() => {
+    const pendientes = codigos
+      .map((c, i) => ({ c, i }))
+      .filter(({ c, i }) => esAerovia(c) && !resueltos[i] && codigos[i - 1] && codigos[i + 1]);
+    if (pendientes.length === 0) return;
+
+    let cancelado = false;
+    (async () => {
+      for (const { c, i } of pendientes) {
+        try {
+          const q = new URLSearchParams({ q: c, desde: codigos[i - 1], hasta: codigos[i + 1] });
+          const res = await fetch(`/api/puntos?${q}`);
+          if (!res.ok || cancelado) continue;
+          const datos = await res.json();
+          if (cancelado) continue;
+
+          if (datos.punto) {
+            setResueltos((prev) => {
+              const copia = [...prev];
+              copia[i] = datos.punto;
+              return copia;
+            });
+            setErroresAerovia((prev) => {
+              const { [i]: _, ...resto } = prev;
+              return resto;
+            });
+          } else if (datos.error) {
+            setErroresAerovia((prev) => ({ ...prev, [i]: datos.error }));
+          }
+        } catch {
+          // Sin señal se deja pendiente y se reintenta cuando cambie algo.
+        }
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codigos.join("|"), resueltos]);
+
   /* ---------------------------------------------------------------------- */
   /* Estado en la URL                                                        */
   /* ---------------------------------------------------------------------- */
@@ -249,25 +311,38 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
   /* Puntos y cálculo                                                        */
   /* ---------------------------------------------------------------------- */
 
+  const deRef = (codigo: string, ref: PuntoResuelto | null): PuntoRuta => ({
+    codigo,
+    label: ref?.label ?? "",
+    lat: ref?.lat,
+    lon: ref?.lon,
+    variacionW: ref?.variacionW,
+    resuelto: !!ref,
+    clase: ref?.clase,
+    elevacionFt: ref?.elevacionFt,
+    pistas: ref?.pistas,
+    estacion: ref?.estacion,
+    rutas: ref?.rutas,
+    vigencia: ref?.vigencia,
+  });
+
+  /**
+   * La ruta como la ve el cálculo: **la aerovía se abre en sus puntos acá y no antes**.
+   *
+   * Ésa es toda la diferencia con la versión anterior. Antes la expansión pisaba `codigos`
+   * y la aerovía desaparecía: quedaban trece campos sueltos y cambiar el punto de salida
+   * obligaba a borrar once. Ahora `codigos` guarda `SADM · BCA · W67 · OSA · SAZS` —cinco
+   * tokens, un link corto, un plan editable— y los trece puntos existen sólo del lado del
+   * cálculo, que es el único que los necesita.
+   */
   const puntos: PuntoRuta[] = useMemo(
     () =>
-      codigos.map((codigo, i) => {
+      codigos.flatMap((codigo, i) => {
         const ref = resueltos[i];
-        return {
-          codigo,
-          label: ref?.label ?? "",
-          lat: ref?.lat,
-          lon: ref?.lon,
-          variacionW: ref?.variacionW,
-          resuelto: !!ref,
-          clase: ref?.clase,
-          elevacionFt: ref?.elevacionFt,
-          pistas: ref?.pistas,
-          estacion: ref?.estacion,
-          rutas: ref?.rutas,
-          vigencia: ref?.vigencia,
-        };
+        if (ref?.clase === "aerovia") return (ref.tramo ?? []).map((p) => deRef(p.codigo, p));
+        return [deRef(codigo, ref ?? null)];
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [codigos, resueltos]
   );
 
@@ -339,8 +414,24 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     // Dos es el mínimo: con uno no hay tramo que calcular y la pantalla no tendría
     // nada que mostrar.
     if (codigos.length <= 2) return;
-    setCodigos((prev) => prev.filter((_, j) => j !== i));
-    setResueltos((prev) => prev.filter((_, j) => j !== i));
+    // Sacar una aerovía se lleva también su punto de salida: quedó ahí porque la aerovía lo
+    // puso, y dejarlo suelto convertiría "sacar el tramo" en "sacar el tramo y quedarte con
+    // un punto en el medio de la nada que no pediste".
+    const aEliminar = new Set([i]);
+    if (esAerovia(codigos[i]) || huecosAerovia.has(i)) aEliminar.add(i + 1);
+    setCodigos((prev) => prev.filter((_, j) => !aEliminar.has(j)));
+    setResueltos((prev) => prev.filter((_, j) => !aEliminar.has(j)));
+    // Los marcadores son índices, así que hay que correrlos: sin esto, borrar un punto de
+    // arriba deja una banda de aerovía dibujada sobre un punto cualquiera.
+    setHuecosAerovia((prev) => {
+      const nuevo = new Set<number>();
+      for (const h of prev) {
+        if (aEliminar.has(h)) continue;
+        nuevo.add(h - [...aEliminar].filter((x) => x < h).length);
+      }
+      return nuevo;
+    });
+    setErroresAerovia({});
   };
 
   /**
@@ -360,44 +451,60 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
       });
       setCodigos(nuevos);
       setResueltos(nuevos.map((c) => porCodigo.get(c) ?? null));
+      setErroresAerovia({});
     },
     [codigos, resueltos]
   );
 
   /**
-   * Pega una ruta entera, expandiendo las aerovías que traiga.
+   * Pega la ruta entera.
    *
-   * **La expansión va acá y no en el campo de cada punto**, porque una aerovía no se
-   * resuelve sola: `UM424` necesita saber el punto de antes y el de después. Es también la
-   * razón por la que esto no corre en cada tecla — es un reemplazo de la ruta completa, no
-   * un valor.
+   * **Ya no expande**: `ALBAL UM424 EZE` deja los tres tokens y la aerovía se resuelve
+   * sola, igual que si se hubiera agregado con el botón. Que las dos puertas dejen el mismo
+   * modelo es lo que hace que se pueda editar lo pegado — antes, pegar una ruta con
+   * aerovía daba trece campos sueltos y salir de ahí era borrar y volver a empezar.
    */
-  const pegarRuta = async (texto: string) => {
+  const pegarRuta = (texto: string) => {
     const nuevos = parsearRuta(texto);
-    if (nuevos.length < 2) return;
+    if (nuevos.length >= 2) aplicarRuta(nuevos);
+  };
 
-    // Sin aerovías no hace falta salir a la red: la ruta ya es la lista de puntos.
-    if (!nuevos.some(esAerovia)) {
-      setAerovias({ expandidas: [], error: null, vigencia: null });
-      aplicarRuta(nuevos);
-      return;
-    }
+  /**
+   * Mete una aerovía después del punto `i`.
+   *
+   * **Inserta dos casilleros, no uno**: la aerovía y su punto de salida. El punto de salida
+   * es un punto propio de la ruta —el tramo siguiente arranca ahí— y la primera versión de
+   * esto insertaba sólo la banda, con lo cual al elegir el destino se pisaba el aeródromo
+   * de llegada: una ruta SADM · BCA · SAZS se convertía en SADM · BCA · W67 · OSA y
+   * **desaparecía SAZS**. Se vio manejando la pantalla con un navegador.
+   */
+  const agregarAerovia = (i: number) => {
+    if (codigos.length + 2 > MAX_PUNTOS) return;
+    setCodigos((prev) => [...prev.slice(0, i + 1), "", "", ...prev.slice(i + 1)]);
+    setResueltos((prev) => [...prev.slice(0, i + 1), null, null, ...prev.slice(i + 1)]);
+    // Marca el hueco como aerovía aunque todavía no tenga designador, para que la fila se
+    // dibuje como banda y no como campo de punto.
+    setHuecosAerovia((prev) => {
+      const nuevo = new Set<number>();
+      for (const h of prev) nuevo.add(h > i ? h + 2 : h);
+      nuevo.add(i + 1);
+      return nuevo;
+    });
+  };
 
-    try {
-      const res = await fetch(`/api/ruta?q=${encodeURIComponent(nuevos.join(" "))}`);
-      if (!res.ok) return;
-      const datos = await res.json();
-      setAerovias({
-        expandidas: datos.expandidas ?? [],
-        error: datos.error ?? null,
-        vigencia: datos.vigencia ?? null,
-      });
-      // Con error la ruta vieja se queda: es preferible a dejar la pantalla en blanco
-      // mientras se corrige el punto de entrada.
-      if (!datos.error && (datos.puntos ?? []).length >= 2) aplicarRuta(datos.puntos);
-    } catch {
-      // Sin señal se deja la ruta como está. Es la misma regla que el resto de la pantalla.
-    }
+  const cambiarAerovia = (i: number, aerovia: string, hasta: string) => {
+    setCodigos((prev) => {
+      const copia = [...prev];
+      copia[i] = aerovia;
+      if (hasta && i + 1 < copia.length) copia[i + 1] = hasta;
+      return copia;
+    });
+    setResueltos((prev) => {
+      const copia = [...prev];
+      copia[i] = null;
+      if (hasta && i + 1 < copia.length) copia[i + 1] = null;
+      return copia;
+    });
   };
 
   const puntosMapa = cargados
@@ -439,29 +546,78 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
             <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Ruta</h3>
 
             <div className="space-y-3">
-              {codigos.map((codigo, i) => (
-                <div key={i} className="flex items-end gap-2">
-                  <div className="flex-1 min-w-0">
-                    <PuntoResolver
-                      label={i === 0 ? "Salida" : i === codigos.length - 1 ? "Llegada" : `Punto ${i + 1}`}
-                      value={codigo}
-                      onChange={(v) => cambiarCodigo(i, v)}
-                      onResolve={(ref) => resolverPunto(i, ref)}
-                      autoFocus={i === 0 && !codigo}
+              {codigos.map((codigo, i) => {
+                /*
+                  Una posición es aerovía si ya lo es —`esAerovia`— o si se acaba de
+                  insertar y todavía no se eligió cuál. Sin lo segundo, el hueco recién
+                  creado se dibujaría como un campo de punto vacío y no habría por dónde
+                  elegir.
+                */
+                const esBanda = esAerovia(codigo) || huecosAerovia.has(i);
+                if (esBanda) {
+                  const ref = resueltos[i];
+                  return (
+                    <TramoAerovia
+                      key={i}
+                      desde={codigos[i - 1] ?? ""}
+                      aerovia={codigo}
+                      hasta={codigos[i + 1] ?? ""}
+                      intermedios={(ref?.tramo ?? []).map((p) => p.codigo)}
+                      error={erroresAerovia[i] ?? null}
+                      onCambiar={(a, h) => cambiarAerovia(i, a, h)}
+                      onQuitar={() => quitarPunto(i)}
                     />
+                  );
+                }
+
+                return (
+                  <div key={i}>
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1 min-w-0">
+                        <PuntoResolver
+                          label={etiquetaPunto(codigos, i)}
+                          value={codigo}
+                          onChange={(v) => cambiarCodigo(i, v)}
+                          onResolve={(ref) => resolverPunto(i, ref)}
+                          autoFocus={i === 0 && !codigo}
+                        />
+                      </div>
+                      {codigos.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => quitarPunto(i)}
+                          aria-label={`Quitar ${codigo || "punto"}`}
+                          className="mb-1 p-2.5 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/*
+                      La acción vive **entre** dos puntos, que es donde va una aerovía. Antes
+                      había que saber la sintaxis y escribirla en el campo de abajo; acá se
+                      ofrece justo donde tiene sentido y sólo cuando puede funcionar: hace
+                      falta un punto resuelto de este lado y otro token del otro.
+                    */}
+                    {resueltos[i] &&
+                      resueltos[i]?.clase !== "aerovia" &&
+                      i + 1 < codigos.length &&
+                      !esAerovia(codigos[i + 1]) &&
+                      !huecosAerovia.has(i + 1) &&
+                      codigos.length < MAX_PUNTOS && (
+                        <button
+                          type="button"
+                          onClick={() => agregarAerovia(i)}
+                          className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 hover:text-aviation-blue transition-colors"
+                        >
+                          <Route className="w-3.5 h-3.5" />
+                          Ir por aerovía desde {codigo}
+                        </button>
+                      )}
                   </div>
-                  {codigos.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => quitarPunto(i)}
-                      aria-label={`Quitar punto ${i + 1}`}
-                      className="mb-1 p-2.5 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {codigos.length < MAX_PUNTOS && (
@@ -500,64 +656,9 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                 className="w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 py-2 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-colors placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
               />
               <span className="block mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
-                Podés usar aerovías: <span className="data">ALBAL UM424 EZE</span> escribe los catorce puntos
-                del medio.
+                También entra la sintaxis de plan de vuelo: <span className="data">ALBAL UM424 EZE</span>.
               </span>
             </label>
-
-            {/*
-              Qué pasó con las aerovías.
-
-              **El error se muestra y la ruta vieja se queda.** Una aerovía expandida por la
-              mitad daría una travesía más corta que la real y con pinta de válida, así que
-              cuando el punto de entrada o de salida no está, no se expande nada y se dice
-              cuál falta y por dónde pasa la aerovía.
-            */}
-            {aerovias.error && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3.5 py-3">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
-                <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300">{aerovias.error}</p>
-              </div>
-            )}
-
-            {aerovias.expandidas.length > 0 && !aerovias.error && (
-              <div className="rounded-xl border border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-white/[0.03] px-3.5 py-3 space-y-1.5">
-                {aerovias.expandidas.map((e) => (
-                  <p key={e.aerovia} className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                    <span className="data font-bold text-zinc-900 dark:text-white">{e.aerovia}</span> agregó{" "}
-                    {e.intermedios === 0
-                      ? "ningún punto: " + e.desde + " y " + e.hasta + " son contiguos"
-                      : `${e.intermedios} ${e.intermedios === 1 ? "punto" : "puntos"} entre ${e.desde} y ${e.hasta}`}
-                    .
-                  </p>
-                ))}
-                {/*
-                  **Lo que la planilla NO sabe de la aerovía.** Un piloto que ve "A305" en una
-                  planilla podría suponer que alguien verificó que puede volarla a la altura
-                  que cargó. De la aerovía se usa la geometría y nada más: los límites
-                  verticales, la clase de espacio aéreo y la dirección de los niveles de
-                  crucero están en ENR 3 y no se leen acá.
-                */}
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-relaxed pt-1">
-                  Se usa sólo por dónde pasa la aerovía. Los niveles, la clase de espacio aéreo y la dirección
-                  de crucero están en{" "}
-                  {aerovias.vigencia ? (
-                    <a
-                      href={aerovias.vigencia.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-aviation-blue hover:underline"
-                    >
-                      {aerovias.vigencia.documento}
-                    </a>
-                  ) : (
-                    "ENR 3"
-                  )}{" "}
-                  del AIP{aerovias.vigencia ? `, edición ${aerovias.vigencia.edicion}` : ""} y hay que
-                  consultarlos aparte.
-                </p>
-              </div>
-            )}
           </section>
 
           <section className="space-y-4">
@@ -774,7 +875,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
 
               <Sintonizar puntos={cargados} />
 
-              <VigenciaAip puntos={cargados} />
+              <VigenciaAip puntos={cargados} refs={resueltos} />
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-imprimir="junto">
                 <Total label="Distancia" valor={fmt(plan!.totales.distanciaNm, 1)} unidad="NM" />
@@ -949,33 +1050,71 @@ function PlanillaTramos({
 }
 
 /**
- * De cuándo es el dato del AIP, cuando la ruta se apoya en un punto significativo.
+ * De cuándo es el dato del AIP, y qué parte de él estamos usando.
  *
  * **El AIP se enmienda cada 28 días (ciclo AIRAC).** Un punto de aerovía sin fecha obliga
  * al piloto a suponer que sigue vigente, y lo que suponga va a ser optimista — es la misma
  * regla por la que la ficha de aeródromo muestra la edición de su AD 2.
  *
+ * Lista **un renglón por documento**, y no uno solo, porque una ruta puede apoyarse en dos
+ * a la vez: los puntos salen de ENR 4.4 y las aerovías de ENR 3. La primera versión
+ * mostraba el primero que encontrara y dejaba al otro sin fecha.
+ *
  * Va en la planilla impresa: es justo cuando la pantalla no está al lado que importa saber
  * de cuándo es lo que se está leyendo.
  */
-function VigenciaAip({ puntos }: { puntos: PuntoRuta[] }) {
-  const vigencia = puntos.find((p) => p.vigencia)?.vigencia;
-  if (!vigencia) return null;
+function VigenciaAip({
+  puntos,
+  refs,
+}: {
+  puntos: PuntoRuta[];
+  refs: (PuntoResuelto | null)[];
+}) {
+  /*
+    Las aerovías no están en `puntos` —ahí ya se abrieron en los puntos que aportan— así
+    que su documento hay que buscarlo en las referencias sin expandir. Sin esto, una ruta
+    por aerovía citaba ENR 4.4 y nunca ENR 3.
+  */
+  const porDocumento = new Map<string, NonNullable<PuntoRuta["vigencia"]>>();
+  for (const v of [...puntos.map((p) => p.vigencia), ...refs.map((r) => r?.vigencia)]) {
+    if (v && !porDocumento.has(v.documento)) porDocumento.set(v.documento, v);
+  }
+  if (porDocumento.size === 0) return null;
+
+  const hayAerovia = refs.some((r) => r?.clase === "aerovia");
 
   return (
-    <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
-      Los puntos de aerovía salen del{" "}
-      <a
-        href={vigencia.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-semibold text-aviation-blue hover:underline"
-      >
-        AIP Argentina {vigencia.documento}
-      </a>
-      , edición <span className="data font-semibold">{vigencia.edicion}</span>, vigente desde{" "}
-      <span className="data font-semibold">{vigencia.vigenteDesde}</span>. Se enmienda cada 28 días.
-    </p>
+    <div className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed space-y-1">
+      {[...porDocumento.values()].map((v) => (
+        <p key={v.documento}>
+          {v.documento === "ENR 3" ? "Las aerovías" : "Los puntos de aerovía"} salen del{" "}
+          <a
+            href={v.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-aviation-blue hover:underline"
+          >
+            AIP Argentina {v.documento}
+          </a>
+          , edición <span className="data font-semibold">{v.edicion}</span>, vigente desde{" "}
+          <span className="data font-semibold">{v.vigenteDesde}</span>.
+        </p>
+      ))}
+      {/*
+        **Lo que la planilla NO sabe de la aerovía.** Un piloto que ve "W67" en una planilla
+        podría suponer que alguien verificó que puede volarla a la altura que cargó. De la
+        aerovía se usa por dónde pasa y nada más: los límites verticales, la clase de
+        espacio aéreo y la dirección de los niveles de crucero están en ENR 3 y no se leen
+        acá.
+      */}
+      {hayAerovia && (
+        <p>
+          De la aerovía se usa <strong>sólo por dónde pasa</strong>. Los niveles, la clase de espacio aéreo y
+          la dirección de crucero hay que consultarlos aparte.
+        </p>
+      )}
+      <p>El AIP se enmienda cada 28 días.</p>
+    </div>
   );
 }
 
@@ -1019,6 +1158,21 @@ function Sintonizar({ puntos }: { puntos: PuntoRuta[] }) {
       </ul>
     </div>
   );
+}
+
+/**
+ * Cómo se llama cada campo de la ruta.
+ *
+ * **Cuenta sólo los puntos, no las aerovías.** Si una banda ocupara un número, la ruta
+ * `SADM · BCA · W67 · OSA` mostraría "Punto 4" arriba del tercer punto que se escribe, y
+ * el piloto tendría que descontar mentalmente las bandas para saber dónde está.
+ */
+function etiquetaPunto(codigos: string[], i: number): string {
+  if (i === 0) return "Salida";
+  const esUltimo = codigos.slice(i + 1).every((c) => !c.trim());
+  if (esUltimo) return "Llegada";
+  const numero = codigos.slice(0, i + 1).filter((c) => !esAerovia(c)).length;
+  return `Punto ${numero}`;
 }
 
 /** Grados de rumbo, siempre con tres dígitos: así se cantan y así se leen. */

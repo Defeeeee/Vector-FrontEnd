@@ -73,15 +73,15 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
-    version: "2.12.0",
+    version: "2.12.1",
     fecha: "2026-08-19",
-    titulo: "Rutas por aerovía, sin escribir todos los puntos",
+    titulo: "Rutas por aerovía, eligiendo en vez de escribiendo",
     novedades: [
       {
         icono: "brujula",
-        titulo: "Escribí la aerovía y listo",
+        titulo: "\"Ir por aerovía\", abajo de cada punto",
         texto:
-          "En el campo de pegar la ruta podés poner ALBAL UM424 EZE y te carga los once puntos del medio, como en un plan de vuelo. Si el punto por el que entrás no está en esa aerovía te lo dice y te muestra por dónde pasa, en vez de armarte una ruta que no pediste.",
+          "Debajo de cada punto de la ruta aparece un botón que te ofrece las aerovías que pasan por ahí y hasta dónde llega cada una. Elegís las dos cosas de una lista: no hay que saberse ninguna de memoria ni tener la carta al lado. La aerovía queda como una franja entre los dos puntos, y si cambiás el destino se recalcula sola en vez de dejarte once campos sueltos para borrar a mano.",
         href: "/dashboard/planificador",
         cta: "Probar una aerovía",
       },

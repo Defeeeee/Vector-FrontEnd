@@ -6,11 +6,11 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
-## v2.12.0 — Rutas por aerovía, sin escribir todos los puntos
+## v2.12.1 — Rutas por aerovía, eligiendo en vez de escribiendo
 
 _19 de agosto de 2026_
 
-- **Escribí la aerovía y listo** — En el campo de pegar la ruta podés poner ALBAL UM424 EZE y te carga los once puntos del medio, como en un plan de vuelo. Si el punto por el que entrás no está en esa aerovía te lo dice y te muestra por dónde pasa, en vez de armarte una ruta que no pediste.
+- **"Ir por aerovía", abajo de cada punto** — Debajo de cada punto de la ruta aparece un botón que te ofrece las aerovías que pasan por ahí y hasta dónde llega cada una. Elegís las dos cosas de una lista: no hay que saberse ninguna de memoria ni tener la carta al lado. La aerovía queda como una franja entre los dos puntos, y si cambiás el destino se recalcula sola en vez de dejarte once campos sueltos para borrar a mano.
 - **220 aerovías, y las que no verificamos no aparecen** — Salen del ENR 3 del AIP y cada secuencia se contrasta contra el ENR 4.4: si a una le falta un punto, no la publicamos. Una aerovía incompleta daría una travesía más corta que la real y con pinta de válida. De la aerovía se usa sólo por dónde pasa: los niveles y la clase de espacio aéreo hay que consultarlos aparte.
 
 ## v2.11.0 — Los puntos de aerovía, en el planificador

@@ -67,11 +67,17 @@ const ROUTES = [
   },
   { path: "/api/puntos?q=S34.68%2FW58.64", expect: (s) => s === 200, json: (b) => b.punto?.lat === -34.68 },
   // Un punto de aerovía del AIP. Lee un TSV más, así que si el build no lo copió, acá se ve.
-  // Una aerovía expandida: lee aerovias.tsv y cruza con fixes/navaids.
+  // El selector de aerovías: qué sale de un punto y hasta dónde llega.
   {
-    path: "/api/ruta?q=BCA%20W67%20OSA",
+    path: "/api/aerovias?punto=BCA",
     expect: (s) => s === 200,
-    json: (b) => b.puntos?.join(",") === "BCA,AKNOS,OGLER,OSA" && b.expandidas?.[0]?.intermedios === 2,
+    json: (b) => b.aerovias?.some((a) => a.designador === "W67" && a.salidas.includes("OSA")),
+  },
+  // Y el tramo ya resuelto, que es lo que la planilla consume.
+  {
+    path: "/api/puntos?q=W67&desde=BCA&hasta=OSA",
+    expect: (s) => s === 200,
+    json: (b) => b.punto?.clase === "aerovia" && b.punto.tramo?.map((p) => p.codigo).join(",") === "AKNOS,OGLER",
   },
   {
     path: "/api/puntos?q=DORVO",
