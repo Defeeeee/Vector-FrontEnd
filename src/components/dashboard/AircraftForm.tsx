@@ -4,6 +4,7 @@ import { useTransition, useState } from "react";
 import { Plus, ChevronRight } from "lucide-react";
 import { addAircraft } from "@/actions/flight";
 import { LoadingButton } from "@/components/LoadingButton";
+import CamposPerformance from "./CamposPerformance";
 
 export default function AircraftForm() {
   const [isPending, startTransition] = useTransition();
@@ -80,7 +81,16 @@ export default function AircraftForm() {
             </div>
           </div>
         </div>
-        
+
+        <div className="pt-2 border-t border-zinc-100 dark:border-white/5">
+          <div className="pt-6">
+            <CamposPerformance
+              claseLabel="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors"
+              claseInput="w-full bg-transparent border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-aviation-cyan/20 focus:border-zinc-900 dark:focus:border-aviation-cyan/50 transition-all font-bold placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+            />
+          </div>
+        </div>
+
         <LoadingButton 
           isLoading={isPending}
           type="submit" 

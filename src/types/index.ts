@@ -81,6 +81,15 @@ export interface Aircraft {
   type: string; // Marca y Modelo
   type_acft?: string; // MONT-T, MULT-T, etc.
   cost_per_hour?: number;
+  /**
+   * Performance de crucero, para el planificador. Los tres opcionales y **sin
+   * default**: `undefined` es "no lo sé" y la pantalla lo dice, en vez de mostrar un
+   * 110 inventado que se vería igual que uno cargado por el piloto.
+   */
+  cruise_tas_kt?: number;
+  fuel_burn_lph?: number;
+  /** Utilizable, no total: el no utilizable no vuela. */
+  fuel_capacity_l?: number;
 }
 
 export interface Profile {
@@ -237,6 +246,19 @@ export interface AirportRef {
   label: string;
   /** ANAC's three-letter designator (GEZ, MOR). Argentine aerodromes only. */
   local?: string;
+  /**
+   * Variación magnética en **grados oeste positivos**, precalculada con WMM.
+   *
+   * Oeste positivo y no declinación este porque es la que se **suma** al rumbo
+   * verdadero para obtener el magnético, que es lo único que el piloto hace con ella.
+   * Ver `aMagnetico` en `lib/navegacion.ts`.
+   *
+   * Sólo la tienen los aeródromos de MADHEL. `undefined` es "no la sabemos": el
+   * planificador lo dice en pantalla en vez de asumir cero, que en Argentina es un
+   * valor perfectamente válido —la línea agónica cruza la Patagonia— y por lo tanto
+   * indistinguible de un dato faltante.
+   */
+  variacionW?: number;
   /** What MADHEL publishes about it. Absent for non-Argentine aerodromes. */
   madhel?: {
     province: string;

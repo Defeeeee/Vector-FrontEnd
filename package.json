@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "build:airports": "node scripts/build-airports.mjs",
+    "build:magvar": "node scripts/build-magvar.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke": "node scripts/smoke.mjs"
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.27",
+    "geomagnetism": "^0.2.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",

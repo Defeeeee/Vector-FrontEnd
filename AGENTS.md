@@ -3563,3 +3563,75 @@ imposible → 1.
 **Falta para el planificador:** `B2` (la columna de variación magnética en el TSV, hoy
 inexistente), `B3` (ruta multipunto), `B4` (migración 014 con TAS, consumo y tanques por
 aeronave) y `B5` (la pantalla).
+
+## Performance por aeronave y la variación magnética — 2026-08-18
+
+`B4` y `B2` del plan 12, los dos datos que le faltaban al planificador.
+
+### B4 — Migración 014: TAS, consumo y tanque
+
+`aircraft` sabía cuánto sale la hora y no sabía a qué velocidad vuela. Los calculadores
+venían usando constantes hardcodeadas —TAS 110, consumo 32 L/h— que son las del Harmony
+y de ningún otro avión.
+
+**Por aeronave y no por plan**: se cargan una vez al dar de alta el avión y sirven para
+siempre. Por plan habría que tipearlos antes de cada vuelo, que es exactamente la
+fricción que el planificador viene a sacar.
+
+**Nullables y sin default.** Un default de 110 kt sería mentir con cara de dato: el
+piloto vería una velocidad que nadie cargó, sin forma de distinguirla de una real. Null
+es "no lo sé" y la pantalla lo dice.
+
+Los CHECK son `> 0 AND <= techo`. Vale escribir por qué funcionan: **un CHECK que evalúa
+a NULL pasa** —sólo FALSE rechaza—, así que los nulls entran solos. Es la misma lógica
+de tres valores que en la migración 011 hizo que una restricción no rechazara nada; acá
+juega a favor. Verificado con la tabla de verdad en la base: null pasa, 0 rechaza, 500
+rechaza, 110 pasa.
+
+Los campos van en `CamposPerformance.tsx`, **un componente compartido**, porque el alta
+y la edición son dos formularios distintos y tres campos duplicados divergen — la
+lección de `splitRoute`, que en este repo llegó a estar escrita cinco veces.
+
+Del formulario sale `null` y no `0` cuando el campo está vacío: el cero rompería el
+CHECK y además significa otra cosa. Y acepta coma decimal, porque acá se escribe 31,5.
+
+### B2 — La variación magnética, y una premisa del plan que era falsa
+
+**El plan decía "Argentina va de ~5° a 15° W". Es falso, y de una forma que importa: el
+signo se da vuelta adentro del país.** Morón 10,0° W, Salta 9,3° W — pero **Bariloche
+5,4° E y Ushuaia 11,7° E**. La línea agónica cruza la Patagonia. Medido sobre los 711
+aeródromos, el país va de **17,8° W en Misiones a 12,6° E en Santa Cruz: treinta grados
+de punta a punta**.
+
+Eso convierte el argumento de "una constante nacional sería aproximada" en otro mucho
+más fuerte: **en medio país estaría equivocada por el doble de la variación**.
+
+Columna 14 de `madhel.tsv`, calculada por `scripts/build-magvar.mjs` con `geomagnetism`
+(WMM-2025) como **devDependency**: cero dependencias en producción, cero costo por
+request. La variación se mueve 0,1–0,2°/año, así que la columna sirve varios años; el
+modelo vence el 13/11/2029.
+
+**El signo, otra vez.** El WMM publica declinación **positiva al este**; la carta
+argentina y el piloto usan variación **oeste positiva**. La columna guarda la segunda
+porque es la que se suma al rumbo verdadero. El campo se llama `variacionW` con la `W`
+adentro justamente para que nadie lo mezcle con la declinación del modelo.
+
+**El script es idempotente**: recorta a 13 columnas antes de agregar la 14ª, así que
+correrlo dos veces no hace crecer el archivo. Verificado por md5 y por un test.
+
+`build-madhel.mjs` **se lleva puesta esta columna** cuando regenera el TSV desde ANAC.
+Queda avisado en su encabezado y, mejor, hay un test que falla si alguien se olvida de
+correr `npm run build:magvar` después.
+
+### Verificación
+
+`tsc` 0 · **399 tests** · build limpio · migración aplicada y verificada en producción.
+
+La librería se contrastó contra **los 213 valores oficiales de prueba del WMM** que trae
+el propio paquete: peor diferencia **0,005°**. Vale contar que el primer intento dio
+245° de diferencia y **el error era mío** —le estaba pasando la altitud en metros donde
+espera kilómetros—; leer el test del paquete lo aclaró. Una discrepancia enorme contra
+una referencia oficial casi siempre es el arnés, no la librería.
+
+Los nueve tests de `magvar.test.ts` leen el TSV real a propósito: lo que puede romperse
+acá no es una fórmula sino que alguien regenere los datos y se olvide del segundo paso.

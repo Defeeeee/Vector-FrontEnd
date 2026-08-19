@@ -45,6 +45,20 @@ export interface Airport {
   lat?: number;
   lon?: number;
   /**
+   * Variación magnética en **grados oeste positivos**, precalculada con WMM por
+   * `scripts/build-magvar.mjs` y guardada en la 14ª columna de `madhel.tsv`.
+   *
+   * Oeste positivo y no declinación este porque es la que se **suma** al rumbo
+   * verdadero para obtener el magnético, que es lo único que el piloto hace con ella.
+   *
+   * Sólo la tienen los aeródromos de MADHEL. `undefined` es "no la sabemos" — y ojo
+   * con confundirlo con cero: **cero es un valor válido en Argentina**, la línea
+   * agónica cruza la Patagonia. El país va de 17,8° W en Misiones a 12,6° E en Santa
+   * Cruz, así que una constante nacional estaría equivocada por treinta grados de
+   * punta a punta.
+   */
+  variacionW?: number;
+  /**
    * ANAC's three-letter designator — GEZ for General Rodríguez, MOR for Morón.
    * Argentine aerodromes only, and it is how pilots here actually refer to the
    * field. Resolves as an alias of `icao`; it is never what gets stored.
@@ -168,7 +182,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
 
   for (const line of fs.readFileSync(file, "utf8").split("\n")) {
     if (!line) continue;
-    const [local, icao, iata, name, city, province, kind, condition, control, status, elevM, lat, lon] =
+    const [local, icao, iata, name, city, province, kind, condition, control, status, elevM, lat, lon, magvarW] =
       line.split("\t");
     if (!local) continue;
 
@@ -196,6 +210,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
     if (existing) {
       existing.local = local;
       existing.madhel = madhel;
+      existing.variacionW = asNum(magvarW);
       if (existing.elevation === undefined && metres !== undefined) {
         existing.elevation = Math.round(metres / 0.3048);
       }
@@ -220,6 +235,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
       lon: asNum(lon),
       local,
       madhel,
+      variacionW: asNum(magvarW),
     };
 
     byIcao.set(canonical, airport);

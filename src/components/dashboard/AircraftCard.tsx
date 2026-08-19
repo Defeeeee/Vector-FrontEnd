@@ -5,6 +5,7 @@ import { updateAircraft, deleteAircraft } from "@/actions/flight";
 import { Plane, Edit2, Trash2, X, Check, Loader2, ChevronRight } from "lucide-react";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
+import CamposPerformance from "./CamposPerformance";
 
 interface AircraftCardProps {
   aircraft: Aircraft;
@@ -82,6 +83,16 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
             </EditField>
           </div>
 
+          <div className="pt-2 border-t border-zinc-200 dark:border-white/10">
+            <div className="pt-6">
+              <CamposPerformance
+                aeronave={aircraft}
+                claseLabel="text-[11px] font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 ml-1"
+                claseInput="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all"
+              />
+            </div>
+          </div>
+
           <div className="flex items-center justify-end space-x-6">
             <button
               disabled={isPending}
@@ -132,6 +143,16 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
             </>
           )}
         </p>
+
+        {/* Sólo si hay algo que mostrar. Una fila de guiones no informa: el que no
+            cargó performance ya lo sabe, y la tarjeta queda más limpia sin ella. */}
+        {(aircraft.cruise_tas_kt || aircraft.fuel_burn_lph || aircraft.fuel_capacity_l) && (
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+            {aircraft.cruise_tas_kt && <span>{aircraft.cruise_tas_kt} kt</span>}
+            {aircraft.fuel_burn_lph && <span>{aircraft.fuel_burn_lph} L/h</span>}
+            {aircraft.fuel_capacity_l && <span>{aircraft.fuel_capacity_l} L</span>}
+          </p>
+        )}
       </div>
     </div>
   );

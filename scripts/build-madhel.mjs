@@ -16,6 +16,10 @@
  * the identifiers and locations move very slowly.
  *
  * Columns: local ICAO IATA name city province kind condition control status elev_m lat lon
+ *
+ * ⚠️ Este script **se lleva puesta la 14ª columna**, la variación magnética. Después
+ * de correrlo hay que correr `npm run build:magvar`, que la recalcula. Hay un test
+ * (`src/lib/magvar.test.ts`) que falla si alguien se olvida.
  */
 
 import fs from "node:fs";

@@ -220,6 +220,20 @@ export async function deleteFlight(id: string) {
   }
 }
 
+/**
+ * Un número positivo del formulario, o `null`.
+ *
+ * `null` y no cero por dos motivos que apuntan al mismo lado: la base tiene un CHECK
+ * de `> 0` que un cero rompería, y semánticamente **vacío significa "no lo sé"**, que
+ * es distinto de "vale cero". Acepta coma decimal porque acá se escribe 31,5.
+ */
+function numeroOpcional(valor: FormDataEntryValue | null): number | null {
+  const texto = String(valor ?? "").trim().replace(",", ".");
+  if (!texto) return null;
+  const n = Number(texto);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export async function addAircraft(formData: FormData) {
   const registration = formData.get("registration") as string;
   const icao = formData.get("icao") as string;
@@ -228,7 +242,12 @@ export async function addAircraft(formData: FormData) {
 
   const response = await apiFetch("/aircraft", {
     method: "POST",
-    body: JSON.stringify({ registration, icao, type, type_acft }),
+    body: JSON.stringify({
+      registration, icao, type, type_acft,
+      cruise_tas_kt: numeroOpcional(formData.get("cruise_tas_kt")),
+      fuel_burn_lph: numeroOpcional(formData.get("fuel_burn_lph")),
+      fuel_capacity_l: numeroOpcional(formData.get("fuel_capacity_l")),
+    }),
   });
 
   if (!response.ok) {
@@ -257,7 +276,12 @@ export async function updateAircraft(formData: FormData) {
   try {
     const response = await apiFetch(`/aircraft/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ registration, icao, type, type_acft }),
+      body: JSON.stringify({
+        registration, icao, type, type_acft,
+        cruise_tas_kt: numeroOpcional(formData.get("cruise_tas_kt")),
+        fuel_burn_lph: numeroOpcional(formData.get("fuel_burn_lph")),
+        fuel_capacity_l: numeroOpcional(formData.get("fuel_capacity_l")),
+      }),
     });
 
     if (!response.ok) {
