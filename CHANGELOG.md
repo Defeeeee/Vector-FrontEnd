@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.14.0 — Los 51 aeródromos controlados, con sus cartas
+
+_19 de agosto de 2026_
+
+- **Frecuencias, pistas y combustible de toda la red controlada** — Antes teníamos datos del AIP de ocho aeródromos; ahora de los 51 que ANAC publica con ficha, Morón incluido. Salen del documento oficial y cada número está verificado contra el PDF en las dos direcciones: nada que no esté publicado, y nada publicado que falte.
+- **Las cartas oficiales, en la ficha** — El plano de aeródromo y la carta de aproximación de cada uno, con su edición y desde cuándo rige, sin salir a buscarlas al sitio de ANAC. Son 246 documentos.
+- **Y corregimos el largo de nueve pistas** — Cruzando el AIP con la base que usábamos aparecieron nueve pistas mal medidas. Morón figuraba con 2850 m y mide 2303; San Fernando con 1801 y mide 1690. Donde ANAC publica la medida, ahora manda ANAC.
+
 ## v2.13.0 — La ruta se reordena, y los puntos entran donde quieras
 
 _19 de agosto de 2026_

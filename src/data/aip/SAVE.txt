@@ -1,0 +1,196 @@
+# SAVE — extraído de https://ais.anac.gob.ar/descarga/aip-69e114f5ef93e
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 425414S - 0710808W Centro geométrico de pista/
+(*) 425414S - 0710808W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+12 km al ESE de la ciudad de Esquel/
+12 km ESE of the city of Esquel
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+800.25 m (2.625 ft), 22°C – (-2.4°C).
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+21 m (69 ft).
+5 VAR, cambio anual / VAR, annual change 7° E, 8´ W (Año/Year 2021)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RN 40 km 1771,
+CP 9200, Pcia. de Chubut. (+54 2945) 452483, mail
+ydesq@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, RN 40 Km 1771, Zip
+code 9200, Province of Chubut. (+54 2945) 452483,
+ydesq@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 9 029455) 451676/79
+www.aeropuertoargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de navegación aérea (EANA SA) ARO/AIS
+(+54 294) 5451354, Ext 45304, 45300, acesq@eana.com.ar
+www.eana.com.ar
+Argentine Air Navigation Company (EANA SA) ARO/AIS (+54 294)
+5451354, Ext 45304, 45300, acesq@eana.com.ar
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete/ (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1 y AVGAS 100LL./ JET A-1 y / and AVGAS 100LL.
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+20.000 litros a través de AEROPIT – (2 camiones cisterna de 10.500
+litros y 9.000 litros)
+20,000 liters through AEROPIT - (2 tanker trucks of 10,500 liters
+and 9,000 liters)
+4 Servicios e instalaciones de deshielo / De-icing facilities Anticongelante liquido/sólido para RWY, APN y TWY /
+Liquid/solid antifreeze for RWY, APN and TWY
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+05 NIL,
+049° 2.393x40
+50t/1 74t/2
+115t/4 178/t5
+220/t8
+ASPH
+425434.75S
+0710852.17W
+799.25 m
+2.622 ft NIL
+23 NIL,
+229°
+425352.64S
+0710723.58W
+781.25 m
+2.563 ft NIL
+08 NIL,
+083° 1.239x30 GND
+425442.67S
+0710901.22W
+800.25 m
+2.625 ft NIL
+26 NIL,
+263°
+425442.97S
+0710806.61W
+791 m
+2.595 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end) and Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 2.513x280 90x80 NIL NIL NIL
+NIL NIL NIL NIL NIL
+NIL NIL 1.299x60 90x60 NIL NIL NIL
+NIL NIL NIL NIL NIL
+Observaciones / Remarks: RWY 08/26 CLSD
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA/TWR/APP ESQUEL TORRE/ ESQUEL TOWER
+CPPL 118.8 MHz
+11:00-22:00 UTC
+NIL
+CAUX 118.10 MHz NIL
+EMERG 121.50 MHz NIL
+AIP ARGENTINA SAVE AD 2.8
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025

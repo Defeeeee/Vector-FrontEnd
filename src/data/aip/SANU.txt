@@ -1,0 +1,186 @@
+# SANU — extraído de https://ais.anac.gob.ar/descarga/aip-69e10b2277811
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 313417S - 0682506W Centro geométrico de pista. /
+(*) 313417S - 0682506W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+12 km al SE de la ciudad de San Juan. /
+12 km SE of the city of San Juan.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+593.75 m (1.948 ft), 35.1° C – 0.3° C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+24 m (79 ft)
+5 VAR, cambio anual / VAR, annual change 3° W, 11’ W (Año / year 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RN 20 - KM 12,
+CP 5417, San Juan, Pcia. de San Juan.
+(+54 264) 4251727, ydJUA@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, RN 20 - KM 12, Zip
+code 5417, San Juan, Province of San Juan.
+(+54 264) 4251727, ydJUA@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, Calle Carlos Pellegrini - Acceso
+Aeropuerto, (+54 264) 4254133, (+54 264) 4254134, corporativo
+(+54 264) 4104772. www.aeropuertosargentina.com /
+Aeropuertos Argentina, Calle Carlos Pellegrini – Airport Access
+(+54 264) 4254133, (+54 264) 4254134, corporate (+54 264)
+4104772. www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), (+54 264)
+4250400 Int. 47614 acjua@eana.com.ar, MET (+54 264) 4250399.
+www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA) (+54 264) 4250400
+Ext. 47614 acjua@eana.com.ar, MET (+54 264) 4250399.
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1 – AVGAS 100 LL.
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+JET A-1= 5 tanques x 25.000 litros c/u, 1 camión abastecedor x
+20.000 litros, 1 camión abastecedor x 22.000 litros.
+AVGAS 100 LL= 1 tanque de 10.000 litros. /
+JET A-1= 5 tanks of 25,000 liters each, 1 supply truck of 20,000
+liters, 1 supply truck of 22,000 liters.
+AVGAS 100 LL= 1 tank of 10,000 liters.
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+18 179.51°
+182.29° 2.460x45 ASPH
+430/F/B/X/T
+313337.33S
+0682506.26W
+593.75 m
+1.948 ft -0.08%
+36 359.51°
+002.29°
+313457.20S
+0682505.46W
+591.75 m
+1.941 ft 0.08%
+AIP ARGENTINA SANU AD 2.6
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end) and Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No No 2.580x280 150 x 90 No No NIL
+No No 150 x 90 No No NIL
+Observaciones /Remarks: Dispone de márgenes ASPH - Ancho 7,5 m. / ASPH margins available - 7.5 m wide.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TMA/APP/TWR San Juan Torre /
+San Juan Tower
+CPPL 119.35 MHz
+10:00-23:59 UTC
+NIL
+CAUX 118.05 MHz NIL
+EMERG 121.5 MHz NIL

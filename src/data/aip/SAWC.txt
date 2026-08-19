@@ -1,0 +1,186 @@
+# SAWC — extraído de https://ais.anac.gob.ar/descarga/aip-69e7b256c1c2c
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+501649S-0720312W Centro geométrico de pista /
+501649S-0720312W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+16,6 km al ENE de la ciudad de El Calafate /
+16.6 km to ENE of the city of El Calafate
+3 ELEV, temperatura de referencia y temperatura mínima media
+/ELEV, reference temperature and mean low temperature
+197.25 m (647 ft), 19.1°C – (-4.4°C)
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+13 m (43 ft)
+5 VAR, cambio anual / VAR, annual change 12° E - 6´ W (Año 2021) / 12° E - 6´ W (Year 2021)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RP 11 km 23.5
+(Acceso aeropuerto), CP 9405, El Calafate, Pcia. de Santa Cruz.
+Jefatura (+54 2902) 491937, (+54 11) 38985232
+ydECA@anac.gob.ar, jefaturacalafate@anac.gob.ar.
+NATIONAL CIVIL AVIATION ADMINISTRATION, Provincial Route 11
+km 23.5 (Airport Access), Zip code 9405, El Calafate, Province of
+Santa Cruz. AD Head Office (+54 2902) 491937, (+54 11) 38985232
+ydECA@anac.gob.ar, jefaturacalafate@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD Operator, Telephone, FAX, AFS, e-mail and website LONDON SUPPLY, Av. Eduardo Madero 900, Piso 28 - Edificio
+Catalinas, CABA (+54 11) 4321-7300, info@londonsupply.com.
+El Calafate Santa Cruz, Argentina, (+54 2902) 491220, (+54
+2902) 491229/30, clientesfte@londonsupply.com,
+https://aeropuertoelcalafate.com/aeropuerto.php
+LONDON SUPPLY, 900 Eduardo Madero Avenue, 28th floor –
+Catalinas Building, CABA (+54 11) 4321-7300,
+info@londonsupply.com El Calafate, Santa Cruz, Argentina, (+54
+2902) 491220, (+54 2902)491229/30,
+clientesfte@londonsupply.com,
+https://aeropuertoelcalafate.com/aeropuerto.php
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A), ARO-
+AIS (+54 2902) 492051, (+54 2902) 493702, Móvil (+54 9 2902)
+485640, aceca@eana.com.ar, www.eana.com.ar/
+Argentine Air Navigation Company (EANA S.A). ARO-AIS (+54
+2902) 492051, (+54 2902) 493702, Mobile (+54 9 2902) 485640,
+aceca@eana.com.ar, www.eana.com.ar.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks No
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1, AVGAS 100LL / Mobil HELIX 20W-50
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+YPF / JET A-1 380.000 litros - AVGAS 10.000 litros /
+YPF / JET A-1 380,000 liters - AVGAS 10,000 liters
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No (*)
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks (*) Hangar privado perteneciente al Aeroclub Lago Argentino /
+(*) Private hangar belonging to Aeroclub Lago Argentino
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO
+(Centésimas
+de grado) /
+GEO BRG (to
+one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de RWY
+para APP precisión /
+THR ELEV and highest
+ELEV of TDZ of
+precision APP RWY
+Pendiente de
+RWY-SWY /
+Slope of
+RWY- SWY
+1 2 3 4 5 6 7
+07 No,
+072° 2.550x45 CONC
+61/R/B/X/U
+501652.74S
+0720415.86W
+197,25 m
+647 ft No
+25 No,
+252°
+501645.08S
+0720207.47W
+192,50 m
+632 ft No
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end)
+Description of arresting
+system
+OFZ
+Observacion
+es /
+Remarks (*)
+8 9 10 11 12 13 14
+No No No 120x90 m No No No
+No No No No No No
+(*) Franja reducida 130 m a ambos lados del eje de pista. APN de viraje en ambos umbrales: 155x82 m.
+Márgenes de pista ASPH ancho 7,5 m /
+Strip reduced by 130 m on both sides of the runway centerline. Turning APN at both thresholds: 155x82 m.
+Runway shoulders ASPH width 7.5 m
+AIP ARGENTINA SAWC AD 2.6
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2024 11 JULIO 2024
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation Observaciones / Remarks
+1 2 3 4 5 6
+TMA/APP/TWR CALAFATE TORRE /
+CALAFATE TOWER
+CPPL 119.95 MHz
+10:00-23:59 UTCCAUX 118.20 MHz
+EMERG 121.50 MHz Ver AIP GEN 3.4./ See GEN 3.4.
+ATIS El Calafate 127.85 MHz 10:00-23:59 UTC Ver /See AIP GEN 3.4 – ATIS

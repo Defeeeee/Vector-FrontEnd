@@ -1,0 +1,177 @@
+# SANC — extraído de https://ais.anac.gob.ar/descarga/aip-69e256ccb0f13
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 283535S 0654504W Centro geométrico de pista.
+(*) 283535S 0654504W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+15 km al SSE de San Fernando del Valle de Catamarca. /
+15 km SSE of San Fernando del Valle de Catamarca.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+474.25 m (1.556 ft), 34.5°C – 4.5°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+28 m (92 ft)
+5 VAR, cambio anual / VAR, annual change 7° W, 12’ W (Año / Year 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RP 33 km 22,
+Distrito Los Puestos, Localidad de Las Tejas de Valle Viejo, Pcia. de
+Catamarca, CP 4707. (+54 383) 4453686 - ANAC (+54 383)
+4851204, ydCAT@anac.gob.ar
+NATIONAL CIVIL AVIATION ADMINISTRATION, RP 33 km 22,
+District Los Puestos, Locality of Las Tejas de Valle Viejo, Province
+of Catamarca, Zip code 4707. (+54 383) 4453686 - ANAC (+54 383)
+4851204, ydCAT@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 383) 4453683, (+54 383) 4453684,
+(+54 11) 39874150 (H24), www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A). ARO-AIS
+(+54 383) 4453686, accat@eana.com.ar, www.eana.com.ar /
+Argentine Air Navigation Company (EANA S.A). ARO-AIS (+54 383)
+4453686, accat@eana.com.ar, www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete. / Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+NIL
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1 y / and AVGAS 100 LL
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+NIL
+4 Servicios e instalaciones de deshielo / De-icing facilities NIL
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+NIL
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+NIL
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCR)
+y superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+02 012°,
+019° 2.800x30
+550/R/B/W/T
+CONC
+400/F/A/X/T
+ASPH
+283619.67S
+0654514.95W
+459.75 m
+1.508 ft -0.52%
+20 192°,
+199°
+283450.72S
+0654453.56W
+474.25 m
+1.556 ft 0.52%
+AIP ARGENTINA SANC AD 2.5
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 2/2023 30 NOVIEMBRE 2023
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No No 2920x280 90x90 No No No
+No No 90x90 No No No
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio /
+Service designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA/APP/TWR CATAMARCA TORRE /
+CATAMARCA TOWER
+CPPL 118.15 MHz
+Ver / See AD 2.3-7CAUX 119.90 MHz
+EMERG 121.50 MHz Ver / See AIP GEN 3.4
+AIP ARGENTINA SANC AD 2.7
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025

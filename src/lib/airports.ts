@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import type { Pista } from "./briefing";
+import { datosAip } from "./aip";
 import path from "node:path";
 
 /**
@@ -217,6 +218,37 @@ function leerPistas(): Map<string, Pista[]> {
   return mapa;
 }
 
+/**
+ * Corrige el largo de las pistas con el del AIP, donde el AIP lo publica.
+ *
+ * `runways.tsv` sale de OurAirports y **está bien en la enorme mayoría**: de las 52 pistas
+ * comparables contra el AIP, 43 coinciden dentro de 15 m. Pero nueve no, y algunas por
+ * mucho: **Morón figura con 2850 m y mide 2303** —547 m de más, confirmado contra las
+ * distancias declaradas de AD 2.13, donde TORA, TODA, ASDA y LDA dicen todas 2.303— y San
+ * Fernando figura con 1801 donde mide 1690.
+ *
+ * Un largo de más es del lado peligroso: es el número con el que alguien decide si su
+ * avión entra. Así que donde ANAC publica la medida, gana ANAC.
+ *
+ * **El rumbo no se toca.** Sigue siendo el medido de OurAirports, que es el que alimenta el
+ * viento cruzado y que se contrastó sin encontrar diferencias. El AIP lo da en magnético y
+ * geográfico, y convertirlo sería agregar una conversión donde hoy hay una medición.
+ */
+function corregirLargosConAip(icao: string, pistas: Pista[]): Pista[] {
+  const delAip = datosAip(icao)?.pistas;
+  if (!delAip?.length) return pistas;
+
+  const normalizar = (d: string) => d.split("/").map((x) => x.replace(/^0+/, "") || "0").join("/");
+
+  return pistas.map((p) => {
+    const par = delAip.find((a) => normalizar(a.designador) === normalizar(`${p.le}/${p.he}`));
+    if (!par) return p;
+    const metros = Number(par.dimensiones.split(/[xX×]/)[0].replace(".", ""));
+    if (!Number.isFinite(metros) || metros <= 0) return p;
+    return { ...p, largoFt: Math.round(metros * 3.28084) };
+  });
+}
+
 function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
   const pistasPorIcao = leerPistas();
   const file = path.join(process.cwd(), "src", "data", "madhel.tsv");
@@ -253,7 +285,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
       existing.local = local;
       existing.madhel = madhel;
       existing.variacionW = asNum(magvarW);
-      existing.pistas = pistasPorIcao.get(canonical) ?? [];
+      existing.pistas = corregirLargosConAip(canonical, pistasPorIcao.get(canonical) ?? []);
       if (existing.elevation === undefined && metres !== undefined) {
         existing.elevation = Math.round(metres / 0.3048);
       }
@@ -279,7 +311,7 @@ function applyMadhel({ byIcao, byPrefix, all, haystacks }: Index): void {
       local,
       madhel,
       variacionW: asNum(magvarW),
-      pistas: pistasPorIcao.get(canonical) ?? [],
+      pistas: corregirLargosConAip(canonical, pistasPorIcao.get(canonical) ?? []),
     };
 
     byIcao.set(canonical, airport);

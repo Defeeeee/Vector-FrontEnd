@@ -4464,3 +4464,52 @@ La lista de aeródromos también dejó de estar escrita a mano: sale del listado
 que si ANAC publica una ficha nueva entra sola en la próxima corrida.
 
 **678 tests.**
+
+## Los 51 aeródromos, y nueve pistas mal medidas — 2026-08-19
+
+Segunda mitad: el generador corrió sobre los **51 aeródromos con ficha AD 2.0**. Quedan
+**170 frecuencias, 62 pistas y 246 cartas**, y las 329 comprobaciones del módulo pasan en
+las dos direcciones.
+
+### Lo que apareció al pasar de 8 a 51
+
+Cada uno de estos lo marcó en rojo el test bidireccional, no una lectura del código:
+
+1. **Paraná publica la demora en grados y minutos** —`8° 27'`— y el discriminador pedía dos
+   dígitos antes del grado. Se perdía la pista entera.
+2. **Base Belgrano II y Tartagal publican la demora como `NIL`.** Ahí se cayó el
+   discriminador entero: era el rumbo, y hay aeródromos que no lo tienen. Lo que separa una
+   cabecera de una elevación es la estructura —número de una o dos cifras al principio del
+   renglón, sin unidad detrás— más el corte de la tabla.
+3. **Mendoza no trae el encabezado numérico de la continuación**, así que sus dimensiones de
+   franja entraban como pistas de 300x150. Y en **Reconquista** el bloque se pasa de largo y
+   arrastraba números de otras tablas. El corte pasó a ser por lo primero que aparezca de
+   tres marcas distintas.
+4. **Santa Rosa y Villa Reynolds escriben `JET A1` sin guión.** Se emitía `JET A-1`, o sea
+   una cadena que ese documento no contiene, y el test la rechazó con razón. Se emite la
+   forma que el documento usa.
+
+### Nueve pistas mal medidas, y una es la de casa
+
+Cruzando el AIP contra `runways.tsv` —que sale de OurAirports— de 52 pistas comparables
+**43 coinciden dentro de 15 m y nueve no**:
+
+| | OurAirports | AIP |
+|---|---|---|
+| **SADM Morón** | 2850 m | **2303 m** |
+| SAAC Concordia | 1600 m | **2000 m** |
+| SARC Río Cuarto | 2100 m | **2250 m** |
+| SADF San Fernando | 1801 m | **1690 m** |
+
+Morón se confirmó contra AD 2.13: TORA, TODA, ASDA y LDA dicen **todas 2.303**. Son 547 m
+de más en el número con el que alguien decide si su avión entra, y del lado peligroso.
+
+Donde ANAC publica la medida, gana ANAC. **El rumbo no se toca**: sigue siendo el medido de
+OurAirports, que se contrastó sin diferencias, y que es lo que alimenta el viento cruzado.
+Cambiarlo por el del AIP sería reemplazar una medición por una conversión.
+
+Un detalle que casi esconde la corrección: **`runways.tsv` guarda San Fernando como `5/23` y
+el AIP como `05/23`**. El emparejamiento normaliza los ceros de las dos puntas; comparando
+literal, la corrección no se habría aplicado y nadie se habría enterado.
+
+**940 tests.**

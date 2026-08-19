@@ -1,0 +1,202 @@
+# SARF — extraído de https://ais.anac.gob.ar/descarga/aip-69e249b1a7ad5
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 261246S–0581341W Centro geométrico de pista. /
+(*) 261246S–0581341W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+7 km al S de la ciudad de Formosa. / 7 km S of the city of Formosa.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+59 m (194 ft) / 34.1° C – 11.5° C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+18 m (59 ft)
+5 VAR, cambio anual / VAR, annual change 15° W, 10’ W (Año/ Year 2026)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL - Aeropuerto
+Formosa - Ruta 11 km 1168 - C.C. 33 - CP 3600 – Pcia. de Formosa.
+Jefatura (+54 370) 4451428, móvil (+54 9 370) 4343791, (+54 9
+370) 4220762, Operaciones (+54 370) 4446563 - SARFYDYX. /
+NATIONAL CIVIL AVIATION ADMINISTRATION - Formosa Airport –
+Route 11 km 1168 - Mailbox 33 – Zip Code 3600 – Province of
+Formosa. AD Head Office (+54 370) 4451428 / Mobile (+54 9 370)
+4343791, (+54 9 370) 4220762, Operations (+54 370) 4446563 –
+SARFYDYX.
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina - Aeropuerto Formosa - Tel/Fax (+54 370)
+450521. www.aeropuertosargentina.com/
+Aeropuertos Argentina – Formosa Airport – Phone/Fax (+54 370)
+450521. www.aeropuertosargentina.com/
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA) ARO-AIS (+54
+370) 4454448, (+54 362) 4390098, (+54 11) 65451904
+acfsa@eana.com.ar, TWR (+54 11) 29397757.
+Argentine Air Navigation Company (EANA SA) www.eana.com.ar
+ARO-AIS (+54 370) 4454448, (+54 362) 4390098, (+54 11)
+65451904 acfsa@eana.com.ar, TWR (+54 11) 29397757.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete. / (*) Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL JET A-1, HD 1.100 (*)/
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+JET A-1 100.000 litros /
+JET A-1 100,000 liters
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7
+Observaciones / Remarks (*) Sin disponibilidad de AVGAS 100LL.
+Aeroplanta Formosa móvil (+54 9 370) 4452082, móvil (+54 9
+370) 4211049/
+(*) No AVGAS 100LL available.
+Formosa Air plant mobile (+54 9 370) 4452082, mobile (+54 9
+370) 4211049
+AIP ARGENTINA SARF AD 2.3
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones de
+RWY (M) /
+Dimensions of
+RWY (M)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX
+de TDZ de
+RWY para
+APP
+precisión /
+THR ELEV
+and highest
+ELEV of TDZ
+of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+04 No,
+040°
+1.800x30 430/F/D/X/T
+ASPH
+261312.47S
+0581355.01W
+GUND 18 m (59 ft)
+58.5 m /
+192 ft No
+22 No,
+220°
+261219.52S
+0581327.64W
+GUND 18 m (59 ft)
+59 m /
+194 ft No
+Dimensiones
+SWY (M) /
+Dimensions of
+SWY (M)
+Dimensiones
+CWY (M)
+Dimensions of
+CWY (M)
+Dimensiones de
+franja (M) /
+Dimensions of
+strips (M)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada/
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No No
+1.920x215 90x60
+No No
+RWY 04 Franja de
+pista sector W
+reducida a 75 m
+por OBST /
+RWY 04 Runway
+strip, sector W
+reduced to 75 m
+due to OBST
+No No No No
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency Horas de operación / Hours of operation Observaciones /
+Remarks
+1 2 3 4 5 6
+APP/TWR Formosa Torre /
+Formosa Tower
+CPPL 119.10 MHz
+Ver SAD 2.3-7 /
+See AD 2.3-7
+Ver GEN 3.4 /
+See GEN 3.4
+CAUX 118.25 MHz Ver GEN 3.4 /
+See GEN 3.4
+EMERG 121.5 MHz

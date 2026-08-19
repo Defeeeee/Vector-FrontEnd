@@ -1,0 +1,270 @@
+# SARL — extraído de https://ais.anac.gob.ar/descarga/aip-69e1113b81c2b
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 294117S - 0570908W Centro geométrico de pista. /
+(*) 294117S - 0570908W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+6 km al WNW de la ciudad de Paso de Los Libres. /
+6 km at WNW of the city of Paso de Los Libres.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+70 m (230 ft), 32.2°C – 9°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+15 m (49 ft)
+5 VAR, cambio anual / VAR, annual change 14° W - 11´ W Año / Year 2024
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. Dr. Arturo
+Frondizi S/N°, CP 3230, Paso de los Libres, Pcia. de Corrientes.
+Jefatura (+54 3772) 422222, SARLYDYX. /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Dr. Arturo Frondizi
+Avenue No number, Zip code 3230, Paso de los Libres, Province of
+Corrientes.
+AD Head Office (+54 3772) 422222, SARLYDYX.
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA).
+www.eana.com.ar Conmutador (+54 362) 4436291/2/3, MET int
+32932, ARO/AIS int 32933 aclib@eana.com.ar, ANS int 32931,
+TWR int. 32934 /
+Argentine Air Navigation Company (EANA S.A) www.eana.com.ar
+Head office (+54 362) 4436291/2/3, MET ext 32932, ARO AIS ext
+32933 aclib@eana.com.ar, ANS ext 32931, TWR ext 32934
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Dirección Provincial de Aeronáutica de Corrientes, Calle 25
+de mayo 927 (Código Postal 3400) corrientes, Teléfono: (+54 379)
+4475426. /
+Aeronautics Directorate of the Province of Corrientes, 927 25 de
+Mayo street (Zip Code 3400) Corrientes,
+Telephone: 379 447542
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete. / (*) Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types No
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+No
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO (to
+one-hundredth
+of a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and
+SWY strength
+(PCN) and
+surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+18 (*) 171°
+183° 2.260x45 30/F/B/X/U
+ASPH
+294045.69S
+0570914.27W
+70 m
+229 ft 0.00%
+36 (*) 351°
+004°
+294158.16S
+0570900.75W
+69.95 m
+230 ft 0.00%
+AIP ARGENTINA SARL AD 2.5
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS (cont.)
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks (*)
+8 9 10 11 12 13 14
+No No 2.380x280 90X90 No No DTHR RWY 18: 130 m
+No No No No DTHR RWY 36: 308 m
+(*) RWY 18/36 prohibida las operaciones de aeronaves a turbina y grupo moto propulsor debajo de los planos por desprendimiento de
+carpeta asfáltica. /
+RWY 18/36 operations of turbine-powered aircraft and propulsion units under the planes are prohibited due to the detachment of the
+asphalt layer.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación / Hours
+of operation Observaciones / Remarks
+1 2 3 4 5 6
+TMA/TWR/APP Libres Torre / Libres Tower
+CPPL 120.3 MHz LUN a DOM 12:30-20:30 UTC
+MON to SUN 12:30-20:30 UTCCAUX 118.5 MHz Ver GEN 3.4 / See GEN 3.4
+118.1 MHz HX
+Servicio HX para
+comunicaciones en
+inmediaciones de Paso de los
+Libres, Uruguaiana y su
+Coordinación. /
+HX service for communications
+in the vicinity of Paso de los
+Libres, Uruguaiana and its
+Coordination.
+EMERG 121.50 MHz LUN a DOM 12:30-20:30 UTC
+MON to SUN 12:30-20:30 UTC
+AIP ARGENTINA SARL AD 2.8
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026
+AD 2.21 PROCEDIMIENTOS DE ATENUACIÓN DEL RUIDO / NOISE ABATEMENT PROCEDURES
+Se aplicarán los procedimientos generales de atenuación de ruido establecidos en la Parte 2 – ENR 1.5. /
+The general noise abatement procedures set forth in Part 2 - ENR 1.5 shall apply.
+AD 2.22 PROCEDIMIENTOS DE VUELO / FLIGHT PROCEDURES
+TRÁNSITO VFR
+Circuitos de Tránsito de Aeródromo
+A fin de evitar posibles interferencias, los circuitos de tránsito de los aeródromos de Paso de los Libres y de Uruguaiana, serán de tipo
+hipódromo (órbita) y establecidos de la siguiente manera, (ver ANEXO B):
+a) Paso de los libres (pista 18/36) al Oeste (W) del eje de pista.
+b) Uruguaiana (pista 10/28) al Sur (S) del eje de pista.
+Todos los vuelos VFR que tengan previsto operar en la TMA/CTR Paso de los Libres o en el circuito de tránsito de aeródromo de Uruguaiana,
+deberán establecer enlaces radioeléctricos con las dependencias ATS correspondientes.
+FRASEOLOGÍA
+Se acordó utilizar la fraseología en inglés para realizar las coordinaciones para las comunicaciones entre las dependencias ATS de ambos
+Estados.
+ZONA DE TRÁNSITO DE AERÓDROMO DE URUGUAIANA (ver ANEXO A)
+Espacio Aéreo Clase G. Comprende el espacio aéreo incluido dentro de los límites que se detallan a continuación:
+LATERALES: definido por un sector circular de 9,2 km (5NM) de radio, centrado en las coordenadas 294700S - 0570213W en el espacio
+aéreo bajo jurisdicción de Brasil; y
+VERTICALES: desde el suelo hasta 500 m/1.500 ft AGL.
+CORREDOR DE VUELO VFR DE URUGUAIANA (ver ANEXO A)
+Espacio Aéreo Clase G, cuyos límites serán los siguientes:
+LATERALES: de las coordenadas 294700S - 0570213W hasta 10 NM, con rumbo magnético 100/280, y con una anchura de 01 NM a cada
+lado del eje; y
+VERTICALES: desde el suelo hasta 500 m/1.500 ft AGL.
+DEPENDENCIAS ATS:
+El Servicios de Control de Aproximación a la aeronave que opere en TMA/CTR Paso de los Libres será realizado por TWR Paso de los Libres,
+cuyo distintivo de llamada será “Torre Paso de los Libres” y que se encuentra ubicado en el aeródromo Paso de los Libres.
+El Servicio de Control de Aeródromo a las aeronaves que operen en la Zona de Tránsito del Aeródromo de Paso de Los Libres será prestado
+por TWR Paso de Los Libres, cuyo distintivo de llamada será "Torre Paso de Los Libres".
+El Servicio de Información y Alerta de Vuelo a las aeronaves que operen en la Zona de Tránsito de Aeródromo (ATZ) de Uruguaiana y en
+el Corredor de Vuelo VFR será proporcionado por Radio Uruguaiana, cuyo indicativo será “Radio Uruguaiana”. /
+VFR TRAFFIC
+Aerodrome Traffic Circuits
+In order to avoid possible interferences, the traffic circuits of Paso de los Libres and Uruguaiana aerodromes will be of the hypodrome type
+(orbit) and established as follows (see Annex B):
+a) Paso de los Libres (runway 18/36) to the West (W) of the runway axis.
+b) Uruguaiana (runway 10/28) to the South (S) of the runway axis.
+All VFR flights planning to operate in the TMA/CTR Paso de los Libres or in the Uruguaiana aerodrome traffic circuit, must establish radio
+links with the corresponding ATS units.
+PHRASEOLOGY
+It was agreed to use English phraseology to coordinate communications between the ATS departments of both States.
+URUGUAIANA AERODROME TRAFFIC AREA (See Annex A)
+Class G Airspace. Comprises the airspace included within the limits detailed below:
+LATERAL: defined by a circular sector with a radius of 9.2 km (5 NM), centered at coordinates 294700S - 0570213W in the airspace
+under the jurisdiction of Brazil; and
+VERTICAL: from the ground up to 500 m/1,500 ft AGL.
+AIP ARGENTINA SARL AD 2.9
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026
+AD 2.22 PROCEDIMIENTOS DE VUELO / FLIGHT PROCEDURES (Cont.)
+URUGUAIANA VFR FLIGHT CORRIDOR (See Annex A)
+Airspace Class G. Whose limits will be the following:
+LATERAL: from coordinates 294700S - 0570213W to 10 NM, with a magnetic bearing of 100/280, and with a width of 01 NM on each
+side of the axis; and.
+VERTICAL: from the ground to 500 m/1,500 ft AGL.
+ATS Units:
+Approach Control Services to aircraft operating at TMA/CTR Paso de los Libres will be provided by TWR Paso de los Libres, whose call sign
+will be “Torre Paso de los Libres” and which is located at the Paso de los Libres aerodrome.
+Aerodrome Control Service to aircraft operating in the Paso de Los Libres Aerodrome Traffic Zone will be provided by TWR Paso de Los
+Libres, whose call sign will be "Torre Paso de Los Libres".
+The Flight Information and Alert Service for aircraft operating in the Uruguaiana Aerodrome Traffic Zone (ATZ) and the VFR Flight Corridor
+will be provided by Radio Uruguaiana, whose call sign will be “Radio Uruguaiana”.
+ANEXO / ANNEX A
+AIP ARGENTINA SARL AD 2.10
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026
+ANEXO / ANNEX B
+AIP ARGENTINA SARL AD 2.11
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2024 11 JULIO 2024
+AD 2.23 INFORMACIÓN SUPLEMENTARIA / ADDITIONAL INFORMATION
+Habilitado vuelo nocturno. / Night flight authorized.
+AD 2.24 CARTAS RELATIVAS AL AERÓDROMO / CHARTS RELATED TO THE AERODROME
+Plano de aeródromo – OACI. / Aerodrome Chart - ICAO SARL AD 2.A1
+Plano de obstáculos de aeródromos - OACI, Tipo A / Aerodrome obstacle chart – ICAO, Type A PISTA / RWY 18/36 SARL AD 2.D1
+AD 2.25 PENETRACIÓN DE LA SUPERFICIE DEL TRAMO VISUAL (VSS) / VISUAL SEGMENT SURFACE (VSS) PENETRATION
+Penetración de la superficie del tramo visual (VSS), incluyendo los procedimientos y valores mínimos de los procedimientos afectados: /
+Visual segment surface (VSS) penetration, including procedure and procedure minima affected:
+NIL

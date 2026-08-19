@@ -78,8 +78,14 @@ function normalizar(s: string): string {
 describe("los datos del AIP están respaldados por el PDF oficial", () => {
   const icaos = icaosConAip();
 
-  it("hay ocho aeródromos, que son los controlados que MADHEL deja vacíos", () => {
-    expect(icaos).toEqual(["SAAR", "SABE", "SACO", "SADF", "SADP", "SAEZ", "SAZM", "SAZS"]);
+  it("están los 51 aeródromos con ficha AD 2.0 del AIP", () => {
+    /*
+      La lista sale del listado del AIP, no de una constante: si ANAC publica la ficha de un
+      aeródromo nuevo, entra sola en la próxima corrida del generador. Este número baja si
+      ANAC despublica algo, y eso es información.
+    */
+    expect(icaos.length).toBe(51);
+    expect(icaos).toContain("SADM");
   });
 
   it.each(icaos)("%s: cada frecuencia está en el texto del AIP", (icao) => {
@@ -358,5 +364,50 @@ describe("componerFicha", () => {
 
   it("los teléfonos nunca los pone el AIP", () => {
     expect(componerFicha(vacio, datosAip("SADF")).telephone).toEqual([]);
+  });
+});
+
+describe("el largo de pista del AIP corrige al de OurAirports", () => {
+  it("Morón mide 2303 m, no 2850", async () => {
+    /*
+      **El caso que motivó la corrección, y es el aeródromo de casa.** `runways.tsv` sale
+      de OurAirports y da 9350 ft (2850 m); el AIP dice 2.303x38 y AD 2.13 lo confirma con
+      TORA, TODA, ASDA y LDA en 2.303. Son 547 m de más en el número con el que alguien
+      decide si su avión entra.
+    */
+    const { getAirport } = await import("./airports");
+    const pista = getAirport("SADM")!.pistas!.find((p) => p.le === "02")!;
+    expect(pista.largoFt).toBe(Math.round(2303 * 3.28084));
+  });
+
+  it("y San Fernando 1690, no 1801", async () => {
+    /*
+      Se busca sin ceros a la izquierda porque **`runways.tsv` guarda San Fernando como
+      `5/23`** y el AIP como `05/23`. El emparejamiento del overlay normaliza las dos
+      puntas justamente por eso; si comparara literal, la corrección no se aplicaría y
+      nadie se enteraría.
+    */
+    const { getAirport } = await import("./airports");
+    const pista = getAirport("SADF")!.pistas!.find((p) => p.le.replace(/^0+/, "") === "5")!;
+    expect(pista.largoFt).toBe(Math.round(1690 * 3.28084));
+  });
+
+  it("el rumbo sigue siendo el medido de OurAirports", async () => {
+    /*
+      Sólo se corrige el largo. El rumbo alimenta el viento cruzado y es una medición; el
+      AIP lo publica en magnético y geográfico, y tomarlo de ahí cambiaría una medición por
+      una conversión.
+    */
+    const { getAirport } = await import("./airports");
+    const pista = getAirport("SADM")!.pistas!.find((p) => p.le === "02")!;
+    expect(pista.fuente).toBe("medida");
+    expect(pista.rumboT).toBe(13);
+  });
+
+  it("un aeródromo sin datos del AIP conserva lo de OurAirports", async () => {
+    const { getAirport } = await import("./airports");
+    const pistas = getAirport("SADL")?.pistas ?? [];
+    // La Plata no tiene AD 2: lo que haya viene de OurAirports, intacto.
+    for (const p of pistas) expect(p.fuente).toBe("medida");
   });
 });

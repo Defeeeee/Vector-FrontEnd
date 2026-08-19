@@ -1,0 +1,191 @@
+# SARE — extraído de https://ais.anac.gob.ar/descarga/aip-69e23557ecfd0
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 272700S 0590322W Centro geométrico de pista /
+(*) 272700S 0590322W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+5 km al SW de la ciudad de Resistencia /
+5 km at SW of the city of Resistencia
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+52.75 m (173 ft), 33.4°C - 9.4°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+19 m (62 ft)
+5 VAR, cambio anual / VAR, annual change 13° W, 12´ W (Año/year 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Ruta 11 km
+1.003 S/N°, CP 3500, Resistencia, Pcia. del Chaco.
+Jefatura AD: (+54 362) 4442858, móvil (+54 9 362) 4737006,
+SAREYDYX, ydsis@anac.gob.ar, aeroresistencia@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Ruta 11 km 1.003
+S/N°, Zip Code 3500, Resistencia, Province of Chaco.
+AD Head Office: (+54 362) 4442858, mobile (+54 9 362) 4737006,
+SAREYDYX, ydsis@anac.gob.ar, aeroresistencia@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, CP 3500, Pcia. del Chaco, (+54 362)
+4446014 – 4446009, www.aeropuertosargentina.com /
+Aeropuertos Argentina, Zip code 3500, Province of Chaco, (+54
+362) 4446014 – 4446009, www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A). ARO/AIS
+(+54 362) 4436280, (+54 3624) 436291-2-3, Int. 32146, 32151,
+(+54 11) 0800-7773227, acsis@eana.com.ar, ww.eana.com.ar /
+Argentine Air Navigation Company (EANA S.A), ARO/AIS (+54 362)
+4436280, (+54 3624) 436291-2-3, Ext. 32146, 32151, (+54 11)
+0800-7773227, acsis@eana.com.ar, www.eana.com.ar.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Sí / Yes
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL, JET A-1 / AF 1004 JET OIL AG 1022
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL 20.000 litros / liters. JET A-1 288.000 litros / liters
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No se dispone / Not available
+7
+Observaciones / Remarks No se cuenta con servicios de asistencia en tierra
+Dispone de Escalera no motorizada con capacidad máxima para
+aeronaves tipo Airbus A330, similar o menor porte, para uso solo
+en PSN N° 3A /
+No ground service assistance available
+Non-motorized stairs with maximum capacity for aircraft type
+Airbus A330 similar or lighter, only for use in PSN No. 3A
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO
+THR, extremo
+RWY, GUND
+THR /
+THR GEO
+COORD, RWY
+end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+03 020.7°
+34° 2.770x45 410/F/A/X/T
+ASPH
+272741.77S
+0590339.84W
+52.25 m
+171 ft 0.018%
+21 200.7°,
+214°
+272617.69S
+0590303.86W
+52.75 m
+173 ft -0.018%
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en
+qué extremo de
+pista)
+Descripción del
+sistema de
+parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+No 800x150 2.890X280 90x90 No No NIL
+No 220x150 90x90 No No NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation Observaciones / Remarks
+1 2 3 4 5 6
+TMA Resistencia Control
+CPPL 119.40 MHz
+H24
+CAUX 120.40 MHz
+EMERG 121.50 MHz Ver GEN 3.4 / See GEN 3.4
+APP/TWR Resistencia Torre /
+Resistencia Tower
+CPPL 118.70 MHz
+CAUX 118.10 MHz
+SMC Resistencia Rodaje o Superficie /
+Resistencia Taxiing or Surface 121.95 MHz Ver GEN 3.4 / See GEN 3.4
+ATIS ATIS Resistencia 127.85 MHz Ver / see GEN 3.4 ATIS

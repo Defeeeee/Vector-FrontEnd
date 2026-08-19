@@ -1,0 +1,184 @@
+# SAOS — extraído de https://ais.anac.gob.ar/descarga/aip-69e10c3899e4a
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 322304.09S – 0651108.78W Centro geométrico de pista. /
+(*) 322304.09S – 0651108.78W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+4.5 km al SSE de la ciudad de Santa Rosa de Conlara /
+4.5 km SSE of the city of Santa Rosa de Conlara.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+616.25 m (2.022 ft), 32.7°C – 4.4°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+26 m (85 ft)
+5 VAR, cambio anual / VAR, annual change 5° W , 11’ W (Año / year 2022)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Autopista de los
+Comechingones 55, km 921.5, CP 5777, Santa Rosa de Conlara,
+Pcia. de San Luis. Jefatura (+54 2656) 482080,
+ydSRC@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Autopista de los
+Comechingones 55, km 921.5, Zip code 5777, Santa Rosa de
+Conlara, Province of San Luis.Head office (+54 2656) 482080,
+ydSRC@anac.gob.ar
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A)
+www.eana.com.ar ARO-AIS móvil (+54 9 351) 2921338,
+acsrc@eana.com.ar; TWR móvil (+54 9 2656) 442939. /
+Argentine Air Navigation Company (EANA S.A) www.eana.com.ar
+ARO-AIS móvil (+54 9 351) 2921338, acsrc@eana.com.ar; TWR
+móvil (+54 9 2656) 442939.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+NIL
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100 LL - AVGAS UL91 - JET A1, AeroShell W100 -
+AeroShell W100 Plus - AeroShell W120 - AeroShell W15W-50
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity Almacenamiento de 40.000 litros JET A1;
+Abastecedoras de 15.000 litros JET A1; 2.000 litros AVGAS 100
+LL; 1.000 litros de AVGAS UL91. /
+40,000-liter JET A1 storage;
+15,000-liter JET A1 dispensers; 2,000 liters AVGAS 100 LL; 1,000
+liters of AVGAS UL91.
+4 Servicios e instalaciones de deshielo / De-icing facilities NIL
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+NIL
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+NIL
+7 Observaciones / Remarks (*) O/R - 5 días de antelación. / (*) O/R - 5 days in advance.
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of TDZ
+of precision APP
+RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+02 17.57°
+022°
+2.550x45 40/R/C/W/T
+CONC
+322343.55S
+0651123.51W
+GUND 26 m
+616 m
+2.021 ft 0 m
+20 197.57°
+202°
+322224.63S
+0651054.06W
+GUND 26 m
+616.25 m
+2.022 ft 0 m
+AIP ARGENTINA SAOS AD 2.5
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2023 30 NOVIEMBRE 2023
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS (cont.)
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 2.670x280 90x90 NIL NIL NIL
+NIL NIL NIL NIL NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio / Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA/APP/TWR Valle del Conlara Torre /
+Valle del Conlara Tower
+CPPL 119.95 MHz 12:00-18:00 UTC, días
+hábiles, resto O/R /
+working days, rest O/R
+CAUX 118.85 MHz
+EMERG 121.50 MHz Ver / see AIP GEN 3.4.
+AIP ARGENTINA SAOS AD 2.7
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 2/2025 27 NOVIEMBRE 2025

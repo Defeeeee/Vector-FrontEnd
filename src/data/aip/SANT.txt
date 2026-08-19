@@ -1,0 +1,182 @@
+# SANT — extraído de https://ais.anac.gob.ar/descarga/aip-69e10b1142729
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 265018S 0650616W Centro geométrico de pista /
+(*) 265018S 0650616W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+12 km al E de la ciudad de San Miguel de Tucumán /
+12 km at E of the city of San Miguel de Tucumán
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+455.25 m (1.494 ft), 31.3°C - 6.9°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+28 m (92 ft)
+5 VAR, cambio anual / VAR, annual change 8° W, 12´ W (Año/year 2024)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Delfín Gallo
+S/Nº, Cevil Pozo, CP 4178, Pcia. de Tucumán.
+Jefatura (+54 381) 4260636, SANTYDYX, ydtuc@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Delfín Gallo No Nº,
+Cevil Pozo, CP 4178, Province of Tucumán.
+AD Head Office (+54 381) 4260636, SANTYDYX,
+ydtuc@anac.gob.ar.
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 381) 4265072 - Fax (+54 381)
+4264906, www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A) ARO-AIS /
+MET (+54 381) 4260756, Fax (+54 381) 4511036, móvil (+54 9 11)
+53174775, RTI 52311, actuc@eana.com.ar; www.eana.com.ar
+Argentine Air Navigation Company (EANA S.A.) ARO-AIS / MET
+(+54 381) 4260756, Fax (+54 381) 4511036, mobile (+54 9 11)
+53174775, RTI 52311, actuc@eana.com.ar; www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+TCA – Cámara de Frío / TCA - Cold Chamber
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL - JET A-1 / HD 1.100
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL 50.000 litros / liters - JET A-1 400.000 litros / liters
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG (Centésimas
+de grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR (m) y
+ELEV MAX de TDZ
+(m) de RWY para
+APP precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+02 9.78°,
+018° 3.500x45 82/R/B/W/T
+CONC
+265113.62S
+0650626.35W
+435.75
+439 0.557%
+20 189.77°,
+198°
+264921.56S
+0650604.83W 455.25 -0.557%
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m)
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de
+parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks (*)
+8 9 10 11 12 13 14
+No No 3.620x280 90x90 No No NIL
+No No 90x90 No No NIL
+(*) Dispone de márgenes pavimentados de 7.5 m. / (*) It has paved margins of 7.5 m.
+AIP ARGENTINA SANT AD 2.5
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+funcionamiento /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR/APP Tucumán Torre /
+Tucumán Tower
+CPPL 119.50 MHz
+H24
+CAUX 118.35MHz
+SMC Tucumán Rodaje o Superficie /
+Tucumán Taxiing or Surface CPPL 121.75 MHz Ver/See GEN 3.4
+ATIS ATIS Tucumán CPPL 127.55 MHz Ver/See GEN 3.4
+TMA Tucumán Control CPPL 123.85 MHz
+CAUX 122.50 MHz
+EMERG 121.50 MHz
+AIP ARGENTINA SANT AD 2.7
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026

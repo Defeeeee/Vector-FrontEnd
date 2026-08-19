@@ -1,0 +1,232 @@
+# SAZB — extraído de https://ais.anac.gob.ar/descarga/aip-69e7b314ac7f0
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+384338S - 0620912W Centro geométrico de pista. /
+384338S - 0620912W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+10 km al E de la ciudad de Bahía Blanca. /
+10 km E of the city of Bahía Blanca.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+75.5 m (248 ft) / 31.2° C, 2.4 ° C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+15 m (49 ft).
+5 VAR, cambio anual / VAR, annual change 3° W, 9´ W (Año / Year 2018).
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL – Ex Ruta 3
+Norte KM 675 - CP 8000 - Bahía Blanca - Pcia. de Buenos Aires.
+Jefe de aeródromo: (+54 291) 4460264 Casilla de Correo
+Electrónico: ydbca@anac.gob.ar
+NATIONAL CIVIL AVIATION ADMINISTRATION – Former Route 3
+North KM 675 – Zip Code 8000 - Bahía Blanca – Province of Buenos
+Aires Head of aerodrome: (+54 291) 4460264 E-mail:
+ydbca@anac.gob.ar
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A)
+ARO/AIS (+54 291) 644014 ext 36428, (+54 291) 4860300,
+acbca@eana.com.ar; TWR (+54 9 291) 4162082; MET (+54 9 291)
+4860350 /
+Argentine Air Navigation Company (EANA S.A).
+www.eana.com.ar. ARO/AIS (+54 291) 644014 ext 36428, (+54
+291) 4860300, acbca@eana.com.ar; TWR (+54 9 291) 4162082;
+MET (+54 9 291) 4860350
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks No
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL / JET A-1
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+H24
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks No
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésim
+as de
+grado) /
+BRG GEO,
+BRG MAG
+(to one-
+hundredth
+of a
+degree)
+Dimension
+es de RWY
+(m) /
+Dimensions
+of RWY (m)
+Resistencia (PCN) y
+superficie de RWY
+y SWY /
+RWY and SWY
+strength (PCN) and
+surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+17L NIL
+166° 2.410x45 42/F/B/W/U
+ASPH
+384300.01S
+0620926.56W
+75.5 m
+248 ft NIL
+35R NIL
+346°
+384415.01S
+0620858.57W
+66.5 m
+218 ft NIL
+06 NIL
+063° 1.980x30
+68t/1 85t/2 136t/4
+136t/5 240 t/8
+ASPH
+384339.00S
+0621050.06W
+74 m
+243 ft
+NIL
+24 NIL
+243°
+384307.59S
+0620938.54W
+75.5 m
+248 ft
+NIL
+17R NIL
+167° 1.498x30
+22 t/1 30 t/2 48 t/4
+48 t/5 90 t/8
+ASPH
+384310.98S
+0621103.56W
+70.5 m
+231 ft
+NIL
+35L NIL
+347°
+384357.72S
+0621046.64W
+71.5 m
+235 ft
+NIL
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimension
+es CWY
+(m) /
+Dimension
+s of CWY
+(m)
+Dimension
+es de franja
+(m) /
+Dimensions
+of strips
+(m)
+RESA
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL NIL 90x90 NIL NIL NIL
+NIL NIL NIL NIL NIL NIL
+NIL NIL NIL 90x60 NIL NIL CLSD
+NIL NIL NIL NIL NIL CLSD
+NIL NIL NIL 90x60 NIL NIL CLSD
+NIL NIL NIL NIL NIL CLSD
+Observaciones /Remarks:
+Extremo RWY 35R 384255.31S 0620928.32W – ELEV 76 m 249 ft. Dispone de área de 150 m de longitud en SFC CONC/
+End RWY 35R 384255.31S 0620928.32W - ELEV 76 m 249 ft. 150 m long area available in SFC CONC
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR/APP Bahía Blanca Torre/
+Bahía Blanca Tower
+CPPL
+AUX
+119.15 MHz
+118.10 MHz
+H24
+NIL
+SMC Bahía Blanca Rodaje o superficie/
+Bahía Blanca Taxiing or surface
+CPPL 121.90 MHz
+U/S
+VER GEN 3.4/
+SEE GEN 3.4
+EMERG 121.50 MHz VER GEN 3.4/
+SEE GEN 3.4
+TMA Bahía Blanca Control CPPL 124.80 MHz NIL

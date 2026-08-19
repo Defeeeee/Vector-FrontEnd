@@ -73,6 +73,35 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.14.0",
+    fecha: "2026-08-19",
+    titulo: "Los 51 aeródromos controlados, con sus cartas",
+    novedades: [
+      {
+        icono: "nube",
+        titulo: "Frecuencias, pistas y combustible de toda la red controlada",
+        texto:
+          "Antes teníamos datos del AIP de ocho aeródromos; ahora de los 51 que ANAC publica con ficha, Morón incluido. Salen del documento oficial y cada número está verificado contra el PDF en las dos direcciones: nada que no esté publicado, y nada publicado que falte.",
+        href: "/dashboard/airports",
+        cta: "Buscar un aeródromo",
+      },
+      {
+        icono: "compartir",
+        titulo: "Las cartas oficiales, en la ficha",
+        texto:
+          "El plano de aeródromo y la carta de aproximación de cada uno, con su edición y desde cuándo rige, sin salir a buscarlas al sitio de ANAC. Son 246 documentos.",
+        href: "/dashboard/airports",
+        cta: "Ver las cartas",
+      },
+      {
+        icono: "reloj",
+        titulo: "Y corregimos el largo de nueve pistas",
+        texto:
+          "Cruzando el AIP con la base que usábamos aparecieron nueve pistas mal medidas. Morón figuraba con 2850 m y mide 2303; San Fernando con 1801 y mide 1690. Donde ANAC publica la medida, ahora manda ANAC.",
+      },
+    ],
+  },
+  {
     version: "2.13.0",
     fecha: "2026-08-19",
     titulo: "La ruta se reordena, y los puntos entran donde quieras",

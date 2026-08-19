@@ -1,0 +1,210 @@
+# SASA — extraído de https://ais.anac.gob.ar/descarga/aip-69e1138586777
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 245135S - 0652913W Centro geométrico de pista /
+(*) 245135S - 0652913W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+10 km al SW de la ciudad de Salta /
+10 km at SW of the city of Salta.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+1246.25 m (4.089 ft), 28.4°C - 2.9°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+34 m
+5 VAR, cambio anual / VAR, annual change 9° W - 13’ W (Año 2025) / 9° W - 13’ W (Year 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Ruta 51 km 5 ½,
+CP 4400, Salta, Pcia. de Salta.
+Conmutador (+54 387) 4375111 - (+54 387) 4375113, SASAYDYX /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Ruta 51 km 5 ½, Zip
+code 4400, Salta, Province of Salta.
+Switchboard (+54 387) 4375111 - (+54 387) 4375113, SASAYDYX.
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina (+54 387) 4243115 /2904 /7356,
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), ARO-AIS
+(+54 387) 4375113 Int/RTI 52643/52648, acsal@eana.com.ar,
+www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA), ARO-AIS (+54
+387) 4375113 Int/RTI 52643/52648, acsal@eana.com.ar,
+www.eana.com.ar.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Sí / Yes
+2 Tipos de combustible, lubricantes / Fuel and oil types ELIT 20W-50 / Movil Jet AP 1.001 PRIST
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL 40.000 litros. JET A 285.000 litros /
+AVGAS 100LLL 40,000 liters. JET A 285,000 liters.
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+Sí. 1.250 m² (*) O/R / Yes. 1,250 m² (*) O/R
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Reparación de aeronaves de mediano porte /
+Repair of medium-sized aircraft
+7
+Observaciones / Remarks (*) Dirección General Aviación Civil Salta (+54 387) 4241203 -
+11:00-19:00 UTC /
+(*) Salta General Civil Aviation Directorate (+54 387) 4241203 -
+11:00-19:00 UTC.
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,BRG
+MAG
+(to one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCR)
+y superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+02 NIL,
+020°
+2.989x45
+530/R/A/W/T
+CONC
+395/F/A/X/T
+ASPH
+245222.20S
+0652923.78W
+GUND 34 112 ft
+1246.25 m
+4.089 ft NIL
+20 NIL,
+200°
+245046.94S
+0652902.93W
+GUND 34 112 ft
+1230.5 m
+4.037 ft NIL
+06 NIL,
+061°
+2.400x30 430/F/B/X/T
+ASPH
+245129.15S
+0652922.47W
+GUND 34 112 ft
+1.240 m
+4.068 ft NIL
+24 NIL,
+241°
+245041.37S
+0652814.90W
+GUND 34 112 ft
+1214.25 m
+3.984 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 3.109x280 240 x 90(m) NIL NIL NIL
+NIL NIL NIL NIL NIL
+NIL NIL 2.520x280 90x60(m) NIL NIL (*)
+NIL NIL NIL NIL (*)
+(*) AVBL de márgenes de 7.5 m a cada lado - SFC ASPH.
+AVBL plataforma de virajes en umbrales de RWY 06/24 – SFC ASPH. /
+(*) AVBL of 7,5 m margins on each side - SFC ASPH.
+AVBL turning apron at RWY 06/24 thresholds - SFC ASPH.
+(*) RWY 06/24 solo para rodaje /
+RWY 06/24 only for taxiing
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TWR SALTA TORRE / SALTA TOWER
+CPPL 128.85 MHz
+H24
+CAUX 129.75 MHz
+EMERG 121.50 MHz
+TMA/APP Salta Control CPPL 124.60 MHz
+CAUX 126.00 MHz
+ATIS 127.65 MHz H24

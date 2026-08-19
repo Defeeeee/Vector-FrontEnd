@@ -1,0 +1,313 @@
+# SAOU — extraído de https://ais.anac.gob.ar/descarga/aip-69e23dcde0868
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 331624S-0662123W Centro geométrico de pista. /
+(*) 331624S-0662123W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+3.8 km al NW de la ciudad de San Luis /
+3,8 km NW of the city of San Luis
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+710.75 m (2.332 ft), 31.6°C – 4°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+24 m (79 ft)
+5 VAR, cambio anual / VAR, annual change 3° W, 11’ W (Año/Year 2021)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. Fuerza
+Aérea 3095, CP 5700, Pcia. de San Luis. Jefatura: móvil (+54 9
+2966) 581648. Alternativos: móvil (+54 9 11) 64798818 / (+54
+266) 4436269, ydUIS@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Av. Fuerza Aérea
+3095, Zip code 5700, Province of San Luis. Head Office: mobile
+(+54 9 2966) 581648. Alternatives: mobile (+54 9 11) 64798818 /
+(+54 266) 4436269, ydUIS@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 11) 54806111,
+www.aeropuertosargentina.com.ar
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), ARO-AIS
+móvil (+54 9 379) 488177 - Altn. (+54 379) 4458844,
+accrr@eana.com.ar, MET (+54 379) 4458332 - móvil (+54 9 11)
+66706002, www.eana.com.ar. /
+Argentine Air Navigation Company (EANA SA), ARO-AIS móvil (+54
+9 379) 488177 - Altn. (+54 379) 4458844, accrr@eana.com.ar,
+MET (+54 379) 4458332 - móvil (+54 9 11) 66706002,
+www.eana.com.ar.
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete. / (*) Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+NIL
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+NIL
+4 Servicios e instalaciones de deshielo / De-icing facilities NIL
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+NIL
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+NIL
+7 Observaciones / Remarks NIL
+AIP ARGENTINA SAOU AD 2.3
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2024 11 JULIO 2024
+AD 2.8 DATOS SOBRE PLATAFORMAS, CALLES DE RODAJE Y EMPLAZAMIENTOS/POSICIONES DE VERIFICACIÓN DE EQUIPO /
+APRONS, TAXIWAYS AND CHECK LOCATIONS/POSITIONS DATA
+1 Designación, superficie y resistencia APN /
+Designation surface and strength of aprons
+ASPH - PCN 43/R/C/W/T.
+2 Designación, ancho, superficie y resistencia TWY /
+Designation, width, surface and strength of taxiways
+"A", "B", "C" 18m – ASPH - PCN 36/F/B/W/T.
+3 Emplazamiento y elevación ACL /
+Location and elevation of altimenter checkpoints
+APN ELEV 708 m (2.323 ft)
+4
+Emplazamiento de los puntos de verificación VOR /
+Location of VOR checkpoints
+En TWY “C”, rodaje ingreso a RWY distancia 600 m (0.32 NM) RDL
+145. /
+In TWY "C", taxi entry to RWY distance 600 m (0.32 NM) RDL 145
+5 Posición de los puntos de verificación INS /
+Position of INS checkpoints
+NIL
+6 Observaciones / Remarks NIL
+AD 2.9 SISTEMA DE GUÍA Y CONTROL DEL MOVIMIENTO EN LA SUPERFICIE Y SEÑALES /
+SURFACE MOVEMENT GUIDANCE AND CONTROL SYSTEM AND MARKINGS
+1
+Uso de señales ID de puestos de estacionamiento de aeronaves,
+líneas de guía TWY y sistema de guía visual a estacionamiento
+en los puestos de aeronaves /
+Use of aircraft stand ID signs, TWY guide lines and visual
+docking/parking guidance system at aircraft stands
+Sí/Yes
+2 Señales y LGT de RWY y TWY / RWY and TWY markings and LGT Sí/Yes
+3 Barras de parada y luces de protección de RWY /
+Stop bars and RWY guard lights
+No
+4 Otras medidas de protección de RWY /
+Other runway protection measures
+NIL
+5 Observaciones / Remarks No dispone ID tipo de aeronaves en PSN 3, 4, 5 y 6 /
+No aircraft type ID available on PSN 3, 4, 5 and 6
+AD 2.10 OBSTÁCULOS DEL AERÓDROMO / AERODROME OBSTACLES
+En las áreas de aproximación y despegue / In approach/TKOF areas
+RWY - Área afectada /
+RWY - Area affected
+Tipo de obstáculo, Elevación, Señales y LGT /
+Obstacle type, Elevation, Markings and LGT
+Coordenadas /
+Coordinates
+01 Aproximación / Approach Tanque/Tank 708.75 m 331723.4S 0662126.1W
+01 Aproximación / Approach Árbol/Tree 727 m 331733.2S 0662123.9W
+01 Aproximación / Approach Árbol/Tree 723 m 331720.2S 0662137.9W
+01 Aproximación / 19 Despegue
+01 Approach / 19 Takeoff Árbol/Tree 720.5 m 331723.3S 0662135.5W
+01 Aproximación / 19 Despegue
+01 Approach / 19 Takeoff Árbol/Tree 715 m 331726.4S 0662132.1W
+01 Aproximación / 19 Despegue
+01 Approach / 19 Takeoff Árbol/Tree 720.5 m 331728.2S 0662129.4W
+01 Aproximación / 19 Despegue
+01 Approach / 19 Takeoff Árbol/Tree 720 m 331730.3S 0662128W
+19 Aproximación / Approach Árbol/Tree 718 m 331530.8S 0662111.1W
+19 Aproximación / Approach Árbol/Tree 720.5 m 331528S 0662120.6W
+19 Aproximación / 01 Despegue
+19 Approach / 01 Takeoff Árbol/Tree 716 m 331529.1S 0662115.4W
+19 Aproximación / 01 Despegue
+/ 19 Approach / 01 Takeoff Árbol/Tree 719 m 331526.9S 0662115.2W
+19 Aproximación / 01 Despegue
+19 Approach / 01 Takeoff Árbol/Tree 721.5 m 331522.4S 0662113.3W
+AIP ARGENTINA SAOU AD 2.4
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 2/2024 28 NOVIEMBRE 2024
+AD 2.10 OBSTÁCULOS DEL AERÓDROMO / AERODROME OBSTACLES (Cont.)
+En el área de circuito y en el AD / In circling area and at AD
+Tipo de obstáculo, Elevación, Señales y LGT /
+Obstacle type, Elevation, Markings and LGT Coordenadas / Coordinates
+Antena/Antenna 785 m 331541.7S 06620 17.1W
+Edificación/Building 770.5 m 331737.3S 06619 29.4W
+Antena/Antenna 770.5 m 331634.2S 06620 20.4W
+Antena/Antenna 761.5 m 331704.3S 0662041.3W
+Antena/Antenna 772 m 331723.3S 0662021.7W
+Antena/Antenna 778.5 m 331729S 0662030.5W
+Antena/Antenna 747.5 m 331736.6S 0662057W
+Antena/Antenna 752.5 m 331737.7S 0662054.8W
+Antena/Antenna 756.5 m 331744.2S 0662040.5W
+Edificación/Building 751 m 331752.2S 0662054.8W
+Antena/Antenna 779.5 m 331758.6S 0662049.8W
+Antena/Antenna 759.5 m 331803.8S 0662034.4W
+Antena/Antenna 778 m 331805.9S 0662020.6W
+Edificación/Building 765 m 331807.9S 0662008.8W
+Antena/Antenna 758 m 331811.5S 0662015.8W
+Antena/Antenna 781 m 331825.5S 0662041.6W
+Árbol/Tree 725.5 m 331717.6S 0662140.2W
+Árbol/Tree 726 m 331719.3S 0662139.7W
+Árbol/Tree 718 m 331719.6S 0662138.4W
+Árbol/Tree 711 m 331722.6S 0662123.4W
+Árbol/Tree 718.5 m 331726S 0662122.7W
+Antena/Antenna 727.5 m 331544.7S 0662110.4W
+Antena/Antenna 714 m 331531.3S 0662122.3W
+Árbol/Tree 725 m 331535.5S 0662107.7W
+Árbol/Tree 727.5 m 331532.2S 0662106.7W
+Árbol/Tree 730.5 m 331524.8S 0662108.1W
+Árbol/Tree 727.5 m 331524.1S 0662106.9W
+Antena/Antenna 130.7 m 331743.5S 0661730.2W
+Observaciones / Remarks: NIL
+AD 2.11 INFORMACIÓN METEOROLÓGICA PROPORCIONADA / METEOROLOGICAL INFORMATION PROVIDED
+1 Oficina MET asociada / Associated MET office EMA SAN LUIS, OMA/OVM MENDOZA
+2 Horas de servicio / Hours of service H24
+Oficina MET fuera de horario / MET office out of service hours OMA/OVM CÓRDOBA
+3
+Oficina responsable de la preparación TAF /
+Office responsible for preparation of TAFs
+OMA MENDOZA (00/00, 12/12, 18/18) y/and OMA CÓRDOBA
+(06/06)
+Períodos de validez / Periods of validity 24 HR: 00/00, 06/06, 12/12, 18/18
+4
+Disponibilidad de pronósticos de tendencias para el AD /
+Availability of the trend forecasts for the AD
+No
+Intervalos de expedición de pronósticos /
+Interval of issuance of the forecasts
+No
+5
+Información sobre cómo se hacen las exposiciones verbales y las
+consultas /
+Information on how briefing and/or consultation is provided
+No
+6
+Documentación de vuelo suministrada /
+Flight documentation supplied
+No
+Idioma(s) utilizado(s) / Language(s) used No
+7
+Las cartas y otra información expuesta o a disposición para
+exposiciones verbales o consultas /
+Charts and other information displayed or available for briefing
+or consultation
+No
+AIP ARGENTINA SAOU
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCN)
+y superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+01 NIL,
+009° 2.955x30 PCN 36/F/B/W/T
+ASPH
+331711.05S
+0662129.89W
+700.75 m
+2.299 ft
+NIL
+19 NIL,
+189°
+331535.76S
+0662116.91W
+710.75 m
+2.332 ft
+NIL
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 3075x280 90x60 NIL NIL NIL
+NIL NIL NIL NIL NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA/APP/TWR San Luis Torre / San Luis Tower
+CPPL 118.40 MHz 11:00-23:00 UTC. REST O/R NIL
+CAUX 119.85 MHz NIL
+EMERG 121.5 MHz NIL

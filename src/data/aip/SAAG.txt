@@ -1,0 +1,169 @@
+# SAAG — extraído de https://ais.anac.gob.ar/descarga/aip-69ebb97edc7dc
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+330020S - 0583646W Centro geométrico de pista. /
+330020S - 0583646W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+8 km al W de la ciudad de Gualeguaychú. /
+8 km at W of the city of Gualeguaychú.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+23 m (75 ft), 31.2° C - 6° C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+17 m (56 ft)
+5 VAR, cambio anual / VAR, annual change 10° W, 10’ W (Año/Year 2020)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, telephone, FAX, AFS, e-mail and website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RN 14 y Urquiza
+al Oeste, CP 2820, Gualeguaychú, Pcia. de Entre Ríos.
+(+54 3446) 437767 / Jefatura AD móvil (+54 9 3446) 376693,
+ydGUA@anac.gob.ar. /
+NATIONAL CIVIL AVIATION ADMINISTRATION, RN 14 and Urquiza
+al Oeste, CP 2820, Gualeguaychú, Province of Entre Ríos.
+(+54 3446) 437767 / AD Head Office mobile (+54 9 3446) 376693,
+ydGUA@anac.gob.ar
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA). TWR móvil
+corporativo (+54 9 341) 5192583, www.eana.com.ar
+Argentine Air Navigation Company (EANA SA). TWR corporate
+mobile (+54 9 341) 5192583, www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks No
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+NIL
+2 Tipos de combustible, lubricantes / Fuel and oil types NIL
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+NIL
+4 Servicios e instalaciones de deshielo / De-icing facilities NIL
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+Sí/Yes.
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+NIL
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas de
+grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCN)
+y superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of
+precision APP
+RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+01 NIL,
+010° 1.330x30 16t/1 20t/2 32t/4
+ASPH
+330041.65S
+0583646.53W
+23 m
+75 ft NIL
+19 NIL,
+190°
+325958.47S
+0583645.69W
+16 m
+53 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en
+qué extremo de
+pista)
+Descripción del
+sistema de
+parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 1.451x150 NIL NIL NIL NIL
+NIL NIL NIL NIL NIL NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TMA/APP/TWR Gualeguaychú Torre
+Gualeguaychú Tower
+CPPL 118.4 MHz 11:00-19:00 UTC No
+CAUX 119.3 MHz No

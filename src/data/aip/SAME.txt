@@ -1,0 +1,240 @@
+# SAME — extraído de https://ais.anac.gob.ar/descarga/aip-69fc9d7664864
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 324954S 0684734W Centro geométrico de pista /
+(*) 324954S 0684734W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+8 km al NE de la ciudad de Mendoza /
+8 km at NE of the city of Mendoza
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+704 m (2.310 ft), 32.8°C - 2°C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+22 m (72 ft)
+5 VAR, cambio anual / VAR, annual change 2° W, 11´ W (Año / year 2025)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. Fuerza
+Aérea, km 12.5 y Brig. Zuloaga, Las Heras, Pcia. de Mendoza, C.C.
+5539
+Jefatura (+54 261) 4487483, SAMEYDYX, yddoz@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, Fuerza Aérea
+Avenue, Km 12.5 and Brig. Zuloaga, Las Heras, Province of
+Mendoza, Mailbox 5539
+AD Head Office (+54 261) 4487483, SAMEYDYX,
+yddoz@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (+54 261) 5206000,
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), ARO-AIS y
+Fax (+54 261) 4487486, MET (+54 261) 4487468,
+www.eana.com.ar
+Argentine Air Navigation Company (EANA SA), ARO-AIS y Fax (+54
+261) 4487486, MET (+54 261) 4487468, www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Sí / Yes - O/R para aeronaves con envergadura mayor a 36 m (*)
+/ O/R for aircraft with a wingspan greater than 36 m (*)
+2
+Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL y JET A-1, Aeroshell Oil W100, Aeroshell Oil W100
+Plus, Aeroshell Oil W15 W50 y aditivo anticongelante /
+AVGAS 100LL and JET A-1, Aeroshell Oil W100, Aeroshell Oil
+W100 Plus, Aeroshell Oil W15W50 and antifreeze additive
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL 30.000 litros. Stock operativo: 24.000 litros.
+Abastecimiento por surtidor. JET A-1, Capacidad: 900.000 litros.
+Stock operativo: 450.000 litros. Abastecimiento por unidades
+abastecedoras /
+AVGAS 100LLL 30,000 liters. Operating stock: 24,000 liters.
+Supply by dispenser. JET A-1, Capacity: 900,000 liters. Operating
+stock: 450,000 liters. Supply by supplying units
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks (*) Intercargo SAC: móvil / mobile (+54 9 11) 36155203 / (+54 9
+11) 24657229 / e-mail: mendoza@intercargo.com.ar
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+18 180.74°,
+183°
+2.835x54
+970/R/B/W/T
+CONC
+324909.03S
+0684733.67W
+GUND 22 m / 72 ft
+698 m
+2.290 ft 0.21%
+36 000.7°,
+003°
+970/R/B/W/T
+CONC
+325039.56S
+0684735.02W
+GUND 22 m / 72 ft
+704 m
+2.310 ft -0.21%
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m)
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks (*)
+8 9 10 11 12 13 14
+No 300x150 2.955x280 90x108 No No NIL
+No 350x150 108x108 No No NIL
+(*) THR 36 desplazado permanentemente 45 m por OBST / (*) THR 36 permanently displaced 45 m by OBST.
+AD 2.14 LUCES DE APROXIMACIÓN Y DE PISTA / APPROACH AND RUNWAY LIGHTING
+Designador RWY
+/
+RWY designator
+Tipo, LEN e INTST del
+sistema de LGT de APCH /
+APCH LGT system type, LEN
+and INTST
+LGT THR Color WBAR /
+THR LGT Color WBAR PAPI, VASIS
+LEN
+LGT
+TDZ
+1 2 3 4 5
+18 No Sí / Yes
+Avasis ángulo de aproximación 3°
+/
+Avasis approach angle 3°
+No
+36 No Sí / Yes Ángulo aproximación 3° /
+Approach angle 3° No
+LEN, Separación,
+Color, INTST RCLL
+/
+RCLL LEN,
+Spacing, Color,
+INTST
+LEN, Separación, Color,
+INTST REDL /
+REDL LEN, Spacing, Color,
+INSTS
+Color RENL y WBAR /
+RENL Color and WBAR
+LEN y Color STWL /
+STWL LEN and Color
+Observaciones /
+Remarks
+6 7 8 9 10
+Sí / Yes Sí / Yes Sí / Yes Sí / Yes NIL
+Sí / Yes Sí / Yes Sí / Yes Sí / Yes NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio /
+Service designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+funcionamiento /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA Mendoza Control
+CPPL. 124.20 MHz
+H24
+CAUX 122.10 MHz
+EMERG 121.50 MHz Ver / See GEN 3.4
+TWR/APP Mendoza Torre /
+Mendoza Tower
+CPPL. 119.90 MHz Ver / See GEN 3.4
+CAUX 118.65 MHz
+SMC Mendoza Rodaje o Superficie /
+Mendoza Taxiing or Surface CPPL. 121.95 MHz Ver / See GEN 3.4
+ATIS ATIS Mendoza CPPL. 127.60 MHz Ver / See GEN 3.4

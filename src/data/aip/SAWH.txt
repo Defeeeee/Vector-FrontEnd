@@ -1,0 +1,191 @@
+# SAWH — extraído de https://ais.anac.gob.ar/descarga/aip-69e7b2b7ee74b
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+545036S - 0681744W Centro geométrico de pista (*). /
+545036S - 0681744W Geometric center of runway (*).
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+4 km al S de la ciudad de Ushuaia. /
+4 km at S of the city of Ushuaia.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+29.25 m (96 ft), 13.6° C, 0.2° C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+13 m (43 ft)
+5 VAR, cambio anual / VAR, annual change 12° E, 5´ W, (Año /YEAR 2020)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, CP 9410,
+Ushuaia, Pcia. de Tierra del Fuego, Antártida e Islas del Atlántico
+Sur. Jefatura ANAC (+54 9 2901) 409216, ydusu@anac.gob.ar ,
+aerodromoushuaia@anac.gob.ar; SAWHYDYX/
+NATIONAL CIVIL AVIATION ADMINISTRATION, ZIP CODE 9410,
+Ushuaia, Province of Tierra del Fuego, Antarctic and Islas del
+Atlántico Sur. Jefatura ANAC (+54 9 2901) 409216,
+ydusu@anac.gob.ar , aerodromoushuaia@anac.gob.ar
+SAWHYDYX
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+LONDON SUPPLY, Aeropuerto de Ushuaia (+54 2901) 431232 /
+LONDON SUPPLY, Ushuaia Airport (+54 2901) 431232
+https://londonsupplygroup.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A). ARO/AIS
+(+54 2901) 434390 (+54 11) 44802385 Ext 44306;
+acusu@eana.com.ar; MET (+54 2901) 423553; TWR (+54 2901)
+423346. www.eana.com.ar /
+Argentine Air Navigation Company (EANA S.A). ARO/AIS (+54
+2901) 434390 (+54 11) 44802385 Ext 44306,
+acusu@eana.com.ar; MET (+54 2901) 423553; TWR (+54 2901)
+423346; www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / Calculated in laboratory.
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Si /Yes
+2 Tipos de combustible, lubricantes / Fuel and oil types YPF: Jet A-1 – Aerolubr/Aerograsa/Aerofl
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+Tres tanques 400.000 litros. Total: 1.200.000 litros / Three tanks
+400,000 liters. Total: 1,200,000 liters
+4 Servicios e instalaciones de deshielo / De-icing facilities Si /Yes
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks Hidrantes/ Hydrants: 4 (cuatro/four)
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY / RWY
+designation
+BRG GEO, BRG
+MAG
+(Centésimas
+de grado) /
+BRG GEO, BRG
+MAG (to one-
+hundredth of a
+degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength
+(PCN) and
+surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY
+para APP
+precisión / THR
+ELEV and highest
+ELEV of TDZ of
+precision APP
+RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+07 NIL 2.804x45 54/R/A/W/U
+CONC
+545038.55S
+0681852.82W
+GUND 13 m (43 ft)
+25 m
+82 ft NIL
+25 NIL
+545033.23S
+0681635.17W
+GUND 13 m (43 ft)
+21 m
+69 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions of
+CWY (m)
+Dimensiones
+de franja (m)
+/ Dimensions
+of strips (m)
+RESA
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end) and Description of
+arresting system
+OFZ Observaciones /
+Remarks (*)
+8 9 10 11 12 13 14
+114x45 150x150 2.858x215 NIL NIL NIL DTHR 07 180 m.
+90X45 NIL NIL NIL DTHR 25 162 m.
+(*) Franja de pista sector S reducida a 75 m / Franja de pista sector N, entre 350 y 1200 M, reducida a 75 m.
+(*) Runway strip S sector reduced to 75 m / Runway strip N sector, between 350 and 1200 m, reduced to 75 m.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio / Service
+designation
+Distintivo de
+llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR/APP Ushuaia Torre /
+Tower
+CPPL 118.10 MHz
+10:00-02:00 UTC,
+rest O/R
+CAUX 122.10 MHz
+ATIS ATIS Ushuaia CPPL 127.80 MHz Ver / See GEN 3.4
+TMA Ushuaia Control CPPL 123.85 MHz
+Opera frecuencia PPAL TWR
+118,10 Mhz /
+It operates MAIN TWR frequency
+118.10 Mhz
+Ushuaia Torre /
+Tower EMERG 121.50 MHz Ver / See GEN 3.4.
+AIP ARGENTINA SAWH AD 2.9
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2026 11 JUNIO 2026

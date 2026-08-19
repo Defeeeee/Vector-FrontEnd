@@ -1,0 +1,182 @@
+# SANE — extraído de https://ais.anac.gob.ar/descarga/aip-69e1098092c2d
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+274556S 0641836W Centro geométrico de pista /
+274556S 0641836W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+6 km al NNW de la ciudad de Santiago del Estero /
+6 km NNW of the city of Santiago del Estero
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+201 m (659 ft) / 34.2°C – 4.9°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+25 m (82 ft)
+5 VAR, cambio anual / VAR, annual change 9° W, 12’ W (Año/Year 2024)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Av. Madre de
+Ciudades S/N°, CP 4200, Santiago del Estero, Pcia. de Santiago del
+Estero. Jefatura: móvil (+54 9 385) 5126273, ydsde@anac.gob.ar
+NATIONAL CIVIL AVIATION ADMINISTRATION, Av. Madre de
+Ciudades S/N°, Zip code 4200, Santiago del Estero, Province of
+Santiago del Estero. AD Head Office: mobile (+54 9 385) 5126273,
+ydsde@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina, (54 11) 3989 9555,
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A). ARO-AIS
+(+54 385) 4340710 Interno 36960, acsde@eana.com.ar,
+www.eana.com.ar /
+Argentine Air Navigation Company (EANA S.A). ARO-AIS (+54 385)
+4340710 extension 36960, acsde@eana.com.ar.
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks No
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100 LL y / and JET A-1 / HD 1100
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL 10.000 litros; JET A-1 126.700 litros. HD 1100 20
+litros. /
+AVGAS 100LLL 10,000 liters; JET A-1 126,700 liters. HD 1100 20
+liters.
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Hangar Dirección Provincial de Aviación Civil. /
+Hangar of the Provincial Directorate of Civil Aviation.
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCN)
+y superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN) and
+surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+03 NIL,
+036° 2.435x45 71t/1 96t/2 152t/4
+ASPH
+274631.30S
+0641856.54W
+199 m
+653 ft NIL
+21 NIL,
+216°
+274521.32S
+0641815.11W
+199.5 m
+655 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 2.555x280 (*) 90x90 NIL NIL NIL
+NIL NIL 90x90 NIL NIL NIL
+(*) Reducida 74 m medido del RCL entre THR 03 hasta los 837 m de dicho THR en sector SW. /
+Reduced 74 m measured from the RCL between THR 03 to 837 m of said THR in SW sector.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TMA/APP/TWR SANTIAGO TORRE /
+SANTIAGO TOWER
+CPPL 118.70 MHz
+10:00-23:59 UTC
+No
+CAUX 119.25 MHz No
+EMERG 121.50 Mhz

@@ -1,0 +1,186 @@
+# SAZY — extraído de https://ais.anac.gob.ar/descarga/aip-69fcdbcd57a67
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+400431S – 0710814W Centro geométrico de pista/
+400431S - 0710814W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+25 KM ENE de la ciudad de San Martín de los Andes. /
+25 km ENE of the city of San Martín de los Andes.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+789 m (2.589 ft) / 23.2°C, -1.6 ° C
+4 GUND en la posición de la elevación del AD /GUND at AD ELEV
+PSN
+23 m (75 ft).
+5 VAR, cambio anual / VAR, annual change 6° E - 9´ W – Año /Year 2021
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL – RN 40 KM 22 –
+Pcia. de Neuquén – CP 8370 –/ Administración (+54 2972) 428388,
+Casilla de Correo Electrónico: ydchp@anac.gob.ar/
+NATIONAL CIVIL AVIATION ADMINISTRATION - RN 40 KM 22 –
+Province of Neuquén – Zip code 8370 / Administration (+54 2972)
+428388, E-mail Address: ydchp@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Administrador por el Gobierno de la Provincia de Neuquén.
+(+54 02972) 428388/
+Administered by the Government of the Province of Neuquén.
+(+54 02972) 428388
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A.), ATS /
+ARO/AIS (+54 297) 2428398, Ext 57977, acchp@eana.com.ar ,
+MET (+54 2972) 421696, www.eana.com.ar /
+Argentine Air Navigation Company (EANA S.A.), ATS / ARO/AIS
+(+54 297) 2428398, Ext 57977, acchp@eana.com.ar , MET (+54
+2972) 421696, www.eana.com.ar /
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR.
+8 Observaciones / Remarks NIL
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types AGAS 100LL y JET A-1./ AGAS 100LL and JET A-1.
+3
+Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+JET A-1 150.000 litros, AVGAS 100LL 50.000 litros,
+Abastecedora JET A1, 14.300 litros/
+JET A-1 150,000, AVGAS 100LL 50,000 liters,
+JET A-1 supplier, 14,300 liters.
+4
+Servicios e instalaciones de deshielo / De-icing facilities Anticongelantes líquidos / sólidos para RWY, TWY
+y APN. No ACFT
+Liquid / solid antifreeze for RWY, TWY and APN. No ACFT.
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG
+(to one-
+hundredth
+of a degree)
+Dimensiones
+de RWY (M) /
+Dimensions of
+RWY (M)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength
+(PCN) and
+surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV
+and highest
+ELEV of TDZ
+of precision
+APP RWY
+Pendiente de RWY-
+SWY /
+Slope of RWY-SWY
+1 2 3 4 5 6 7
+06 NIL
+063° 2.501x45 38/F/B/X/T
+ASPH
+400446S
+0710903.21W
+789 m
+2.589 ft NIL
+24 NIL
+243°
+400416.10S
+0710725.08W
+775 m
+2.543 ft NIL
+AIP ARGENTINA SAZY AD 2.6
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS (cont.)
+Dimensiones
+SWY (M) /
+Dimensions of
+SWY (M)
+Dimensiones
+CWY (M) /
+Dimensions
+of CWY (M)
+Dimensiones
+de franja (M)/
+Dimensions of
+strips (M)
+RESA(m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada /
+Location (which RWY
+end) and Description
+of arresting system
+OFZ (*)Observaciones
+/Remarks
+8 9 10 11 12 13 14
+NIL NIL NIL 90x90 NIL NIL NIL
+NIL NIL NIL NIL NIL
+(*) RWY 06/24 dispone de REILS. / (*) RWY 06/24 has REILS.
+Plataforma de viraje en pista: 06/24 – PCN 42/R/A/W/- Runway turning apron: 06/24 - PCN 42/R/A/W
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación del
+Servicio / Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TMA/APP/TWR San Martín de los Andes
+CPPL. 119.60MHz
+12:00-20:00 UTCCAUX 118.35MHz
+EMERG 121.50 MHz

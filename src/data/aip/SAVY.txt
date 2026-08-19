@@ -1,0 +1,187 @@
+# SAVY — extraído de https://ais.anac.gob.ar/descarga/aip-69e1155398740
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+424533S-0650610W Centro geométrico de pista /
+424533S-0650610W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+5.3 km al WNW de la ciudad de Puerto Madryn /
+5,3 km WNW of the city of Puerto Madryn
+3 ELEV, temperatura de referencia y temperatura mínima media/
+ELEV, reference temperature and mean low temperature
+132 m (433 ft), 28.4°C – 1.1°C.
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+14 m (46 ft)
+VAR, cambio anual / VAR, annual change 2° E, 8’ W (Año/Year 2024)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RN A010 Acceso
+Norte, CP 9120, Pto. Madryn, Pcia. de Chubut
+(+54 280) 4451287, Móvil (+54 9 280) 4592860,
+ydDRY@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, RN A010 North
+Access, Zip code 9120, Pto. Madryn, Province of Chubut.
+(+54 280) 445128, Mobile (+54 9 280) 4592860,
+ydDRY@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD Operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina (+54 280) 4456774, 4456765
+(Atención en horario de servicio del aeródromo),
+www.aeropuertosargentina.com /
+Aeropuertos Argentina, (+54 280)4456774, 4456765
+(Attention during aerodrome service hours),
+www.aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA), ARO-AIS
+(+54 280) 4475938, acdry@eana.com.ar, MET (+54 9 11)
+76306537, www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA), ARO-AIS (+54 280)
+4475938, acdry@eana.com.ar, MET (+54 9 11) 76306537,
+www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks NIL
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+NIL
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+Sí/Yes
+4 Servicios e instalaciones de deshielo / De-icing facilities NIL
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+NIL
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+NIL
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+GEO BRG,
+MAG BRG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCR) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCR)
+and surface
+COORD GEO THR, extremo
+RWY, GUND THR /
+THR GEO COORD, RWY
+end, THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV
+of TDZ of
+precision APP
+RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+06 58.02°,
+056° 2.500x45 430/F/B/W/T
+(**)
+424554.69S
+0650656.30W
+131 m
+430 ft -0.03%
+24 238.00°,
+236°
+424511.76S
+0650523.02W
+132 m
+433 ft 0.03%
+AIP ARGENTINA SAVY AD 2.5
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2024 11 JULIO 2024
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS (Cont.)
+Dimensiones
+SWY (m) /
+Dimensions of
+SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones
+de franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué extremo
+de pista) Descripción del
+sistema de parada /
+Location (which RWY end)
+Description of arresting
+system
+OFZ Observaciones /
+Remarks (*)
+8 9 10 11 12 13 14
+No No 2.620x280 90x90 No No NIL
+No No No No NIL
+(*) Franja RWY 24 Sector izquierdo reducida a 75 m entre progresivas 300 y 450 por desniveles del terreno /
+(*) RWY 24 left sector strip reduced to 75 m between progressives 300 and 450 due to uneven ground
+(**) Resistencia sector de concreto en umbrales PCR 550/R/B/W/T
+(**) Strength of threshold concrete sector PCR 550/R/B/W/T
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia/
+Frequency
+Horas de
+operación /
+Hours of operation
+Observaciones /
+Remarks
+1 2 3 4 5 6
+TWR/APP Puerto Madryn Torre /
+Puerto Madryn Tower
+CPPL 119.50 MHz
+Ver AIP AD 2.3.7./
+See AIP AD 2.3.7.
+CAUX 118.50 MHz
+EMERG 121.50 MHz Ver AIP GEN 3.4. /
+See AIP GEN 3.4.

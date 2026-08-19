@@ -245,12 +245,21 @@ function pistasDe(blk) {
   const desde = lineas.findIndex((l) => /^1( \d)+$/.test(l));
   if (desde < 0) return [];
   /*
-    La tabla sigue en una continuación cuyo encabezado de columnas empieza en 8, y ahí
-    están las dimensiones de la **franja** y de la SWY. Un `2.470x260` de esa tabla se
-    parece muchísimo a una pista, y cortar por el literal `(cont.)` no alcanzaba: no todos
-    los aeródromos lo escriben.
+    La continuación de la tabla trae las dimensiones de la **franja** y de la SWY, y un
+    `2.470x260` de ahí se parece muchísimo a una pista.
+
+    El corte se hace por **lo primero que aparezca** de tres cosas, porque los 51
+    documentos no son iguales y cada variante la marcó en rojo un aeródromo concreto:
+
+    - el encabezado numérico de la continuación (`8 9 10 …`), que es lo habitual;
+    - el rótulo `SWY (m)` o un `(cont.)`, porque **Mendoza no trae el encabezado numérico**
+      y sin esto sus dimensiones de franja entraban como pistas de 300x150;
+    - otra sección `AD 2.x`, porque en **Reconquista** el bloque se pasa de largo y
+      arrastraba números de tablas que no tienen nada que ver.
   */
-  const hasta = lineas.findIndex((l, i) => i > desde && /^8( \d)+$/.test(l));
+  const corta = (l) =>
+    /^8( \d{1,2})+$/.test(l) || /\(cont\.\)/.test(l) || /SWY \(m\)/.test(l) || /^AD 2\.(?!12)\d/.test(l);
+  const hasta = lineas.findIndex((l, i) => i > desde && corta(l));
   const fin = hasta > desde ? hasta : lineas.length;
 
   /*
@@ -283,7 +292,14 @@ function pistasDe(blk) {
       Sin esto entraba como pista hasta un `20 ft` de elevación: Ezeiza aparecía con una
       pista 20 que no existe.
     */
-    if (!lineas.slice(i, i + 2).some((x) => RE_DEMORA.test(x))) continue;
+    /*
+      **No se exige demora.** Era el discriminador original —la columna 2 de una pista es
+      su rumbo— y funcionaba en los ocho primeros, pero al pasar a 51 apareció que el AIP a
+      veces la publica como `NIL`: Base Belgrano II y Tartagal no tienen ninguna, y
+      pidiéndola se perdía la pista entera. Lo que separa una cabecera de una elevación es
+      la estructura —número de una o dos cifras al principio del renglón, sin unidad
+      detrás— más el corte de la tabla de arriba.
+    */
 
     cabeceras.push(cab[1].padStart(2, "0"));
   }
@@ -307,8 +323,12 @@ function pistasDe(blk) {
  *
  * Ese separador es lo que la distingue de una elevación (`465.5 m`) o de una pendiente
  * (`0.2%`), que es de lo que hay que distinguirla.
+ *
+ * Y el grado se acepta con **uno** a tres dígitos delante, no dos: Paraná publica la demora
+ * en grados y minutos —`8° 27'`— y pidiendo dos dígitos se perdía la pista entera. Es el
+ * tipo de variación que aparece recién al pasar de ocho aeródromos a cincuenta y uno.
  */
-const RE_DEMORA = /\d{2,3}[.,]\d+\s*[°,]|\d{3}\s*°/;
+const RE_DEMORA = /\d{2,3}[.,]\d+\s*[°,]|\d{1,3}\s*°/;
 
 /**
  * Los combustibles de aviación de la celda de AD 2.4.
@@ -326,10 +346,17 @@ const RE_DEMORA = /\d{2,3}[.,]\d+\s*[°,]|\d{3}\s*°/;
 function combustiblesDe(celda) {
   const plano = (celda ?? "").toUpperCase().replace(/\s+/g, "");
   const tipos = [];
+  /*
+    **Se emite la forma que el documento usa, no una canónica.** El AIP escribe `JET A-1` en
+    casi todos lados y `JET A1` en Santa Rosa y Villa Reynolds; emitir siempre la primera
+    ponía en pantalla una cadena que ese documento no contiene, y el test que verifica que
+    todo lo mostrado esté en el PDF la rechazaba — con razón.
+  */
   if (/AVGAS100LL/.test(plano)) tipos.push("AVGAS 100LL");
   else if (/AVGAS100/.test(plano)) tipos.push("AVGAS 100");
   else if (/AVGAS/.test(plano)) tipos.push("AVGAS");
-  if (/JETA-?1/.test(plano)) tipos.push("JET A-1");
+  if (/JETA-1/.test(plano)) tipos.push("JET A-1");
+  else if (/JETA1/.test(plano)) tipos.push("JET A1");
   else if (/JETA/.test(plano)) tipos.push("JET A");
   return tipos.join(", ");
 }
@@ -428,10 +455,19 @@ async function main() {
       próximo número de ítem. Son texto libre y no vale la pena adivinarles estructura: el
       test comprueba que lo que se muestra esté en el documento, que es lo que importa.
     */
-    const ubicacion = campoDe(seccion("AD 2.2"), "Direction and distance from city")
+    /*
+      La ubicación viene en castellano y en inglés, y el separador no es siempre ` / `:
+      Morón las pega con un punto —"3 km al SW de la ciudad de Morón. 3 km SW of the city of
+      Morón."—. Se corta antes de la segunda distancia, que es lo único que las dos
+      versiones tienen en común.
+    */
+    const crudo = campoDe(seccion("AD 2.2"), "Direction and distance from city")
       .split(/\s+\d\s+ELEV/)[0]
       .split(" / ")[0]
-      .trim()
+      .trim();
+    const distancias = [...crudo.matchAll(/\d+(?:[.,]\d+)?\s*(?:km|KM|NM|m)\b/g)];
+    const ubicacion = (distancias.length > 1 ? crudo.slice(0, distancias[1].index).trim() : crudo)
+      .replace(/[.\s]+$/, "")
       .slice(0, 90);
     const combustible = combustiblesDe(campoDe(seccion("AD 2.4"), "Fuel and oil types").split(/\s+3\s+Instalaciones/)[0]);
     if (ubicacion || combustible) servicios.push([icao, ubicacion, combustible].join("\t"));

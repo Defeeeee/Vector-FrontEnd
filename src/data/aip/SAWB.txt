@@ -1,0 +1,160 @@
+# SAWB — extraído de https://ais.anac.gob.ar/descarga/aip-69e11573197e5
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+641420.86S - 0563751.06W Centro geométrico de pista /
+641420.86S - 0563751.06W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+Isla Marambio, Mar de Weddell, Sect. Antártico Argentino. /
+Marambio Island, Weddell Sea, Argentine Antarctic Sector
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+209.5 m (687 ft), 1.7°C – (-19.3°C)
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+20 m (66 ft)
+5 VAR, cambio anual / VAR, annual change NIL
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+(+54 11) 43176000 Int. 14218 - 0810-222033
+ydMBI@anac.gob.ar /
+(+54 11) 43176000 Extension 14218 - 0810-2220330,
+ydMBI@anac.gob.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks NIL
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+NIL
+2 Tipos de combustible, lubricantes / Fuel and oil types NIL
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+NIL
+4 Servicios e instalaciones de deshielo / De-icing facilities NIL
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+NIL
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+NIL
+7 Observaciones / Remarks NIL
+AIP ARGENTINA SAWB AD 2.2
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2024 11 JULIO 2024
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones
+de RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia
+(PCN) y
+superficie de
+RWY y SWY /
+RWY and SWY
+strength (PCN)
+and surface
+COORD GEO THR,
+extremo RWY, GUND
+THR /
+THR GEO COORD, RWY
+end COORD, THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+05 NIL
+1.208x40
+641429.11S
+0563831.75W
+209.5 m
+687 ft
+NIL
+23 NIL 641412.61S
+0563710.36W
+205 m
+673 ft
+NIL
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA
+Ubicación (en qué
+extremo de pista)
+Descripción del sistema
+de parada /
+Location (which RWY
+end) and Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL NIL 90x80 NIL NIL NIL
+NIL NIL NIL NIL NIL NIL
+Observaciones /Remarks RWY 05/23 - Tierra – ILE Portátil / RWY 05/23 - Earth - Portable ILE
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TWR/APP Marambio Torre /
+Marambio Tower
+CPPL 118.10 MHz NIL NIL
+CAUX 118.50 MHz NIL
+EMERG 121.50 MHz NIL NIL
+AIP ARGENTINA SAWB AD 2.6
+DEPARTAMENTO INFORMACIÓN AERONÁUTICA AMDT AIRAC 1/2025 12 JUNIO 2025
+➔
+➔

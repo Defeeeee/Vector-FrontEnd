@@ -1,0 +1,199 @@
+# SAMM — extraído de https://ais.anac.gob.ar/descarga/aip-69e168cc06ad1
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+352937S 0693429W Centro geométrico de pista. /
+352937S 0693429W Geometric center of runway.
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+1 km al S de la ciudad de Malargüe. /
+1 km S of the city of Malargüe.
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+1.423 m (4.669 ft), 29.1°C – (-2.3° C).
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+26 m (85 ft)
+5 VAR, cambio anual / VAR, annual change 1° E, 10’ W (Año / Year 2024)
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, RN 40 Sur, CP
+5613, Malargüe, Pcia. de Mendoza. (+54 260) 4470131 - móvil
+(+54 9 260) 4306895 - móvil (+54 9 260) 4582461,
+ydmlg@anac.gob.ar /
+NATIONAL CIVIL AVIATION ADMINISTRATION, RN 40 Sur, Zip Code
+5613, Malargüe, Province of Mendoza. (+54 260) 4470131 -
+mobile (+54 9 260) 4306895 - mobile (+54 9 260) 4582461,
+ydmlg@anac.gob.ar
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos Argentina (+54 260) 4470098,
+www.aeropuertosargentina.com,
+fsambrano@aeropuertosargentina.com
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA SA) ARO-AIS (+54
+260) 4471265 acmlg@eana.com.ar, www.eana.com.ar /
+Argentine Air Navigation Company (EANA SA), ARO-AIS (+54 260)
+4471265 acmlg@eana.com.ar, www.eana.com.ar
+7 Tipos de tránsito permitido (IFR/VFR) /
+Types of traffic permitted (IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks No
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+No
+2 Tipos de combustible, lubricantes / Fuel and oil types JET A-1
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+55.000 litros: Depósito 40.000 litros - Abastecedora 15.000 litros /
+55,000 liters: Tank 40,000 liters - Supply tank 15,000 liters
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+No
+7 Observaciones / Remarks No
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO,
+BRG MAG
+(Centésimas
+de grado) /
+BRG GEO,
+BRG MAG (to
+one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCN) y
+superficie de RWY y
+SWY /
+RWY and SWY
+strength (PCN) and
+surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y ELEV
+MAX de TDZ de
+RWY para APP
+precisión /
+THR ELEV and
+highest ELEV of
+TDZ of precision
+APP RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+09 NIL,
+95° 1.450x20 ASPH
+11t/1 15t/2
+352902.76S
+0693456.32W
+1.430 m
+4.692 ft NIL
+27 NIL,
+275°
+352909.01S
+0693349.36W
+1.417,5 m
+4.651 ft NIL
+14 NIL,
+143° 2.650x30 ASPH
+75t/1 94t/2 167t/4
+352914.12S
+0693447.78W
+1.422,75 m
+4.668 ft NIL
+32 NIL,
+323°
+353011.79S
+0693357.70W
+1.422,5 m
+4.667 ft NIL
+Dimensiones
+SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en
+qué extremo de
+pista) Descripción
+del sistema de
+parada /
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+NIL NIL 1.570x150 90x40 NIL NIL
+(*)
+NIL NIL 90x40 NIL NIL
+NIL NIL 2.770x280 90x60 NIL NIL
+NIL NIL 90x60 NIL NIL
+(*) RWY 09/27 CLSD. Extremo RWY 32 352901.68S 0693458.58W - ELEV 1.421,75 m 4.665 ft. THR 14 MOV 470 m por OBST. /
+RWY 09/27 CLSD. RWY 32 end 352901.68S 0693458.58W - ELEV 1.421,75 m 4.665 ft. THR 14 MOV 470 m due to OBST.
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de
+llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de operación /
+Hours of operation Observaciones / Remarks
+1 2 3 4 5 6
+TMA/APP/TWR Malargüe Torre /
+Malargüe Tower
+CPPL 118.25 MHz
+11:00-19:00 UTC
+O/R (*)
+(*) COOR móvil (+54 9 260) 4306895 y (+54 9
+260) 4582461. Ver AIC apertura anticipada o
+extensión de servicios. /
+COOR mobile (+54 9 260) 4306895 and (+54
+9 260) 4582461. See AIC opening or service
+extension
+CAUX 119.55 MHz
+EMERG 121.5 MHZ

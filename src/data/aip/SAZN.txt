@@ -1,0 +1,202 @@
+# SAZN — extraído de https://ais.anac.gob.ar/descarga/aip-69e1234aab580
+# AIP ARGENTINA, AD 2.0 · edición 01/26 · vigente desde 11-Jun-26
+# Generado por scripts/build-aip.mjs. NO EDITAR A MANO: es la copia verbatim contra
+# la que aip.test.ts contrasta los TSV, en los dos sentidos.
+AD 2.2 DATOS GEOGRÁFICOS Y ADMINISTRATIVOS DEL AERÓDROMO / AERODROME GEOGRAPHICAL AND ADMINISTRATIVE DATA
+1 COORD GEO del ARP y emplazamiento en el AD /
+ARP GEO COORD and location in the AD
+(*) 385656S - 0680921W Centro geométrico de pista /
+(*) 385656S - 0680921W Geometric center of runway
+2 Dirección y distancia desde la ciudad /
+Direction and distance from city
+8 km al WNW de la ciudad de Neuquén /
+8 km at WNW of the city of Neuquén
+3 ELEV, temperatura de referencia y temperatura mínima media /
+ELEV, reference temperature and mean low temperature
+271.50 m (891 ft), 32.1° C, 0.5° C
+4 GUND en la posición de la elevación del AD /
+GUND at AD ELEV PSN
+18 m (59 ft)
+5 VAR, cambio anual / VAR, annual change 2° E, 0°9´ W (Año/Year) 2025
+6
+Jefatura de aeródromo, dirección, teléfono, FAX, AFS, correo
+electrónico y sitio web /
+AD Head Office, Address, telephone, FAX, AFS, e-mail and
+website
+ADMINISTRACIÓN NACIONAL DE AVIACIÓN CIVIL, Aeropuerto
+Neuquén, Presidente Perón, San Martín 5901, CP 8300, Pcia. de
+Neuquén. Conmutador (+54 299) 4440525, Jefatura (+54 299)
+440544, SAZNYDYX/
+NATIONAL CIVIL AVIATION ADMINISTRATION, Neuquén President
+Perón Airport, San Martín 5901 Zip code 8300. Province of
+Neuquén. Switchboard (+54 299) 4440525 – AD Head Office (+54
+299) 4440544 – SAZNYDYX
+Explotador, teléfono, FAX, AFS, correo electrónico y sitio web /
+AD operator, Telephone, FAX, AFS, e-mail and website
+Aeropuertos del Neuquén S.A ANSA, (+54 299) 4625086, NQN-
+Operaciones@aa2000.com.ar, www.anqn.com.ar /
+Aeropuertos del Neuquén S.A ANSA, (+54 299) 4625086, NQN-
+Operaciones@aa2000.com.ar, www.anqn.com.ar
+Prestador de los Servicios de Navegación Aérea (ANSP),
+teléfono, FAX, AFS, correo electrónico y sitio web /
+Air Navigation Service Provider (ANSP), Telephone, FAX, AFS,
+email and website
+Empresa Argentina de Navegación Aérea (EANA S.A).
+www.eana.com.ar. ARO/AIS (+54 11) 44802444
+acneu@eana.com.ar/
+Argentine Air Navigation Company (EANA S.A). www.eana.com.ar
+ARO/AIS (+54 11) 44802444 acneu@eana.com.ar/
+7 Tipos de tránsito permitido (IFR/VFR) / Types of traffic permitted
+(IFR/VFR)
+IFR/VFR
+8 Observaciones / Remarks (*) Calculado en gabinete / (*) Calculated in laboratory
+
+AD 2.4 SERVICIOS E INSTALACIONES DE ESCALA / HANDLING SERVICES AND FACILITIES
+1 Elementos disponibles para el manejo de carga /
+Cargo-handling facilities
+Sí, carga liviana / Yes, light load
+2 Tipos de combustible, lubricantes / Fuel and oil types AVGAS 100LL, JET A-1 / 1.000, 1.080, 1.100, 1.120
+3 Instalaciones y capacidad de abastecimiento de combustible /
+Fuelling facilities and capacity
+AVGAS 100LL, 50.000 litros. JET A-1, 350.000 litros. /
+AVGAS 100LL, 50,000 liters. JET A-1, 350,000 liters.
+4 Servicios e instalaciones de deshielo / De-icing facilities No
+5 Espacio de hangar para aeronaves de paso /
+Hangar space for visiting aircraft
+No
+6 Instalaciones para reparaciones de aeronaves de paso /
+Repair facilities for visiting aircraft
+Sí, sólo para aeronaves livianas / Yes, only for light aircraft
+7 Observaciones / Remarks NIL
+
+AD 2.12 CARACTERÍSTICAS FÍSICAS DE LAS PISTAS / RUNWAY PHYSICAL CHARACTERISTICS
+Designador
+RWY /
+RWY
+designation
+BRG GEO
+(Centésimas
+de grado) /
+BRG GEO (to
+one-
+hundredth of
+a degree)
+Dimensiones de
+RWY (m) /
+Dimensions of
+RWY (m)
+Resistencia (PCR) y
+superficie de RWY y
+SWY /
+RWY and SWY
+strength (PCR) and
+surface
+COORD GEO THR,
+extremo RWY,
+GUND THR /
+THR GEO COORD,
+RWY end COORD,
+THR GUND
+ELEV THR y
+ELEV MAX de
+TDZ de RWY
+para APP
+precisión /
+THR ELEV and
+highest ELEV
+of TDZ of
+precision APP
+RWY
+Pendiente de
+RWY-SWY /
+Slope of RWY-
+SWY
+1 2 3 4 5 6 7
+09 90.23°,
+88.13°
+2.570x45
+RWY
+580/R/D/W/U ASPH
+SWY NIL ASPH
+385656.27S
+0681013.93W
+385656.60S
+0680827.24W
+18m (59 ft)
+271.5 m
+891 ft
+-0.11%
+0.0%
+27 270.22°,
+268.13°
+RWY
+700/F/C/X/T ASPH
+SWY NIL ASPH
+385656.60S
+0680827.23W
+385656.27S
+0681013.93W
+18 m (59 ft)
+268.75 m
+882 ft
+0.11%
+0.0%
+Dimensione
+s SWY (m) /
+Dimensions
+of SWY (m)
+Dimensiones
+CWY (m) /
+Dimensions
+of CWY (m)
+Dimensiones de
+franja (m) /
+Dimensions of
+strips (m)
+RESA (m)
+Ubicación (en qué
+extremo de pista)
+Descripción del
+sistema de parada
+/
+Location (which
+RWY end) and
+Description of
+arresting system
+OFZ Observaciones /
+Remarks
+8 9 10 11 12 13 14
+206x45 No 3104x280 No No No NIL
+208x45 No No No No NIL
+
+AD 2.18 INSTALACIONES DE COMUNICACIONES DE LOS ATS / ATS COMMUNICATION FACILITIES
+Designación
+del Servicio /
+Service
+designation
+Distintivo de llamada /
+Call sign
+Canales /
+Channels
+Frecuencia /
+Frequency
+Horas de
+operación /
+Hours of
+operation
+Observaciones / Remarks
+1 2 3 4 5 6
+TMA/TWR/APP NEUQUÉN TORRE / NEUQUÉN TOWER
+CPPL 119.80 MHz
+H24
+CAUX 118.85 MHz
+EMERG 121.50 MHz Ver GEN 3.4./ See GEN 3.4.
+SMC Neuquén Rodaje o Superficie /
+Neuquén Taxiing or Surface 121.80 MHz Ver GEN 3.4. / See GEN 3.4.
+ATIS Neuquén ATIS 127.65 MHz
+Ver GEN 3.4: Radiodifusión
+automática de información
+terminal (ATIS). /
+See GEN 3.4. Automatic
+Terminal Information Service
+(ATIS).
