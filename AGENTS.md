@@ -4513,3 +4513,60 @@ el AIP como `05/23`**. El emparejamiento normaliza los ceros de las dos puntas; 
 literal, la corrección no se habría aplicado y nadie se habría enterado.
 
 **940 tests.**
+
+## El briefing del vuelo de mañana, por mail — 2026-08-19
+
+Pedido: *"estaría bueno que me mande un buen briefing por mail para el vuelo el día
+anterior"*. Y enseguida: *"no tengo seteado nada para el mail"*.
+
+**Está entero y apagado.** Se enciende con una variable de entorno y sin tocar DNS.
+
+### La división, igual que el barrido de vencimientos
+
+El backend dice **a quién** avisarle —`GET /api/flight-briefings/pending`, protegido por el
+mismo `X-Cron-Secret`— y el frontend arma el mensaje y lo entrega, porque las credenciales
+del proveedor viven en la app de Next.
+
+`FlightBriefingsController` es un controlador **aparte** y no un endpoint más en
+`PlannedFlightsController`, por la misma razón que `DocumentAlertsController` está
+separado: ese controlador declara `guards = [auth_guard]` a nivel de clase y los guards de
+Litestar se acumulan hacia abajo, así que un handler adentro no puede optar por salirse. Un
+cron no tiene sesión.
+
+### Por qué la tarde anterior y no la mañana del vuelo
+
+Porque el vuelo del sábado se decide el viernes a la noche: el TAF del día ya está
+publicado y todavía se está a tiempo de cambiar el plan, la aeronave o la hora. Un aviso el
+mismo día llega para confirmar, no para decidir.
+
+### Lo que el mail **no** pretende ser
+
+**No reemplaza al briefing en vivo, y lo dice en el cuerpo.** Armado a las seis de la tarde
+y leído a las siete de la mañana tiene trece horas encima: el METAR cambió, el TAF se
+enmendó y puede haber un NOTAM nuevo. Lleva la hora en la que se armó y un link al
+planificador con la ruta cargada.
+
+Un mail que se presenta como el briefing definitivo es **peor que ningún mail**: reemplaza
+una consulta que el piloto iba a hacer igual por una foto vieja.
+
+Y sigue la regla de siempre: **una estación que no respondió se declara como tal**, con las
+palabras "no es que esté bien, es que no lo sabemos". Es el bug de la pantalla vieja de Ruta
+METAR, y no puede volver por la puerta del correo.
+
+### Tres decisiones de robustez
+
+- **Sin `RESEND_API_KEY` el barrido no falla**: contesta 200 con `enviados: 0` y el motivo,
+  que incluye la instrucción. Tirar una excepción haría que una feature todavía apagada
+  ensucie los logs y esconda las que sí importan.
+- **Los problemas por vuelo van en el cuerpo, no en el código de estado.** Un 500 porque a
+  un piloto le falta el mail haría que el cron reintente todo y mande dos veces a los demás.
+- **Un plan sin ruta no es un problema.** "El sábado vuelo" es un plan legítimo; no da
+  briefing y no se reporta como error.
+
+### Sin entrada en el changelog, a propósito
+
+La versión no se subió y no hay novedad publicada: **el envío está apagado hasta que exista
+la key**, y anunciar una feature que no manda es exactamente la clase de cosa que este
+proyecto viene corrigiendo. Cuando se encienda, entra con su versión.
+
+**956 tests.**
