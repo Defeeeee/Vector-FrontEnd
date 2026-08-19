@@ -92,7 +92,7 @@ export function aCampoRoute(codigos: string[]): string {
  * NOTAM y pista en uso; a una coordenada en el medio del campo, nada de eso. Ver
  * `puntosConBriefing`.
  */
-export type ClasePunto = "aerodromo" | "radioayuda" | "coordenada" | "radial";
+export type ClasePunto = "aerodromo" | "radioayuda" | "fix" | "coordenada" | "radial";
 
 /** Un punto del plan, ya resuelto contra el directorio. */
 export interface PuntoRuta {
@@ -121,6 +121,10 @@ export interface PuntoRuta {
   pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string; fuente?: "medida" | "estimada" }[];
   /** Qué sintonizar, en los puntos que nacen de una radioayuda. */
   estacion?: { ident: string; tipo: string; nombre: string; frecuencia: string | null };
+  /** Las aerovías del punto significativo: `W67-SID BCA`. Sólo en los `fix`. */
+  rutas?: string;
+  /** De cuándo es el dato del AIP. Se muestra: el AIP se enmienda cada 28 días. */
+  vigencia?: { documento: string; edicion: string; vigenteDesde: string; url: string };
 }
 
 /**

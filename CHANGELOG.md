@@ -6,6 +6,12 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.11.0 — Los puntos de aerovía, en el planificador
+
+_19 de agosto de 2026_
+
+- **Los 1018 puntos significativos del AIP** — Escribí DORVO, AKNOS o cualquiera de los cinco letras que canta el control y entra en la ruta como un punto más, con su tramo, su rumbo y su tiempo. Te muestra a qué aerovías pertenece y de qué edición del AIP salió — se enmienda cada 28 días.
+
 ## v2.10.1 — Las frecuencias de los aeródromos controlados estaban mal
 
 _19 de agosto de 2026_

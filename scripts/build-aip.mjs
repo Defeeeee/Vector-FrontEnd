@@ -198,8 +198,20 @@ async function main() {
     );
   }
 
-  fuentes.sort();
-  fs.writeFileSync(FUENTES, fuentes.join("\n") + "\n");
+  /*
+    Se **fusiona**, no se sobrescribe. `aip-fuentes.tsv` es la tabla única de procedencia
+    de todo lo que sale del AIP y la escriben dos generadores: éste pone una fila por
+    aeródromo y `build-fixes.mjs` pone la de ENR 4.4. Si cualquiera de los dos pisara el
+    archivo entero, el otro perdería su fecha de vigencia sin hacer ruido — y una fecha de
+    vigencia que desaparece en silencio es exactamente la clase de dato que después nadie
+    nota que falta.
+  */
+  const mias = new Set(AERODROMOS);
+  const previas = fs.existsSync(FUENTES)
+    ? fs.readFileSync(FUENTES, "utf8").split("\n").filter((l) => l.trim() && !mias.has(l.split("\t")[0]))
+    : [];
+  const todas = [...previas, ...fuentes].sort();
+  fs.writeFileSync(FUENTES, todas.join("\n") + "\n");
   console.log(`\naip-fuentes.tsv: ${fuentes.length} documentos.`);
   console.log(`  Columnas: icao documento edicion vigenteDesde url`);
 }

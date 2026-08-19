@@ -4178,3 +4178,52 @@ clave para los puntos significativos`, edición 01/26 vigente desde 11-Jun-26, 2
 infraestructura de `build-aip.mjs`. No se mezcló con una corrección de datos de seguridad.
 
 **606 tests.**
+
+## Los puntos de aerovía, que sí estaban disponibles — 2026-08-19
+
+Cierra el pedido que había quedado abierto: *"podríamos hacer que tome fixes de aerovías
+como wpt también? o esa data no está disponible"*.
+
+**La primera respuesta —que no había fuente— era correcta y estaba incompleta.**
+OurAirports publica `navaids.csv` pero no `fixes.csv`, `waypoints.csv` ni `airways.csv`:
+los tres dan 404. Lo que faltó entonces fue seguir buscando del otro lado: están en el
+**ENR 4.4 del AIP de ANAC**, y se llegó a ellos con la misma infraestructura que se armó
+para corregir las frecuencias — el listado por AJAX con `X-Requested-With`, la descarga
+del PDF y `unpdf`.
+
+**1018 puntos, tabla limpia**, una fila por punto: designador, coordenadas en
+grados-minutos-segundos y las aerovías y procedimientos a los que pertenece.
+
+### Por qué se pueden aceptar sin desambiguar
+
+**Los 1018 designadores son de cinco letras y son todos distintos**, y ningún otro
+catálogo del proyecto usa cinco: los códigos de aeródromo tienen tres o cuatro y los
+idents de radioayuda, tres como máximo. Un token de cinco letras en una ruta no puede ser
+otra cosa. Es la misma propiedad que hizo aceptables a los VOR y que dejó afuera a los 62
+NDB de ident repetido, y **se verifica contra los catálogos reales** —`getAirport` y
+`getRadioayuda` sobre los 1018— en vez de razonarse sobre largos: si mañana ANAC publica
+un aeródromo de cinco letras, el test se pone rojo antes de que una ruta resuelva mal.
+
+### Dos cosas que aparecieron al escribirlo
+
+1. **`ClasePunto` estaba declarado dos veces** —en `ruta-planificada.ts` y en la ruta de
+   API— y se desincronizó apenas entró `"fix"`: la pantalla dejó de compilar. Ahora la
+   ruta reexporta el tipo de la librería. Un tipo duplicado sólo avisa cuando alguien lo
+   toca, y que avise es suerte.
+2. **`aip-fuentes.tsv` lo escriben dos generadores** —`build-aip.mjs` una fila por
+   aeródromo y `build-fixes.mjs` la de ENR 4.4— y el primero pisaba el archivo entero. Los
+   dos fusionan ahora. Una fecha de vigencia que desaparece en silencio es exactamente la
+   clase de dato que nadie nota que falta.
+
+Y una de presentación: el recorte de la lista de aerovías se hace **por separador**. A 60
+caracteres crudos, `ALDEX` quedaba como `…SID CBA-STAR CBA-`, con un guión colgando y la
+última aerovía partida al medio — se lee como un dato incompleto en vez de como una lista
+recortada.
+
+### La fecha, otra vez
+
+ENR 4.4 edición 01/26, vigente desde 11-Jun-26, y **la pantalla lo dice** con enlace al
+PDF. Ciclo AIRAC de 28 días: un punto de aerovía sin fecha obliga al piloto a suponer que
+sigue vigente.
+
+**620 tests.**

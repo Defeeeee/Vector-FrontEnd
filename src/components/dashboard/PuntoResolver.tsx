@@ -201,7 +201,15 @@ export default function PuntoResolver({
     una barra de por medio, el token está completo cuando `clasificarToken` lo acepta —
     avisar antes sería gritarle "desconocido" a alguien que va por `BAR/04`.
   */
-  const completo = value.includes("/") ? !!clasificarToken(value) : value.trim().length === 4;
+  /*
+    Cuándo decir "no lo reconozco". Cuatro caracteres para un código de aeródromo, **cinco
+    para un punto significativo** —los designadores del AIP son siempre de cinco letras— y
+    con una barra de por medio, cuando `clasificarToken` acepta el token entero. Avisar
+    antes sería gritarle "desconocido" a alguien que va por `BAR/04` o por `DORV`.
+  */
+  const completo = value.includes("/")
+    ? !!clasificarToken(value)
+    : value.trim().length === 4 || value.trim().length === 5;
   const desconocido = completo && !resuelto && !cargando;
   const pista = ayuda(value);
 

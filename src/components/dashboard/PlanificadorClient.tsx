@@ -256,6 +256,8 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
           elevacionFt: ref?.elevacionFt,
           pistas: ref?.pistas,
           estacion: ref?.estacion,
+          rutas: ref?.rutas,
+          vigencia: ref?.vigencia,
         };
       }),
     [codigos, resueltos]
@@ -640,7 +642,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
                 {faltantes.length > 0
                   ? "El plan no se calcula salteando un punto: uniría los vecinos con una recta que no vas a volar y el total saldría más corto de lo que es."
-                  : "Indicador ICAO (SADM), designador de ANAC (MOR), una coordenada propia (S34.68/W58.64) o un punto por radial y distancia (BAR/045/25)."}
+                  : "Indicador ICAO (SADM), designador de ANAC (MOR), un punto de aerovía del AIP (DORVO), una coordenada propia (S34.68/W58.64) o un punto por radial y distancia (BAR/045/25)."}
               </p>
             </div>
           ) : (
@@ -670,6 +672,8 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <PlanillaTramos plan={plan!} puntos={cargados} />
 
               <Sintonizar puntos={cargados} />
+
+              <VigenciaAip puntos={cargados} />
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-imprimir="junto">
                 <Total label="Distancia" valor={fmt(plan!.totales.distanciaNm, 1)} unidad="NM" />
@@ -840,6 +844,37 @@ function PlanillaTramos({
         CV curso verdadero · CM curso magnético · WCA corrección por viento · RM rumbo magnético a volar
       </p>
     </div>
+  );
+}
+
+/**
+ * De cuándo es el dato del AIP, cuando la ruta se apoya en un punto significativo.
+ *
+ * **El AIP se enmienda cada 28 días (ciclo AIRAC).** Un punto de aerovía sin fecha obliga
+ * al piloto a suponer que sigue vigente, y lo que suponga va a ser optimista — es la misma
+ * regla por la que la ficha de aeródromo muestra la edición de su AD 2.
+ *
+ * Va en la planilla impresa: es justo cuando la pantalla no está al lado que importa saber
+ * de cuándo es lo que se está leyendo.
+ */
+function VigenciaAip({ puntos }: { puntos: PuntoRuta[] }) {
+  const vigencia = puntos.find((p) => p.vigencia)?.vigencia;
+  if (!vigencia) return null;
+
+  return (
+    <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
+      Los puntos de aerovía salen del{" "}
+      <a
+        href={vigencia.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-aviation-blue hover:underline"
+      >
+        AIP Argentina {vigencia.documento}
+      </a>
+      , edición <span className="data font-semibold">{vigencia.edicion}</span>, vigente desde{" "}
+      <span className="data font-semibold">{vigencia.vigenteDesde}</span>. Se enmienda cada 28 días.
+    </p>
   );
 }
 

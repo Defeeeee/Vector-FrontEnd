@@ -175,6 +175,18 @@ export function datosAip(icao: string): DatosAip | null {
   };
 }
 
+/**
+ * La procedencia de un documento del AIP, por su clave.
+ *
+ * La clave es el ICAO para los AD 2 y `ENR4.4` para los puntos significativos:
+ * `aip-fuentes.tsv` es **la tabla única de procedencia de todo lo que sale del AIP**, y la
+ * escriben dos generadores que se fusionan en vez de pisarse. Existe aparte de `datosAip`
+ * porque ENR 4.4 no tiene ni frecuencias ni pistas: tiene mil puntos y una fecha.
+ */
+export function fuenteAip(clave: string): FuenteAip | null {
+  return cargar().fuentes.get((clave ?? "").trim().toUpperCase()) ?? null;
+}
+
 /** Los ICAO que tienen datos del AIP. Lo usa el test para recorrerlos todos. */
 export function icaosConAip(): string[] {
   return [...cargar().frecuencias.keys()].sort();

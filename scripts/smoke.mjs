@@ -66,6 +66,12 @@ const ROUTES = [
       Math.abs(b.punto.lon - -70.7482) < 0.001,
   },
   { path: "/api/puntos?q=S34.68%2FW58.64", expect: (s) => s === 200, json: (b) => b.punto?.lat === -34.68 },
+  // Un punto de aerovía del AIP. Lee un TSV más, así que si el build no lo copió, acá se ve.
+  {
+    path: "/api/puntos?q=DORVO",
+    expect: (s) => s === 200,
+    json: (b) => b.punto?.clase === "fix" && Math.abs(b.punto.lat - -34.71611) < 0.0001,
+  },
   // Sin sesión el middleware tiene que redirigir, no explotar.
   { path: "/dashboard", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/log-flight", expect: (s) => s === 307 || s === 302 },

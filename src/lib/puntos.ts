@@ -14,8 +14,14 @@ import { puntoDesde } from "./navegacion";
  * |---|---|
  * | `SADM`, `MOR` | aeródromo, por ICAO o designador ANAC |
  * | `BAR`, `CBA` | radioayuda (VOR/VOR-DME, y NDB de ident único) |
+ * | `DORVO`, `AKNOS` | punto significativo del AIP: siempre cinco letras |
  * | `S34.68/W58.64` | un punto propio, por coordenada |
  * | `BAR/045/25` | 25 NM en el radial 045 de BAR |
+ *
+ * Los tres primeros son "un código" para esta función: **acá sólo se decide la forma, no
+ * contra qué catálogo resuelve**. Que un token de cinco letras sólo pueda ser un fix es
+ * una propiedad de los datos —los códigos de aeródromo tienen tres o cuatro caracteres y
+ * los idents de radioayuda, tres— y quien la usa es `/api/puntos`.
  *
  * La barra separa **adentro** de un punto; los espacios, comas y guiones separan **entre**
  * puntos. Por eso las coordenadas no se escriben `-34.68,-58.64`: la coma partiría el

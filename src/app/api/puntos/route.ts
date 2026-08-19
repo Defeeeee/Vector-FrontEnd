@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAirport, searchAirports } from "@/lib/airports";
 import { getRadioayuda } from "@/lib/radioayudas";
+import { buscarFixes, getFix } from "@/lib/fixes";
+import { fuenteAip } from "@/lib/aip";
 import { clasificarToken, frecuencia, puntoPorRadial } from "@/lib/puntos";
+import type { ClasePunto } from "@/lib/ruta-planificada";
 
 /**
  * GET /api/puntos?q=SADM · ?q=BAR/045/25 · ?q=S34.68/W58.64
@@ -41,7 +44,14 @@ import { clasificarToken, frecuencia, puntoPorRadial } from "@/lib/puntos";
  * opinan.
  */
 
-export type ClasePunto = "aerodromo" | "radioayuda" | "coordenada" | "radial";
+/**
+ * La clase vive en `lib/ruta-planificada.ts` y acá se reexporta.
+ *
+ * Estaba declarada en los dos lados, y **se desincronizó apenas entraron los fixes**: la
+ * pantalla no compilaba porque una de las dos no conocía `"fix"`. Un tipo duplicado sólo
+ * avisa cuando alguien lo toca; que avise es suerte.
+ */
+export type { ClasePunto };
 
 export interface PuntoResuelto {
   /** El token tal como se tipeó, normalizado. Es lo que vuelve a la URL. */
@@ -55,6 +65,13 @@ export interface PuntoResuelto {
   pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string; fuente?: "medida" | "estimada" }[];
   /** Qué sintonizar. Sólo en los puntos que nacen de una radioayuda. */
   estacion?: { ident: string; tipo: string; nombre: string; frecuencia: string | null };
+  /** Las aerovías del punto significativo: `W67-SID BCA`. Sólo en los `fix`. */
+  rutas?: string;
+  /**
+   * De cuándo es el dato, cuando sale del AIP. El AIP se enmienda cada 28 días, así que
+   * un punto de aerovía sin fecha obliga al piloto a suponer que está vigente.
+   */
+  vigencia?: { documento: string; edicion: string; vigenteDesde: string; url: string };
 }
 
 export async function GET(req: NextRequest) {
@@ -103,7 +120,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ punto, sugerencias: [] }, cache);
   }
 
-  // Un código: aeródromo primero, radioayuda después.
+  /*
+    Un código puede ser tres cosas, y se prueban en este orden: **aeródromo, radioayuda,
+    punto significativo**.
+
+    El orden importa sólo en el primer escalón —`BAR` es Bariloche aeródromo y no el VOR,
+    ver arriba—; entre radioayuda y fix no hay competencia posible: los idents de
+    radioayuda tienen tres caracteres como máximo y los designadores de fix son
+    **exactamente cinco**. Un token de cinco letras no puede ser otra cosa que un fix, y eso
+    está verificado contra los catálogos reales en `fixes.test.ts`, no razonado.
+  */
   const codigo = token.codigo;
   const sugerencias = searchAirports(codigo, 8);
 
@@ -140,5 +166,41 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ punto, sugerencias }, cache);
   }
 
-  return NextResponse.json({ punto: null, sugerencias }, cache);
+  const fix = getFix(codigo);
+  if (fix) {
+    const fuente = fuenteAip("ENR4.4");
+    const punto: PuntoResuelto = {
+      codigo,
+      clase: "fix",
+      // El designador **es** el nombre: un fix no tiene otro. Se muestran las aerovías al
+      // lado, que es lo que le dice al piloto dónde está parado.
+      label: fix.rutas || "Punto significativo",
+      lat: fix.lat,
+      lon: fix.lon,
+      rutas: fix.rutas,
+      vigencia: fuente
+        ? { documento: "ENR 4.4", edicion: fuente.edicion, vigenteDesde: fuente.vigenteDesde, url: fuente.url }
+        : undefined,
+    };
+    return NextResponse.json({ punto, sugerencias: [] }, cache);
+  }
+
+  /*
+    Sin resolver. Las sugerencias suman los fixes que empiezan igual: alguien que escribió
+    `DOR` a lo mejor va a `DORVO`, y sin esto no tendría forma de descubrirlo — un
+    designador de cinco letras no se adivina.
+  */
+  const porPrefijo = buscarFixes(codigo, 6).map((f) => ({
+    icao: f.designador,
+    name: f.designador,
+    city: "",
+    country: "AR",
+    size: "S" as const,
+    iata: "",
+    label: f.rutas || "Punto significativo",
+    lat: f.lat,
+    lon: f.lon,
+  }));
+
+  return NextResponse.json({ punto: null, sugerencias: [...sugerencias, ...porPrefijo] }, cache);
 }
