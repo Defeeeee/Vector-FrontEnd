@@ -3762,3 +3762,42 @@ ninguna tarjeta.
 **La lección, y es la misma de siempre en esta bitácora:** un número plausible con un
 comentario convincente al lado sigue siendo un número inventado. El smoke lo agarró
 porque prueba contra el backend real; ningún test unitario lo habría visto.
+
+## La historia de `main` empieza el 1 de agosto, y no es un error — 2026-08-19
+
+Si corrés `git log` y ves que el proyecto arranca el 2026-08-01, **no arranca ahí**. El
+commit raíz de `main` es `9e03df0` —"Merge pull request #9 from feat/flightdeck-look"— y
+**no tiene padres**: la historia se recreó ese día. Vector existe desde el 2026-03-31.
+
+Esto salió a la luz limpiando ramas. De 40 ramas quedaban 9 que git reportaba como "sin
+mergear", y la pregunta era si tenían trabajo perdido. **Siete no tenían ancestro común
+con `main`**: colgaban de la raíz original de marzo. Git no puede saber que su contenido
+está absorbido, así que las marca como divergentes para siempre.
+
+**Ninguna tenía trabajo pendiente.** Verificado archivo por archivo, no por el grafo:
+Nuevo Vuelo como diálogo, heatmap de actividad, calculadoras operativas, auditoría de
+bitácora, tracker de vencimientos, resolver de aeródromos ICAO, nav móvil con badge,
+webhook con HMAC-SHA256 y la sesión en vivo del copiloto — **todo está en `main` hoy**, y
+en versiones más evolucionadas que las de las ramas. La de `chore/logbook-not-null`
+tenía su componente **idéntico byte a byte** al de `main`; la del backend se reducía a
+**un import sin usar**.
+
+**Un error de método que vale anotar:** al principio dije que mergearlas "borraría 42.000
+líneas". Eso era el `git diff` de dos árboles, **no lo que hace un merge** — git no toca
+los archivos que la rama nunca modificó. Lo real es distinto y peor de otra forma: sin
+ancestro común git usa un árbol vacío como base y **entra en conflicto el repo entero**.
+La conclusión no cambió; el razonamiento estaba mal y por eso se corrige acá.
+
+**Antes de borrar se dejaron dos tags**, porque esas ramas eran lo único que quedaba de
+la historia previa al corte:
+
+- `historia-pre-agosto-2026` → `415fe56`, **111 commits** del 31-mar al 1-ago.
+- `historia-copiloto-whatsapp` → `26f9f4c`, el único commit que el otro tag no contenía.
+
+Para recuperar algo de ahí: `git checkout -b rescate historia-pre-agosto-2026`.
+
+**Nota de infraestructura:** el borrado de refs remotas **no se puede hacer desde una
+sesión de agente**. El proxy deja pasar los push que avanzan una rama y devuelve 403 en
+el `git-receive-pack` cuando el payload es una deleción. Crear refs sí pasa —los dos tags
+se pudieron haber creado desde acá—. Si hace falta borrar, se le pasa el comando a la
+persona; no hay forma de rodearlo y no hay que intentarlo.
