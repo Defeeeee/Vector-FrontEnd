@@ -98,3 +98,43 @@ export function problemaDeHoras(despegue: string, aterrizaje: string): string | 
   if (roto(aterrizaje)) return "El horario de aterrizaje quedó incompleto. Completá hora y minutos.";
   return null;
 }
+
+/**
+ * Qué campos de hora quedaron a medio completar, mirando el estado del propio input.
+ *
+ * ## Por qué hace falta mirar el DOM y no alcanza con el valor
+ *
+ * **Un `<input type="time">` a medio completar tiene `value === ""`.** No devuelve lo que
+ * se ve escrito: devuelve la cadena vacía, exactamente igual que si estuviera en blanco. Y
+ * en un plan las horas son opcionales, así que por el valor solo no hay forma de distinguir
+ * "no puso hora" de "puso hora y le falta el AM/PM".
+ *
+ * La única señal que los separa es `validity.badInput`, que sólo existe en el elemento.
+ *
+ * ## Y por qué el formulario lleva `noValidate`
+ *
+ * Porque si no, **nada de esto llega a correr**: con la validación nativa activa el
+ * navegador corta el envío antes, con su propio globo —"invalid value"— que no dice qué
+ * campo ni qué falta. Apagarla y validar acá es lo que permite que el mensaje sea nuestro.
+ *
+ * El riesgo de apagarla es dejar pasar un dato roto, y por eso esta función existe: sin
+ * ella, un horario a medio completar se guardaría **en blanco y en silencio**, que es peor
+ * que el globo.
+ */
+export function horasIncompletas(form: HTMLFormElement): string | null {
+  const rotos: string[] = [];
+  const campos: [string, string][] = [
+    ["takeoff_time", "despegue"],
+    ["landing_time", "aterrizaje"],
+  ];
+
+  for (const [nombre, etiqueta] of campos) {
+    const el = form.elements.namedItem(nombre);
+    if (el instanceof HTMLInputElement && el.validity.badInput) rotos.push(etiqueta);
+  }
+
+  if (rotos.length === 0) return null;
+  return rotos.length === 1
+    ? `El horario de ${rotos[0]} quedó a medio completar. Revisá la hora, los minutos y AM/PM.`
+    : "Los dos horarios quedaron a medio completar. Revisá la hora, los minutos y AM/PM.";
+}

@@ -4607,8 +4607,25 @@ nada le diga qué falta. Sea ése el caso o no, **el mensaje genérico no puede 
 sale 23:30 y aterriza 00:40 cruza la medianoche y es normal. Son horas tentativas de un
 plan, no el registro de un vuelo.
 
-Queda pedido al usuario el texto exacto del cartel y si aparece en el recuadro rojo de
-Vector o como globo del navegador: son dos causas distintas y la de arriba es una hipótesis,
-no un diagnóstico cerrado.
+**Confirmado por el usuario: es el globo del navegador, al apretar Programar.** La
+hipótesis era correcta y el arreglo anterior **no alcanzaba**: si la validación nativa corta
+el envío, nuestra validación nunca llega a correr.
+
+El arreglo completo son dos piezas que se necesitan mutuamente:
+
+1. **`noValidate` en los dos formularios**, para que el navegador no corte antes.
+2. **`horasIncompletas`, que mira `validity.badInput` en el input**, porque un
+   `<input type="time">` a medio completar tiene `value === ""` — no devuelve lo que se ve
+   escrito, devuelve la cadena vacía, igual que si estuviera en blanco. Y en un plan las
+   horas son opcionales, así que **por el valor solo no hay forma de distinguir "no puso
+   hora" de "puso hora y le falta el AM/PM"**.
+
+Sin la segunda, apagar la validación nativa habría sido peor que el globo: el horario a
+medio completar se guardaría **en blanco y en silencio**.
+
+Verificado manejando un navegador contra el build de producción, que es la única forma en
+este repo —`horasIncompletas` recibe un `HTMLFormElement` y `vitest` corre en
+`environment: "node"`—. Los cuatro casos: los dos completos envía, los dos vacíos envía
+(son opcionales), y cada uno a medio completar da nuestro mensaje diciendo cuál es.
 
 **960 tests.**

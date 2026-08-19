@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
 import {
@@ -9,7 +9,7 @@ import {
   updatePlannedFlight,
 } from "@/actions/planned-flight";
 import BotonPendiente from "@/components/BotonPendiente";
-import { aLocal, aUtc, problemaDeHoras, soloHoraYMinuto } from "@/lib/horarios";
+import { aLocal, aUtc, horasIncompletas, problemaDeHoras, soloHoraYMinuto } from "@/lib/horarios";
 import {
   horasDelMes,
   mesDe,
@@ -62,6 +62,15 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
    */
   const [horaLocal, setHoraLocal] = useState(false);
 
+  /*
+    Los formularios llevan `noValidate` y se validan acá. Hace falta la referencia al
+    elemento porque **un `<input type="time">` a medio completar devuelve la cadena vacía**:
+    por el valor no se distingue de uno en blanco, y en un plan las horas son opcionales. La
+    única señal que los separa es `validity.badInput`, que vive en el input.
+  */
+  const formAlta = useRef<HTMLFormElement>(null);
+  const formEdicion = useRef<HTMLFormElement>(null);
+
   const mes = useMemo(
     () => mesDe({ mesIso, todayIso, planned, flights }),
     [mesIso, todayIso, planned, flights]
@@ -88,10 +97,9 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
 
   async function programar(formData: FormData) {
     setError(null);
-    const mal = problemaDeHoras(
-      String(formData.get("takeoff_time") || ""),
-      String(formData.get("landing_time") || "")
-    );
+    const mal =
+      (formAlta.current && horasIncompletas(formAlta.current)) ||
+      problemaDeHoras(String(formData.get("takeoff_time") || ""), String(formData.get("landing_time") || ""));
     if (mal) return setError(mal);
     const res = await createPlannedFlight(leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
@@ -101,10 +109,9 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
   async function guardarEdicion(formData: FormData) {
     if (!editando) return;
     setError(null);
-    const mal = problemaDeHoras(
-      String(formData.get("takeoff_time") || ""),
-      String(formData.get("landing_time") || "")
-    );
+    const mal =
+      (formEdicion.current && horasIncompletas(formEdicion.current)) ||
+      problemaDeHoras(String(formData.get("takeoff_time") || ""), String(formData.get("landing_time") || ""));
     if (mal) return setError(mal);
     const res = await updatePlannedFlight(editando.id, leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
@@ -165,9 +172,15 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
         </div>
       )}
 
-      {/* Alta -------------------------------------------------------------- */}
+      {/*
+        Alta.
+
+        `noValidate` a propósito: con la validación nativa activa el navegador corta el
+        envío con su propio globo —"invalid value"— que no dice qué campo ni qué falta. El
+        piloto ve una hora escrita y un cartel que no le sirve. Ver `horasIncompletas`.
+      */}
       {alta && (
-        <form action={programar} className={`${CARD} p-6 md:p-8 space-y-5`}>
+        <form ref={formAlta} action={programar} noValidate className={`${CARD} p-6 md:p-8 space-y-5`}>
           <Campos aircraft={aircraft} fecha={alta} horaLocal={horaLocal} onHoraLocal={setHoraLocal} />
           <BotonPendiente
             pendiente="Programando…"
@@ -269,7 +282,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
               </div>
             )}
 
-            <form action={guardarEdicion} className="space-y-5">
+            <form ref={formEdicion} action={guardarEdicion} noValidate className="space-y-5">
               <Campos aircraft={aircraft} plan={editando} horaLocal={horaLocal} onHoraLocal={setHoraLocal} />
               <BotonPendiente
                 pendiente="Guardando…"
