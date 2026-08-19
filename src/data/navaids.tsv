@@ -1,0 +1,96 @@
+ADO	NDB	Puerto Deseado	-47.7333	-65.9094	210	-7.2	modelo
+ARS	NDB	Alto Rio Senguerr	-45.0164	-70.8011	310	-9.5	modelo
+BAR	VOR-DME	San Carlos De Bariloche	-41.1403	-71.1889	117400	-8	slaved
+BCA	VOR-DME	Bahia Blanca	-38.7200	-62.1583	114300	0	slaved
+BIO	NDB	El Turbio	-51.6100	-72.2214	205	-14.2	modelo
+CAT	VOR-DME	Catamarca	-28.5836	-65.7467	114300	1	slaved
+CBA	VOR-DME	Cordoba	-31.3133	-64.2036	114500	2	slaved
+CHP	VOR-DME	San Martin De Los Andes	-40.0489	-71.0953	117000	-8	slaved
+CRR	VOR-DME	Corrientes	-27.4372	-58.7617	115400	10.1	modelo
+CRV	VOR-DME	Comodoro Rivadavia	-45.7733	-67.3717	117500	-8	slaved
+DIA	NDB	Concordia	-31.3017	-58.0042	335	9.1	modelo
+DIL	VOR-DME	Tandil	-37.2250	-59.2294	115900	3	slaved
+DOZ	VOR-DME	Mendoza	-32.8319	-68.7908	114900	-3	slaved
+ECA	VOR-DME	El Calafate	-50.2783	-72.0456	114700	-13.3	modelo
+ENO	VOR-DME	Mariano Moreno	-34.5628	-58.7906	112900	5	slaved
+EPO	NDB	Comandante Espora	-38.7339	-62.1628	370	1.2	modelo
+ERE	VOR-DME	Ceres	-29.8644	-61.8722	115500	5	slaved
+ESQ	VOR-DME	Esquel	-42.8872	-71.1003	117800	-10	slaved
+EZE	VOR-DME	Ezeiza	-34.8242	-58.5353	116500	4	slaved
+FDO	VOR-DME	San Fernando	-34.4514	-58.5842	114400	5	slaved
+FSA	VOR-DME	Formosa	-26.2103	-58.2247	115600	9	slaved
+GAL	VOR-DME	Rio Gallegos	-51.6110	-69.3302	116700	-13	slaved
+GBE	VOR	General Belgrano	-35.7511	-58.4639	115600	4	slaved
+GES	NDB	Villa Gesell	-37.2347	-57.0239	242	6.5	modelo
+GNR	NDB	General Roca	-38.9831	-67.6011	275	-3.5	modelo
+GPI	VOR	General Pico	-35.6928	-63.7508	112200	0	slaved
+GRA	VOR-DME	Rio Grande	-53.7753	-67.7458	117300	-12	slaved
+GRE	NDB	Gobernador Gregores	-48.7831	-70.1614	360	-11.2	modelo
+GUA	VOR-DME	Gualeguaychu	-33.0097	-58.6142	113200	6	slaved
+H	NDB	Cordoba	-31.2861	-64.2074	262	3.3	modelo
+IGU	VOR-DME	Cataratas Del Iguazu	-25.7345	-54.4857	114100	12	slaved
+ILM	NDB	Quilmes	-34.7108	-58.2403	210	7.1	modelo
+ITA	VOR	Las Lomitas	-24.7361	-60.5439	112200	8	slaved
+ITO	VOR	Chilecito	-29.2111	-67.4425	116500	1.3	modelo
+JSM	NDB	Jose De San Martin	-44.0581	-70.4344	250	-9	modelo
+JUA	VOR-DME	San Juan	-31.5639	-68.4214	113100	-2	slaved
+JUJ	VOR-DME	Jujuy	-24.3936	-65.0928	112900	4	slaved
+LAR	VOR	La Rioja	-29.3886	-66.8036	113500	0	slaved
+LDR	NDB	Villa Dolores	-31.9528	-65.1425	310	2.2	modelo
+LIB	NDB	Paso De Los Libres	-29.6947	-57.1481	250	10.4	modelo
+LYE	VOR	Laboulaye	-34.1411	-63.3625	116300	1	slaved
+M	NDB	Malargue	-35.5133	-69.5583	320	-3.4	modelo
+MCS	VOR-DME	Monte Caseros	-30.2667	-57.6383	113900	7	slaved
+MDP	VOR-DME	Mar Del Plata	-37.9297	-57.5764	116200	5	slaved
+MJZ	VOR	Marcos Juarez	-32.6878	-62.1608	114700	3	slaved
+MLG	VOR-DME	Malargue	-35.4861	-69.5786	117200	-5	slaved
+NEU	VOR-DME	Neuquen	-38.9503	-68.1547	116700	-6	slaved
+NIN	VOR	Junin	-34.5411	-60.9339	116100	3	slaved
+O	NDB	Santa Rosa	-36.5683	-64.2700	300	0.4	modelo
+OA	NDB	Ministro Pistarini	-34.8903	-58.5060	270	6.5	modelo
+OB	NDB	San Carlos De Bariloche	-41.1242	-71.2485	330	-8.1	modelo
+OD	NDB	Tandil	-37.1583	-59.2217	300	4.5	modelo
+OEL	VOR-DME	Choele Choel	-39.2825	-65.6100	113400	-2.1	modelo
+OJ	NDB	Jujuy	-24.4608	-65.0554	315	5.4	modelo
+ON	NDB	Presidente Peron	-38.9499	-68.2578	332	-4.2	modelo
+OR	NDB	Rio Cuarto	-33.1483	-64.3200	322	2.3	modelo
+ORA	NDB	Oran	-23.1494	-64.3242	285	6.5	modelo
+OSA	VOR-DME	Santa Rosa	-36.5837	-64.2728	112500	-1	slaved
+OU	NDB	Teniente Benjamin Matienzo	-26.9186	-65.1200	322	4.4	modelo
+OV	NDB	Sauce Viejo	-31.7808	-60.8431	262	6.2	modelo
+OZ	NDB	Mariano Moreno	-34.4833	-58.8217	295	6.5	modelo
+PAL	VOR-DME	El Palomar	-34.6128	-58.6139	115200	6.5	modelo
+PAR	VOR-DME	Parana	-31.8083	-60.4847	116800	4	slaved
+PDI	VOR-DME	Punta Indio	-35.3461	-57.2756	114100	5	slaved
+PEH	NDB	Pehuajo	-35.8411	-61.8608	265	3.2	modelo
+POS	VOR-DME	Posadas	-27.3856	-55.9692	114900	11	slaved
+PSP	NDB	Presidencia Roque Saenz Pena	-26.7472	-60.4861	205	8.6	modelo
+PTA	VOR	La Plata	-34.9758	-57.8983	113700	5	slaved
+PTM	NDB	Perito Moreno	-46.5364	-70.9861	335	-10.5	modelo
+R	NDB	Rio Cuarto	-33.1117	-64.2750	305	2.3	modelo
+RMY	NDB	Rio Mayo	-45.7047	-70.2628	290	-9.5	modelo
+ROS	VOR-DME	Rosario	-32.9050	-60.7814	117300	3	slaved
+RTA	VOR-DME	Reconquista	-29.2086	-59.6825	117100	7	slaved
+RYD	VOR-DME	Villa Reynolds	-33.7286	-65.3811	115700	0	slaved
+SAL	VOR-DME	Salta	-24.8523	-65.4839	116700	3	slaved
+SAN	NDB	San Antonio Oeste	-40.7647	-65.0342	220	-2.3	modelo
+SCZ	NDB	Santa Cruz	-50.0217	-68.5794	245	-10.5	modelo
+SDE	VOR	Santiago Del Estero	-27.7794	-64.3181	114800	2	slaved
+SIS	VOR-DME	Resistencia	-27.4469	-59.0572	115100	9.5	modelo
+SJU	VOR-DME	San Julian	-49.3098	-67.8129	117700	-11	slaved
+SNT	VOR-DME	San Antonio De Areco	-34.2194	-59.4356	117700	4	slaved
+SRA	VOR	San Rafael	-34.5894	-68.3947	116900	-3	slaved
+SRC	VOR-DME	Santa Rosa De Conlara	-32.3736	-65.1833	117500	2	modelo
+STR	NDB	Santa Teresita	-36.5497	-56.6839	365	7.3	modelo
+SVO	NDB	Sauce Viejo	-31.7117	-60.8064	405	6.3	modelo
+T	NDB	Trelew	-43.2015	-65.2380	280	-4.1	modelo
+TAR	NDB	Tartagal	-22.6278	-63.8192	210	7.3	modelo
+TRC	VOR	Rio Cuarto	-33.0922	-64.2650	114200	0	slaved
+TRE	VOR-DME	Trelew	-43.2025	-65.2472	115100	-5	slaved
+TUC	VOR-DME	Tucuman	-26.8458	-65.1083	114100	2	slaved
+U	NDB	San Luis	-33.3050	-66.3617	307	0.3	modelo
+UIS	VOR	San Luis	-33.2694	-66.3608	116000	-1	slaved
+USU	VOR	Ushuaia	-54.8381	-68.2842	113700	-13	slaved
+VIE	VOR	Viedma	-40.8672	-63.0008	117100	-2	slaved
+W	NDB	Villa Reynolds	-33.7367	-65.4000	237	1.1	modelo
+Y	NDB	Goya	-29.0883	-59.2000	277	9.1	modelo

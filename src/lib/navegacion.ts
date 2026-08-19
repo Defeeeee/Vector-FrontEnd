@@ -84,6 +84,48 @@ export function rumboVerdadero(desde: Punto, hasta: Punto): number {
 }
 
 /**
+ * A dónde se llega saliendo de un punto con un rumbo y una distancia.
+ *
+ * Es el problema inverso de `rumboVerdadero`, y usa **la misma geometría loxodrómica**
+ * para que las dos operaciones cierren: salir de A con el rumbo hacia B y la distancia
+ * A-B tiene que caer en B. Con gran círculo no cerraría, porque el rumbo cambia en el
+ * camino.
+ *
+ * Lo usa el punto por radial y distancia de un VOR: "25 NM en el radial 045 de BAR".
+ *
+ * `rumboT` va en grados **verdaderos**. Si venís de un radial —que es magnético— hay que
+ * convertirlo antes con la variación **de la estación**; ver `lib/puntos.ts`.
+ */
+export function puntoDesde(origen: Punto, rumboT: number, distanciaNm: number): Punto {
+  const toRad = (g: number) => (g * Math.PI) / 180;
+  const R = 3440.065; // radio terrestre en NM, el mismo que usa `distance.ts`
+
+  const δ = distanciaNm / R;
+  const θ = toRad(rumboT);
+  const φ1 = toRad(origen.lat);
+  const λ1 = toRad(origen.lon);
+
+  const Δφ = δ * Math.cos(θ);
+  const φ2 = φ1 + Δφ;
+
+  const Δψ = Math.log(Math.tan(Math.PI / 4 + φ2 / 2) / Math.tan(Math.PI / 4 + φ1 / 2));
+  /*
+    En un rumbo este-oeste puro `Δψ` tiende a cero y la división explota. El límite
+    matemático de `Δφ/Δψ` cuando ambos tienden a cero es `cos(φ)`, así que se usa eso
+    directamente. Sin esta rama, volar exactamente al 090 daría `NaN`.
+  */
+  const q = Math.abs(Δψ) > 1e-11 ? Δφ / Δψ : Math.cos(φ1);
+  const Δλ = (δ * Math.sin(θ)) / q;
+
+  return {
+    lat: (φ2 * 180) / Math.PI,
+    // Normalizado a (-180, 180]: sin esto, cruzar el antimeridiano daría una longitud
+    // de 190 grados que ningún mapa sabe dibujar.
+    lon: ((((λ1 + Δλ) * 180) / Math.PI + 540) % 360) - 180,
+  };
+}
+
+/**
  * De verdadero a magnético.
  *
  * `variacionW` va **en grados oeste positivos**, que es como lo publica la carta

@@ -1,6 +1,6 @@
 {
   "name": "FlightLog-FrontEnd",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -11,6 +11,7 @@
     "build:airports": "node scripts/build-airports.mjs",
     "build:magvar": "node scripts/build-magvar.mjs",
     "build:runways": "node scripts/build-runways.mjs",
+    "build:navaids": "node scripts/build-navaids.mjs",
     "build:changelog": "node scripts/build-changelog.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

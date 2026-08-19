@@ -4016,3 +4016,90 @@ sí es medido. Los cuatro números contrastados a mano.
 
 **14 tests nuevos** sobre el parser, con las líneas literales de la ficha de ANAC.
 **508 tests** en total.
+
+## Radioayudas y puntos propios en la ruta — 2026-08-19
+
+Pedido: *"podríamos hacer que tome fixes de aerovías y radioayudas como wpt también?"* y
+después *"sumarle poder sumar un punto por radial y distancia de un VOR"*.
+
+**Los fixes de aerovía no se pueden.** OurAirports publica `navaids.csv` pero no tiene
+`fixes.csv`, `waypoints.csv` ni `airways.csv` — los tres dan 404. Los puntos de aerovía
+argentinos viven en el ENR 4.4 del AIP de ANAC, en PDF y con ciclo AIRAC de 28 días. No
+hay fuente abierta; se dijo en vez de aproximarlo con otra cosa.
+
+### Lo que la medición cambió respecto de lo que yo esperaba
+
+La idea original era "poder poner un VOR como punto de ruta". **Esa parte casi no sirve,
+y los números lo dicen:** de los 96 idents del directorio, **77 ya son código de
+aeródromo** —el VOR se llama como el campo al que sirve—, con una mediana de **0,34 NM**
+entre la estación y su homónimo y un peor caso de 4 NM (Comodoro Rivadavia). Escribir
+`BAR` ya resolvía Bariloche. Los 19 restantes son casi todos NDB de una o dos letras, que
+ni siquiera se pueden tipear.
+
+Así que el directorio se justifica por otra cosa: **el punto por radial**, que necesita la
+posición exacta de la estación y su variación de alineación, y **decir qué sintonizar**.
+
+### El punto delicado: la variación de un radial no es la de hoy
+
+**Un radial de VOR está referido a la variación con la que la estación fue alineada.**
+OurAirports da Bariloche con 8,0° E; el WMM de hoy da 5,4° E. Casi tres grados, que a
+25 NM son más de una milla de error lateral. Por eso `navaids.tsv` guarda
+`slaved_variation_deg` (50 de 57 VOR) y no la columna de aeródromos. El dato es de ~2007,
+lo cual se comprueba: 8,03° extrapola desde los 5,4° de hoy a la deriva de 0,144°/año que
+da el WMM.
+
+**Los 62 NDB de ident ambiguo quedan afuera.** `L` aparece cinco veces, `A` son Ezeiza,
+Reconquista y Tartagal. Elegir uno pondría un punto a mil kilómetros del que el piloto
+quiso, sin avisar.
+
+**Un punto por radial de una estación sin variación devuelve `null`, no un punto con
+variación cero.** En Argentina el rango va de 12° E a 18° W: suponer cero puede ser 30° de
+error, trece millas a 25 NM.
+
+### La gramática, que la decidió `parsearRuta` y no yo
+
+La barra separa **adentro** de un punto; el espacio, la coma y el guión separan **entre**
+puntos. De ahí sale todo lo demás: las coordenadas se escriben `S34.68/W58.64` y no
+`-34.68,-58.64`, porque la coma y el menos partirían el token.
+
+**Y por eso el decimal es el punto y nunca la coma**, aunque acá se escriba con coma. La
+primera versión la aceptaba y la API la resolvía bien — hasta que se comprobó que
+`S34,68/W58,64` se parte en cuatro puntos de ruta en cuanto la ruta se pega entera o
+vuelve de la URL, que es donde vive el estado de esta pantalla. Un formato que se rompe
+solo al compartir el link es peor que uno que se rechaza de entrada. Cada token tiene
+ahora una forma `canonico`, y un test comprueba que no contenga ningún separador y que
+volver a clasificarla dé el mismo punto.
+
+### Lo que se cuidó de no romper
+
+- **El aeródromo gana sobre la radioayuda en un código pelado.** Ninguna ruta ya escrita
+  cambia de resultado, y el aeródromo trae pistas, elevación y METAR que la estación no.
+- **Los puntos que no son aeródromo no van al briefing.** `veredictoDeRuta` cuenta cuántas
+  estaciones respondieron para decidir si puede opinar: una coordenada nunca va a tener
+  METAR y la contaría como estación caída, bajando el veredicto de una ruta impecable.
+  Verificado en el navegador: una ruta de tres puntos con un radial en el medio dice
+  **"0 de 2 estaciones"**, no de 3.
+- **`AirportResolver` no se tocó.** Tiene `maxLength={4}` y filtro `[A-Z0-9]`, y lo usan
+  seis pantallas donde eso es correcto. El planificador usa `PuntoResolver`, su hermano de
+  ruta.
+- **Ni la coordenada ni el radial traen variación magnética.** Sale del WMM, que es
+  `devDependency` y corre en el build, no en producción. Devolver la de la estación sería
+  peor que nada: es de 2007 y es de alineación, no del terreno.
+
+### Verificación
+
+`geomagnetism` no entró a producción; el `puntoDesde` loxodrómico se contrastó contra una
+implementación aparte en Python escrita desde la fórmula de Bowditch, no desde el
+TypeScript.
+
+**Ocho mutantes sobre `puntos.ts`, los ocho cazados** — incluido el del signo de la
+variación, que es el caro: a 25 NM son casi siete millas de desvío.
+
+Como los componentes no se pueden testear (`vitest` corre en `environment: "node"`), el
+campo y la pantalla se manejaron con un navegador de verdad contra el build de producción,
+con una página temporal que se borró después. Ahí apareció el único bug de UI: **un token
+con barra que no clasifica quedaba en silencio** — `BAR/400/25` no decía nada y la persona
+se quedaba mirando un campo inerte. Ahora cualquier token con barra que no resuelve
+explica qué le falta.
+
+**556 tests** en total.

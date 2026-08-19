@@ -7,6 +7,7 @@ import {
   dispersionDeVariacion,
   parsearRuta,
   puntosCalculables,
+  puntosConBriefing,
   rutaAUrl,
   variacionDelPlan,
   type PuntoRuta,
@@ -49,6 +50,59 @@ describe("parsearRuta", () => {
     expect(parsearRuta("")).toEqual([]);
     expect(parsearRuta("   ")).toEqual([]);
     expect(parsearRuta("---")).toEqual([]);
+  });
+});
+
+describe("parsearRuta con los puntos que no son aeródromo", () => {
+  it("la barra no parte un punto", () => {
+    /*
+      **El test que fija la gramática.** La barra separa adentro de un punto y los
+      espacios, comas y guiones separan entre puntos. Si algún día alguien suma la barra
+      a los separadores, `BAR/045/25` se convierte en tres puntos de ruta llamados BAR,
+      045 y 25 — y los dos últimos ni siquiera van a resolver.
+    */
+    expect(parsearRuta("SADM BAR/045/25 SAZN")).toEqual(["SADM", "BAR/045/25", "SAZN"]);
+    expect(parsearRuta("SADM S34.68/W58.64")).toEqual(["SADM", "S34.68/W58.64"]);
+  });
+
+  it("con guiones de separador también, que es como vuelve de la URL", () => {
+    expect(parsearRuta("SADM-BAR/045/25-SAZN")).toEqual(["SADM", "BAR/045/25", "SAZN"]);
+  });
+
+  it("la vuelta por la URL cierra con los tres tipos de punto", () => {
+    // Un link compartido tiene que abrir el mismo plan. Con coordenadas y radiales
+    // adentro esto deja de ser obvio: los dos formatos tienen caracteres que en otra
+    // gramática serían separadores.
+    const codigos = ["SADM", "S34.68/W58.64", "BAR/045/25", "SAZN"];
+    expect(parsearRuta(rutaAUrl(codigos))).toEqual(codigos);
+  });
+});
+
+describe("puntosConBriefing", () => {
+  it("sólo los aeródromos", () => {
+    /*
+      **No es cosmético.** `veredictoDeRuta` decide si puede opinar contando cuántas
+      estaciones contestaron. Una coordenada propia nunca va a tener METAR: mandarla al
+      briefing la contaría como estación caída y bajaría el veredicto de una ruta que
+      está perfecta. Y una radioayuda tampoco emite METAR — `SDE` la estación y `SDE` el
+      aeródromo comparten las letras y nada más.
+    */
+    const puntos = [
+      punto({ codigo: "SADM", clase: "aerodromo" }),
+      punto({ codigo: "S34.68/W58.64", clase: "coordenada" }),
+      punto({ codigo: "BAR/045/25", clase: "radial" }),
+      punto({ codigo: "ITA", clase: "radioayuda" }),
+      punto({ codigo: "SAZN", clase: "aerodromo" }),
+    ];
+    expect(puntosConBriefing(puntos).map((p) => p.codigo)).toEqual(["SADM", "SAZN"]);
+  });
+
+  it("un punto sin resolver todavía no tiene clase, y no va", () => {
+    expect(puntosConBriefing([punto({ codigo: "XX", clase: undefined })])).toEqual([]);
+  });
+
+  it("un código vacío tampoco", () => {
+    expect(puntosConBriefing([punto({ codigo: "  ", clase: "aerodromo" })])).toEqual([]);
   });
 });
 

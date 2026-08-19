@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.10.0 — Un punto de la ruta ya no tiene que ser un aeródromo
+
+_19 de agosto de 2026_
+
+- **Puntos por radial y distancia** — Escribí BAR/045/25 y el planificador lo toma como punto: 25 NM en el radial 045 del VOR de Bariloche. Usa la variación con la que está alineada la estación, que no es la de hoy ni la del aeródromo, y te dice qué frecuencia sintonizar.
+- **Tus propios puntos visuales** — El pueblo, el cruce de rutas, la laguna: si tenés la coordenada, escribila como S34.68/W58.64 y entra en la ruta como un punto más, con su tramo, su rumbo y su tiempo.
+- **Las radioayudas del país** — 96 estaciones —VOR, VOR-DME y los NDB que no se confunden con otro— con su frecuencia y su posición, para poder apoyar la ruta en ellas.
+
 ## v2.9.0 — Todo el preflight en una sola pantalla
 
 _19 de agosto de 2026_

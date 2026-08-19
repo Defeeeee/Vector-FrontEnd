@@ -73,6 +73,35 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.10.0",
+    fecha: "2026-08-19",
+    titulo: "Un punto de la ruta ya no tiene que ser un aeródromo",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Puntos por radial y distancia",
+        texto:
+          "Escribí BAR/045/25 y el planificador lo toma como punto: 25 NM en el radial 045 del VOR de Bariloche. Usa la variación con la que está alineada la estación, que no es la de hoy ni la del aeródromo, y te dice qué frecuencia sintonizar.",
+        href: "/dashboard/planificador",
+        cta: "Probar un radial",
+      },
+      {
+        icono: "lupa",
+        titulo: "Tus propios puntos visuales",
+        texto:
+          "El pueblo, el cruce de rutas, la laguna: si tenés la coordenada, escribila como S34.68/W58.64 y entra en la ruta como un punto más, con su tramo, su rumbo y su tiempo.",
+        href: "/dashboard/planificador",
+        cta: "Planificar un vuelo",
+      },
+      {
+        icono: "avion",
+        titulo: "Las radioayudas del país",
+        texto:
+          "96 estaciones —VOR, VOR-DME y los NDB que no se confunden con otro— con su frecuencia y su posición, para poder apoyar la ruta en ellas.",
+      },
+    ],
+  },
+  {
     version: "2.9.0",
     fecha: "2026-08-19",
     titulo: "Todo el preflight en una sola pantalla",

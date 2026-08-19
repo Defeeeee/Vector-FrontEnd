@@ -26,15 +26,23 @@
 export const MAX_PUNTOS = 12;
 
 /**
- * Códigos de aeródromo a partir de texto libre.
+ * Los puntos de una ruta a partir de texto libre.
  *
  * Acepta los mismos separadores que `splitRoute` —espacios y guiones— más la coma,
  * porque quien tipea una ruta larga la separa con comas. **No deduplica**: SADM SAAJ
  * SADM es una ida y vuelta perfectamente normal, y colapsarla borraría el tramo de
  * regreso.
  *
- * No valida que el código exista. De eso se ocupa el directorio de aeródromos, que es
- * quien sabe; acá sólo se parte texto.
+ * No valida nada. De la forma de cada token se ocupa `clasificarToken` en `lib/puntos.ts`
+ * y de si existe, el directorio; acá sólo se parte texto.
+ *
+ * ## Por qué la barra no es separador, y por qué eso decide la sintaxis
+ *
+ * Un punto de ruta ya no es sólo un aeródromo: puede ser `BAR/045/25` —25 NM en el
+ * radial 045 de Bariloche— o una coordenada propia. **La barra separa adentro de un
+ * punto; el espacio, la coma y el guión separan entre puntos.** De ahí sale que las
+ * coordenadas se escriban `S34.68/W58.64` y no `-34.68,-58.64`: con esta gramática, la
+ * coma partiría el punto en dos y el menos también.
  */
 export function parsearRuta(texto: string): string[] {
   return (texto ?? "")
@@ -77,22 +85,58 @@ export function aCampoRoute(codigos: string[]): string {
   return primero === ultimo ? primero : `${primero} ${ultimo}`;
 }
 
+/**
+ * De qué clase es un punto del plan.
+ *
+ * No es decoración: **decide qué se le puede pedir.** A un aeródromo se le pide METAR,
+ * NOTAM y pista en uso; a una coordenada en el medio del campo, nada de eso. Ver
+ * `puntosConBriefing`.
+ */
+export type ClasePunto = "aerodromo" | "radioayuda" | "coordenada" | "radial";
+
 /** Un punto del plan, ya resuelto contra el directorio. */
 export interface PuntoRuta {
-  /** El código tal como se tipeó: ICAO o designador ANAC. */
+  /** El token tal como se tipeó: ICAO, designador ANAC, ident, coordenada o radial. */
   codigo: string;
   /** Nombre corto para mostrar. Vacío si el código no resolvió. */
   label: string;
   lat?: number;
   lon?: number;
-  /** Variación magnética del aeródromo, oeste positiva. Ver `navegacion.ts`. */
+  /**
+   * Variación magnética del aeródromo, oeste positiva. Ver `navegacion.ts`.
+   *
+   * **Sólo los aeródromos la tienen.** Un punto por coordenada o por radial no la trae:
+   * sale del WMM, que acá corre en el build y no en producción, y usar la de la estación
+   * en su lugar sería peor que nada —es de 2007 y es la de alineación, no la del
+   * terreno—. El plan usa una sola variación, la de salida, así que no falta.
+   */
   variacionW?: number;
   /** `false` cuando el código no existe en el directorio. */
   resuelto: boolean;
+  /** Qué clase de punto es. `undefined` mientras no resolvió. */
+  clase?: ClasePunto;
   /** Elevación en pies. Alimenta la densidad de altitud del briefing. */
   elevacionFt?: number;
   /** Pistas con rumbo verdadero, para el viento cruzado. Vacío en la mayoría. */
   pistas?: { le: string; he: string; rumboT: number; largoFt?: number; superficie?: string; fuente?: "medida" | "estimada" }[];
+  /** Qué sintonizar, en los puntos que nacen de una radioayuda. */
+  estacion?: { ident: string; tipo: string; nombre: string; frecuencia: string | null };
+}
+
+/**
+ * Los puntos a los que tiene sentido pedirles briefing.
+ *
+ * **Sólo los aeródromos**, y esto no es cosmético: `veredictoDeRuta` cuenta cuántas
+ * estaciones contestaron para decidir si puede opinar. Un punto por coordenada nunca va
+ * a tener METAR, así que mandarlo al briefing lo contaría como una estación caída y
+ * degradaría el veredicto de una ruta que está perfecta. Cuando no se sabe hay que
+ * decirlo; inventar un "no sabemos" tampoco vale.
+ *
+ * Una radioayuda tampoco: `SDE` la estación no emite METAR, lo emite `SDE` el
+ * aeródromo — y son objetos distintos aunque compartan las letras.
+ */
+export function puntosConBriefing(puntos: PuntoRuta[]): PuntoRuta[] {
+  return puntos.filter((p) => p.clase === "aerodromo" && p.codigo.trim());
 }
 
 /**

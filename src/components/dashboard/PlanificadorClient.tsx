@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Compass, Info, Plus, Printer, Trash2, Wind } from "lucide-react";
-import type { Aircraft, AirportRef } from "@/types";
-import AirportResolver from "./AirportResolver";
+import type { Aircraft } from "@/types";
+import type { PuntoResuelto } from "@/app/api/puntos/route";
+import PuntoResolver from "./PuntoResolver";
 import PageHeader from "./PageHeader";
 import PlanMapa from "./PlanMapa";
 import BriefingRuta from "./BriefingRuta";
@@ -22,6 +23,7 @@ import {
   MAX_PUNTOS,
   dispersionDeVariacion,
   parsearRuta,
+  puntosConBriefing,
   rutaAUrl,
   type PuntoRuta,
 } from "@/lib/ruta-planificada";
@@ -47,6 +49,18 @@ import {
  * - **Cuando no se sabe, se dice.** Un tramo con un código sin resolver no se saltea:
  *   anula el cálculo y la pantalla señala cuál falta. Saltearlo uniría los vecinos con
  *   una recta que nadie va a volar y daría un total más corto con pinta de válido.
+ * - **Un punto que no es aeródromo no va al briefing.** Una coordenada propia nunca va a
+ *   tener METAR, y `veredictoDeRuta` cuenta cuántas estaciones contestaron para decidir
+ *   si puede opinar: mandarla igual la contaría como una estación caída y bajaría el
+ *   veredicto de una ruta impecable. Ver `puntosConBriefing`.
+ *
+ * ## Un punto ya no es sólo un aeródromo
+ *
+ * Se puede escribir `SADM` como siempre, y además `S34.68/W58.64` —el pueblo, el cruce
+ * de rutas, la laguna, que es como se vuela VFR de verdad— o `BAR/045/25`, que son 25 NM
+ * en el radial 045 del VOR de Bariloche. La gramática vive en `lib/puntos.ts` y el campo
+ * es `PuntoResolver`, que existe justamente porque `AirportResolver` sólo acepta cuatro
+ * letras y lo usan otras seis pantallas.
  *
  * ## Sin persistencia, a propósito
  *
@@ -70,7 +84,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
   const [codigos, setCodigos] = useState<string[]>(() =>
     rutaInicial.length >= 2 ? rutaInicial : ["", ""]
   );
-  const [resueltos, setResueltos] = useState<(AirportRef | null)[]>(() =>
+  const [resueltos, setResueltos] = useState<(PuntoResuelto | null)[]>(() =>
     Array(Math.max(rutaInicial.length, 2)).fill(null)
   );
   const [aeronaveId, setAeronaveId] = useState(aeronaveInicial);
@@ -123,14 +137,21 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     if (salida?.variacionW !== undefined) setVariacion(String(salida.variacionW));
   }, [salida]);
 
-  // Viento desde el METAR de salida.
+  /*
+    Viento desde el METAR de salida — **sólo si la salida es un aeródromo**. Se puede
+    empezar una ruta en una coordenada, y pedirle el METAR a `S34.68/W58.64` sería pedirle
+    el clima a un código que no existe: un 404 y un campo de viento que no se completa
+    nunca, sin explicación.
+  */
+  const icaoSalida = salida?.clase === "aerodromo" ? salida.codigo : null;
+
   useEffect(() => {
-    if (!salida?.icao || tocoViento.current) return;
+    if (!icaoSalida || tocoViento.current) return;
     let cancelado = false;
 
     (async () => {
       try {
-        const res = await fetch(`/api/weather?icao=${encodeURIComponent(salida.icao)}`);
+        const res = await fetch(`/api/weather?icao=${encodeURIComponent(icaoSalida)}`);
         if (!res.ok || cancelado) return;
         const datos = await res.json();
         if (cancelado || tocoViento.current) return;
@@ -146,7 +167,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
           vientoSuperficie.current = { direccion: dir, velocidad: vel };
         }
         if (datos.metar) {
-          setMetar({ estacion: datos.nearestStation?.icao || salida.icao, texto: datos.metar });
+          setMetar({ estacion: datos.nearestStation?.icao || icaoSalida, texto: datos.metar });
         }
       } catch {
         // Sin METAR se planifica igual, con viento cero o el que el piloto tipee. No
@@ -157,7 +178,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     return () => {
       cancelado = true;
     };
-  }, [salida?.icao]);
+  }, [icaoSalida]);
 
   // Viento en altura para el punto de salida.
   useEffect(() => {
@@ -231,8 +252,10 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
           lon: ref?.lon,
           variacionW: ref?.variacionW,
           resuelto: !!ref,
-          elevacionFt: ref?.elevation,
+          clase: ref?.clase,
+          elevacionFt: ref?.elevacionFt,
           pistas: ref?.pistas,
+          estacion: ref?.estacion,
         };
       }),
     [codigos, resueltos]
@@ -287,9 +310,9 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     setCodigos((prev) => prev.map((c, j) => (j === i ? valor : c)));
   }, []);
 
-  const resolverPunto = useCallback((i: number, ref: AirportRef | null) => {
+  const resolverPunto = useCallback((i: number, ref: PuntoResuelto | null) => {
     setResueltos((prev) => {
-      if (prev[i]?.icao === ref?.icao) return prev;
+      if (prev[i]?.codigo === ref?.codigo) return prev;
       const copia = [...prev];
       copia[i] = ref;
       return copia;
@@ -323,7 +346,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
     const nuevos = parsearRuta(texto);
     if (nuevos.length < 2) return;
 
-    const porCodigo = new Map<string, AirportRef>();
+    const porCodigo = new Map<string, PuntoResuelto>();
     resueltos.forEach((ref, i) => {
       if (ref) porCodigo.set(codigos[i].trim().toUpperCase(), ref);
     });
@@ -374,7 +397,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               {codigos.map((codigo, i) => (
                 <div key={i} className="flex items-end gap-2">
                   <div className="flex-1 min-w-0">
-                    <AirportResolver
+                    <PuntoResolver
                       label={i === 0 ? "Salida" : i === codigos.length - 1 ? "Llegada" : `Punto ${i + 1}`}
                       value={codigo}
                       onChange={(v) => cambiarCodigo(i, v)}
@@ -414,6 +437,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <input
                 type="text"
                 placeholder="SADM CHV SAAJ"
+                title="Separá los puntos con espacios, comas o guiones. La barra va adentro de un punto: BAR/045/25"
                 /*
                   El único campo de la pantalla que **no** se aplica en vivo, y es a
                   propósito. Los demás son valores; éste es un reemplazo masivo: aplicado
@@ -616,7 +640,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
                 {faltantes.length > 0
                   ? "El plan no se calcula salteando un punto: uniría los vecinos con una recta que no vas a volar y el total saldría más corto de lo que es."
-                  : "Podés usar el indicador ICAO (SADM) o el designador de ANAC (MOR)."}
+                  : "Indicador ICAO (SADM), designador de ANAC (MOR), una coordenada propia (S34.68/W58.64) o un punto por radial y distancia (BAR/045/25)."}
               </p>
             </div>
           ) : (
@@ -644,6 +668,8 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               </p>
 
               <PlanillaTramos plan={plan!} puntos={cargados} />
+
+              <Sintonizar puntos={cargados} />
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-imprimir="junto">
                 <Total label="Distancia" valor={fmt(plan!.totales.distanciaNm, 1)} unidad="NM" />
@@ -709,7 +735,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                 tipeaba la misma ruta dos veces, en dos pantallas distintas.
               */}
               <BriefingRuta
-                puntos={cargados.map((p) => ({
+                puntos={puntosConBriefing(cargados).map((p) => ({
                   codigo: p.codigo,
                   label: p.label,
                   lat: p.lat,
@@ -813,6 +839,48 @@ function PlanillaTramos({
       <p className="mt-2 font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
         CV curso verdadero · CM curso magnético · WCA corrección por viento · RM rumbo magnético a volar
       </p>
+    </div>
+  );
+}
+
+/**
+ * Qué sintonizar, cuando algún punto sale de una radioayuda.
+ *
+ * **Va en la planilla impresa, no atrás de un desplegable.** Es la razón por la que el
+ * directorio de radioayudas existe: si un punto está definido como "25 NM en el radial
+ * 045 de BAR", el número que hay que poner en el NAV es parte del punto, no un dato de
+ * consulta. Buscarlo en la carta con el avión andando es justo lo que esta pantalla
+ * viene a evitar.
+ *
+ * No se muestra nada cuando la ruta es toda de aeródromos, que es la mayoría.
+ */
+function Sintonizar({ puntos }: { puntos: PuntoRuta[] }) {
+  // Una estación puede definir varios puntos —dos radiales del mismo VOR— y se sintoniza
+  // una sola vez. Se listan por ident, en el orden en que aparecen en la ruta.
+  const estaciones = new Map<string, NonNullable<PuntoRuta["estacion"]>>();
+  for (const p of puntos) {
+    if (p.estacion && !estaciones.has(p.estacion.ident)) estaciones.set(p.estacion.ident, p.estacion);
+  }
+  if (estaciones.size === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-white/[0.03] px-4 py-3">
+      <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+        Sintonizar
+      </p>
+      <ul className="mt-2 space-y-1">
+        {[...estaciones.values()].map((e) => (
+          <li key={e.ident} className="flex items-baseline gap-2 text-xs">
+            <span className="font-bold tracking-wider text-zinc-900 dark:text-white">{e.ident}</span>
+            {e.frecuencia && (
+              <span className="data font-semibold text-zinc-600 dark:text-zinc-300">{e.frecuencia}</span>
+            )}
+            <span className="text-zinc-400 dark:text-zinc-500 truncate">
+              {e.tipo} · {e.nombre}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

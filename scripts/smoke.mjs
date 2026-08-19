@@ -49,6 +49,23 @@ const ROUTES = [
   // si el build no los copió, esto lo agarra.
   { path: "/api/airports/search?q=SADM", expect: (s) => s === 200, json: (b) => b.results?.[0]?.icao === "SADM" },
   { path: "/api/airports/search?q=GEZ", expect: (s) => s === 200, json: (b) => b.results?.[0]?.icao === "SRDR" },
+  // Los puntos del planificador leen dos TSV más —radioayudas y pistas— y hacen
+  // trigonometría con ellos. Un punto por radial que devuelve `null` acá significa que
+  // `navaids.tsv` no llegó al build, y en la pantalla se vería como "no lo reconocemos"
+  // sin ninguna otra pista.
+  { path: "/api/puntos?q=SADM", expect: (s) => s === 200, json: (b) => b.punto?.clase === "aerodromo" },
+  {
+    path: "/api/puntos?q=BAR%2F045%2F25",
+    expect: (s) => s === 200,
+    // 25 NM en el radial 045 de Bariloche. Se comprueban las coordenadas y no sólo que
+    // haya punto: un corrimiento de columnas en el TSV daría un punto igual de válido y
+    // a cien millas de donde va.
+    json: (b) =>
+      b.punto?.clase === "radial" &&
+      Math.abs(b.punto.lat - -40.8897) < 0.001 &&
+      Math.abs(b.punto.lon - -70.7482) < 0.001,
+  },
+  { path: "/api/puntos?q=S34.68%2FW58.64", expect: (s) => s === 200, json: (b) => b.punto?.lat === -34.68 },
   // Sin sesión el middleware tiene que redirigir, no explotar.
   { path: "/dashboard", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/log-flight", expect: (s) => s === 307 || s === 302 },

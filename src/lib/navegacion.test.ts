@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { aMagnetico, calcularPlan, calcularTramo, rumboVerdadero, type Punto } from "./navegacion";
+import {
+  aMagnetico,
+  calcularPlan,
+  calcularTramo,
+  puntoDesde,
+  rumboVerdadero,
+  type Punto,
+} from "./navegacion";
+import { distanciaNmPrecisa } from "./distance";
 
 /**
  * Los rumbos esperados salen de una implementación aparte, escrita en otro lenguaje a
@@ -248,5 +256,91 @@ describe("calcularPlan", () => {
     const solo = calcularPlan([SADM, SAAJ], params);
     const ida = calcularPlan([SADM, SAAJ, SADM], params);
     expect(ida.totales.minutos!).toBeCloseTo(solo.totales.minutos! * 2, 6);
+  });
+});
+
+describe("puntoDesde", () => {
+  it("cierra con rumboVerdadero: salir de A hacia B llega a B", () => {
+    /*
+      **La propiedad que justifica usar la misma geometría en las dos funciones.** Si
+      `puntoDesde` fuera ortodrómico y `rumboVerdadero` loxodrómico, esto no cerraría, y
+      un punto construido por radial y distancia caería al lado del que uno quiso.
+
+      El residuo que queda es real y está medido: `distanciaNmPrecisa` es **ortodrómica**
+      y esta función camina sobre la **loxodrómica**, que es un poco más larga. En
+      SADM→SAZN, 524 NM, la diferencia es de **0,217 NM** — un 0,04%. Por eso la
+      tolerancia es de un cuarto de milla y no de un metro: es el precio conocido de
+      medir con una geometría y rumbear con la otra, y en tiempos y combustible no se
+      nota.
+    */
+    for (const [a, b] of [
+      [SADM, SAAJ],
+      [SADM, SAZN],
+      [SADF, SAAJ],
+    ] as const) {
+      const d = distanciaNmPrecisa(a.lat, a.lon, b.lat, b.lon);
+      const destino = puntoDesde(a, rumboVerdadero(a, b), d);
+      expect(distanciaNmPrecisa(destino.lat, destino.lon, b.lat, b.lon)).toBeLessThan(0.25);
+    }
+  });
+
+  it("en tramos cortos, que es donde se usa, cierra casi exacto", () => {
+    // Un punto por radial y distancia son 10-50 NM. Ahí la diferencia entre las dos
+    // geometrías es de tercer orden y desaparece.
+    const cerca = { lat: -34.4545, lon: -58.5909 };
+    const d = distanciaNmPrecisa(SADM.lat, SADM.lon, cerca.lat, cerca.lon);
+    const destino = puntoDesde(SADM, rumboVerdadero(SADM, cerca), d);
+    expect(destino.lat).toBeCloseTo(cerca.lat, 5);
+    expect(destino.lon).toBeCloseTo(cerca.lon, 5);
+  });
+
+  it("al norte sube la latitud y no mueve la longitud", () => {
+    // 60 NM son un grado de latitud, por definición de milla náutica.
+    const d = puntoDesde({ lat: -34, lon: -58 }, 0, 60);
+    expect(d.lat).toBeCloseTo(-33, 2);
+    expect(d.lon).toBeCloseTo(-58, 6);
+  });
+
+  it("al sur baja la latitud", () => {
+    expect(puntoDesde({ lat: -34, lon: -58 }, 180, 60).lat).toBeCloseTo(-35, 2);
+  });
+
+  it("al este puro no cambia la latitud y no da NaN", () => {
+    /*
+      El caso que rompe la fórmula ingenua: con rumbo 090 la diferencia de latitudes
+      estiradas es cero y la división explota. El límite es `cos(latitud)`.
+    */
+    const d = puntoDesde({ lat: -34, lon: -58 }, 90, 60);
+    expect(Number.isNaN(d.lat)).toBe(false);
+    expect(Number.isNaN(d.lon)).toBe(false);
+    expect(d.lat).toBeCloseTo(-34, 9);
+    // A 34° de latitud, 60 NM al este son más de un grado de longitud.
+    expect(d.lon).toBeGreaterThan(-58 + 1.1);
+    expect(d.lon).toBeLessThan(-58 + 1.3);
+  });
+
+  it("al oeste puro tampoco", () => {
+    const d = puntoDesde({ lat: -34, lon: -58 }, 270, 60);
+    expect(d.lat).toBeCloseTo(-34, 9);
+    expect(d.lon).toBeLessThan(-58);
+  });
+
+  it("la distancia de vuelta es la que se pidió", () => {
+    for (const rumbo of [0, 45, 90, 137, 180, 225, 270, 314]) {
+      const d = puntoDesde(SADM, rumbo, 25);
+      expect(distanciaNmPrecisa(SADM.lat, SADM.lon, d.lat, d.lon)).toBeCloseTo(25, 1);
+    }
+  });
+
+  it("distancia cero deja el punto donde estaba", () => {
+    const d = puntoDesde(SADM, 137, 0);
+    expect(d.lat).toBeCloseTo(SADM.lat, 9);
+    expect(d.lon).toBeCloseTo(SADM.lon, 9);
+  });
+
+  it("normaliza la longitud si cruza el antimeridiano", () => {
+    const d = puntoDesde({ lat: 0, lon: 179 }, 90, 240);
+    expect(d.lon).toBeGreaterThan(-180);
+    expect(d.lon).toBeLessThanOrEqual(180);
   });
 });
