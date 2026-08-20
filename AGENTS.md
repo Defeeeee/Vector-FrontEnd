@@ -4760,3 +4760,31 @@ De este lado quedaba un hueco que no causó ese bug pero es de la misma familia:
 igual —el objeto sale de `leerForm`, y TypeScript sólo aplica el chequeo de propiedades de
 más a los literales—, así que el tipo describía un PATCH que no era el que se hacía. Ahora
 están declaradas.
+
+## El remitente del briefing sale por el dominio propio — 2026-08-20
+
+El usuario verificó `vector.fdiaznem.com.ar` en Resend. **No hizo falta código**: el
+remitente ya salía de `RESEND_FROM`, con el de prueba de Resend como default.
+
+Lo que sí faltaba era que se pudiera encontrar. La variable existía sólo como un
+`process.env.RESEND_FROM ||` en medio del `fetch`, y el comentario de arriba del archivo
+todavía decía que no hacía falta verificar un dominio — cierto cuando se escribió, engañoso
+ahora que hay uno. Queda documentada con el formato exacto.
+
+### Los dos errores que ahora avisan
+
+**El dominio pelado como remitente.** Verificar `vector.fdiaznem.com.ar` y poner eso mismo en
+`RESEND_FROM` es el paso en falso natural: sin arroba no es una dirección. Antes se mandaba a
+Resend para que contestara 422; ahora se descarta acá con el motivo, se usa el de prueba y el
+aviso viaja **aunque el envío haya salido bien** — se mandó, pero no desde donde se creía.
+
+**El 403 por dominio sin verificar.** Se nombra el remitente en el motivo, porque el texto de
+Resend habla de "domain" sin decir qué variable lo controla.
+
+Ninguno de los dos se ve el mismo día: el barrido corre a las 18:00 y el error queda en un
+log que nadie mira hasta que el mail no llegó. Por eso el mensaje tiene que alcanzar solo.
+
+`remitente()` se extrajo para poder testearla —`enviarMail` pega contra Resend y no se
+testea—. Cinco casos, tres mutantes, los tres mueren.
+
+**974 tests.**
