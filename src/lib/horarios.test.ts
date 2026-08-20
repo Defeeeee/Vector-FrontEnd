@@ -9,7 +9,16 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { UTC_OFFSET_ARG, aLocal, aUtc, correrReloj, esHora, soloHoraYMinuto, problemaDeHoras } from "./horarios";
+import {
+  UTC_OFFSET_ARG,
+  aLocal,
+  aUtc,
+  correrReloj,
+  esHora,
+  soloHoraYMinuto,
+  problemaDeHoras,
+  avisoDeHorarios,
+} from "./horarios";
 
 describe("esHora", () => {
   it("acepta horas de reloj y rechaza el resto", () => {
@@ -110,5 +119,65 @@ describe("problemaDeHoras", () => {
       obligaría a cargar el plan mal a propósito — y son horas tentativas, no el registro.
     */
     expect(problemaDeHoras("23:30", "00:40")).toBeNull();
+  });
+
+  it("los segundos no son basura: hay navegadores que se los agregan solos", () => {
+    /*
+      Un `<input type="time">` puede devolver `"12:30:00"`. Es una hora perfectamente
+      buena escrita con un campo de más, y rechazarla trabaría el alta sin motivo.
+    */
+    expect(problemaDeHoras("12:30:00", "15:30:00")).toBeNull();
+  });
+});
+
+describe("avisoDeHorarios", () => {
+  const bien = (valor: string) => ({ valor, entradaInvalida: false });
+  const vacio = bien("");
+  /** Vacío y con el navegador diciendo que hay algo escrito: la hora se perdería. */
+  const aMedias = { valor: "", entradaInvalida: true };
+
+  it("dos horas completas no avisan nada", () => {
+    expect(avisoDeHorarios(bien("12:30"), bien("15:30"))).toBeNull();
+  });
+
+  it("dos campos en blanco tampoco: las horas son opcionales en un plan", () => {
+    expect(avisoDeHorarios(vacio, vacio)).toBeNull();
+    expect(avisoDeHorarios(bien("12:30"), vacio)).toBeNull();
+  });
+
+  it("**si hay valor se confía en el valor, aunque el navegador diga `badInput`**", () => {
+    /*
+      El bug reportado en producción, exacto: un piloto vio el cartel con `12:30` y `15:30`
+      puestos, en un picker que ni siquiera muestra AM/PM, y **no pudo programar el vuelo**.
+      La versión anterior cortaba el envío con `badInput` a secas.
+
+      La especificación dice que `badInput` implica valor vacío. Este test fija que no le
+      creemos: mientras haya algo utilizable en el campo, no hay nada que avisar.
+    */
+    const raro = { valor: "15:30", entradaInvalida: true };
+    expect(avisoDeHorarios({ valor: "12:30", entradaInvalida: true }, raro)).toBeNull();
+    expect(avisoDeHorarios(bien("12:30"), raro)).toBeNull();
+  });
+
+  it("un campo a medias se nombra, para saber cuál volver a poner", () => {
+    expect(avisoDeHorarios(aMedias, bien("15:30"))).toContain("despegue");
+    expect(avisoDeHorarios(bien("12:30"), aMedias)).toContain("aterrizaje");
+  });
+
+  it("los dos a medias dan un mensaje solo, no dos", () => {
+    const msg = avisoDeHorarios(aMedias, aMedias);
+    expect(msg).toBe(
+      "Los dos horarios quedaron a medio completar y no se guardaron. Editá el vuelo para agregarlos."
+    );
+    expect(msg).not.toContain("despegue");
+  });
+
+  it("**el aviso dice que no se guardó, no que revise antes de mandar**", () => {
+    /*
+      No es cosmética: el plan ya está guardado cuando esto aparece. Un mensaje en
+      imperativo previo —"revisá y volvé a intentar"— describiría algo que no pasó y
+      mandaría al piloto a reenviar un formulario que ya no existe.
+    */
+    expect(avisoDeHorarios(aMedias, bien("15:30"))).toContain("no se guardó");
   });
 });

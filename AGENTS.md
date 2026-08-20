@@ -4649,3 +4649,83 @@ respuesta que no sea OK, así que en los logs habría figurado como *"el backend
 404"* — que se lee como un problema del backend y no como una URL mal armada de este lado.
 La lección es la de siempre en este repo: **cuando hay un endpoint parecido que ya
 funciona, copiarle la forma antes de inventarla.**
+
+## El cartel de horario que no dejaba programar — 2026-08-20
+
+El arreglo anterior tenía un falso positivo, y el falso positivo era peor que el bug
+original: **el piloto reportó el cartel con los dos horarios puestos —`12:30` y `15:30`— en
+un picker que ni siquiera muestra AM/PM.** Con `noValidate` y `horasIncompletas` cortando el
+envío, eso significa que no podía programar el vuelo. El bug de origen mostraba un cartel
+molesto; éste dejaba la pantalla inutilizable.
+
+### Lo que se pudo averiguar, y lo que no
+
+`validity.badInput` era `true` en un campo que mostraba una hora completa. Según la
+especificación eso no debería pasar: `badInput` implica `value === ""`. **Chromium no lo
+reproduce** — se probaron los cinco estados manejando un navegador contra el build de
+producción, y con `12:30`/`15:30` da `badInput=false` en los dos campos.
+
+O sea que la señal miente en algún navegador que no está acá, y no hay forma de saber desde
+el sandbox cuál ni bajo qué condición. Se listaron hipótesis (el segmento AM/PM recortado
+por el ancho del campo, un tercer segmento de segundos, una diferencia de locale) y ninguna
+se pudo confirmar. **Anotarlas como causa habría sido inventar.**
+
+### Por qué se cambió la consecuencia y no la detección
+
+Perseguir la detección exacta de un navegador que no se puede reproducir es una apuesta, y
+lo que importa es de qué lado cae la apuesta cuando se pierde. Los dos lados no cuestan lo
+mismo:
+
+- **Falso positivo:** alguien con todo bien cargado no puede usar la pantalla, y no hay nada
+  que pueda hacer al respecto. Es lo que pasó.
+- **Falso negativo:** se pierde **una hora tentativa y opcional** de un plan que se edita en
+  dos clics.
+
+Por eso `horasIncompletas` pasó a ser `horariosPerdidos`, y `problemaDeEntrada` a
+`avisoDeHorarios`: **el plan se guarda siempre**, y si un campo quedó a medias aparece
+después un cartel ámbar que dice cuál y que hay que volver a ponerlo. El nombre y el texto
+cambiaron con la conducta a propósito — un mensaje en imperativo previo ("revisá y volvé a
+intentar") describiría algo que ya no pasa y mandaría a reenviar un formulario que ya no
+está montado. Hay un test que fija esa diferencia.
+
+La condición además exige `value === ""` **además** de `badInput`: si hay algo utilizable en
+el campo, se confía en el campo. Eso solo ya habría desbloqueado al piloto si el valor era
+no vacío; el cambio de consecuencia lo desbloquea aunque no lo fuera.
+
+`noValidate` se queda. Sin él vuelve el globo genérico del navegador, que es el reporte
+original.
+
+### La regla se puede testear ahora
+
+El problema de fondo del arreglo anterior es que **la regla vivía contra el DOM**:
+`horasIncompletas(form)` recibe un `HTMLFormElement` y `vitest` corre en
+`environment: "node"`, así que sólo se podía verificar a ojo. Una regla que ya se equivocó
+en producción no puede quedar sin tests.
+
+Ahora la decisión vive en `avisoDeHorarios(EstadoHora, EstadoHora)` —un tipo propio de dos
+campos, `valor` y `entradaInvalida`— y `horariosPerdidos` es sólo la lectura del DOM. Seis
+tests nuevos, con el caso reportado escrito tal cual: valor `"15:30"` y `badInput` en `true`
+no avisan nada. **Cinco mutantes deliberados, los cinco mueren.**
+
+### Un bug de paso, encontrado buscando el otro
+
+Buscando qué podía devolver un `type="time"` apareció que **hay navegadores que le agregan
+segundos**: `"12:30:00"`. Dos consecuencias que estaban vivas:
+
+- `problemaDeHoras` lo rechazaba como basura —`esHora("12:30:00")` es `false`— y **trababa
+  el alta con una hora perfectamente buena**. Ahora normaliza con `soloHoraYMinuto` antes de
+  juzgar.
+- Peor: `leerForm` se lo pasaba a `aUtc`, que devuelve intacto lo que no sea `HH:MM`. Un
+  horario escrito **en local** se habría guardado **sin correr las tres horas**, o sea tres
+  horas equivocado y sin ningún síntoma. Ahora se normaliza antes de convertir.
+
+Ninguno de los dos se reprodujo tampoco; los dos son de una línea y no tienen contra.
+
+### Verificación
+
+Los cinco estados del campo manejando Chromium contra el build de producción, más el
+`CalendarioClient` de verdad montado en una página temporal: el formulario abre con
+`noValidate`, tiene los dos `type="time"`, y con `12:30`/`15:30` no avisa nada. La página
+temporal se borró.
+
+**967 tests.**

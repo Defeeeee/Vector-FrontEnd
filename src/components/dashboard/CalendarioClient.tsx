@@ -9,7 +9,7 @@ import {
   updatePlannedFlight,
 } from "@/actions/planned-flight";
 import BotonPendiente from "@/components/BotonPendiente";
-import { aLocal, aUtc, horasIncompletas, problemaDeHoras, soloHoraYMinuto } from "@/lib/horarios";
+import { aLocal, aUtc, horariosPerdidos, problemaDeHoras, soloHoraYMinuto } from "@/lib/horarios";
 import {
   horasDelMes,
   mesDe,
@@ -63,13 +63,21 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
   const [horaLocal, setHoraLocal] = useState(false);
 
   /*
-    Los formularios llevan `noValidate` y se validan acá. Hace falta la referencia al
-    elemento porque **un `<input type="time">` a medio completar devuelve la cadena vacía**:
-    por el valor no se distingue de uno en blanco, y en un plan las horas son opcionales. La
-    única señal que los separa es `validity.badInput`, que vive en el input.
+    Los formularios llevan `noValidate`, así que el aviso de horarios es nuestro. Hace falta
+    la referencia al elemento porque **un `<input type="time">` a medio completar devuelve
+    la cadena vacía**: por el valor no se distingue de uno en blanco, y en un plan las horas
+    son opcionales. La única señal que los separa es `validity.badInput`, que vive en el
+    input y no viaja en el `FormData`.
   */
   const formAlta = useRef<HTMLFormElement>(null);
   const formEdicion = useRef<HTMLFormElement>(null);
+
+  /*
+    El aviso de que un horario se fue en blanco. **No bloquea el guardado**: `badInput` ya
+    se equivocó una vez y dejó a un piloto sin poder programar un vuelo que tenía bien
+    cargado. Ver `avisoDeHorarios`.
+  */
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const mes = useMemo(
     () => mesDe({ mesIso, todayIso, planned, flights }),
@@ -91,31 +99,45 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
 
   function abrirAlta(fecha: string) {
     setError(null);
+    setAviso(null);
     setEditando(null);
     setAlta(fecha);
   }
 
   async function programar(formData: FormData) {
     setError(null);
-    const mal =
-      (formAlta.current && horasIncompletas(formAlta.current)) ||
-      problemaDeHoras(String(formData.get("takeoff_time") || ""), String(formData.get("landing_time") || ""));
+    setAviso(null);
+    const mal = problemaDeHoras(
+      String(formData.get("takeoff_time") || ""),
+      String(formData.get("landing_time") || "")
+    );
     if (mal) return setError(mal);
+    // Se lee **antes** de guardar: después el formulario ya no está montado.
+    const perdido = formAlta.current && horariosPerdidos(formAlta.current);
     const res = await createPlannedFlight(leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
-    else setAlta(null);
+    else {
+      setAlta(null);
+      setAviso(perdido || null);
+    }
   }
 
   async function guardarEdicion(formData: FormData) {
     if (!editando) return;
     setError(null);
-    const mal =
-      (formEdicion.current && horasIncompletas(formEdicion.current)) ||
-      problemaDeHoras(String(formData.get("takeoff_time") || ""), String(formData.get("landing_time") || ""));
+    setAviso(null);
+    const mal = problemaDeHoras(
+      String(formData.get("takeoff_time") || ""),
+      String(formData.get("landing_time") || "")
+    );
     if (mal) return setError(mal);
+    const perdido = formEdicion.current && horariosPerdidos(formEdicion.current);
     const res = await updatePlannedFlight(editando.id, leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
-    else setEditando(null);
+    else {
+      setEditando(null);
+      setAviso(perdido || null);
+    }
   }
 
   async function borrar() {
@@ -173,11 +195,21 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
       )}
 
       {/*
+        El vuelo **se guardó**; lo que faltó es un horario. Por eso es ámbar y no rojo, y
+        por eso aparece con el formulario ya cerrado. Ver `avisoDeHorarios`.
+      */}
+      {aviso && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700 dark:text-amber-400">
+          {aviso}
+        </div>
+      )}
+
+      {/*
         Alta.
 
         `noValidate` a propósito: con la validación nativa activa el navegador corta el
         envío con su propio globo —"invalid value"— que no dice qué campo ni qué falta. El
-        piloto ve una hora escrita y un cartel que no le sirve. Ver `horasIncompletas`.
+        piloto ve una hora escrita y un cartel que no le sirve. Ver `avisoDeHorarios`.
       */}
       {alta && (
         <form ref={formAlta} action={programar} noValidate className={`${CARD} p-6 md:p-8 space-y-5`}>
@@ -443,7 +475,12 @@ function Campos({
  */
 function leerForm(formData: FormData, horaLocal: boolean) {
   const hora = (campo: string) => {
-    const v = (formData.get(campo) as string) || "";
+    /*
+      `soloHoraYMinuto` no está de adorno: hay navegadores que le agregan segundos al
+      `<input type="time">`, y `aUtc` devuelve intacto lo que no sea `HH:MM` — o sea que un
+      `"12:30:00"` escrito en local se guardaría **sin correr las tres horas**.
+    */
+    const v = soloHoraYMinuto((formData.get(campo) as string) || "");
     if (!v) return null;
     return horaLocal ? aUtc(v) : v;
   };
