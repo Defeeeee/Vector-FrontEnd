@@ -18,6 +18,17 @@ interface PlannedPayload {
   aircraft_id?: string | null;
   route?: string | null;
   notes?: string | null;
+  /**
+   * Horas tentativas **en UTC**, `"HH:MM"`. Ver `leerForm` del calendario.
+   *
+   * Estaban faltando en este tipo desde que se agregaron: el calendario las
+   * mandaba igual —el objeto viene de una función, así que TypeScript no aplica
+   * el chequeo de propiedades de más— y acá figuraba un PATCH que no las incluía.
+   * No causó el bug de `PlannedFlightUpdate`, pero es exactamente la clase de
+   * hueco por el que uno así pasa sin que nadie lo mire.
+   */
+  takeoff_time?: string | null;
+  landing_time?: string | null;
   status?: PlannedStatus;
   flight_id?: string | null;
   postponed_until?: string | null;

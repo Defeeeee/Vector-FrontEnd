@@ -4744,3 +4744,19 @@ contra el build de producción: las ocho formas de tipear un horario, el `FormDa
 y el interruptor de unidad ida y vuelta. La página temporal se borró.
 
 **969 tests.**
+
+### Coda: el PATCH fallaba por otra cosa
+
+Con el campo de texto andando, editar el vuelo para ponerle los horarios dio
+`Validation failed for PATCH /planned-flights/<id>`. **No era el horario.**
+
+`PlannedFlightUpdate` del backend tenía `date` y `postponed_until` tipados `NoneType`, por un
+sombreado de nombre entre el campo `date` y `from datetime import date`. Editar un vuelo
+programado y posponerlo estuvieron rotos desde que se escribió el modelo. Está contado en
+`AGENTS.md` del backend, con un test genérico que recorre todos los modelos.
+
+De este lado quedaba un hueco que no causó ese bug pero es de la misma familia:
+`PlannedPayload` **no declaraba `takeoff_time` ni `landing_time`**. El calendario las mandaba
+igual —el objeto sale de `leerForm`, y TypeScript sólo aplica el chequeo de propiedades de
+más a los literales—, así que el tipo describía un PATCH que no era el que se hacía. Ahora
+están declaradas.
