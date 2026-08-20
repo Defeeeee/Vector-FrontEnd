@@ -4650,82 +4650,97 @@ respuesta que no sea OK, así que en los logs habría figurado como *"el backend
 La lección es la de siempre en este repo: **cuando hay un endpoint parecido que ya
 funciona, copiarle la forma antes de inventarla.**
 
-## El cartel de horario que no dejaba programar — 2026-08-20
 
-El arreglo anterior tenía un falso positivo, y el falso positivo era peor que el bug
-original: **el piloto reportó el cartel con los dos horarios puestos —`12:30` y `15:30`— en
-un picker que ni siquiera muestra AM/PM.** Con `noValidate` y `horasIncompletas` cortando el
-envío, eso significa que no podía programar el vuelo. El bug de origen mostraba un cartel
-molesto; éste dejaba la pantalla inutilizable.
+## El calendario deja de usar `<input type="time">` — 2026-08-20
 
-### Lo que se pudo averiguar, y lo que no
+Tres intentos sobre el mismo reporte. Los dos primeros fueron sobre el cartel; el problema
+era el campo.
 
-`validity.badInput` era `true` en un campo que mostraba una hora completa. Según la
-especificación eso no debería pasar: `badInput` implica `value === ""`. **Chromium no lo
-reproduce** — se probaron los cinco estados manejando un navegador contra el build de
-producción, y con `12:30`/`15:30` da `badInput=false` en los dos campos.
+### El arco, corto
 
-O sea que la señal miente en algún navegador que no está acá, y no hay forma de saber desde
-el sandbox cuál ni bajo qué condición. Se listaron hipótesis (el segmento AM/PM recortado
-por el ancho del campo, un tercer segmento de segundos, una diferencia de locale) y ninguna
-se pudo confirmar. **Anotarlas como causa habría sido inventar.**
+1. El navegador cortaba el envío con su globo genérico. Se apagó con `noValidate` y el
+   mensaje pasó a ser nuestro, mirando `validity.badInput`.
+2. **Ese arreglo dejó al piloto sin poder programar nada**: reportó el cartel con `12:30` y
+   `15:30` escritos. Se cambió la consecuencia —guardar igual y avisar después— para que un
+   error de detección no volviera a trabar la pantalla.
+3. El cartel volvió a aparecer. **Y esta vez se fue a mirar la base**, que es lo que había
+   que hacer desde el principio.
 
-### Por qué se cambió la consecuencia y no la detección
+### El dato que cerró el caso
 
-Perseguir la detección exacta de un navegador que no se puede reproducir es una apuesta, y
-lo que importa es de qué lado cae la apuesta cuando se pierde. Los dos lados no cuestan lo
-mismo:
+El vuelo `SADF SAZM` del 21/08 quedó guardado con `takeoff_time` y `landing_time` en
+**`null`**, con los horarios escritos en pantalla.
 
-- **Falso positivo:** alguien con todo bien cargado no puede usar la pantalla, y no hay nada
-  que pueda hacer al respecto. Es lo que pasó.
-- **Falso negativo:** se pierde **una hora tentativa y opcional** de un plan que se edita en
-  dos clics.
+O sea que el cartel nunca fue un falso positivo: el widget nativo consideraba el campo
+incompleto y devolvía la cadena vacía, y el dato **efectivamente se perdía**. Las dos
+primeras versiones estaban discutiendo cuándo mostrar un cartel sobre una pérdida de datos
+real. Ninguna cantidad de afinar la detección iba a hacer aparecer un valor que el navegador
+nunca entregó.
 
-Por eso `horasIncompletas` pasó a ser `horariosPerdidos`, y `problemaDeEntrada` a
-`avisoDeHorarios`: **el plan se guarda siempre**, y si un campo quedó a medias aparece
-después un cartel ámbar que dice cuál y que hay que volver a ponerlo. El nombre y el texto
-cambiaron con la conducta a propósito — un mensaje en imperativo previo ("revisá y volvé a
-intentar") describiría algo que ya no pasa y mandaría a reenviar un formulario que ya no
-está montado. Hay un test que fija esa diferencia.
+Qué segmento le faltaba —AM/PM, segundos, algo de locale— no se pudo determinar: **Chromium
+no reproduce el estado**, y el picker mostraba `15:30`, que en un reloj de 12 horas no se
+puede ni escribir. Se anotan como hipótesis, no como causa.
 
-La condición además exige `value === ""` **además** de `badInput`: si hay algo utilizable en
-el campo, se confía en el campo. Eso solo ya habría desbloqueado al piloto si el valor era
-no vacío; el cambio de consecuencia lo desbloquea aunque no lo fuera.
+**La lección es de método: ante un reporte sobre datos, ir a los datos.** Dos rondas de
+razonar sobre la especificación de `badInput` contra una consulta de treinta segundos que lo
+resolvió. La pregunta que faltó hacerse fue *"¿el horario llegó a guardarse?"*, no *"¿el
+cartel está bien puesto?"*.
 
-`noValidate` se queda. Sin él vuelve el globo genérico del navegador, que es el reporte
-original.
+### El arreglo
 
-### La regla se puede testear ahora
+**El campo pasa a ser de texto y el parseo es nuestro.** Sin widget nativo no hay segmentos,
+ni `badInput`, ni AM/PM, ni locale: el `value` es literalmente lo que el piloto escribió, y
+la validación vuelve a ser `problemaDeHoras`, que ya existía y ya estaba testeada.
 
-El problema de fondo del arreglo anterior es que **la regla vivía contra el DOM**:
-`horasIncompletas(form)` recibe un `HTMLFormElement` y `vitest` corre en
-`environment: "node"`, así que sólo se podía verificar a ojo. Una regla que ya se equivocó
-en producción no puede quedar sin tests.
+Se acepta `1530` y `15:30`, que son las dos formas en que se escribe una hora en una
+planilla; `930` se lee `09:30`. `inputMode="numeric"` saca el teclado de números en el
+teléfono. `filtrarHoraTipeada` limpia mientras se escribe y `normalizarHoraTipeada` acomoda
+al salir del campo.
 
-Ahora la decisión vive en `avisoDeHorarios(EstadoHora, EstadoHora)` —un tipo propio de dos
-campos, `valor` y `entradaInvalida`— y `horariosPerdidos` es sólo la lectura del DOM. Seis
-tests nuevos, con el caso reportado escrito tal cual: valor `"15:30"` y `badInput` en `true`
-no avisan nada. **Cinco mutantes deliberados, los cinco mueren.**
+**Uno o dos dígitos vuelven intactos a propósito**: leer `9` como `09:00` sería inventarle
+los minutos a alguien que capaz se fue del campo antes de terminar de escribir `09:30`. Lo
+que no cierra —`2515`, letras— también vuelve intacto. La función normaliza, no adivina, y
+el único juez del resultado es `esHora`: no hay una segunda regla de longitud que pueda
+desincronizarse de ella. Eso salió de un mutante que sobrevivió — la cota superior de
+dígitos era redundante, así que se borró en vez de testearla.
 
-### Un bug de paso, encontrado buscando el otro
+Se fue todo el andamiaje de `badInput`: el cartel ámbar, `avisoDeHorarios`,
+`horariosPerdidos` y las dos `ref` a los formularios. `noValidate` se queda.
 
-Buscando qué podía devolver un `type="time"` apareció que **hay navegadores que le agregan
-segundos**: `"12:30:00"`. Dos consecuencias que estaban vivas:
+### Lo que apareció de paso
 
-- `problemaDeHoras` lo rechazaba como basura —`esHora("12:30:00")` es `false`— y **trababa
-  el alta con una hora perfectamente buena**. Ahora normaliza con `soloHoraYMinuto` antes de
-  juzgar.
-- Peor: `leerForm` se lo pasaba a `aUtc`, que devuelve intacto lo que no sea `HH:MM`. Un
-  horario escrito **en local** se habría guardado **sin correr las tres horas**, o sea tres
-  horas equivocado y sin ningún síntoma. Ahora se normaliza antes de convertir.
+**El interruptor UTC/local borraba lo escrito.** Los campos eran no controlados con
+`defaultValue` y una `key` los recreaba al cambiar de unidad, porque si no el valor se
+quedaba en la unidad anterior mientras el rótulo decía la nueva. Recrearlos arreglaba el
+rótulo tirando el dato — la misma pérdida silenciosa, en el mismo formulario. Ahora los dos
+horarios viven en estado y el interruptor **convierte**: `12:30` UTC pasa a `09:30` local y
+vuelve. Lo que está a medio tipear se deja como está.
 
-Ninguno de los dos se reprodujo tampoco; los dos son de una línea y no tienen contra.
+La `key` no desapareció, se mudó: va en `<Campos>` del modal de edición, porque el modal no
+se desmonta al clickear otro día y los campos con estado propio mostrarían los del vuelo
+anterior.
+
+**Y dos bugs de segundos**, encontrados buscando el otro: hay navegadores que agregan
+segundos al `type="time"`. `problemaDeHoras` rechazaba `"12:30:00"` como basura y trababa el
+alta con una hora perfectamente buena; peor, `leerForm` se lo pasaba a `aUtc`, que devuelve
+intacto lo que no sea `HH:MM` — un horario escrito **en local** se habría guardado **sin
+correr las tres horas**, sin ningún síntoma. Los dos normalizan ahora con `soloHoraYMinuto`.
+
+### El handler duplicado
+
+Abrir la edición estaba escrito en línea y duplicado —grilla y lista de móvil— y las dos
+copias limpiaban sólo el error. Ahora es `abrirEdicion`, una sola.
 
 ### Verificación
 
-Los cinco estados del campo manejando Chromium contra el build de producción, más el
-`CalendarioClient` de verdad montado en una página temporal: el formulario abre con
-`noValidate`, tiene los dos `type="time"`, y con `12:30`/`15:30` no avisa nada. La página
-temporal se borró.
+`normalizarHoraTipeada` y `filtrarHoraTipeada` se testean en `node`: once casos y siete
+mutantes deliberados, de los que seis mueren y el séptimo señaló el código redundante que se
+borró. Hay además un test del contrato entre las dos mitades: lo que la normalización
+devuelve, o es vacío o `problemaDeHoras` lo acepta. Sin eso podrían discrepar y el piloto
+vería un error sobre un campo que la app misma acaba de reescribir.
 
-**967 tests.**
+El `CalendarioClient` de verdad, montado en una página temporal y manejado con Chromium
+contra el build de producción: las ocho formas de tipear un horario, el `FormData` que sale,
+y el interruptor de unidad ida y vuelta. La página temporal se borró.
+
+**969 tests.**

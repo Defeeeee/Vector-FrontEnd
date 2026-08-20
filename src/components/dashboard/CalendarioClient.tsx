@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react";
 import {
@@ -9,7 +9,14 @@ import {
   updatePlannedFlight,
 } from "@/actions/planned-flight";
 import BotonPendiente from "@/components/BotonPendiente";
-import { aLocal, aUtc, horariosPerdidos, problemaDeHoras, soloHoraYMinuto } from "@/lib/horarios";
+import {
+  aLocal,
+  aUtc,
+  filtrarHoraTipeada,
+  normalizarHoraTipeada,
+  problemaDeHoras,
+  soloHoraYMinuto,
+} from "@/lib/horarios";
 import {
   horasDelMes,
   mesDe,
@@ -62,23 +69,6 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
    */
   const [horaLocal, setHoraLocal] = useState(false);
 
-  /*
-    Los formularios llevan `noValidate`, así que el aviso de horarios es nuestro. Hace falta
-    la referencia al elemento porque **un `<input type="time">` a medio completar devuelve
-    la cadena vacía**: por el valor no se distingue de uno en blanco, y en un plan las horas
-    son opcionales. La única señal que los separa es `validity.badInput`, que vive en el
-    input y no viaja en el `FormData`.
-  */
-  const formAlta = useRef<HTMLFormElement>(null);
-  const formEdicion = useRef<HTMLFormElement>(null);
-
-  /*
-    El aviso de que un horario se fue en blanco. **No bloquea el guardado**: `badInput` ya
-    se equivocó una vez y dejó a un piloto sin poder programar un vuelo que tenía bien
-    cargado. Ver `avisoDeHorarios`.
-  */
-  const [aviso, setAviso] = useState<string | null>(null);
-
   const mes = useMemo(
     () => mesDe({ mesIso, todayIso, planned, flights }),
     [mesIso, todayIso, planned, flights]
@@ -99,45 +89,43 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
 
   function abrirAlta(fecha: string) {
     setError(null);
-    setAviso(null);
     setEditando(null);
     setAlta(fecha);
   }
 
+  /*
+    Existe para que el cartel se limpie en un solo lugar. Estaba escrito en línea y
+    duplicado en la grilla y en la lista de móvil.
+  */
+  function abrirEdicion(p: PlannedFlight) {
+    setError(null);
+    setAlta(null);
+    setEditando(p);
+  }
+
   async function programar(formData: FormData) {
     setError(null);
-    setAviso(null);
     const mal = problemaDeHoras(
       String(formData.get("takeoff_time") || ""),
       String(formData.get("landing_time") || "")
     );
     if (mal) return setError(mal);
-    // Se lee **antes** de guardar: después el formulario ya no está montado.
-    const perdido = formAlta.current && horariosPerdidos(formAlta.current);
     const res = await createPlannedFlight(leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
-    else {
-      setAlta(null);
-      setAviso(perdido || null);
-    }
+    else setAlta(null);
   }
 
   async function guardarEdicion(formData: FormData) {
     if (!editando) return;
     setError(null);
-    setAviso(null);
     const mal = problemaDeHoras(
       String(formData.get("takeoff_time") || ""),
       String(formData.get("landing_time") || "")
     );
     if (mal) return setError(mal);
-    const perdido = formEdicion.current && horariosPerdidos(formEdicion.current);
     const res = await updatePlannedFlight(editando.id, leerForm(formData, horaLocal));
     if (res && "error" in res && res.error) setError(res.error);
-    else {
-      setEditando(null);
-      setAviso(perdido || null);
-    }
+    else setEditando(null);
   }
 
   async function borrar() {
@@ -195,16 +183,6 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
       )}
 
       {/*
-        El vuelo **se guardó**; lo que faltó es un horario. Por eso es ámbar y no rojo, y
-        por eso aparece con el formulario ya cerrado. Ver `avisoDeHorarios`.
-      */}
-      {aviso && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-700 dark:text-amber-400">
-          {aviso}
-        </div>
-      )}
-
-      {/*
         Alta.
 
         `noValidate` a propósito: con la validación nativa activa el navegador corta el
@@ -212,7 +190,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
         piloto ve una hora escrita y un cartel que no le sirve. Ver `avisoDeHorarios`.
       */}
       {alta && (
-        <form ref={formAlta} action={programar} noValidate className={`${CARD} p-6 md:p-8 space-y-5`}>
+        <form action={programar} noValidate className={`${CARD} p-6 md:p-8 space-y-5`}>
           <Campos aircraft={aircraft} fecha={alta} horaLocal={horaLocal} onHoraLocal={setHoraLocal} />
           <BotonPendiente
             pendiente="Programando…"
@@ -240,11 +218,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
               matriculas={matriculas}
               todayIso={todayIso}
               onDia={abrirAlta}
-              onPlan={(p) => {
-                setError(null);
-                setAlta(null);
-                setEditando(p);
-              }}
+              onPlan={abrirEdicion}
             />
           ))}
         </div>
@@ -270,11 +244,7 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
                 dia={dia}
                 matriculas={matriculas}
                 todayIso={todayIso}
-                onPlan={(p) => {
-                  setError(null);
-                  setAlta(null);
-                  setEditando(p);
-                }}
+                onPlan={abrirEdicion}
               />
             </div>
           ))
@@ -314,8 +284,19 @@ export default function CalendarioClient({ planned, flights, aircraft, mesIso, t
               </div>
             )}
 
-            <form ref={formEdicion} action={guardarEdicion} noValidate className="space-y-5">
-              <Campos aircraft={aircraft} plan={editando} horaLocal={horaLocal} onHoraLocal={setHoraLocal} />
+            <form action={guardarEdicion} noValidate className="space-y-5">
+              {/*
+                La `key` reinicia los horarios al pasar de un vuelo a otro. Sin ella el
+                modal no se desmonta al clickear otro día y los campos —que ahora tienen
+                estado propio— mostrarían los del vuelo anterior.
+              */}
+              <Campos
+                key={editando.id}
+                aircraft={aircraft}
+                plan={editando}
+                horaLocal={horaLocal}
+                onHoraLocal={setHoraLocal}
+              />
               <BotonPendiente
                 pendiente="Guardando…"
                 className="px-8 py-3 rounded-full bg-aviation-blue text-white text-sm font-bold"
@@ -378,11 +359,34 @@ function Campos({
   horaLocal: boolean;
   onHoraLocal: (v: boolean) => void;
 }) {
-  // Lo guardado es UTC; esto es sólo cómo se muestra en el campo.
-  const mostrar = (v: string | null | undefined) => {
+  /*
+    Los dos horarios viven en estado, y no como campos no controlados con `defaultValue`,
+    por el interruptor de UTC/local: **antes cambiar de unidad borraba lo que estaba
+    escrito.** El truco era una `key` que forzaba a React a recrear el input, porque si no
+    el valor se quedaba en la unidad anterior mientras el rótulo decía la nueva. Recrear el
+    input arregla el rótulo tirando el dato, que es la misma pérdida silenciosa que este
+    formulario ya tuvo una vez.
+
+    Con el valor en estado el interruptor **convierte** en vez de borrar.
+  */
+  const inicial = (v: string | null | undefined) => {
     const utc = soloHoraYMinuto(v);
     return utc && horaLocal ? aLocal(utc) : utc;
   };
+  const [despegue, setDespegue] = useState(() => inicial(plan?.takeoff_time));
+  const [aterrizaje, setAterrizaje] = useState(() => inicial(plan?.landing_time));
+
+  /*
+    Cambiar de unidad. Lo escrito se corre las tres horas; lo que no sea una hora entera
+    —el piloto a mitad de tipear— se deja como está, porque `correrReloj` devuelve intacto
+    lo que no entiende y no hay nada que convertir todavía.
+  */
+  function cambiarUnidad() {
+    const convertir = horaLocal ? aUtc : aLocal;
+    setDespegue((v) => convertir(normalizarHoraTipeada(v)));
+    setAterrizaje((v) => convertir(normalizarHoraTipeada(v)));
+    onHoraLocal(!horaLocal);
+  }
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <label className="space-y-1.5">
@@ -424,36 +428,24 @@ function Campos({
       {/*
         Horarios tentativos. Van al prefill, así que completar el vuelo llega con
         los dos horarios puestos en vez de pedirlos de nuevo.
-
-        La `key` fuerza a React a recrear el input cuando cambia el interruptor:
-        son campos no controlados con `defaultValue`, y sin esto el valor mostrado
-        se quedaría en la unidad anterior mientras el rótulo dice la nueva.
       */}
-      <label className="space-y-1.5">
-        <span className="eyebrow">Despegue {horaLocal ? "(local)" : "(UTC)"}</span>
-        <input
-          key={`t-${horaLocal}`}
-          type="time"
-          name="takeoff_time"
-          defaultValue={mostrar(plan?.takeoff_time)}
-          className={`${INPUT} data`}
-        />
-      </label>
-      <label className="space-y-1.5">
-        <span className="eyebrow">Aterrizaje {horaLocal ? "(local)" : "(UTC)"}</span>
-        <input
-          key={`l-${horaLocal}`}
-          type="time"
-          name="landing_time"
-          defaultValue={mostrar(plan?.landing_time)}
-          className={`${INPUT} data`}
-        />
-      </label>
+      <CampoHora
+        name="takeoff_time"
+        etiqueta={`Despegue ${horaLocal ? "(local)" : "(UTC)"}`}
+        valor={despegue}
+        onValor={setDespegue}
+      />
+      <CampoHora
+        name="landing_time"
+        etiqueta={`Aterrizaje ${horaLocal ? "(local)" : "(UTC)"}`}
+        valor={aterrizaje}
+        onValor={setAterrizaje}
+      />
 
       <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-3">
         <button
           type="button"
-          onClick={() => onHoraLocal(!horaLocal)}
+          onClick={cambiarUnidad}
           className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors underline underline-offset-4"
         >
           Escribir en hora {horaLocal ? "UTC" : "local"}
@@ -463,6 +455,51 @@ function Campos({
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * Un horario del plan. **Campo de texto, no `<input type="time">`.**
+ *
+ * El widget nativo se sacó porque para un piloto no producía ningún valor: el vuelo se
+ * guardaba con los dos horarios en `null` **teniéndolos escritos en pantalla**, y la
+ * consulta a la base lo confirmó. Toda la explicación está en `normalizarHoraTipeada`.
+ *
+ * Lo que se gana además de que funcione: se puede tipear `1530` sin los dos puntos, que es
+ * como se escribe una hora en una planilla y más rápido que pelear con un selector. El
+ * `inputMode` numérico hace que en el teléfono salga el teclado de números.
+ *
+ * `onChange` filtra mientras se escribe —sólo dígitos y dos puntos— y `onBlur` normaliza al
+ * salir del campo. Se mutan los inputs directamente porque son no controlados, igual que el
+ * resto del formulario.
+ */
+function CampoHora({
+  name,
+  etiqueta,
+  valor,
+  onValor,
+}: {
+  name: string;
+  etiqueta: string;
+  valor: string;
+  onValor: (v: string) => void;
+}) {
+  return (
+    <label className="space-y-1.5">
+      <span className="eyebrow">{etiqueta}</span>
+      <input
+        type="text"
+        name={name}
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="HH:MM"
+        maxLength={5}
+        value={valor}
+        onChange={(e) => onValor(filtrarHoraTipeada(e.target.value))}
+        onBlur={(e) => onValor(normalizarHoraTipeada(e.target.value))}
+        className={`${INPUT} data`}
+      />
+    </label>
   );
 }
 

@@ -17,7 +17,8 @@ import {
   esHora,
   soloHoraYMinuto,
   problemaDeHoras,
-  avisoDeHorarios,
+  normalizarHoraTipeada,
+  filtrarHoraTipeada,
 } from "./horarios";
 
 describe("esHora", () => {
@@ -130,54 +131,66 @@ describe("problemaDeHoras", () => {
   });
 });
 
-describe("avisoDeHorarios", () => {
-  const bien = (valor: string) => ({ valor, entradaInvalida: false });
-  const vacio = bien("");
-  /** Vacío y con el navegador diciendo que hay algo escrito: la hora se perdería. */
-  const aMedias = { valor: "", entradaInvalida: true };
-
-  it("dos horas completas no avisan nada", () => {
-    expect(avisoDeHorarios(bien("12:30"), bien("15:30"))).toBeNull();
+describe("normalizarHoraTipeada", () => {
+  it("acepta las dos formas en que se escribe una hora en una planilla", () => {
+    expect(normalizarHoraTipeada("1530")).toBe("15:30");
+    expect(normalizarHoraTipeada("15:30")).toBe("15:30");
   });
 
-  it("dos campos en blanco tampoco: las horas son opcionales en un plan", () => {
-    expect(avisoDeHorarios(vacio, vacio)).toBeNull();
-    expect(avisoDeHorarios(bien("12:30"), vacio)).toBeNull();
+  it("tres dígitos son H:MM, que es la abreviación natural", () => {
+    expect(normalizarHoraTipeada("930")).toBe("09:30");
+    expect(normalizarHoraTipeada("9:30")).toBe("09:30");
+    expect(normalizarHoraTipeada("000")).toBe("00:00");
   });
 
-  it("**si hay valor se confía en el valor, aunque el navegador diga `badInput`**", () => {
+  it("los bordes del reloj", () => {
+    expect(normalizarHoraTipeada("0000")).toBe("00:00");
+    expect(normalizarHoraTipeada("2359")).toBe("23:59");
+  });
+
+  it("vacío y espacios quedan vacíos: en un plan la hora es opcional", () => {
+    expect(normalizarHoraTipeada("")).toBe("");
+    expect(normalizarHoraTipeada("   ")).toBe("");
+  });
+
+  it("**lo que no cierra vuelve intacto: normaliza, no adivina**", () => {
     /*
-      El bug reportado en producción, exacto: un piloto vio el cartel con `12:30` y `15:30`
-      puestos, en un picker que ni siquiera muestra AM/PM, y **no pudo programar el vuelo**.
-      La versión anterior cortaba el envío con `badInput` a secas.
+      Un `9` suelto podría leerse como `09:00`, y sería inventarle los minutos a alguien que
+      capaz se fue del campo antes de terminar de escribir `09:30`. Vuelve como está y
+      `problemaDeHoras` le dice que complete hora y minutos.
 
-      La especificación dice que `badInput` implica valor vacío. Este test fija que no le
-      creemos: mientras haya algo utilizable en el campo, no hay nada que avisar.
+      Lo mismo con una hora que no existe: convertir `2515` en algo sería peor que
+      rechazarlo.
     */
-    const raro = { valor: "15:30", entradaInvalida: true };
-    expect(avisoDeHorarios({ valor: "12:30", entradaInvalida: true }, raro)).toBeNull();
-    expect(avisoDeHorarios(bien("12:30"), raro)).toBeNull();
+    expect(normalizarHoraTipeada("9")).toBe("9");
+    expect(normalizarHoraTipeada("15")).toBe("15");
+    expect(normalizarHoraTipeada("2515")).toBe("2515");
+    expect(normalizarHoraTipeada("1265")).toBe("1265");
+    expect(normalizarHoraTipeada("12345")).toBe("12345");
+    expect(normalizarHoraTipeada("hola")).toBe("hola");
   });
 
-  it("un campo a medias se nombra, para saber cuál volver a poner", () => {
-    expect(avisoDeHorarios(aMedias, bien("15:30"))).toContain("despegue");
-    expect(avisoDeHorarios(bien("12:30"), aMedias)).toContain("aterrizaje");
-  });
-
-  it("los dos a medias dan un mensaje solo, no dos", () => {
-    const msg = avisoDeHorarios(aMedias, aMedias);
-    expect(msg).toBe(
-      "Los dos horarios quedaron a medio completar y no se guardaron. Editá el vuelo para agregarlos."
-    );
-    expect(msg).not.toContain("despegue");
-  });
-
-  it("**el aviso dice que no se guardó, no que revise antes de mandar**", () => {
+  it("lo que devuelve, o es vacío o lo entiende problemaDeHoras", () => {
     /*
-      No es cosmética: el plan ya está guardado cuando esto aparece. Un mensaje en
-      imperativo previo —"revisá y volvé a intentar"— describiría algo que no pasó y
-      mandaría al piloto a reenviar un formulario que ya no existe.
+      El contrato entre las dos: si la normalización devolvió algo utilizable, el validador
+      no lo rechaza. Sin esto podrían discrepar y el piloto vería un error sobre un campo
+      que la app misma acaba de reescribir.
     */
-    expect(avisoDeHorarios(aMedias, bien("15:30"))).toContain("no se guardó");
+    for (const t of ["1530", "930", "0000", "2359", "9:30", "15:30"]) {
+      expect(problemaDeHoras(normalizarHoraTipeada(t), "")).toBeNull();
+    }
+  });
+});
+
+describe("filtrarHoraTipeada", () => {
+  it("deja pasar lo que forma una hora y nada más", () => {
+    expect(filtrarHoraTipeada("15:30")).toBe("15:30");
+    expect(filtrarHoraTipeada("1a5b:3c0")).toBe("15:30");
+    expect(filtrarHoraTipeada("15h30")).toBe("1530");
+  });
+
+  it("corta en cinco: `HH:MM` es todo lo que entra", () => {
+    expect(filtrarHoraTipeada("153045")).toBe("15304");
+    expect(filtrarHoraTipeada("15:30:45")).toBe("15:30");
   });
 });
