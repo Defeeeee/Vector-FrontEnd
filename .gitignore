@@ -39,3 +39,8 @@ next-env.d.ts
 
 # idea
 .idea/
+
+# El service worker se genera en cada build: lleva adentro la versión y, en cuanto
+# haya precache, los nombres con hash de `.next/static`. Commitearlo garantizaría
+# que quede viejo. Lo produce `npm run build`; ver `scripts/build-sw.mjs`.
+/public/sw.js

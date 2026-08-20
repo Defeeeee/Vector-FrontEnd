@@ -45,6 +45,23 @@ const ROUTES = [
   { path: "/legal/privacidad", expect: (s) => s === 200 },
   { path: "/legal/terminos", expect: (s) => s === 200 },
   { path: "/no-existe-esta-ruta", expect: (s) => s === 404 },
+  /*
+    La PWA. El manifest se genera desde `src/app/manifest.ts`, así que un campo mal
+    escrito lo agarra `tsc`; lo que esto agarra es que la ruta exista y que
+    `start_url` siga apuntando al dashboard — con `/` la app instalada arrancaría en
+    un redirect condicional que sin red no ocurre.
+
+    `sw.js` no lo produce Next sino `scripts/build-sw.mjs` después del build. Si
+    alguien corre `next build` a secas, acá se ve: el archivo no está.
+  */
+  {
+    path: "/manifest.webmanifest",
+    expect: (s) => s === 200,
+    json: (b) => b.start_url === "/dashboard" && b.icons?.length >= 3,
+  },
+  { path: "/sw.js", expect: (s) => s === 200 },
+  { path: "/icono-192.png", expect: (s) => s === 200 },
+  { path: "/icono-512-maskable.png", expect: (s) => s === 200 },
   // El directorio de aeródromos se sirve sin sesión y lee los TSV del disco:
   // si el build no los copió, esto lo agarra.
   { path: "/api/airports/search?q=SADM", expect: (s) => s === 200, json: (b) => b.results?.[0]?.icao === "SADM" },

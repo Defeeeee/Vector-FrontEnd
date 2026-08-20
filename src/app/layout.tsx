@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
+import ServiceWorkerVector from "@/components/ServiceWorkerVector";
 
 // Single unified typeface across the app — Nunito for both body text and
 // display/headline roles.
@@ -36,8 +37,30 @@ const monoFace = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vector | Digital Logbook",
-  description: "Advanced flight tracking for modern pilots",
+  title: "Vector — Libro de vuelo",
+  description:
+    "El libro de vuelo y el planificador de navegación para pilotos, con lo esencial disponible sin señal.",
+  // Los dos los toma iOS, que no lee el manifest para esto.
+  appleWebApp: { capable: true, title: "Vector", statusBarStyle: "default" },
+};
+
+/**
+ * El color de la barra del navegador, declarado **dos veces a propósito**.
+ *
+ * El manifest sólo admite un `theme_color` y esta app tiene dos fondos —blanco en
+ * claro, negro en oscuro—, así que un color fijo pinta mal la mitad del tiempo. Acá
+ * sí se puede condicionar por `prefers-color-scheme`, y por eso el color vive de
+ * este lado y no en `manifest.ts`.
+ *
+ * `viewportFit: "cover"` es lo que hace que en `standalone` la app llegue hasta el
+ * borde en los teléfonos con muesca, en vez de dejar dos franjas.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -78,6 +101,13 @@ export default function RootLayout({
           <main className="relative flex min-h-screen flex-col items-center overflow-x-hidden">
             {children}
           </main>
+          {/*
+            Va en el layout raíz y no en el del dashboard: el service worker tiene
+            alcance de origen entero, y sobre todo `?sw=reset` tiene que andar desde
+            una pantalla que no sea el dashboard — si el dashboard es lo que quedó
+            roto, el remedio no puede vivir adentro.
+          */}
+          <ServiceWorkerVector />
         </ThemeProvider>
       </body>
     </html>

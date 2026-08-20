@@ -4846,3 +4846,107 @@ dominio sin verificar.
 
 **Estado: andando.** Confirmado por el usuario — el mail llega, sale por el dominio propio y
 el cron quedó instalado el 2026-08-20.
+
+## Vector empieza a ser una PWA — Fase 1 — 2026-08-20
+
+Primera de seis fases de [Plan 13 — Vector sin señal]. **En ésta el service worker no
+intercepta nada**, y eso es el punto.
+
+### Por qué la primera versión no hace nada
+
+Porque **un service worker roto no se arregla con un deploy**: el que decide si se
+busca la versión nueva es el service worker viejo. Es el único componente de esta app
+que puede quedar pegado en el teléfono de alguien y no haber forma de sacarlo desde
+acá.
+
+Así que el orden es: instalarlo, actualizarlo y **poder matarlo**, verificado en un
+navegador de verdad, antes de que toque un solo request. El `fetch` está declarado y
+vacío — sin `respondWith` el navegador resuelve todo exactamente como si el service
+worker no existiera, y la declaración hace falta igual porque los navegadores la piden
+para considerar la app instalable.
+
+### La vía de escape, y el detalle que la hace verificable
+
+`?sw=reset` desregistra todo y borra todos los caches **desde la página**, sin pedirle
+nada al service worker: uno roto puede no contestar un `postMessage` nunca. Cuando
+estás usando el botón de pánico ya no confiás en el paciente.
+
+La primera versión redirigía a `/`, y ahí apareció el problema al probarlo: **la
+recarga volvía a registrar al instante**, así que un desregistro que funcionó y uno que
+falló se veían exactamente igual —un service worker activo en las dos pantallas—. Una
+vía de escape que no se puede comprobar no es una vía de escape.
+
+Ahora aterriza en `/?sw=limpio`, que a propósito **no** registra. El piloto ve el
+origen en cero, y la próxima navegación normal instala la versión que esté publicada.
+
+### La función que existe para que no se escriba la línea obvia
+
+`cachesABorrar` (`src/lib/pwa.ts`) borra **sólo** el shell de otras versiones. Nada más.
+
+La línea que uno escribe sin pensar en un `activate` es *"borrá todo lo que no sea el
+cache actual"*, y acá esa línea sería destructiva: se llevaría `vector-paginas`,
+`vector-datos` y `vector-meteo` **en cada deploy**. El piloto que despliega un martes y
+vuela el sábado se encontraría sin nada guardado y sin ninguna señal de por qué.
+
+Por eso los caches de datos **no llevan versión en el nombre** —renombrar es tirar— y
+se migran por un `ESQUEMA` aparte, que sube sólo cuando cambia la *forma* de lo
+guardado, no el contenido de la app. Hay un test que fija exactamente eso, y el mutante
+que lo rompe es justamente la línea obvia.
+
+### Dónde vive el criterio
+
+En `src/lib/pwa.ts`, no en `sw.ts`. El service worker **no se puede testear** —`vitest`
+corre en `environment: "node"` y no hay jsdom— así que todo lo que sea una decisión se
+toma donde hay tests y del otro lado queda la plomería. Es la misma jugada que parió
+`briefing.ts`.
+
+### La herramienta: esbuild propio, no Serwist
+
+`next-pwa` no soporta App Router de Next 16. `@serwist/next` depende del plugin de
+webpack y este repo compila con Turbopack. **`@serwist/turbopack` sí existe** (9.5.12)
+y se evaluó: sirve el service worker desde un **route handler** que corre esbuild
+adentro del build de Next, con `serverExternalPackages` y una ruta atrapatodo en
+`app/`. Se descartó — deja `/sw.js` siendo algo que no es un archivo.
+
+Quedó `scripts/build-sw.mjs`, junto a los otros nueve generadores. El bundler hace
+falta igual, y no por el precache: el service worker **importa TypeScript de
+`src/lib/`**, y sin empaquetar habría que copiar esa lógica adentro, que es el error de
+`splitRoute` otra vez.
+
+⚠️ **`esbuild` va en `dependencies`, no en `devDependencies`.** El deploy instala con
+`npm ci --omit=dev` y este script corre dentro de `npm run build`: del otro lado, el
+build fallaría en el servidor y andaría perfecto en la máquina de quien lo escribió.
+`sharp` sí es de desarrollo, porque `build:iconos` se corre a mano y su salida se
+commitea.
+
+⚠️ **`public/sw.js` es el único generado que no se commitea.** Lleva la versión adentro
+y, en cuanto haya precache, los nombres con hash de `.next/static`: commiteado estaría
+viejo desde el primer deploy.
+
+### Los íconos
+
+No había ninguno: `public/` tenía un solo archivo y era un PDF. La marca es la flecha
+de rumbo —el símbolo con el que un avión se dibuja en cualquier carta móvil—, elegida
+porque **se lee a 48 píxeles**, dice de qué es la app sin escribirlo, y es la V de
+Vector dada vuelta.
+
+El `maskable` es un archivo aparte y no el mismo con otro `purpose`: Android recorta con
+la forma del launcher y puede comerse el 20% de cada borde, así que va con fondo a
+sangre y la marca al 60% del lienzo.
+
+### Verificación
+
+984 tests, y el resto manejando Chromium contra el build de producción, porque nada de
+esto se puede testear en `node`:
+
+- Se registra y toma el control; **no crea ni un cache**.
+- Con el `fetch` vacío, la navegación es idéntica a no tener service worker.
+- `?sw=reset` deja cero registros y cero caches, y la visita siguiente re-registra.
+- Una versión nueva aparece como `waiting`, muestra el cartel, y al aceptar toma el
+  control y el cartel se va.
+- **Un deploy borra el shell viejo sin llevarse los tres caches del piloto.**
+
+Un detalle del método, porque costó una corrida: la prueba de actualización marcaba el
+service worker nuevo con **un comentario**, y la minificación lo borraba — el bundle
+salía byte por byte idéntico y el navegador, con razón, no veía ninguna versión nueva.
+La marca tiene que ser código.
