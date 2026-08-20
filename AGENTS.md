@@ -4788,3 +4788,61 @@ log que nadie mira hasta que el mail no llegó. Por eso el mensaje tiene que alc
 testea—. Cinco casos, tres mutantes, los tres mueren.
 
 **974 tests.**
+
+## El briefing por mail, activado de punta a punta — 2026-08-20
+
+La feature estaba escrita desde el 19 y **deliberadamente apagada**: sin `RESEND_API_KEY` el
+barrido devolvía `enviados: 0` con el motivo y seguía. Hoy quedó andando entera.
+
+### Lo que se configuró, que es todo lo que faltaba
+
+| Qué | Dónde | Valor |
+|---|---|---|
+| Clave del proveedor | `~/Vector-FrontEnd/.env` | `RESEND_API_KEY` |
+| Remitente propio | `~/Vector-FrontEnd/.env` | `RESEND_FROM="Vector <briefing@vector.fdiaznem.com.ar>"` |
+| Dominio | Resend | `vector.fdiaznem.com.ar`, verificado por DNS |
+| Barrido | `crontab -l` del server | `0 21 * * *` → `~/bin/vector-flight-briefing.sh` |
+
+`0 21` UTC son las **18:00 ART**: la tarde anterior al vuelo, cuando el TAF del día ya está
+publicado y todavía se está a tiempo de cambiar el plan. No pisa al barrido de vencimientos,
+que corre `0 12`.
+
+### El script, y por qué no es un `curl` suelto en el crontab
+
+Sigue la convención del de vencimientos —`~/bin/vector-document-alerts.sh`— en vez de meter
+el comando en la línea de cron. Tres razones concretas:
+
+- **Cron no lee el `.env`.** El script saca `DOCUMENTS_ALERT_SECRET` del archivo y **falla
+  ruidosamente si no está**, en vez de mandar una cabecera vacía y comerse un 401 diario.
+- El secreto no queda escrito en el crontab.
+- Cada corrida deja la fecha delante del JSON, en `~/logs/flight-briefing.log`.
+
+Ese último punto no es prolijidad. **El barrido de vencimientos ya corrió en verde todos los
+días avisándole a un solo piloto**, y desde afuera era indistinguible de "no había nada que
+avisar" — está contado en `AGENTS.md` del backend. Con el log fechado, un `pendientes: 0` un
+día que había un vuelo programado se ve.
+
+### ⚠️ El barrido no marca nada como enviado
+
+`/flight-briefings/pending` devuelve **todos** los vuelos en estado `programado` de mañana,
+cada vez que se lo llama. No hay columna de "ya avisado".
+
+Consecuencias, que hay que tener presentes antes de tocar esto:
+
+- **Correr el script a mano manda el mail de verdad, otra vez.** No es un dry-run.
+- Poner el cron dos veces, o agregarle un reintento, duplica el aviso.
+- Hoy **lo único que garantiza un mail por vuelo es que el cron corra una sola vez.**
+
+Es distinto del barrido de documentos, que sí marca. Queda anotado como pendiente real y no
+como detalle: una columna `briefing_sent_at` en `planned_flights` lo cerraría.
+
+### El remitente
+
+`RESEND_FROM` ya existía pero estaba enterrada en un `process.env` en medio del `fetch`, y el
+comentario del archivo todavía decía que no hacía falta verificar un dominio — cierto cuando
+se escribió, engañoso ahora. Quedó documentada con el formato exacto, y con aviso propio para
+los dos errores que **no se ven el mismo día**: el dominio pelado sin casilla, y el 403 por
+dominio sin verificar.
+
+**Estado: andando.** Confirmado por el usuario — el mail llega, sale por el dominio propio y
+el cron quedó instalado el 2026-08-20.
