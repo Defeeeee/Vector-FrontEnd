@@ -5150,3 +5150,77 @@ alguien pudiera reconstruir mirando el código. Ahora es una constante y va en l
 salida que quedó.
 
 **1013 tests.**
+
+## El planificador resuelve puntos sin señal — Fase 4 — 2026-08-21
+
+El service worker empieza a contestar `/api/puntos` por su cuenta. Con el navegador en
+modo avión, `SAZM`, `GEZ`, `DORVO` y `BAR/045/25` resuelven, y **con las mismas
+coordenadas que con red** — el punto por radial da `-40.88971272276702` de los dos
+lados, hasta el último decimal.
+
+### El respaldo vive en el service worker, no en el componente
+
+Cuando `/api/puntos` no se alcanza y no hay nada guardado para esa consulta, el service
+worker resuelve con `resolverPunto` —**el mismo algoritmo que el servidor**— contra el
+catálogo precacheado, y devuelve la respuesta con la forma de siempre más
+`offline: true`.
+
+Ponerlo acá y no en `PuntoResolver` significa que **no hubo que tocar un solo
+llamador**. Es el mismo argumento que ya ganó una vez en este repo: el 503 sintético de
+`apiFetch` fluye por caminos que ya estaban escritos. Y `offline: true` es literalmente
+la convención que `apiFetch` inventó y que hasta hoy **nadie leía**; acá estrena su
+primer lector.
+
+### El `fs` que casi rompe el bundle
+
+El service worker importa `catalogo-json.ts`, que importaba `buscarEnIndice` de
+`airports.ts` — y `airports.ts` abre archivos con `node:fs`. Empaquetar eso para el
+navegador no funciona.
+
+Se partió: `busqueda-aerodromos.ts` se queda con los tipos, `normalize`, el ranking y
+`construirIndice`/`buscarEnIndice`; `airports.ts` conserva la lectura de disco y
+**reexporta todo**, así que ningún llamador cambió. Es donde correspondía que viviera
+la búsqueda pura desde el principio: no tiene nada que ver con leer el disco.
+
+El bundle del service worker quedó en **11,2 KB**.
+
+### Lo que la pantalla dice, y por qué tiene que decirlo
+
+`CatalogoDeBordo` aparece sólo cuando se resolvió sin red: *"Resuelto con el catálogo a
+bordo. Sin señal Vector usa los datos guardados en el teléfono: la planilla se calcula
+igual, pero sólo conoce aeródromos argentinos y no puede traer METAR ni NOTAM."*
+
+No es una advertencia sobre la calidad del dato —es el mismo algoritmo y el mismo AIP—
+sino sobre **lo que falta**. `KJFK` resuelve con señal y no resuelve sin ella, y sin el
+aviso eso se lee como "el punto no existe".
+
+`origen-datos.ts` es un módulo con suscripción y no un `useState` porque quien se entera
+y quien lo muestra están lejos: se enteran los hasta doce campos de punto, lo dibuja el
+planificador una vez. También **vuelve a "con señal"** cuando llega una respuesta de
+red: un cartel que dejó de ser cierto es peor que ninguno.
+
+### La performance tipeada sobrevive una recarga, el viento no
+
+TAS, consumo, combustible y reserva vivían sólo en `useState`, y en el celular —donde
+la app pierde el foco todo el tiempo— se perdían constantemente. Son los números de *la
+aeronave*: no cambian entre vuelos. Van a `localStorage` con el molde de
+`Kneeboard.tsx`, el único otro lugar del repo que lo usa: no se lee durante el render
+—no existe en el servidor— y todo envuelto en `try/catch`, porque **Safari en modo
+privado tira al tocar storage**.
+
+**El viento queda deliberadamente afuera.** Es el único de esos valores que *caduca*:
+restaurar el de ayer con la etiqueta de hoy es exactamente el error que la Fase 5 existe
+para impedir con el METAR. La ruta sigue en la URL, que es lo que hace que un plan se
+comparta con un link.
+
+Y se aplica **sólo sobre lo que está vacío**: si el piloto llegó con una aeronave
+elegida o con un plan del calendario, eso gana sobre lo que quedó de la sesión anterior.
+
+### Lo que todavía no anda, dicho sin vueltas
+
+**La pantalla del planificador no abre sin red.** Las navegaciones siguen yendo a la red
+—cachear HTML es la Fase 6— así que esto sirve mientras la pestaña ya esté abierta.
+Sirve para el caso real: se planifica en la plataforma, con la app abierta, y la señal
+se cae en el medio.
+
+**1015 tests.**

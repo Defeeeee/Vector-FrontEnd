@@ -183,8 +183,32 @@ describe("estrategiaPara", () => {
     expect(estrategiaPara(pedir("https://cualquier-cdn.com/icono-192.png"), ORIGEN)).toBe("ignorar");
   });
 
-  it("las rutas de API todavía no se tocan: es la Fase 4", () => {
-    for (const ruta of ["/api/puntos?q=SADM", "/api/weather?icao=SADM", "/api/auth/logout"]) {
+  it("los datos aeronáuticos se guardan y se refrescan atrás", () => {
+    // Son las cuatro rutas que leen los TSV del disco: no salen a internet y no
+    // cambian entre enmiendas del AIP, que son cada 28 días.
+    for (const ruta of [
+      "/api/puntos?q=SADM",
+      "/api/airports/search?q=SAD",
+      "/api/airports/near?lat=-34&lon=-58",
+      "/api/aerovias?punto=BCA",
+    ]) {
+      expect(estrategiaPara(pedir(ruta), ORIGEN)).toBe("datos");
+    }
+  });
+
+  it("**la meteorología no**, y es la regla más importante de todas", () => {
+    /*
+      Un METAR guardado y servido como si fuera de ahora es el peor bug de la historia
+      de esta app con otro disfraz. Meteo y NOTAM entran recién en la Fase 5, y sólo
+      después de que la pantalla sepa decir de cuándo es el dato.
+    */
+    for (const ruta of ["/api/weather?icao=SADM", "/api/notams?icao=SADM", "/api/winds-aloft?lat=-34&lon=-58"]) {
+      expect(estrategiaPara(pedir(ruta), ORIGEN)).toBe("ignorar");
+    }
+  });
+
+  it("lo que muta o es de sesión, nunca", () => {
+    for (const ruta of ["/api/auth/logout", "/api/chat", "/api/export", "/api/share-card"]) {
       expect(estrategiaPara(pedir(ruta), ORIGEN)).toBe("ignorar");
     }
   });

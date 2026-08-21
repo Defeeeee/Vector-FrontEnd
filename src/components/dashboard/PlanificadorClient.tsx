@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, Compass, Info, Plus, Printer, Route, Trash2, Wind } from "lucide-react";
 import type { Aircraft } from "@/types";
 import type { PuntoResuelto } from "@/app/api/puntos/route";
+import { anotarOrigen, leerOrigenLocal, suscribirOrigen } from "@/lib/origen-datos";
 import PuntoResolver from "./PuntoResolver";
 import TramoAerovia from "./TramoAerovia";
 import PageHeader from "./PageHeader";
@@ -117,6 +118,40 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
   const [consumo, setConsumo] = useState("");
   const [combustible, setCombustible] = useState("");
   const [reserva, setReserva] = useState("45");
+  /*
+    La performance tipeada sobrevive a una recarga; **el viento no**.
+
+    La ruta ya viajaba en la URL, así que un plan se comparte con un link. Pero la TAS,
+    el consumo, el combustible y la reserva vivían sólo en `useState`, y en el celular
+    —donde la app pierde el foco todo el tiempo— se perdían constantemente. Son los
+    números de *la aeronave*: no cambian entre vuelos, y volver a tipearlos era la
+    fricción que este planificador venía a sacar.
+
+    **El viento queda deliberadamente afuera**, y no es un olvido. Es el único de estos
+    valores que **caduca**: restaurar el de ayer con la etiqueta de hoy es exactamente
+    el error que la Fase 5 existe para impedir con el METAR. Un viento viejo mostrado
+    como actual da una planilla con pinta de válida y tiempos equivocados.
+
+    `altitud` tampoco: es del vuelo, no de la aeronave.
+  */
+  const performance = usarPerformanceGuardada({ tas, consumo, combustible, reserva });
+
+  /*
+    Se aplica **una sola vez y sólo sobre lo que está vacío**. Si el piloto llegó con
+    una aeronave elegida —que trae su propia TAS y su consumo— o con un plan prefijado
+    desde el calendario, lo guardado no puede pisarlo: la aeronave de este vuelo gana
+    sobre lo que quedó de la sesión anterior.
+  */
+  const yaRestaure = useRef(false);
+  useEffect(() => {
+    if (yaRestaure.current || !performance.restaurada) return;
+    yaRestaure.current = true;
+    const g = performance.restaurada;
+    setTas((v) => v || g.tas);
+    setConsumo((v) => v || g.consumo);
+    setCombustible((v) => v || g.combustible);
+    setReserva((v) => (v === "45" ? g.reserva : v));
+  }, [performance.restaurada]);
 
   const [vientoDir, setVientoDir] = useState("");
   const [vientoVel, setVientoVel] = useState("");
@@ -264,6 +299,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
           const res = await fetch(`/api/puntos?${q}`);
           if (!res.ok || cancelado) continue;
           const datos = await res.json();
+          anotarOrigen(datos);
           if (cancelado) continue;
 
           if (datos.punto) {
@@ -974,6 +1010,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
 
               <Sintonizar puntos={cargados} />
 
+              <CatalogoDeBordo />
               <VigenciaAip puntos={cargados} refs={resueltos} />
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-imprimir="junto">
@@ -1162,6 +1199,87 @@ function PlanillaTramos({
  * Va en la planilla impresa: es justo cuando la pantalla no está al lado que importa saber
  * de cuándo es lo que se está leyendo.
  */
+/** Lo que se guarda entre sesiones: los números de la aeronave, no los del vuelo. */
+interface PerformanceGuardada {
+  tas: string;
+  consumo: string;
+  combustible: string;
+  reserva: string;
+}
+
+const CLAVE_PERFORMANCE = "vector:planificador:performance";
+
+/**
+ * Guarda y restaura la performance tipeada.
+ *
+ * Sigue el molde de `Kneeboard.tsx`, que es el único otro lugar del repo que usa
+ * `localStorage`: **no se lee durante el render** —no existe en el servidor y el HTML
+ * no coincidiría— sino en un efecto después de montar, y todo va envuelto en
+ * `try/catch` porque **Safari en modo privado tira al tocar storage**.
+ *
+ * Devuelve los valores restaurados una sola vez, para que el llamador los aplique.
+ */
+function usarPerformanceGuardada(actual: PerformanceGuardada) {
+  const [listo, setListo] = useState(false);
+  const [restaurada, setRestaurada] = useState<PerformanceGuardada | null>(null);
+
+  useEffect(() => {
+    try {
+      const crudo = window.localStorage.getItem(CLAVE_PERFORMANCE);
+      if (crudo) {
+        const leido = JSON.parse(crudo) as Partial<PerformanceGuardada>;
+        const texto = (v: unknown) => (typeof v === "string" ? v : "");
+        setRestaurada({
+          tas: texto(leido.tas),
+          consumo: texto(leido.consumo),
+          combustible: texto(leido.combustible),
+          reserva: texto(leido.reserva) || "45",
+        });
+      }
+    } catch {
+      // Una entrada corrupta o ilegible no puede costarle la pantalla al piloto.
+    }
+    setListo(true);
+  }, []);
+
+  useEffect(() => {
+    if (!listo) return;
+    try {
+      window.localStorage.setItem(CLAVE_PERFORMANCE, JSON.stringify(actual));
+    } catch {
+      // Sin espacio o en modo privado: se pierde la comodidad, no el plan.
+    }
+  }, [listo, actual]);
+
+  return { listo, restaurada };
+}
+
+/**
+ * "Esto lo resolvió el catálogo de a bordo."
+ *
+ * Aparece sólo cuando el service worker contestó `/api/puntos` sin llegar a la red. No
+ * es una advertencia sobre la calidad del dato —es el mismo algoritmo y los mismos
+ * datos del AIP— sino sobre **lo que falta**: el catálogo de a bordo tiene Argentina
+ * sola, así que un código extranjero que con señal resuelve, sin señal no. Sin este
+ * aviso, eso se lee como "el punto no existe".
+ *
+ * Dice además lo otro que no puede hacer sin red, y que es fácil de no notar: la
+ * planilla se calcula igual —la geometría es toda del lado del cliente— pero el METAR,
+ * el viento en altura y los NOTAM no llegan.
+ */
+function CatalogoDeBordo() {
+  const local = useSyncExternalStore(suscribirOrigen, leerOrigenLocal, () => false);
+  if (!local) return null;
+
+  return (
+    <p className="text-[11px] text-amber-700 dark:text-amber-500 leading-relaxed mb-2">
+      <span className="font-semibold">Resuelto con el catálogo a bordo.</span> Sin señal
+      Vector usa los datos guardados en el teléfono: la planilla se calcula igual, pero
+      sólo conoce aeródromos argentinos y no puede traer METAR ni NOTAM.
+    </p>
+  );
+}
+
 function VigenciaAip({
   puntos,
   refs,

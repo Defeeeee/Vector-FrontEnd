@@ -2,19 +2,25 @@
 
 import {
   CACHES_SIN_VERSION,
+  CACHE_DATOS,
   CACHE_SHELL,
   MENSAJES,
   PRECACHE,
+  RUTA_PUNTOS,
   cachesABorrar,
   estrategiaPara,
 } from "@/lib/pwa";
+import { catalogoDesdeJson, type CatalogoSerializado } from "@/lib/catalogo-json";
+import { resolverPunto } from "@/lib/resolucion-puntos";
+import type { Catalogo } from "@/lib/catalogo";
 
 /**
  * El service worker de Vector.
  *
- * **Fase 2: los assets y la pantalla de respaldo.** Todavía no guarda una sola
- * página del dashboard — eso es la Fase 6, y viene atado al cartel que dice de
- * cuándo es lo que estás viendo.
+ * **Fase 4: el planificador resuelve puntos sin señal.** Todavía no guarda una sola
+ * página del dashboard —eso es la Fase 6, atado al cartel que dice de cuándo es lo que
+ * estás viendo— ni una sola respuesta de meteorología, que es la Fase 5 y no entra
+ * hasta que la pantalla sepa decir la antigüedad del dato.
  *
  * El orden no es casual: un service worker roto **no se arregla con un deploy**,
  * porque el que decide si se busca la versión nueva es el service worker viejo. Por
@@ -179,6 +185,95 @@ async function deLaRedOSinConexion(pedido: Request): Promise<Response> {
   }
 }
 
+/**
+ * El catálogo de a bordo, armado una sola vez por vida del worker.
+ *
+ * **La memoización importa más acá que en el servidor.** El service worker se duerme y
+ * despierta todo el tiempo, y `JSON.parse` de 153 KB en cada tecla del autocompletado
+ * se sentiría al tipear una ruta.
+ */
+let catalogoBordo: Catalogo | null = null;
+
+async function catalogoDeBordo(): Promise<Catalogo | null> {
+  if (catalogoBordo) return catalogoBordo;
+  try {
+    const guardado = await caches.match("/catalogo-aeronautico.json", { cacheName: CACHE_SHELL });
+    const respuesta = guardado ?? (await fetch("/catalogo-aeronautico.json"));
+    catalogoBordo = catalogoDesdeJson((await respuesta.json()) as CatalogoSerializado);
+    return catalogoBordo;
+  } catch {
+    // Sin catálogo no se inventa nada: el pedido falla como fallaba antes, y el
+    // planificador muestra que no pudo resolver el punto.
+    return null;
+  }
+}
+
+/**
+ * Datos aeronáuticos: se contesta con lo guardado y se refresca atrás.
+ *
+ * El ciclo AIRAC es de 28 días, así que servir la respuesta de ayer mientras llega la
+ * de hoy no cuesta nada — y sí cuesta esperar la red en cada tecla del autocompletado.
+ */
+async function guardadoYRefrescar(pedido: Request): Promise<Response> {
+  const cache = await caches.open(CACHE_DATOS);
+  const guardado = await cache.match(pedido);
+
+  const red = fetch(pedido)
+    .then(async (respuesta) => {
+      if (respuesta.status === 200) await cache.put(pedido, respuesta.clone());
+      return respuesta;
+    })
+    .catch(() => null);
+
+  if (guardado) {
+    // El refresco sigue solo. `waitUntil` no está disponible acá, pero la promesa
+    // queda viva mientras el worker lo esté, que alcanza para el caso normal.
+    void red;
+    return guardado;
+  }
+
+  const respuesta = await red;
+  if (respuesta) return respuesta;
+
+  return (await resolverConCatalogoLocal(pedido)) ?? Response.error();
+}
+
+/**
+ * Lo que hace que el planificador funcione sin señal.
+ *
+ * Cuando `/api/puntos` no se puede alcanzar y no hay nada guardado para esa consulta,
+ * el service worker resuelve el punto **con el mismo algoritmo que el servidor**
+ * —`resolverPunto`— contra el catálogo precacheado.
+ *
+ * ## Por qué acá y no en el componente
+ *
+ * Porque así **no hay que tocar un solo llamador**. Es el mismo argumento que ya ganó
+ * una vez en este repo: el 503 sintético de `apiFetch` fluye por caminos que ya
+ * estaban escritos. `PuntoResolver` y `PlanificadorClient` no se enteran de nada, y el
+ * próximo consumidor tampoco va a tener que acordarse.
+ *
+ * La respuesta lleva `offline: true` en el cuerpo —la misma convención que usa
+ * `apiFetch`— para que la pantalla pueda decir con qué resolvió.
+ */
+async function resolverConCatalogoLocal(pedido: Request): Promise<Response | null> {
+  const url = new URL(pedido.url);
+  if (url.pathname !== RUTA_PUNTOS) return null;
+
+  const catalogo = await catalogoDeBordo();
+  if (!catalogo) return null;
+
+  const resolucion = resolverPunto(
+    url.searchParams.get("q") ?? "",
+    { desde: url.searchParams.get("desde") ?? "", hasta: url.searchParams.get("hasta") ?? "" },
+    catalogo
+  );
+
+  return new Response(JSON.stringify({ ...resolucion, offline: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json", "X-Vector-Origen": "catalogo-local" },
+  });
+}
+
 self.addEventListener("fetch", (evento) => {
   const pedido = evento.request;
   const estrategia = estrategiaPara(
@@ -199,7 +294,7 @@ self.addEventListener("fetch", (evento) => {
   // imita peor.
   if (estrategia === "ignorar") return;
 
-  evento.respondWith(
-    estrategia === "assets" ? delCacheODeLaRed(pedido) : deLaRedOSinConexion(pedido)
-  );
+  if (estrategia === "assets") return evento.respondWith(delCacheODeLaRed(pedido));
+  if (estrategia === "datos") return evento.respondWith(guardadoYRefrescar(pedido));
+  evento.respondWith(deLaRedOSinConexion(pedido));
 });

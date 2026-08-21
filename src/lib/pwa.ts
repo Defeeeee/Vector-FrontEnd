@@ -145,7 +145,32 @@ export const PRECACHE = [
     primera vez que pasa, y el precache cubre el caso de que alguien lo pida limpio.
   */
   "/icon.svg",
+  /*
+    El catálogo de a bordo: 153 KB con los aeródromos, radioayudas, puntos
+    significativos y aerovías de Argentina. Es lo que le permite al planificador
+    resolver una ruta sin señal, y por eso se trae por adelantado en vez de esperar a
+    que el piloto lo necesite — cuando lo necesita, por definición no hay red.
+  */
+  "/catalogo-aeronautico.json",
 ];
+
+/**
+ * Las rutas de API que son **datos aeronáuticos**: no cambian entre enmiendas del AIP.
+ *
+ * Van con revalidación en segundo plano: se contesta al instante con lo guardado y se
+ * refresca atrás. El ciclo AIRAC es de 28 días, así que servir una respuesta de ayer
+ * mientras llega la de hoy no tiene ningún costo — y sí lo tiene esperar la red en
+ * cada tecla del autocompletado.
+ */
+export const RUTAS_DE_DATOS = [
+  "/api/puntos",
+  "/api/airports/search",
+  "/api/airports/near",
+  "/api/aerovias",
+];
+
+/** La única de las cuatro que el service worker puede contestar por su cuenta. */
+export const RUTA_PUNTOS = "/api/puntos";
 
 /** Qué hace el service worker con un pedido. */
 export type Estrategia =
@@ -154,7 +179,9 @@ export type Estrategia =
   /** Cache primero. Sólo para contenido inmutable. */
   | "assets"
   /** A la red; si falla de verdad, la pantalla de sin conexión. */
-  | "navegacion";
+  | "navegacion"
+  /** Datos aeronáuticos: se contesta con lo guardado y se refresca atrás. */
+  | "datos";
 
 export interface Pedido {
   metodo: string;
@@ -211,6 +238,7 @@ export function estrategiaPara(pedido: Pedido, origen: string): Estrategia {
 
   if (url.pathname.startsWith("/_next/static/")) return "assets";
   if (PRECACHE.includes(url.pathname)) return "assets";
+  if (RUTAS_DE_DATOS.includes(url.pathname)) return "datos";
 
   return "ignorar";
 }

@@ -1,10 +1,18 @@
-import type { Airport } from "./airports";
 import type { Pista } from "./briefing";
 import type { Catalogo } from "./catalogo";
 import type { Fix } from "./fixes";
 import type { FuenteAip } from "./aip";
 import type { Radioayuda } from "./puntos";
-import { buscarEnIndice, construirIndice } from "./airports";
+/*
+  Se importa de `busqueda-aerodromos` y **no de `airports`**: este módulo lo empaqueta
+  el service worker, y `airports.ts` abre archivos con `fs`. Es el mismo código —aquél
+  lo reexporta— pero por la puerta que existe en el navegador.
+*/
+import {
+  buscarEnIndice,
+  construirIndice,
+  type Airport,
+} from "./busqueda-aerodromos";
 
 /**
  * El `Catalogo` de a bordo: el mismo algoritmo, leyendo un JSON en vez del disco.

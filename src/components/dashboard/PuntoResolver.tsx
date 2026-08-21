@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clasificarToken } from "@/lib/puntos";
 import type { PuntoResuelto } from "@/app/api/puntos/route";
 import type { AirportRef } from "@/types";
+import { anotarOrigen } from "@/lib/origen-datos";
 
 /**
  * Un campo de punto de ruta, para el planificador.
@@ -140,6 +141,9 @@ export default function PuntoResolver({
         });
         if (!res.ok) return;
         const data = await res.json();
+        // `offline: true` lo pone el service worker cuando resolvió con el catálogo
+        // de a bordo. Ver `origen-datos.ts`.
+        anotarOrigen(data);
         const respuesta = {
           punto: (data.punto ?? null) as PuntoResuelto | null,
           sugerencias: (data.sugerencias ?? []) as AirportRef[],
