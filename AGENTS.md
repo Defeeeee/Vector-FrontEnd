@@ -4950,3 +4950,103 @@ Un detalle del método, porque costó una corrida: la prueba de actualización m
 service worker nuevo con **un comentario**, y la minificación lo borraba — el bundle
 salía byte por byte idéntico y el navegador, con razón, no veía ninguna versión nueva.
 La marca tiene que ser código.
+
+## El shell y la pantalla de sin conexión — Fase 2 — 2026-08-20
+
+El service worker empieza a intervenir, y lo hace sobre lo que no puede lastimar a
+nadie: contenido inmutable y una pantalla que dice que no hay red. **Todavía no
+guarda una sola página del dashboard** — eso es la Fase 6, y va atado al cartel que
+dice de cuándo es lo que estás viendo.
+
+### La simplificación que hace innecesario a Workbox
+
+Todo lo que sirve Next lleva **el hash en la URL**:
+`/_next/static/chunks/006v7wp3sr4so.js`, `/_next/static/media/02263eba-s.woff2`.
+Contenido inmutable con nombre único se puede cachear la primera vez que se pide, sin
+conocer la lista de antemano. **Un manifiesto de precache sería enumerar lo que la URL
+ya dice.**
+
+El precache explícito queda en siete entradas escritas a mano: la pantalla de
+respaldo, el manifest y los íconos — lo único que el piloto puede no haber visitado
+nunca y lo que el sistema operativo pide cuando quiere.
+
+Efecto colateral que vale anotar: **las tipografías salen por la misma puerta.**
+`next/font` las auto-hospeda en `/_next/static/media/`, así que no hay nada que hacer
+con Google Fonts — el error clásico es cachear todo menos las fuentes y que sin señal
+la app aparezca en Times New Roman. Hay un test que fija la regla y una comprobación
+en el navegador de que el `body` sigue siendo Nunito offline.
+
+### Dos cosas que sólo aparecieron manejando el navegador
+
+**En la primera visita se guardan 3 assets, no 23.** El service worker se instala
+*después* de que la página pidió sus recursos, así que recién desde la segunda visita
+pasan por él. No se fuerza nada: es exactamente lo que la pantalla de respaldo promete
+—*"si ya las visitaste con conexión"*— y precachear la lista entera exigiría el
+manifiesto que este diseño evita. Prometer más que eso sería la versión PWA de afirmar
+cuando no se sabe.
+
+**El favicon lleva el hash en la query**, no en la ruta: `/icon.svg?icon.0649…`. Era
+el único pedido que fallaba sin red. Está en el precache porque lo que decide la
+estrategia es el `pathname`.
+
+### `estrategiaPara`, que es toda la política
+
+Una función pura que recibe método, URL, modo y si trae header `RSC`, y devuelve
+`ignorar`, `assets` o `navegacion`. Está en `src/lib/pwa.ts` con nueve tests y seis
+mutantes deliberados, porque el `sw.ts` no se puede testear.
+
+Lo que **no** se toca, y cada exclusión tiene su motivo:
+
+- **Nada que no sea `GET`.** Las server actions de Next —incluido cerrar sesión— son
+  `POST` a la URL de la página con header `Next-Action`. Meterse ahí rompe mutaciones,
+  y sin cola de escritura el service worker no tiene nada que aportar. Una línea que
+  elimina una familia entera de bugs.
+- **Los pedidos con header `RSC` se dejan fallar.** Son las navegaciones blandas de
+  `next/link`: devuelven un payload de Flight con `Vary: RSC, Next-Router-State-Tree,
+  …`, o sea que la misma URL da respuestas distintas según de dónde venías. Cachearlos
+  es inútil y servirlos ignorando el `Vary` pinta un árbol que no corresponde. Al
+  fallar, el router cae a navegación dura, y **ahí** el service worker sirve el HTML.
+- **Nada de otro origen.**
+
+Detalle de implementación que importa: `ignorar` es **no llamar a `respondWith`**, no
+llamarlo con un `fetch` de vuelta. Así el navegador resuelve el pedido por su cuenta
+—streaming, prioridades, `Vary`— en vez de por un camino nuestro que lo imita peor.
+
+### Dos mutantes que delataron tests flojos, no código de más
+
+El chequeo de origen y el `catch` del parseo de URL **sobrevivían**. No porque
+sobraran: porque los tests eran malos.
+
+- Las URLs de otro origen que probaba —un tile de OSM, el backend— tampoco coincidían
+  con ningún patrón, así que caían en `ignorar` por otro camino. El caso que de verdad
+  ejercita la comprobación es **otro dominio con nuestra misma forma de ruta**
+  (`https://cualquier-cdn.com/_next/static/chunks/x.js`).
+- El helper del test anteponía el origen a la URL, así que `"no-es-una-url"` terminaba
+  siendo `"https://…arno-es-una-url"` — perfectamente parseable. El `catch` no se
+  ejercitaba nunca.
+
+Es el mismo patrón de siempre en este repo: **un mutante que sobrevive es una pregunta,
+no una respuesta.** Dos veces salió "sobra la línea" y dos veces era "falta el test".
+
+### La pantalla de respaldo
+
+`/sin-conexion` vive **fuera de `/dashboard`** a propósito: el matcher del proxy es
+`["/", "/dashboard/:path*"]`, y una pantalla de "no hay red" que exigiera sesión sería
+un chiste — la sesión se verifica contra el servidor, que es justo lo que no se
+alcanza. El smoke lo fija.
+
+No es un cartel de error: dice qué **sí** se puede hacer y lleva ahí. Los links van con
+`prefetch={false}`, porque estamos sin red por definición y `next/link` intentaría
+traer las tres rutas al montar.
+
+Las navegaciones siguen yendo a la red y sólo ante una falla **real** se sirve el
+respaldo. Sin carrera contra reloj: la de 3 s es de la Fase 6 y viene atada a la trampa
+del refresh token de Supabase, que es de un solo uso. Adelantarla acá sería adelantar
+el riesgo sin ninguna de sus ventajas.
+
+### Verificación
+
+992 tests, y con el navegador **realmente offline**: precache entero, 23 assets y 5
+tipografías, `vector-paginas` inexistente, la pantalla aparece con la URL original
+intacta, cero pedidos fallidos, un POST no pasa por el service worker, y `?sw=reset`
+sigue dejando todo en cero con el cache lleno. Claro y oscuro.

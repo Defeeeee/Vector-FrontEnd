@@ -120,3 +120,97 @@ export function paginaCacheable(pathname: string): boolean {
   // tratarla aparte, y una condición de más sin test es una condición que miente.
   return PAGINAS_CACHEABLES.includes(pathname.replace(/\/+$/, ""));
 }
+
+/**
+ * Lo que se guarda en `install`, aunque el piloto no lo haya visitado nunca.
+ *
+ * Es corto a propósito. **Los assets de la app no están acá**: llevan el hash en la
+ * URL, así que se cachean solos la primera vez que se piden (ver `estrategiaPara`).
+ * Lo que sí hay que traer por adelantado es lo que sólo se necesita cuando ya no hay
+ * red — la pantalla de respaldo — y lo que el sistema operativo puede pedir en
+ * cualquier momento, como los íconos.
+ */
+export const PRECACHE = [
+  "/sin-conexion",
+  "/manifest.webmanifest",
+  "/icono-192.png",
+  "/icono-512.png",
+  "/icono-512-maskable.png",
+  "/apple-touch-icon.png",
+  /*
+    El favicon. Next lo sirve con un hash en la **query** (`/icon.svg?icon.0649…`),
+    no en la ruta, así que el precache de `/icon.svg` pelado y el pedido real son
+    entradas distintas del cache. Está igual en la lista porque lo que decide
+    `estrategiaPara` es el `pathname`: con esto el pedido con query se guarda solo la
+    primera vez que pasa, y el precache cubre el caso de que alguien lo pida limpio.
+  */
+  "/icon.svg",
+];
+
+/** Qué hace el service worker con un pedido. */
+export type Estrategia =
+  /** No se mete: el navegador resuelve como si el service worker no existiera. */
+  | "ignorar"
+  /** Cache primero. Sólo para contenido inmutable. */
+  | "assets"
+  /** A la red; si falla de verdad, la pantalla de sin conexión. */
+  | "navegacion";
+
+export interface Pedido {
+  metodo: string;
+  /** Absoluta. */
+  url: string;
+  /** El `request.mode`: `"navigate"` cuando el navegador va a pintar una página. */
+  modo: string;
+  /** Si trae el header `RSC`, o sea si es una navegación blanda de `next/link`. */
+  esRSC: boolean;
+}
+
+/**
+ * Qué hacer con un pedido. **Es toda la política del service worker.**
+ *
+ * ## Lo que no se toca, y por qué cada exclusión
+ *
+ * **Nada que no sea `GET`.** Las server actions de Next —incluido cerrar sesión— son
+ * `POST` a la URL de la página con un header `Next-Action`. Meterse ahí rompe
+ * mutaciones, y como no hay cola de escritura el service worker no tiene nada que
+ * aportar en ese camino. Una línea que elimina una familia entera de bugs.
+ *
+ * **Nada de otro origen.** Los tiles del mapa son de un tercero y son muchos MB; el
+ * backend está en otro dominio y ni siquiera pasa por el navegador.
+ *
+ * **Los pedidos con header `RSC` se dejan fallar.** Son las navegaciones blandas de
+ * `next/link`: devuelven un payload de Flight, no HTML, y vienen con
+ * `Vary: RSC, Next-Router-State-Tree, …`, o sea que la misma URL produce respuestas
+ * distintas según de dónde venías. Cachearlos es inútil —el `Vary` casi nunca vuelve
+ * a coincidir— y servirlos ignorando el `Vary` es peor: se pinta un árbol que no
+ * corresponde. Al fallar, el router cae a navegación dura, y **ahí** el service
+ * worker puede hacer algo útil.
+ *
+ * ## Lo que sí
+ *
+ * `assets` es sólo para lo que **no puede cambiar de contenido sin cambiar de URL**:
+ * `/_next/static/**` lleva el hash adentro del nombre, y los del precache se
+ * renuevan con la versión del cache. Eso es lo que hace innecesario un manifiesto de
+ * precache: no hace falta saber la lista de antemano si la URL ya promete que el
+ * contenido es único.
+ */
+export function estrategiaPara(pedido: Pedido, origen: string): Estrategia {
+  if (pedido.metodo !== "GET") return "ignorar";
+
+  let url: URL;
+  try {
+    url = new URL(pedido.url);
+  } catch {
+    return "ignorar";
+  }
+  if (url.origin !== origen) return "ignorar";
+
+  if (pedido.esRSC) return "ignorar";
+  if (pedido.modo === "navigate") return "navegacion";
+
+  if (url.pathname.startsWith("/_next/static/")) return "assets";
+  if (PRECACHE.includes(url.pathname)) return "assets";
+
+  return "ignorar";
+}

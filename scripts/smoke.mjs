@@ -62,6 +62,12 @@ const ROUTES = [
   { path: "/sw.js", expect: (s) => s === 200 },
   { path: "/icono-192.png", expect: (s) => s === 200 },
   { path: "/icono-512-maskable.png", expect: (s) => s === 200 },
+  /*
+    La pantalla de respaldo va **fuera** de `/dashboard` a propósito: adentro pasaría
+    por el matcher del proxy y exigiría sesión, que es lo único que no se puede
+    verificar cuando no hay red. Si alguien la mueve, acá aparece como un 307.
+  */
+  { path: "/sin-conexion", expect: (s) => s === 200 },
   // El directorio de aeródromos se sirve sin sesión y lee los TSV del disco:
   // si el build no los copió, esto lo agarra.
   { path: "/api/airports/search?q=SADM", expect: (s) => s === 200, json: (b) => b.results?.[0]?.icao === "SADM" },

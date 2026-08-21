@@ -1,20 +1,29 @@
 /// <reference lib="webworker" />
 
-import { CACHES_SIN_VERSION, CACHE_SHELL, MENSAJES, cachesABorrar } from "@/lib/pwa";
+import {
+  CACHES_SIN_VERSION,
+  CACHE_SHELL,
+  MENSAJES,
+  PRECACHE,
+  cachesABorrar,
+  estrategiaPara,
+} from "@/lib/pwa";
 
 /**
  * El service worker de Vector.
  *
- * **Fase 1: no intercepta nada.** Se instala, se actualiza, se puede matar, y el
- * `fetch` está pero no hace nada. Es deliberado, y el orden importa: un service
- * worker roto **no se arregla con un deploy**, porque el que decide si se busca la
- * versión nueva es el service worker viejo. Antes de que toque un solo request hay
- * que haber verificado en un teléfono de verdad que se instala, que se actualiza y
- * que se puede desinstalar a la fuerza.
+ * **Fase 2: los assets y la pantalla de respaldo.** Todavía no guarda una sola
+ * página del dashboard — eso es la Fase 6, y viene atado al cartel que dice de
+ * cuándo es lo que estás viendo.
  *
- * Las fases siguientes le agregan estrategias de cache **acá adentro**, y cada regla
- * con su comentario. Lo que no va a haber es una receta genérica que "hace lo
- * razonable": las reglas de este proyecto no son las razonables por defecto.
+ * El orden no es casual: un service worker roto **no se arregla con un deploy**,
+ * porque el que decide si se busca la versión nueva es el service worker viejo. Por
+ * eso la Fase 1 verificó instalar, actualizar y poder matarlo antes de que tocara un
+ * solo request, y por eso ahora empieza a intervenir sobre lo que no puede lastimar
+ * a nadie: contenido inmutable y una pantalla que dice que no hay red.
+ *
+ * Lo que no va a haber nunca acá es una receta genérica que "hace lo razonable": las
+ * reglas de este proyecto no son las razonables por defecto.
  *
  * ## Dónde vive el criterio
  *
@@ -25,7 +34,19 @@ import { CACHES_SIN_VERSION, CACHE_SHELL, MENSAJES, cachesABorrar } from "@/lib/
 
 declare const self: ServiceWorkerGlobalScope;
 
-self.addEventListener("install", () => {
+self.addEventListener("install", (evento) => {
+  /*
+    Se traen por adelantado sólo las cosas que el piloto puede no haber visitado
+    nunca —la pantalla de respaldo— y las que el sistema operativo puede pedir en
+    cualquier momento —los íconos—. Los assets de la app **no** están en esa lista:
+    llevan el hash en la URL, así que se guardan solos la primera vez que se piden.
+
+    Si algo del precache falla, la instalación falla entera y se reintenta después.
+    Es lo correcto: un shell a medias es peor que ninguno, porque la app quedaría
+    "disponible sin conexión" sin estarlo.
+  */
+  evento.waitUntil(caches.open(CACHE_SHELL).then((cache) => cache.addAll(PRECACHE)));
+
   /*
     **No se llama a `skipWaiting()` acá, y es la decisión de esta fase.**
 
@@ -104,14 +125,81 @@ self.addEventListener("message", (evento) => {
   }
 });
 
-/*
-  El `fetch` está declarado y **vacío a propósito**.
+/**
+ * Cache primero. **Sólo para contenido que no puede cambiar sin cambiar de URL.**
+ *
+ * Sin revalidar y sin fecha de vencimiento, que en cualquier otro caso sería
+ * imprudente y acá es exacto: `/_next/static/**` lleva el hash adentro del nombre, y
+ * lo del precache se renueva junto con la versión del cache.
+ */
+async function delCacheODeLaRed(pedido: Request): Promise<Response> {
+  const cache = await caches.open(CACHE_SHELL);
+  const guardado = await cache.match(pedido);
+  if (guardado) return guardado;
 
-  Sin llamar a `respondWith`, el navegador resuelve el pedido exactamente como si no
-  hubiera service worker: esta fase no cambia el comportamiento de la app en nada. Y
-  la declaración hace falta igual, porque los navegadores piden que exista un
-  manejador de `fetch` para considerar la app instalable.
+  const respuesta = await fetch(pedido);
+  // **Sólo 200.** Un 404 o un 503 guardado envenena el cache hasta la próxima
+  // versión, y se vería como una app rota que ningún deploy arregla.
+  if (respuesta.ok && respuesta.status === 200) {
+    await cache.put(pedido, respuesta.clone());
+  }
+  return respuesta;
+}
 
-  Acá enganchan las estrategias de las fases siguientes.
-*/
-self.addEventListener("fetch", () => {});
+/**
+ * A la red, y si falla de verdad, la pantalla de sin conexión.
+ *
+ * **No hay carrera contra reloj acá, y es a propósito.** Se espera a que el pedido
+ * falle de verdad. La carrera de 3 s que hace falta para la señal que engancha y no
+ * transfiere viene en la Fase 6, junto con su mitigación — el canje del refresh
+ * token de Supabase es de un solo uso, y abandonar una navegación a mitad de camino
+ * puede quemarlo y dejar al piloto tipeando la contraseña en la plataforma.
+ * Adelantar la carrera sin eso sería adelantar el riesgo sin ninguna de sus ventajas.
+ */
+async function deLaRedOSinConexion(pedido: Request): Promise<Response> {
+  try {
+    /*
+      Se pasa el `Request` original, sin tocarlo. Una navegación viene con
+      `redirect: "manual"`, y la respuesta a un redirect es opaca: no se puede leer,
+      no se puede cachear, pero **sí se puede devolver tal cual** y el navegador la
+      sigue. Rearmar el pedido con `redirect: "follow"` haría que el navegador tire
+      `TypeError` al recibir una respuesta ya redirigida, y la página no cargaría.
+
+      Es también lo que hace imposible confundir "tu sesión venció" con "acá está tu
+      dashboard": el service worker no puede leer el destino, así que no puede
+      elegir mal.
+    */
+    return await fetch(pedido);
+  } catch {
+    const respaldo = await caches.match("/sin-conexion", { cacheName: CACHE_SHELL });
+    if (respaldo) return respaldo;
+    // Sin respaldo tampoco hay nada que inventar: se deja que el navegador muestre
+    // su propio error, que es lo que pasaba antes de todo esto.
+    throw new Error("sin conexión y sin pantalla de respaldo");
+  }
+}
+
+self.addEventListener("fetch", (evento) => {
+  const pedido = evento.request;
+  const estrategia = estrategiaPara(
+    {
+      metodo: pedido.method,
+      url: pedido.url,
+      modo: pedido.mode,
+      // `next/link` navega pidiendo el árbol de React en vez de HTML. Ver la
+      // explicación en `estrategiaPara`.
+      esRSC: pedido.headers.has("RSC") || pedido.headers.has("Next-Router-Prefetch"),
+    },
+    self.location.origin
+  );
+
+  // `ignorar` es **no llamar a `respondWith`**, no llamarlo con un `fetch` de
+  // vuelta: así el navegador resuelve el pedido por su cuenta, con todo lo que eso
+  // implica —streaming, prioridades, `Vary`— en vez de por un camino nuestro que lo
+  // imita peor.
+  if (estrategia === "ignorar") return;
+
+  evento.respondWith(
+    estrategia === "assets" ? delCacheODeLaRed(pedido) : deLaRedOSinConexion(pedido)
+  );
+});

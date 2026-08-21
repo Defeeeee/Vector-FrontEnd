@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  PRECACHE,
+  estrategiaPara,
+  type Pedido,
   CACHES_PERSONALES,
   CACHES_SIN_VERSION,
   CACHE_DATOS,
@@ -107,5 +110,97 @@ describe("paginaCacheable", () => {
     // Lista blanca y no lista negra: una pantalla nueva no entra sola al cache sin
     // que alguien haya decidido que puede.
     expect(paginaCacheable("/dashboard/pantalla-que-no-existe-todavia")).toBe(false);
+  });
+});
+
+describe("estrategiaPara", () => {
+  const ORIGEN = "https://vector.fdiaznem.com.ar";
+  const pedir = (url: string, extra: Partial<Pedido> = {}): Pedido => ({
+    metodo: "GET",
+    url: url.startsWith("http") ? url : ORIGEN + url,
+    modo: "no-cors",
+    esRSC: false,
+    ...extra,
+  });
+
+  it("los assets con hash en la URL van al cache", () => {
+    expect(estrategiaPara(pedir("/_next/static/chunks/006v7wp3sr4so.js"), ORIGEN)).toBe("assets");
+    // Las tipografías salen por la misma puerta. `next/font` las auto-hospeda acá, y
+    // olvidarlas es el error clásico: la app abre sin señal pero con la letra del
+    // sistema.
+    expect(estrategiaPara(pedir("/_next/static/media/02263eba-s.woff2"), ORIGEN)).toBe("assets");
+  });
+
+  it("lo del precache también, para que se renueve con la versión", () => {
+    for (const recurso of PRECACHE) {
+      expect(estrategiaPara(pedir(recurso), ORIGEN)).toBe("assets");
+    }
+  });
+
+  it("una navegación es una navegación", () => {
+    expect(estrategiaPara(pedir("/dashboard/history", { modo: "navigate" }), ORIGEN)).toBe("navegacion");
+  });
+
+  it("**nada que no sea GET**: las server actions son POST y romperlas rompe todo", () => {
+    /*
+      Cerrar sesión, programar un vuelo y cargar uno son server actions: POST a la
+      URL de la página con un header `Next-Action`. Si el service worker se mete ahí,
+      rompe mutaciones — y como no hay cola de escritura, no tiene nada que aportar.
+    */
+    for (const metodo of ["POST", "PUT", "PATCH", "DELETE"]) {
+      expect(estrategiaPara(pedir("/dashboard", { metodo, modo: "navigate" }), ORIGEN)).toBe("ignorar");
+    }
+  });
+
+  it("**los pedidos RSC se dejan fallar**, aunque sean navegaciones blandas", () => {
+    /*
+      Devuelven un payload de Flight con `Vary: RSC, Next-Router-State-Tree, …`: la
+      misma URL da respuestas distintas según de dónde venías. Cachearlos es inútil y
+      servirlos ignorando el `Vary` pinta un árbol que no corresponde. Al fallar, el
+      router cae a navegación dura, y ahí sí se puede hacer algo útil.
+    */
+    expect(estrategiaPara(pedir("/dashboard/history", { esRSC: true }), ORIGEN)).toBe("ignorar");
+    expect(estrategiaPara(pedir("/dashboard/history", { esRSC: true, modo: "navigate" }), ORIGEN)).toBe(
+      "ignorar"
+    );
+  });
+
+  it("nada de otro origen", () => {
+    // Los tiles del mapa son de un tercero y son muchos MB; el backend vive en otro
+    // dominio y ni siquiera pasa por el navegador.
+    expect(estrategiaPara(pedir("https://tile.openstreetmap.org/8/1/2.png"), ORIGEN)).toBe("ignorar");
+    expect(estrategiaPara(pedir("https://api.flightlog.fdiaznem.com.ar/dashboard"), ORIGEN)).toBe("ignorar");
+
+    /*
+      El caso que de verdad prueba la comprobación de origen: **otro dominio con
+      nuestra misma forma de ruta**. Sin la comprobación, los dos de arriba caerían
+      igual en "ignorar" por no coincidir con ningún patrón, y la línea que separa
+      orígenes podría borrarse sin que ningún test se entere.
+    */
+    expect(estrategiaPara(pedir("https://cualquier-cdn.com/_next/static/chunks/x.js"), ORIGEN)).toBe(
+      "ignorar"
+    );
+    expect(estrategiaPara(pedir("https://cualquier-cdn.com/icono-192.png"), ORIGEN)).toBe("ignorar");
+  });
+
+  it("las rutas de API todavía no se tocan: es la Fase 4", () => {
+    for (const ruta of ["/api/puntos?q=SADM", "/api/weather?icao=SADM", "/api/auth/logout"]) {
+      expect(estrategiaPara(pedir(ruta), ORIGEN)).toBe("ignorar");
+    }
+  });
+
+  it("una URL que no se puede parsear no rompe nada", () => {
+    /*
+      El service worker ve **todo** lo que pide la pestaña, incluidos esquemas de
+      extensiones del navegador y cosas que ni son URL. Tirar acá dejaría la app sin
+      cargar, y por una excepción en un pedido que ni siquiera era nuestro.
+
+      Se arma el pedido a mano y no con `pedir`, que antepone el origen: con el
+      prefijo puesto, `new URL` no llega nunca a fallar y este test no probaba nada.
+    */
+    const crudo = (url: string): Pedido => ({ metodo: "GET", url, modo: "no-cors", esRSC: false });
+    expect(estrategiaPara(crudo("no-es-una-url"), ORIGEN)).toBe("ignorar");
+    expect(estrategiaPara(crudo(""), ORIGEN)).toBe("ignorar");
+    expect(estrategiaPara(crudo("chrome-extension://abc/x.js"), ORIGEN)).toBe("ignorar");
   });
 });
