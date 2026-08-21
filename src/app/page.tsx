@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import FeatureMock from "@/components/landing/FeatureMock";
 import { useRouter } from "next/navigation";
+import OlvidarAlSalir from "@/components/OlvidarAlSalir";
 
 const navLinks = [
   { name: "Características", href: "#features" },
@@ -87,6 +88,9 @@ export default function LandingPage() {
 
   return (
     <div className="w-full flex flex-col min-h-screen bg-zinc-50 dark:bg-black overflow-hidden transition-colors duration-300 relative">
+      {/* Si estás acá, no hay sesión: se borra del teléfono lo que era del
+          piloto. Red de seguridad del borrado — ver `olvidar-datos.ts`. */}
+      <OlvidarAlSalir />
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-aviation-blue/5 dark:bg-aviation-blue/[0.06] rounded-full blur-[140px]" />

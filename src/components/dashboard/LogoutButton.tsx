@@ -3,11 +3,20 @@
 import { useTransition } from "react";
 import { LogOut, Loader2 } from "lucide-react";
 import { logout } from "@/actions/auth";
+import { olvidarDatosPersonales } from "@/lib/olvidar-datos";
 
 export function LogoutButton({ isMobile = false, variant = "default" }: { isMobile?: boolean; variant?: "default" | "rail" }) {
   const [isPending, startTransition] = useTransition();
 
   async function handleLogout() {
+    /*
+      **Primero se borra el teléfono, después se sale.** Si la acción falla por red, lo
+      guardado ya no está — que es el orden correcto. Y hace falta hacerlo desde acá
+      porque esto es una server action (`POST` con `Next-Action`), y el service worker
+      no se mete con nada que no sea `GET`: si confiara sólo en interceptar
+      `/api/auth/logout`, el camino más común no borraría nada.
+    */
+    await olvidarDatosPersonales();
     startTransition(async () => {
       await logout();
     });

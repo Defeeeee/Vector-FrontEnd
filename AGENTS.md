@@ -5312,3 +5312,111 @@ borra**, y no hay ninguna página cacheada todavía.
 ⚠️ El upstream de `aviationweather.gov` **no es alcanzable desde el sandbox** —el
 `fetch` de Node no sale por el proxy— así que el camino con METAR real hay que
 comprobarlo en producción. La lógica sí está testeada, contra METAR crudos de verdad.
+
+## El dashboard abre sin señal, fechado — Fase 6 — 2026-08-21
+
+La última del plan. Las pantallas de lectura del dashboard se guardan en el teléfono y
+abren sin red, **con un cartel que dice de cuándo es lo que estás viendo**.
+
+Las dos cosas entraron en el mismo commit a propósito: cachear primero y etiquetar
+después dejaría, aunque sea por un deploy, una app que muestra horas viejas como si
+fueran de ahora.
+
+### ⚠️ El pedido que pierde la carrera NO se aborta
+
+Es el detalle más sutil de todo el plan, y saltearlo rompe sesiones.
+
+En la plataforma el caso malo no es "sin red": es **señal que engancha y no
+transfiere**. Por eso la navegación corre una carrera de 3 s contra la copia guardada.
+Pero `src/proxy.ts` es el único lugar donde se renueva la sesión, y **los refresh token
+de Supabase son de un solo uso**: el proxy los rota.
+
+Si el service worker abortara el pedido perdedor, tiraría la respuesta que traía los
+`Set-Cookie` nuevos — pero Supabase **ya consumió** el token viejo. Pasada la tolerancia
+de GoTrue, la sesión queda muerta y el piloto tiene que escribir la contraseña en la
+plataforma, con el avión afuera.
+
+Hoy eso existe apenas en teoría. La carrera lo volvería **sistemático**, porque se
+pierde justo cuando la red está mal, que es justo cuando el canje tarda.
+
+**`AbortController` para nada, `waitUntil` para todo.** La promesa perdedora sigue viva
+y, de paso, es la que refresca el cache.
+
+### El cartel lee el cache, no le pregunta al service worker
+
+Se descartaron las dos alternativas obvias. **Inyectar el timestamp en el HTML** obliga
+a bufferear el documento entero —chau streaming— y mete un parser de HTML entre Next y
+el navegador. **Preguntar por `postMessage`** depende de que el worker esté vivo, y el
+service worker se muere entre eventos: la respuesta sería "no sé", y "no sé" degradando
+a "asumamos que está fresco" es justo lo que este proyecto prohíbe.
+
+El Cache API existe en `window`. Se abre la caja y se lee el header que el service
+worker estampó al guardar.
+
+Y con red primero **no hace falta saber si la página vino del cache**: si vino de la
+red, el sello es de hace segundos y el cartel se calla; si vino del cache, es de la
+última vez que hubo red. El único modo de falla es callarse sobre una página de ocho
+segundos — **falla del lado seguro**.
+
+⚠️ Hace falta `ignoreVary: true`: Next sirve el HTML con `Vary: RSC,
+Next-Router-State-Tree, …` y un `match` armado desde la página no lleva esos headers.
+Sin eso el cartel no aparecía nunca. Es seguro acá porque **no se usa el cuerpo, sólo
+la fecha**.
+
+### El borrado necesita tres disparadores, y el más obvio no alcanza
+
+⚠️ **El botón "Cerrar Sesión" no pasa por `/api/auth/logout`.** Llama a la server action
+`logout`, que es un `POST` con header `Next-Action` — y la regla de oro del `fetch`
+handler es no meterse con nada que no sea `GET`. Un service worker que sólo interceptara
+esa URL **no borraría nada en el caso más común**.
+
+1. **El botón** avisa por `postMessage` y **espera la confirmación** antes de invocar la
+   acción. Primero se borra, después se sale: si salir falla por red, el teléfono ya
+   quedó limpio.
+2. **`/api/auth/logout` por `GET`**, el camino de los 401, lo maneja el service worker
+   por URL: pasa derecho a la red y borra en `waitUntil`, gane o pierda.
+3. **La landing y el login al montar** son la red de seguridad: capturan la sesión que
+   el proxy declaró muerta, el refresh token vencido a los 30 días y las cookies
+   borradas a mano.
+
+El tercero no es paranoia: **el service worker no puede consultar el estado de sesión
+por su cuenta**, porque las cookies son `httpOnly` y ni `document.cookie` ni la Cookie
+Store API se las muestran. Hay que avisarle; no puede averiguarlo.
+
+Se borran `vector-paginas` y `vector-meteo` —el METAR de tu base dice dónde volás—. El
+catálogo aeronáutico se queda: es público y borrarlo sólo empeoraría el próximo vuelo.
+
+### El bug que sólo aparece manejando un navegador
+
+**La pantalla de "no hay conexión" mostraba "Algo se rompió".**
+
+Guardar su HTML no alcanzaba: el HTML referencia sus chunks de JavaScript, y esos se
+cachean recién cuando alguien los pide — o sea cuando alguien visita la pantalla, que
+por definición nadie hace con señal. React arrancaba, no encontraba su chunk, tiraba
+`ChunkLoadError`, y la frontera de error reemplazaba todo. **La pantalla que existe para
+explicar que no hay red terminaba diciendo que la app está rota.**
+
+Se arregló sin traer un manifiesto de precache: al instalar se lee el HTML recién
+guardado y se sacan de ahí sus propias referencias a `/_next/static/`. **Sale del
+artefacto real**, así que cambia el build y cambia la lista, sin que nadie se acuerde.
+
+Había pasado inadvertido en la Fase 2 porque el probe navegaba a una ruta cuyos chunks
+ya estaban cacheados desde el login.
+
+### El costo, documentado y no descubierto
+
+Con esta arquitectura el HTML del dashboard —horas, vuelos, vencimientos, plata— queda
+**en claro en el directorio de cache del navegador**, y se sigue sirviendo mientras no
+haya red aunque la cookie haya vencido. Es el precio exacto de la decisión de alcance.
+Defendible en el teléfono propio de un piloto; deja de serlo en uno prestado.
+
+### Verificación
+
+1037 tests, y en el navegador con `setOffline(true)`: la página se guarda fechada, las
+de escritura y sesión **no**, la cacheada abre de verdad con su cartel, una no cacheada
+cae en la pantalla de respaldo —que ahora se dibuja—, y el borrado se lleva los caches
+personales dejando el shell.
+
+Dos "fallas" del probe que no eran del código, y vale anotarlas porque cuestan tiempo:
+el cartel no aparecía porque la entrada tenía dos segundos y el umbral son veinte —o
+sea, funcionaba—; y una aserción sobre `h1` fallaba porque esa pantalla no tiene `h1`.

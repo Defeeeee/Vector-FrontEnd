@@ -4,6 +4,8 @@ import {
   CACHES_SIN_VERSION,
   CACHE_DATOS,
   CACHE_METEO,
+  CACHE_PAGINAS,
+  CACHES_PERSONALES,
   HEADER_CAPTURA,
   CACHE_SHELL,
   MENSAJES,
@@ -12,6 +14,7 @@ import {
   cachesABorrar,
   capturaVigente,
   estrategiaPara,
+  paginaCacheable,
   topeMeteo,
 } from "@/lib/pwa";
 import { catalogoDesdeJson, type CatalogoSerializado } from "@/lib/catalogo-json";
@@ -21,9 +24,7 @@ import type { Catalogo } from "@/lib/catalogo";
 /**
  * El service worker de Vector.
  *
- * **Fase 5: la meteorología se guarda, con la fecha a la vista.** Todavía no guarda
- * una sola página del dashboard: eso es la Fase 6, y viene atado al cartel que dice de
- * cuándo es lo que estás viendo.
+ * **Fase 6: el dashboard abre sin señal, fechado.** Completa el plan.
  *
  * El orden no es casual: un service worker roto **no se arregla con un deploy**,
  * porque el que decide si se busca la versión nueva es el service worker viejo. Por
@@ -54,7 +55,13 @@ self.addEventListener("install", (evento) => {
     Es lo correcto: un shell a medias es peor que ninguno, porque la app quedaría
     "disponible sin conexión" sin estarlo.
   */
-  evento.waitUntil(caches.open(CACHE_SHELL).then((cache) => cache.addAll(PRECACHE)));
+  evento.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_SHELL);
+      await cache.addAll(PRECACHE);
+      await guardarLoQueNecesitaElRespaldo(cache);
+    })()
+  );
 
   /*
     **No se llama a `skipWaiting()` acá, y es la decisión de esta fase.**
@@ -120,19 +127,61 @@ self.addEventListener("message", (evento) => {
 
   if (tipo === MENSAJES.olvidarDatosPersonales) {
     /*
-      Todavía no hay nada personal guardado —esta fase no cachea— pero el mensaje
-      existe desde el principio para que el camino esté probado antes de que haya
-      algo que perder. Se contesta por el puerto que mandó el mensaje: quien pide
-      esto está por cerrar sesión y necesita saber que terminó.
+      Se borran **sólo los personales**: las páginas del dashboard y la meteorología —el
+      METAR de tu base dice dónde volás—. El catálogo aeronáutico y el cache de datos se
+      quedan: son públicos, iguales para cualquiera, y borrarlos sólo empeoraría el
+      próximo vuelo de quien vuelva a entrar.
+
+      Se contesta por el puerto que mandó el mensaje: quien pide esto está por cerrar
+      sesión y necesita saber que terminó antes de irse.
     */
     evento.waitUntil(
       (async () => {
-        await Promise.all(CACHES_SIN_VERSION.map((n) => caches.delete(n)));
+        await Promise.all(CACHES_PERSONALES.map((n) => caches.delete(n)));
         evento.ports[0]?.postMessage({ ok: true });
       })()
     );
   }
 });
+
+/**
+ * Guarda los archivos que la pantalla de respaldo necesita para dibujarse.
+ *
+ * ## El bug que esto arregla, y que sólo apareció manejando un navegador
+ *
+ * Guardar el HTML de `/sin-conexion` **no alcanza**. El HTML referencia los chunks de
+ * JavaScript de esa ruta, y esos chunks se cachean recién cuando alguien los pide — o
+ * sea cuando alguien visita la pantalla, que por definición nadie hace con señal.
+ *
+ * Sin ellos, React arranca, no encuentra su chunk, tira `ChunkLoadError`, y la frontera
+ * de error reemplaza la pantalla por **"Algo se rompió. Fue un error nuestro"**. La
+ * pantalla que existe para explicar que no hay red terminaba diciendo que la app está
+ * rota.
+ *
+ * ## Cómo se resuelve sin un manifiesto de precache
+ *
+ * Se lee el HTML que se acaba de guardar y se sacan de ahí sus propias referencias a
+ * `/_next/static/`. **Sale del artefacto real**, así que no puede quedar viejo: cambia
+ * el build, cambia la lista, sin que nadie tenga que acordarse.
+ *
+ * Un fallo acá no voltea la instalación: sin los chunks la pantalla de respaldo se ve
+ * peor, pero el resto del service worker sirve igual.
+ */
+async function guardarLoQueNecesitaElRespaldo(cache: Cache): Promise<void> {
+  try {
+    const guardado = await cache.match("/sin-conexion");
+    if (!guardado) return;
+    const html = await guardado.clone().text();
+    const referencias = new Set(html.match(/\/_next\/static\/[^"')\s]+/g) ?? []);
+    await Promise.all(
+      [...referencias].map((url) =>
+        cache.match(url).then((ya) => (ya ? undefined : cache.add(url).catch(() => undefined)))
+      )
+    );
+  } catch {
+    // Ver arriba: el respaldo degradado es mejor que una instalación fallida.
+  }
+}
 
 /**
  * Cache primero. **Sólo para contenido que no puede cambiar sin cambiar de URL.**
@@ -165,6 +214,82 @@ async function delCacheODeLaRed(pedido: Request): Promise<Response> {
  * puede quemarlo y dejar al piloto tipeando la contraseña en la plataforma.
  * Adelantar la carrera sin eso sería adelantar el riesgo sin ninguna de sus ventajas.
  */
+/**
+ * Cuánto se espera a la red antes de servir la copia guardada.
+ *
+ * **En la plataforma el caso malo no es "sin red": es señal que engancha y no
+ * transfiere.** Un network-first ingenuo espera a que el pedido se rinda, y como
+ * `apiFetch` tiene 15 s de timeout propio, el piloto puede quedarse mirando un spinner
+ * medio minuto. Tres segundos le dan su bitácora de ayer casi al instante, con la
+ * etiqueta que dice que es de ayer.
+ */
+const ESPERA_MS = 3000;
+
+/**
+ * Las páginas del dashboard: red primero, y la copia guardada si la red no llega.
+ *
+ * ## ⚠️ El pedido que pierde la carrera NO se aborta
+ *
+ * Es el detalle más sutil de todo el plan, y saltearlo rompe sesiones.
+ *
+ * `src/proxy.ts` es el único lugar donde se renueva la sesión, y los refresh token de
+ * Supabase son **de un solo uso**: el proxy los rota. Si el service worker abortara el
+ * pedido perdedor, tiraría la respuesta que traía los `Set-Cookie` nuevos — pero
+ * Supabase **ya consumió** el token viejo. Pasada la tolerancia de GoTrue, la sesión
+ * queda muerta y el piloto tiene que escribir la contraseña en la plataforma, con el
+ * avión afuera.
+ *
+ * Hoy eso existe apenas en teoría —alguien que mata la pestaña a mitad del canje—. La
+ * carrera lo volvería **sistemático**, porque se pierde justo cuando la red está mal,
+ * que es justo cuando el canje tarda.
+ *
+ * Por eso: `AbortController` para nada, y la promesa perdedora sigue viva en
+ * `waitUntil`. De paso, esa respuesta tardía es la que refresca el cache.
+ */
+async function paginaConRespaldo(evento: FetchEvent): Promise<Response> {
+  const pedido = evento.request;
+  const cache = await caches.open(CACHE_PAGINAS);
+
+  const red = fetch(pedido)
+    .then(async (respuesta) => {
+      /*
+        Sólo 200 y sólo lo que la lista blanca permite. Un redirect opaco —"tu sesión
+        venció"— no se puede cachear ni leer, y se devuelve tal cual: eso es lo que hace
+        **imposible** servir el dashboard guardado por encima de un "volvé a entrar".
+      */
+      if (respuesta.status === 200 && paginaCacheable(new URL(pedido.url).pathname)) {
+        const copia = respuesta.clone();
+        const cabeceras = new Headers(copia.headers);
+        cabeceras.set(HEADER_CAPTURA, new Date().toISOString());
+        await cache.put(pedido, new Response(await copia.blob(), { status: 200, headers: cabeceras }));
+      }
+      return respuesta;
+    })
+    .catch(() => null);
+
+  const guardada = await cache.match(pedido);
+  if (!guardada) {
+    const respuesta = await red;
+    return respuesta ?? (await respaldoSinConexion());
+  }
+
+  // Con copia guardada se corre la carrera. La promesa perdedora **no se aborta**.
+  const gano = await Promise.race([
+    red,
+    new Promise<null>((listo) => setTimeout(() => listo(null), ESPERA_MS)),
+  ]);
+  if (gano) return gano;
+
+  evento.waitUntil(red);
+  return guardada;
+}
+
+async function respaldoSinConexion(): Promise<Response> {
+  const respaldo = await caches.match("/sin-conexion", { cacheName: CACHE_SHELL });
+  if (respaldo) return respaldo;
+  throw new Error("sin conexión y sin pantalla de respaldo");
+}
+
 async function deLaRedOSinConexion(pedido: Request): Promise<Response> {
   try {
     /*
@@ -317,8 +442,25 @@ async function redOMeteoGuardada(pedido: Request, maximoMin: number): Promise<Re
   }
 }
 
+/** El logout por GET: el camino de los 401 y del link de `ErrorEstado`. */
+const RUTA_LOGOUT = "/api/auth/logout";
+
 self.addEventListener("fetch", (evento) => {
   const pedido = evento.request;
+
+  /*
+    **El logout tiene que poder correr siempre, sobre todo con la sesión rota**, así que
+    pasa derecho a la red sin que el service worker lo toque. Lo único que se hace es
+    aprovechar el paso para borrar lo personal, gane o pierda el pedido: si el servidor
+    no contesta, el teléfono igual queda limpio.
+
+    Ojo que **éste no es el camino más común**: el botón de la app llama a una server
+    action, que es un `POST`, y avisa por `postMessage`. Ver `lib/olvidar-datos.ts`.
+  */
+  if (pedido.method === "GET" && new URL(pedido.url).pathname === RUTA_LOGOUT) {
+    evento.waitUntil(Promise.all(CACHES_PERSONALES.map((n) => caches.delete(n))));
+    return;
+  }
   const estrategia = estrategiaPara(
     {
       metodo: pedido.method,
@@ -342,6 +484,13 @@ self.addEventListener("fetch", (evento) => {
   if (estrategia === "meteo") {
     const tope = topeMeteo(new URL(pedido.url).pathname);
     return evento.respondWith(redOMeteoGuardada(pedido, tope ?? 0));
+  }
+  /*
+    Las páginas de la lista blanca guardan una copia fechada; el resto —alta de vuelos,
+    ajustes, auditoría, login— va a la red y cae en la pantalla de sin conexión.
+  */
+  if (paginaCacheable(new URL(pedido.url).pathname)) {
+    return evento.respondWith(paginaConRespaldo(evento));
   }
   evento.respondWith(deLaRedOSinConexion(pedido));
 });

@@ -8,6 +8,7 @@ import { useState, useTransition, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import OlvidarAlSalir from "@/components/OlvidarAlSalir";
 
 function LoginContent() {
   const [isPending, startTransition] = useTransition();
@@ -67,6 +68,9 @@ function LoginContent() {
 
   return (
     <div className="flex min-h-screen w-full bg-white dark:bg-black relative transition-colors duration-300">
+      {/* Si estás acá, no hay sesión: se borra del teléfono lo que era del
+          piloto. Red de seguridad del borrado — ver `olvidar-datos.ts`. */}
+      <OlvidarAlSalir />
       {/* Minimal Top Bar — constrained to the form half so it does not float
           over the context panel on wide screens. */}
       <div className="absolute top-6 left-0 w-full lg:w-1/2 px-6 flex justify-between items-center z-20">

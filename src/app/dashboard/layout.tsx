@@ -9,6 +9,7 @@ import { apiFetch } from "@/lib/api";
 import { AuditSummary, Profile } from "@/types";
 import ChatWidget from "@/components/dashboard/ChatWidget";
 import SinConexionBanner from "@/components/dashboard/SinConexionBanner";
+import VistoPorUltimaVez from "@/components/dashboard/VistoPorUltimaVez";
 
 import { redirect } from "next/navigation";
 
@@ -164,6 +165,13 @@ export default async function DashboardLayout({
             {/* Arriba de todo: si la consulta base falló, el piloto tiene que
                 enterarse antes de leer un solo número de la pantalla. */}
             {!disponible && <SinConexionBanner />}
+            {/*
+              Los dos carteles contestan preguntas distintas y pueden aparecer juntos.
+              `SinConexionBanner` dice **que no pudimos preguntar**; éste dice **de
+              cuándo es lo que estás viendo**. El segundo sólo aparece cuando la página
+              se sirvió desde el teléfono, y se calcula en el cliente leyendo el cache.
+            */}
+            <VistoPorUltimaVez />
             {children}
           </div>
         </main>
