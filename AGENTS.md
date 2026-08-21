@@ -5050,3 +5050,103 @@ el riesgo sin ninguna de sus ventajas.
 tipografías, `vector-paginas` inexistente, la pantalla aparece con la URL original
 intacta, cero pedidos fallidos, un POST no pasa por el service worker, y `?sw=reset`
 sigue dejando todo en cero con el cache lleno. Claro y oscuro.
+
+## Un solo algoritmo de resolución de puntos — Fase 3 — 2026-08-21
+
+**Esta fase no toca el service worker.** Deja el repo mejor aunque la PWA se cancele:
+`/api/puntos/route.ts` pasó de **279 líneas a 48**, y lo que salió de ahí ahora se
+puede testear y correr en el navegador.
+
+### El problema
+
+La resolución vivía adentro del route handler: `resolverCodigo` más las ~130 líneas de
+composición del `GET`. Ahí no se podía testear —el archivo arrastra `next/server`— y,
+sobre todo, **no podía correr en el navegador**, que es lo que hace falta para que el
+planificador funcione sin señal.
+
+La salida fácil habría sido escribir una segunda resolución "para offline". Es
+exactamente el error que este repo ya cometió: `splitRoute` llegó a estar escrita
+**cinco veces**, y la composición de la ficha de aeródromo estuvo duplicada hasta que
+una copia le mostró al piloto una pista de tierra donde ANAC publica asfalto.
+
+Dos resoluciones que se separan en silencio significan que **la ruta que planificás sin
+señal no es la que planificás con señal**. Nadie lo notaría hasta estar volando.
+
+### Un puerto, dos adaptadores
+
+- `lib/catalogo.ts` — la interfaz `Catalogo`: siete métodos síncronos, sin `fs` ni
+  `fetch` a la vista.
+- `lib/resolucion-puntos.ts` — **el algoritmo, puro**, mudado con sus comentarios.
+- `lib/catalogo-servidor.ts` — los TSV. **No se tocó una línea de los parsers.**
+- `lib/catalogo-json.ts` — el catálogo de a bordo, con el mismo patrón de índice
+  memoizado que `airports.ts`.
+
+### El generador sale de las funciones del servidor, no de los TSV
+
+`scripts/catalogo-fuente.ts` llama a `allAirports()`, `allRadioayudas()`, `allFixes()` y
+`allAerovias()` — las mismas que hay detrás de `catalogoServidor`. Un generador que
+re-parseara los TSV habría sido una **tercera** implementación de la lectura de datos,
+y se habría separado la primera vez que alguien tocara un parser sin acordarse de él.
+
+Así, todo lo que esos parsers hacen y que nadie recordaría replicar —la mezcla del
+directorio mundial con MADHEL, la corrección de largos de pista contra el AIP, la
+variación precalculada, el recorte de rutas a 60 caracteres— llega al JSON **por
+construcción**. Como los módulos son `.ts` con alias `@`, el generador los empaqueta
+con esbuild: el mismo martillo que ya estaba para el service worker.
+
+**153 KB, 55 KB comprimido.** 741 aeródromos, 96 radioayudas, 1018 fixes, 220 aerovías.
+
+### La búsqueda también se compartió, y eso no estaba en el plan
+
+Al escribir el adaptador JSON apareció que `searchAirports` tiene un ranking propio
+—exacto, después prefijo, después texto libre; y entre iguales por tamaño y Argentina
+primero— que **no se replica de memoria**. Una búsqueda "más simple para offline"
+habría hecho que el orden de las sugerencias cambiara según hubiera o no señal.
+
+Se extrajo `construirIndice` + `buscarEnIndice` de `airports.ts`: el servidor arma el
+índice con los 17.129 del TSV, el de a bordo con los 741 del JSON, y el algoritmo es
+uno solo.
+
+### La única asimetría admitida, y está fijada por un test
+
+El catálogo de a bordo tiene **Argentina sola**. El directorio mundial son 469 KB
+comprimidos —diez veces todo lo demás junto— para resolver aeródromos de Kazajistán en
+la plataforma. `KJFK` resuelve con señal y no resuelve sin ella.
+
+Eso obliga a distinguir en el test cruzado, y la distinción es la correcta:
+
+- **Igualdad estricta** en `punto`, `salida` y `error` — lo que tiene consecuencia de
+  navegación.
+- Las **sugerencias** difieren: el de a bordo rellena con más argentinos los lugares
+  donde el servidor pone extranjeros. Lo que se exige es que **los argentinos del
+  servidor sean exactamente los primeros del de a bordo, en el mismo orden** — que es
+  lo que detectaría que el ranking se separó.
+
+### Los tests, y los dos que costaron
+
+Dieciséis tokens contra los dos catálogos, más las 220 aerovías resueltas punto por
+punto con el catálogo de a bordo.
+
+El más valioso es el que compara `armarCatalogo()` contra el JSON commiteado: **atrapa
+el olvido más probable de todos** —corregir un TSV o un parser y no regenerar el
+catálogo— y de paso cubre que alguien lo haya editado a mano.
+
+Seis mutantes deliberados. Dos sobrevivieron a la primera y los dos señalaban un caso
+que faltaba en la tabla, no código de más:
+
+- **`variacionW: f[10] ?? 0`.** Ningún caso tenía un aeródromo sin variación publicada
+  —son 31—. Cero es un valor **válido** en Argentina, la línea agónica cruza la
+  Patagonia, así que la confusión no falla: corrige el rumbo con un número inventado.
+  En SACI son 5,7° de error silencioso. Entró `SACI` a la tabla.
+- **`elevation: f[9] ?? 0`.** Lo mismo con la elevación, que alimenta la altitud de
+  densidad y por lo tanto el largo de pista necesario. `SAMP` es el único del directorio
+  al que le faltan las dos cosas.
+
+### Y el `Cache-Control` que faltaba
+
+`/api/puntos` ponía el header en casi todas las ramas pero no en la de consulta vacía.
+El resultado era que unas respuestas se cacheaban y otras no, sin ningún criterio que
+alguien pudiera reconstruir mirando el código. Ahora es una constante y va en la única
+salida que quedó.
+
+**1013 tests.**

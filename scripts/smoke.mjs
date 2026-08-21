@@ -68,6 +68,17 @@ const ROUTES = [
     verificar cuando no hay red. Si alguien la mueve, acá aparece como un 307.
   */
   { path: "/sin-conexion", expect: (s) => s === 200 },
+  /*
+    El catálogo de a bordo. Que esté al día lo comprueba `resolucion-puntos.test.ts`;
+    esto comprueba lo otro: que **se sirva**. Sin él, el planificador sin señal no
+    resuelve un solo punto, y es la clase de archivo que se cae de un build sin que
+    nada más se rompa.
+  */
+  {
+    path: "/catalogo-aeronautico.json",
+    expect: (s) => s === 200,
+    json: (b) => b.esquema === 1 && b.aerodromos?.length > 500 && b.aerovias?.length === 220,
+  },
   // El directorio de aeródromos se sirve sin sesión y lee los TSV del disco:
   // si el build no los copió, esto lo agarra.
   { path: "/api/airports/search?q=SADM", expect: (s) => s === 200, json: (b) => b.results?.[0]?.icao === "SADM" },

@@ -20,7 +20,8 @@
     "test:watch": "vitest",
     "smoke": "node scripts/smoke.mjs",
     "build:iconos": "node scripts/build-iconos.mjs",
-    "build:sw": "node scripts/build-sw.mjs"
+    "build:sw": "node scripts/build-sw.mjs",
+    "build:catalogo": "node scripts/build-catalogo.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

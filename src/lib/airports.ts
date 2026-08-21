@@ -374,10 +374,55 @@ function compare(a: Airport, b: Airport, rankA: number, rankB: number): number {
  * that happens to share the letters. Exact beats IATA, so it does.
  */
 export function searchAirports(query: string, limit = 8): Airport[] {
+  return buscarEnIndice(load(), query, limit);
+}
+
+/**
+ * Lo que necesita la búsqueda para funcionar, sin decir de dónde salió.
+ *
+ * Existe para que **el catálogo de a bordo use esta misma búsqueda** en vez de una
+ * parecida. `catalogo-json.ts` arma este índice con los ~875 aeródromos argentinos
+ * del JSON precacheado y llama acá; el servidor lo arma con los 17.129 del TSV.
+ *
+ * Sin esto, el orden de las sugerencias sin señal sería distinto del orden con señal
+ * —el ranking de `compare` no es obvio de replicar— y el piloto vería otra lista
+ * según tuviera o no red. Es la misma razón por la que la resolución de puntos se
+ * sacó del route handler.
+ */
+export interface IndiceAerodromos {
+  byIcao: Map<string, Airport>;
+  byPrefix: Map<string, Airport[]>;
+  all: Airport[];
+  /** Texto normalizado y concatenado por aeródromo, en el mismo orden que `all`. */
+  haystacks: string[];
+}
+
+/** Arma el índice desde una lista suelta. Lo usa el catálogo de a bordo. */
+export function construirIndice(aerodromos: Airport[]): IndiceAerodromos {
+  const byIcao = new Map<string, Airport>();
+  const byPrefix = new Map<string, Airport[]>();
+  const all: Airport[] = [];
+  const haystacks: string[] = [];
+
+  for (const a of aerodromos) {
+    byIcao.set(normalize(a.icao), a);
+    if (a.local && a.local !== a.icao) byIcao.set(normalize(a.local), a);
+    all.push(a);
+    haystacks.push(normalize(`${a.local ?? ""} ${a.icao} ${a.city} ${a.name}`));
+    const p = normalize(a.icao).slice(0, 2);
+    const bucket = byPrefix.get(p);
+    if (bucket) bucket.push(a);
+    else byPrefix.set(p, [a]);
+  }
+
+  return { byIcao, byPrefix, all, haystacks };
+}
+
+export function buscarEnIndice(indice: IndiceAerodromos, query: string, limit = 8): Airport[] {
   const q = normalize(query);
   if (q.length < 2) return [];
 
-  const { byIcao, byPrefix, all, haystacks } = load();
+  const { byIcao, byPrefix, all, haystacks } = indice;
   const ranks = new Map<Airport, number>();
 
   const consider = (airport: Airport, rank: number) => {
