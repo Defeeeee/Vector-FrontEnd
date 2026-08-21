@@ -1,4 +1,5 @@
 import { windComponents } from "./aviation";
+import { frescura, horaDeObservacion, sirveParaDecidir } from "./frescura";
 
 /**
  * El veredicto meteorológico de una ruta: ¿se puede volar visual?
@@ -68,6 +69,10 @@ export interface EstacionRuta {
    * una estación puede responder y no publicar categoría.
    */
   respondio: boolean;
+  /** El METAR crudo, que trae adentro su propia hora de observación. */
+  metar?: string | null;
+  /** La hora de observación en ISO, si el proveedor la mandó. */
+  observadoEn?: string | null;
 }
 
 export type TonoVeredicto = "bien" | "atencion" | "peligro" | "sinDatos";
@@ -81,6 +86,24 @@ export interface Veredicto {
   respondieron: number;
   /** La estación que motivó el veredicto, si hay una. */
   estacion?: string;
+}
+
+/**
+ * Si lo que contestó la estación ya no describe el cielo de ahora.
+ *
+ * **Un METAR de cuatro horas respondió pero no informa.** Contarlo como estación que
+ * contestó le permitiría a esta función producir un verde tranquilizador a partir de
+ * datos viejos, que es exactamente el bug de 2026 por otra puerta — y con un service
+ * worker guardando respuestas deja de ser hipotético.
+ *
+ * Cuando la estación **no dice** cuándo observó —ni METAR crudo ni campo del
+ * proveedor— se la cuenta como antes. Ausencia del dato es "el llamador no nos lo
+ * pasó", no "es viejo": inventar vencimientos donde no hay información sería el error
+ * simétrico.
+ */
+function vencida(e: EstacionRuta, ahora: Date): boolean {
+  if (!e.metar && !e.observadoEn) return false;
+  return !sirveParaDecidir(frescura(horaDeObservacion(e.observadoEn, e.metar, ahora), ahora));
 }
 
 /**
@@ -102,11 +125,12 @@ export interface Veredicto {
  * parcial**. Si una estación reporta IFR y otra no contestó, lo que hay que decir es
  * que hay IFR — el dato que falta no atenúa el que sí está.
  */
-export function veredictoDeRuta(estaciones: EstacionRuta[]): Veredicto {
+export function veredictoDeRuta(estaciones: EstacionRuta[], ahora = new Date()): Veredicto {
   const consultadas = estaciones.length;
-  const conDato = estaciones.filter((e) => e.respondio && e.categoria !== "UNK");
+  const informa = (e: EstacionRuta) => e.respondio && e.categoria !== "UNK" && !vencida(e, ahora);
+  const conDato = estaciones.filter(informa);
   const respondieron = conDato.length;
-  const faltantes = estaciones.filter((e) => !e.respondio || e.categoria === "UNK");
+  const faltantes = estaciones.filter((e) => !informa(e));
 
   const base = { consultadas, respondieron };
 

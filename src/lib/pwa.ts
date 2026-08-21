@@ -172,6 +172,54 @@ export const RUTAS_DE_DATOS = [
 /** La única de las cuatro que el service worker puede contestar por su cuenta. */
 export const RUTA_PUNTOS = "/api/puntos";
 
+/**
+ * Meteorología: se guarda, pero con **corte duro** y con la fecha a la vista.
+ *
+ * No entró hasta que la pantalla supo decir la antigüedad del dato (ver
+ * `lib/frescura.ts`). Antes de eso, guardar un METAR era guardar algo que se
+ * renderizaba idéntico tuviera cinco minutos o cinco horas — el peor bug de la
+ * historia de esta app con otro disfraz.
+ *
+ * Los topes de acá no reemplazan a los de `frescura.ts`: **son otra cosa.** Aquéllos
+ * miden cuándo se *observó* y deciden si el dato puede opinar; éstos miden cuánto hace
+ * que lo *trajimos* y deciden si vale la pena servirlo. Un METAR de las 14:00Z traído a
+ * las 14:05 y el mismo traído a las 19:00 no dicen lo mismo sobre el cielo de ahora.
+ */
+export const RUTAS_METEO: { ruta: string; maximoMin: number }[] = [
+  /*
+    Dos horas: un ciclo entero de METAR. Pasado eso la entrada se borra en vez de
+    servirse — el mismo umbral que `INSERVIBLE_MIN`, porque es el mismo razonamiento.
+  */
+  { ruta: "/api/weather", maximoMin: 120 },
+  /*
+    Doce horas para NOTAM y viento en altura, que se mueven mucho más lento: un NOTAM
+    tiene vigencia propia —viaja en el dato— y el GFS se corre cada seis.
+  */
+  { ruta: "/api/notams", maximoMin: 720 },
+  { ruta: "/api/winds-aloft", maximoMin: 720 },
+];
+
+/** Cuándo se guardó una respuesta. Lo estampa el service worker. */
+export const HEADER_CAPTURA = "X-Vector-Capturado-En";
+
+/** El tope de esa ruta, o `null` si no es de las que se guardan. */
+export function topeMeteo(pathname: string): number | null {
+  return RUTAS_METEO.find((r) => r.ruta === pathname)?.maximoMin ?? null;
+}
+
+/**
+ * Si una respuesta guardada todavía se puede servir.
+ *
+ * Sin fecha de captura **no se sirve**: no saber cuándo se trajo es no poder decir si
+ * sirve, y este proyecto no afirma lo que no sabe.
+ */
+export function capturaVigente(capturadoEn: string | null, maximoMin: number, ahora: Date): boolean {
+  if (!capturadoEn) return false;
+  const t = Date.parse(capturadoEn);
+  if (Number.isNaN(t)) return false;
+  return ahora.getTime() - t <= maximoMin * 60000;
+}
+
 /** Qué hace el service worker con un pedido. */
 export type Estrategia =
   /** No se mete: el navegador resuelve como si el service worker no existiera. */
@@ -181,7 +229,9 @@ export type Estrategia =
   /** A la red; si falla de verdad, la pantalla de sin conexión. */
   | "navegacion"
   /** Datos aeronáuticos: se contesta con lo guardado y se refresca atrás. */
-  | "datos";
+  | "datos"
+  /** Meteorología: red primero, y lo guardado sólo si no pasó su tope. */
+  | "meteo";
 
 export interface Pedido {
   metodo: string;
@@ -239,6 +289,7 @@ export function estrategiaPara(pedido: Pedido, origen: string): Estrategia {
   if (url.pathname.startsWith("/_next/static/")) return "assets";
   if (PRECACHE.includes(url.pathname)) return "assets";
   if (RUTAS_DE_DATOS.includes(url.pathname)) return "datos";
+  if (topeMeteo(url.pathname) !== null) return "meteo";
 
   return "ignorar";
 }

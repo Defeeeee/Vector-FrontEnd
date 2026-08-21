@@ -3,12 +3,16 @@
 import {
   CACHES_SIN_VERSION,
   CACHE_DATOS,
+  CACHE_METEO,
+  HEADER_CAPTURA,
   CACHE_SHELL,
   MENSAJES,
   PRECACHE,
   RUTA_PUNTOS,
   cachesABorrar,
+  capturaVigente,
   estrategiaPara,
+  topeMeteo,
 } from "@/lib/pwa";
 import { catalogoDesdeJson, type CatalogoSerializado } from "@/lib/catalogo-json";
 import { resolverPunto } from "@/lib/resolucion-puntos";
@@ -17,10 +21,9 @@ import type { Catalogo } from "@/lib/catalogo";
 /**
  * El service worker de Vector.
  *
- * **Fase 4: el planificador resuelve puntos sin señal.** Todavía no guarda una sola
- * página del dashboard —eso es la Fase 6, atado al cartel que dice de cuándo es lo que
- * estás viendo— ni una sola respuesta de meteorología, que es la Fase 5 y no entra
- * hasta que la pantalla sepa decir la antigüedad del dato.
+ * **Fase 5: la meteorología se guarda, con la fecha a la vista.** Todavía no guarda
+ * una sola página del dashboard: eso es la Fase 6, y viene atado al cartel que dice de
+ * cuándo es lo que estás viendo.
  *
  * El orden no es casual: un service worker roto **no se arregla con un deploy**,
  * porque el que decide si se busca la versión nueva es el service worker viejo. Por
@@ -274,6 +277,46 @@ async function resolverConCatalogoLocal(pedido: Request): Promise<Response | nul
   });
 }
 
+/**
+ * Meteorología: la red manda, y lo guardado sólo si no pasó su tope.
+ *
+ * **Nunca cache primero.** Un METAR guardado no es un dato más rápido: es un dato de
+ * antes, y la diferencia importa justo cuando el piloto está decidiendo pista en uso.
+ * Se va a la red, y sólo si no contesta se mira lo que hay — y aun así se descarta si
+ * lleva más tiempo guardado que el tope de esa ruta.
+ *
+ * La respuesta guardada lleva estampada `X-Vector-Capturado-En`, que contesta una
+ * pregunta distinta de la del METAR: **cuándo lo trajimos**, no cuándo se observó. Las
+ * dos importan, y `lib/frescura.ts` se encarga de la segunda leyendo el propio texto
+ * del METAR.
+ */
+async function redOMeteoGuardada(pedido: Request, maximoMin: number): Promise<Response> {
+  const cache = await caches.open(CACHE_METEO);
+
+  try {
+    const respuesta = await fetch(pedido);
+    if (respuesta.status === 200) {
+      const copia = respuesta.clone();
+      const cabeceras = new Headers(copia.headers);
+      cabeceras.set(HEADER_CAPTURA, new Date().toISOString());
+      await cache.put(pedido, new Response(await copia.blob(), { status: 200, headers: cabeceras }));
+    }
+    return respuesta;
+  } catch {
+    const guardado = await cache.match(pedido);
+    if (guardado && capturaVigente(guardado.headers.get(HEADER_CAPTURA), maximoMin, new Date())) {
+      return guardado;
+    }
+    /*
+      Vencido o sin fecha: **se borra y se deja fallar**. Servir un METAR de seis horas
+      no es servir un dato viejo, es servir un dato falso con formato de dato — y la
+      pantalla ya sabe decir "no pudimos traer el METAR", que es la respuesta honesta.
+    */
+    if (guardado) await cache.delete(pedido);
+    throw new Error("sin meteorología reciente");
+  }
+}
+
 self.addEventListener("fetch", (evento) => {
   const pedido = evento.request;
   const estrategia = estrategiaPara(
@@ -296,5 +339,9 @@ self.addEventListener("fetch", (evento) => {
 
   if (estrategia === "assets") return evento.respondWith(delCacheODeLaRed(pedido));
   if (estrategia === "datos") return evento.respondWith(guardadoYRefrescar(pedido));
+  if (estrategia === "meteo") {
+    const tope = topeMeteo(new URL(pedido.url).pathname);
+    return evento.respondWith(redOMeteoGuardada(pedido, tope ?? 0));
+  }
   evento.respondWith(deLaRedOSinConexion(pedido));
 });

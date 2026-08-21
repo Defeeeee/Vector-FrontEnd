@@ -37,6 +37,21 @@ const METAR_STATIONS = [
   { icao: "SATR", name: "Reconquista", lat: -29.2108, lon: -59.6797 },
 ];
 
+/**
+ * La hora de observación del upstream, en ISO.
+ *
+ * `reportTime` ya viene en ISO; `obsTime` viene en **segundos** desde epoch, y
+ * pasárselo a `new Date()` sin multiplicar da enero de 1970. Se prefiere el primero
+ * justamente para no depender de esa distinción en dos lugares.
+ */
+function horaUpstream(dato: { reportTime?: unknown; obsTime?: unknown }): string | null {
+  if (typeof dato.reportTime === "string" && dato.reportTime.trim() !== "") return dato.reportTime;
+  if (typeof dato.obsTime === "number" && Number.isFinite(dato.obsTime) && dato.obsTime > 0) {
+    return new Date(dato.obsTime * 1000).toISOString();
+  }
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const icao = searchParams.get("icao")?.trim().toUpperCase();
@@ -75,6 +90,19 @@ export async function GET(req: NextRequest) {
     let altimHpa: number | null = null;
     let dewpointC: number | null = null;
     let nearestStation: { icao: string; name: string; distanceNm: number } | null = null;
+    /*
+      **Cuándo se observó.** El upstream lo manda y esta ruta lo tiraba, que es la misma
+      omisión que el comentario de arriba cuenta haber corregido con `altim` y `dewp`.
+
+      Sin esto no hay nada honesto que mostrar: un METAR de cinco minutos y uno de dos
+      horas se renderizan idénticos. Hoy eso es tolerable porque el `revalidate: 300`
+      acota la edad; **con un service worker guardando respuestas deja de serlo**.
+
+      ⚠️ `obsTime` viene en **segundos**; `reportTime` ya viene en ISO. Se manda el ISO
+      para que nadie tenga que acordarse de la escala. Ver `lib/frescura.ts`, que
+      igual sabe leer las dos y prioriza el grupo `DDHHMMZ` del METAR crudo.
+    */
+    let observadoEn: string | null = null;
 
     if (metarRes.ok) {
       const text = await metarRes.text();
@@ -90,6 +118,7 @@ export async function GET(req: NextRequest) {
             windDir = metarData.wdir !== undefined ? metarData.wdir : null;
             altimHpa = typeof metarData.altim === "number" ? metarData.altim : null;
             dewpointC = typeof metarData.dewp === "number" ? metarData.dewp : null;
+            observadoEn = horaUpstream(metarData);
           }
         } catch (parseErr) {
           console.error("Error parsing weather JSON:", parseErr);
@@ -131,6 +160,7 @@ export async function GET(req: NextRequest) {
                     windDir = match.wdir !== undefined ? match.wdir : null;
                     altimHpa = typeof match.altim === "number" ? match.altim : null;
                     dewpointC = typeof match.dewp === "number" ? match.dewp : null;
+                    observadoEn = horaUpstream(match);
                     nearestStation = {
                       icao: candidate.icao,
                       name: candidate.name,
@@ -166,6 +196,7 @@ export async function GET(req: NextRequest) {
       altimHpa,
       dewpointC,
       nearestStation,
+      observadoEn,
     });
   } catch (err: any) {
     console.error("Error fetching weather in api route:", err);

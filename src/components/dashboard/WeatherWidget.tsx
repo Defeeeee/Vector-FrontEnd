@@ -1,11 +1,56 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { frescura, horaDeObservacion } from "@/lib/frescura";
 import { CloudRain, Wind, Thermometer, Search, RefreshCw, ShieldAlert, BookOpen, Copy, Check, Sun, CloudSun, Cloud, CloudLightning } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface WeatherWidgetProps {
   defaultAirport: string;
+}
+
+/**
+ * "Observado hace 12 min."
+ *
+ * El METAR trae su propia hora adentro —el grupo `DDHHMMZ`— así que esto funciona
+ * igual con un dato traído de la red que con uno guardado en el teléfono, sin que
+ * nadie tenga que anotar cuándo se trajo.
+ *
+ * Los tres niveles tienen color distinto y el texto cambia con ellos: por encima de dos
+ * horas ya no se presenta como meteorología sino como lo que es, un texto viejo.
+ */
+function EdadDelMetar({ metar, observadoEn }: { metar: string; observadoEn?: string | null }) {
+  const [ahora, setAhora] = useState<Date | null>(null);
+
+  /*
+    El reloj arranca **después de montar** y se refresca cada minuto. En el render del
+    servidor no hay "ahora" que valga —el HTML se cachea— y una edad calculada allá
+    quedaría congelada en la hora del build.
+  */
+  useEffect(() => {
+    setAhora(new Date());
+    const t = setInterval(() => setAhora(new Date()), 60000);
+    return () => clearInterval(t);
+  }, [metar, observadoEn]);
+
+  if (!ahora) return null;
+  const f = frescura(horaDeObservacion(observadoEn, metar, ahora), ahora);
+  if (!f) return null;
+
+  const color =
+    f.nivel === "inservible"
+      ? "text-red-400"
+      : f.nivel === "viejo"
+        ? "text-amber-400"
+        : "text-zinc-500";
+
+  return (
+    <p className={`font-mono text-[10px] mt-2 ${color}`}>
+      {f.nivel === "inservible"
+        ? `Observado ${f.texto}. Ya no describe las condiciones actuales.`
+        : `Observado ${f.texto}.`}
+    </p>
+  );
 }
 
 interface WeatherData {
@@ -16,9 +61,34 @@ interface WeatherData {
   temp: number | null;
   windSpeed: number | null;
   windDir: string | number | null;
+  /** Cuándo se observó, en ISO. `null` si el proveedor no lo mandó. */
+  observadoEn?: string | null;
+}
+
+/**
+ * Si el navegador cree que no hay red.
+ *
+ * Arranca en `false` —o sea "hay señal"— porque en el servidor no existe
+ * `navigator.onLine` y arrancar en "sin señal" pintaría el botón deshabilitado por un
+ * instante en cada carga. El evento corrige el estado apenas monta.
+ */
+function useSinSenal(): boolean {
+  const [sinSenal, setSinSenal] = useState(false);
+  useEffect(() => {
+    const mirar = () => setSinSenal(typeof navigator !== "undefined" && navigator.onLine === false);
+    mirar();
+    window.addEventListener("online", mirar);
+    window.addEventListener("offline", mirar);
+    return () => {
+      window.removeEventListener("online", mirar);
+      window.removeEventListener("offline", mirar);
+    };
+  }, []);
+  return sinSenal;
 }
 
 export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
+  const sinSenal = useSinSenal();
   const [airport, setAirport] = useState(defaultAirport && defaultAirport !== "---" ? defaultAirport : "SADF");
   const [searchVal, setSearchVal] = useState("");
   const [data, setData] = useState<WeatherData | null>(null);
@@ -256,6 +326,14 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
               <p className="break-words font-mono font-semibold tracking-normal text-zinc-200 dark:text-zinc-100 select-all leading-normal flex-1 flex items-center">
                 {data.metar}
               </p>
+
+              {/*
+                **De cuándo es.** Va siempre, no sólo cuando está viejo — es la misma
+                razón por la que el briefing muestra siempre "N de M estaciones
+                respondieron": un dato sin fecha obliga a suponer que es de recién, y lo
+                que se suponga va a ser optimista. Ver `lib/frescura.ts`.
+              */}
+              <EdadDelMetar metar={data.metar} observadoEn={data.observadoEn} />
             </div>
 
             {/* TAF Toggle & Box */}
@@ -293,14 +371,23 @@ export default function WeatherWidget({ defaultAirport }: WeatherWidgetProps) {
           <div className="flex-1 flex items-center justify-center text-zinc-400 text-xs font-bold">Aún sin reportes cargados</div>
         )}
 
-        {/* Button to refresh manually */}
+        {/*
+          El botón deja de prometer lo que no puede cumplir.
+
+          Sin señal giraba igual y no traía nada, con lo cual insinuaba que lo que
+          quedaba en pantalla era de recién. Ahora se deshabilita y **lo dice**, que es
+          la misma disciplina de `SinConexionBanner`: cuando no se puede, se avisa en
+          vez de simular.
+        */}
         {!loading && data && (
-          <button 
+          <button
+            type="button"
             onClick={() => fetchWeather(airport)}
-            className="w-full flex items-center justify-center space-x-2 bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-semibold text-sm py-3.5 rounded-xl transition-all active:scale-[0.98] mt-2 shadow-sm dark:shadow-none"
+            disabled={sinSenal}
+            className="w-full flex items-center justify-center space-x-2 bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-semibold text-sm py-3.5 rounded-xl transition-all active:scale-[0.98] mt-2 shadow-sm dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-zinc-50 dark:disabled:hover:bg-white/5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Actualizar clima</span>
+            <span>{sinSenal ? "Sin señal para actualizar" : "Actualizar clima"}</span>
           </button>
         )}
         </div>

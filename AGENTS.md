@@ -5224,3 +5224,91 @@ Sirve para el caso real: se planifica en la plataforma, con la app abierta, y la
 se cae en el medio.
 
 **1015 tests.**
+
+## La antigüedad del dato meteorológico — Fase 5 — 2026-08-21
+
+La fase bloqueante, y la única con consecuencia de vuelo. **Recién ahora el service
+worker guarda una respuesta de meteorología**, porque hasta hoy no había forma honesta
+de mostrarla: `/api/weather` recibía la hora de observación del upstream y **la tiraba**.
+
+Era tolerable mientras el dato tenía como mucho cinco minutos —el `revalidate: 300` de
+la ruta—. Guardarlo en el teléfono lo vuelve inaceptable: una respuesta puede ser de
+hace tres horas y se renderizaba idéntica a una de hace tres minutos.
+
+Tiene valor propio aunque la PWA no existiera: hoy un METAR de 55 minutos se veía igual
+que uno de dos.
+
+### El METAR se autofecha, y por eso esto funciona con el cache
+
+El grupo `DDHHMMZ` viaja **adentro del texto** (`METAR SADM 202200Z 19007KT…`). Una
+respuesta guardada sigue sabiendo su edad sin que nadie tenga que anotarla.
+
+Son dos fuentes independientes —el grupo y el campo del proveedor— y **gana el grupo**,
+porque es el que el piloto lee en pantalla y puede contrastar contra su reloj. Un cartel
+que dijera "hace 10 min" al lado de un texto que dice `211200Z` cuando son las 14:30Z
+sería peor que no decir nada.
+
+⚠️ **`obsTime` viene en segundos, no en milisegundos.** Sin multiplicar da enero de
+1970. La ruta manda `reportTime`, que ya es ISO, justamente para no depender de esa
+distinción en dos lugares; `frescura.ts` igual sabe leer las dos escalas.
+
+Y el grupo trae **día del mes pero no mes**, así que hay que resolverlo contra el ahora.
+Ahí apareció el caso que un mutante encontró: `Date.UTC(2026, 1, 31)` no falla, desborda
+al 3 de marzo. Leído el 30 de marzo, un `312300Z` habría dado "3 de marzo 23:00" —
+veintisiete días de antigüedad presentados como una fecha cualquiera.
+
+### Los umbrales, y por qué son esos
+
+Un METAR se emite **una vez por hora**, con SPECI en el medio si cambia algo. Hasta 75
+minutos lo normal es que el más reciente tenga esa edad y no haya nada mejor: **fresco**.
+Más que eso es **viejo** y se dice.
+
+Pasadas **dos horas** deja de ser meteorología: es un ciclo entero perdido, o la estación
+dejó de emitir o nosotros dejamos de poder preguntar. En los dos casos lo que hay no
+describe el cielo de ahora.
+
+### La regla dura
+
+> **Un dato meteorológico guardado se puede mostrar con su fecha al lado; lo que no
+> puede es alimentar un cálculo ni un veredicto.**
+
+`veredictoDeRuta` decide si puede opinar contando cuántas estaciones contestaron. Un
+METAR de cuatro horas **respondió pero no informa**, así que deja de contar — y la ruta
+queda en "no sabemos" en vez de en verde. Es la línea que impide que la PWA reintroduzca
+por otra puerta el *"Ruta 100% VFR habilitada"* de 2026.
+
+Con una salvedad que también está testeada: cuando la estación **no dice** cuándo
+observó, se la cuenta como antes. Ausencia del dato es "el llamador no nos lo pasó", no
+"es viejo"; inventar vencimientos donde no hay información sería el error simétrico.
+
+### Dos preguntas distintas, dos relojes
+
+- **Cuándo se observó** — `frescura.ts`, del propio METAR. Decide si el dato puede opinar.
+- **Cuándo lo trajimos** — `X-Vector-Capturado-En`, que estampa el service worker.
+  Decide si vale la pena servirlo.
+
+Las dos importan: un METAR de las 14:00Z traído a las 14:05 y el mismo traído a las
+19:00 no dicen lo mismo sobre el cielo de ahora. Los topes de captura son 2 h para el
+METAR y 12 h para NOTAM y viento en altura, que se mueven mucho más lento.
+
+**Y sin fecha de captura no se sirve.** No saber cuándo se trajo es no poder decir si
+sirve.
+
+### El botón que dejaba de mentir
+
+Sin señal, el `RefreshCw` de `WeatherWidget` giraba igual y no traía nada — insinuando
+que lo que quedaba en pantalla era de recién. Ahora se deshabilita y dice "sin señal
+para actualizar".
+
+### Verificación
+
+1037 tests. Nueve mutantes deliberados en `frescura.ts` y dos en `briefing.ts`, todos
+muertos; el que sobrevivió a la primera señaló el desborde de fin de mes.
+
+En el navegador, contra el build de producción: la respuesta se guarda con su fecha de
+captura, sin red se sirve, **una captura de tres horas no se sirve y la entrada se
+borra**, y no hay ninguna página cacheada todavía.
+
+⚠️ El upstream de `aviationweather.gov` **no es alcanzable desde el sandbox** —el
+`fetch` de Node no sale por el proxy— así que el camino con METAR real hay que
+comprobarlo en producción. La lógica sí está testeada, contra METAR crudos de verdad.

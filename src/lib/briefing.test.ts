@@ -393,3 +393,60 @@ describe("pistasDesdeMadhel", () => {
     expect(c!.cruzadoKt).toBeLessThan(20);
   });
 });
+
+describe("un METAR viejo no cuenta como estación que informó", () => {
+  /*
+    La regla que impide que la PWA reintroduzca el peor bug de la app por otra puerta.
+    Antes de guardar respuestas en el teléfono, un METAR tenía como mucho cinco minutos;
+    con un service worker puede tener horas y renderizarse idéntico.
+
+    Se prueba con el METAR crudo y no con un campo aparte porque **el METAR se autofecha**:
+    el grupo `DDHHMMZ` viaja adentro del texto, así que una respuesta guardada sigue
+    sabiendo su edad sin que nadie tenga que anotarla.
+  */
+  const AHORA = new Date("2026-08-21T14:30:00Z");
+  const estacion = (grupo: string) => ({
+    icao: "SADM",
+    categoria: "VFR" as const,
+    vientoKt: 5,
+    notams: 0,
+    respondio: true,
+    metar: `METAR SADM ${grupo} 19007KT CAVOK 13/06 Q1012`,
+  });
+
+  it("un METAR reciente da el verde de siempre", () => {
+    const v = veredictoDeRuta([estacion("211400Z")], AHORA);
+    expect(v.tono).toBe("bien");
+    expect(v.respondieron).toBe(1);
+  });
+
+  it("**uno de cuatro horas no**: la ruta queda sin datos, no en verde", () => {
+    const v = veredictoDeRuta([estacion("211030Z")], AHORA);
+    expect(v.tono).toBe("sinDatos");
+    expect(v.respondieron).toBe(0);
+    expect(v.detalle).toContain("no las conocemos");
+  });
+
+  it("con una vieja y una fresca, el conteo lo dice", () => {
+    // Es la misma disciplina de "respondieron de consultadas": el veredicto sabe de
+    // cuántas habló y lo muestra siempre.
+    const v = veredictoDeRuta([estacion("211400Z"), estacion("211030Z")], AHORA);
+    expect(v.consultadas).toBe(2);
+    expect(v.respondieron).toBe(1);
+    expect(v.tono).toBe("atencion");
+  });
+
+  it("una estación que no dice cuándo observó se cuenta como antes", () => {
+    /*
+      Ausencia del dato es "el llamador no nos lo pasó", no "es viejo". Inventar
+      vencimientos donde no hay información sería el error simétrico, y dejaría sin
+      veredicto a media app de un día para el otro.
+    */
+    const v = veredictoDeRuta(
+      [{ icao: "SADM", categoria: "VFR", vientoKt: 5, notams: 0, respondio: true }],
+      AHORA
+    );
+    expect(v.tono).toBe("bien");
+    expect(v.respondieron).toBe(1);
+  });
+});

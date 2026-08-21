@@ -194,6 +194,13 @@ export default function BriefingRuta({ puntos }: { puntos: Punto[] }) {
       vientoKt: d.vientoKt,
       notams: d.notams === null ? null : d.notams.length,
       respondio: d.respondio,
+      /*
+        El METAR crudo viaja al veredicto porque **se autofecha**: el grupo `DDHHMMZ`
+        está adentro del texto. Con eso, `veredictoDeRuta` descarta las estaciones cuyo
+        dato ya no describe el cielo de ahora — un METAR de cuatro horas respondió pero
+        no informa, y contarlo produciría un verde a partir de nada.
+      */
+      metar: d.metar,
     };
   });
 

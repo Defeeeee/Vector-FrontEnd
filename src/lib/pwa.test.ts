@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   PRECACHE,
+  capturaVigente,
   estrategiaPara,
+  topeMeteo,
   type Pedido,
   CACHES_PERSONALES,
   CACHES_SIN_VERSION,
@@ -196,15 +198,47 @@ describe("estrategiaPara", () => {
     }
   });
 
-  it("**la meteorología no**, y es la regla más importante de todas", () => {
+  it("**la meteorología va por su propia puerta**, con corte duro", () => {
     /*
-      Un METAR guardado y servido como si fuera de ahora es el peor bug de la historia
-      de esta app con otro disfraz. Meteo y NOTAM entran recién en la Fase 5, y sólo
-      después de que la pantalla sepa decir de cuándo es el dato.
+      Entró recién cuando la pantalla supo decir de cuándo es el dato (`frescura.ts`).
+      Antes de eso, guardar un METAR era guardar algo que se renderizaba idéntico
+      tuviera cinco minutos o cinco horas — el peor bug de esta app con otro disfraz.
     */
     for (const ruta of ["/api/weather?icao=SADM", "/api/notams?icao=SADM", "/api/winds-aloft?lat=-34&lon=-58"]) {
-      expect(estrategiaPara(pedir(ruta), ORIGEN)).toBe("ignorar");
+      expect(estrategiaPara(pedir(ruta), ORIGEN)).toBe("meteo");
     }
+  });
+
+  it("los topes de meteo, y el que no está no se guarda", () => {
+    // Dos horas para el METAR: un ciclo entero. Doce para NOTAM y viento en altura,
+    // que se mueven mucho más lento.
+    expect(topeMeteo("/api/weather")).toBe(120);
+    expect(topeMeteo("/api/notams")).toBe(720);
+    expect(topeMeteo("/api/winds-aloft")).toBe(720);
+    expect(topeMeteo("/api/puntos")).toBeNull();
+  });
+
+  it("**una respuesta sin fecha de captura no se sirve**", () => {
+    /*
+      No saber cuándo se trajo es no poder decir si sirve. La tentación es tratarla como
+      buena "porque está ahí"; la regla de este proyecto es la contraria.
+    */
+    const ahora = new Date("2026-08-21T14:00:00Z");
+    expect(capturaVigente(null, 120, ahora)).toBe(false);
+    expect(capturaVigente("cualquier cosa", 120, ahora)).toBe(false);
+  });
+
+  it("el tope de captura mide desde que se trajo, no desde que se observó", () => {
+    /*
+      Son dos preguntas distintas y las dos importan: `frescura.ts` mide cuándo se
+      **observó** —y decide si el dato puede opinar—; esto mide cuánto hace que lo
+      **trajimos**. Un METAR de las 14:00Z traído a las 14:05 y el mismo traído a las
+      19:00 no dicen lo mismo sobre el cielo de ahora.
+    */
+    const ahora = new Date("2026-08-21T14:00:00Z");
+    expect(capturaVigente("2026-08-21T13:00:00Z", 120, ahora)).toBe(true);
+    expect(capturaVigente("2026-08-21T12:00:00Z", 120, ahora)).toBe(true);
+    expect(capturaVigente("2026-08-21T11:59:00Z", 120, ahora)).toBe(false);
   });
 
   it("lo que muta o es de sesión, nunca", () => {
