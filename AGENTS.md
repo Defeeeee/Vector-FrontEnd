@@ -5621,3 +5621,52 @@ Un tropiezo que vale anotar: el test de "con la HVI en juego el freno deja de se
 PCA" fallaba porque el fixture no cumplía 61.620 de verdad — `nightLandingsOf` sólo
 cuenta todos los aterrizajes de una fila **sin una sola hora diurna**, y el vuelo mixto
 de la prueba aportaba uno. La función estaba bien; la prueba estaba mal.
+
+---
+
+## Las tarifas históricas son datos, y el backend las pisa sin avisar
+
+El 22/8/26 se recobraron los 34 vuelos de Smart Flight a la tarifa que regía el día que
+se volaron, en vez de a los $185.000 planos con que estaban todos desde diciembre. La
+fuente fue el chat de la escuela, que publica los aumentos con su fecha de vigencia.
+
+| Tramo | Tarifa San Fernando | Vuelos | Horas |
+|---|---|---|---|
+| hasta 28/2/26 | 170.000 | 10 | 11,4 |
+| 1/3 al 28/5/26 | 180.000 (paquete de 10 h) | 18 | 18,3 |
+| desde 29/5/26 | 185.000 (paquete, vigente hasta el 29/8) | 6 | 5,8 |
+
+Sólo las cuatro matrículas de esa escuela —S024, S048, S114 y HQO—. Los vuelos en los
+Evektor son de otro operador y no se tocaron.
+
+### Cómo se mueven los cobros sin mover el saldo
+
+**El saldo es `sum(transactions)` y el del piloto es correcto**, así que recobrar 34
+vuelos tiene que sumar cero contra él. Ya existe la fila que hace ese trabajo:
+`Ajuste por incorporación de cobros históricos`, que nació para neutralizar la
+importación de los cobros viejos. Los cobros bajaron $262.500 y esa fila bajó lo mismo.
+Saldo antes y después: **$1.471.500**, 53 transacciones, sin filas nuevas.
+
+No es una fila más de ajuste: es un tapón, y un tapón se mueve con lo que tapa. Agregar
+un asiento nuevo cada vez que se recalcula habría llenado el libro de "ajustes" que no
+son eventos económicos.
+
+### ⚠️ La trampa que queda abierta
+
+**`aircraft.cost_per_hour` es un solo número, el de hoy.** `_sync_flight_transaction`
+recalcula `duration * cost_per_hour` en cada `POST` y cada `PATCH` de vuelo, así que
+**editar un vuelo viejo lo recobra al precio actual** y deshace su tarifa histórica —en
+silencio, y sin tocar el tapón, con lo cual el saldo también se corre.
+
+Se decidió no arreglarlo ahora. El arreglo, cuando se haga, es una tabla
+`aircraft_rates(aircraft_id, vigente_desde, cost_per_hour)` y que el cobro busque la fila
+vigente a la fecha del vuelo en vez de leer la aeronave. Hasta entonces: **no editar
+vuelos anteriores al 29/5/26 sin recalcular el tapón después**.
+
+### Lo que el chat no puede contestar
+
+La escuela cobra por **aeropuerto**, no por avión —Morón y San Fernando tienen precios
+distintos y el S114 cambió de base en mayo—, y encima los paquetes de 10 h **congelan la
+tarifa por tres meses**. O sea que la tarifa de un vuelo no sale de la lista de precios:
+sale de qué paquete tenía comprado el piloto ese día. Las listas están en el chat; las
+compras, no. El tramo de marzo a mayo lo confirmó el piloto; no se dedujo.
