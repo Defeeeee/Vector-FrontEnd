@@ -5639,6 +5639,18 @@ fuente fue el chat de la escuela, que publica los aumentos con su fecha de vigen
 Sólo las cuatro matrículas de esa escuela —S024, S048, S114 y HQO—. Los vuelos en los
 Evektor son de otro operador y no se tocaron.
 
+**El precio es del aeropuerto, no del avión**, y el piloto confirmó el mapeo: el S024 y
+el S114 se le cobran a tarifa San Fernando, el S048 y el HQO a tarifa Morón. Los 34
+vuelos históricos son todos del S024 y el S114 —las otras dos no tienen ni un vuelo
+cargado—, así que el recálculo usó Sanfer en el 100% de los casos. Que el S114 se haya
+mudado de base a Morón en mayo no cambia nada: se lo cruzan a Sanfer sin costo extra.
+
+**El aumento del 1/7/26 todavía no lo alcanzó.** El paquete que compró el 29/5 le congela
+la hora hasta el 29/8, así que sigue en la lista de precios del 1/3 en efectivo: Sanfer
+185.000, Morón 175.000. Los $200.000 de Sanfer que publicó la escuela en julio **no se
+aplican todavía** — y ése es justamente el tipo de número que se copia de la lista sin
+preguntar y sale mal.
+
 ### Cómo se mueven los cobros sin mover el saldo
 
 **El saldo es `sum(transactions)` y el del piloto es correcto**, así que recobrar 34
