@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.16.0 — El tracker ahora mide la PCA y la HVI juntas
+
+_22 de agosto de 2026_
+
+- **Las dos licencias en la misma card, porque casi nadie hace la PCA sola** — El camino normal acá es sacar la comercial y la habilitación por instrumentos como un solo tramo. El tracker mostraba sólo 61.620, y con los seis diales en verde podías estar a treinta horas de instrumentos del examen que en realidad vas a rendir. Ahora suma el requisito de la HVI: 40 horas de instrumentos, de las cuales hasta 20 pueden ser en simulador.
+- **Y el dial de instrumentos dejó de decir que no volaste nada** — Cuando lo que te frenaba eran las horas de instrumentos, la proyección contestaba siempre "no volaste nada de eso en los últimos 3 meses" aunque las tuvieras cargadas. Ya proyecta con tu ritmo real.
+
 ## v2.15.0 — Vector sin señal, y los simuladores en el libro
 
 _22 de agosto de 2026_

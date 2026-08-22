@@ -5545,3 +5545,79 @@ esa salida de emergencia.
 Chromium contra el build de producción en claro y oscuro: el hangar (la casilla manda
 `false` sola y `false,true` tildada, y la edición abre tildada), el formulario (los
 campos que se postean de cada lado) y las listas (ningún `???` en pantalla).
+
+---
+
+## El tracker mide la PCA y la HVI, no media regulación
+
+**El pedido, textual:** *"quisiera que pongas la pca c hvi como regulacion entera, casi
+nadie hace la pca sola"*.
+
+Y tiene razón sobre el modo de falla: el camino normal en Argentina es sacar la
+comercial y la habilitación por instrumentos como un solo tramo. Un tracker que muestra
+sólo 61.620 puede tener **los seis diales en verde con el piloto a treinta horas del
+examen que en realidad va a rendir**. Es la misma familia que el bug fundacional —una
+pantalla que contesta tranquilizadoramente una pregunta que no es la que se hizo.
+
+### Qué se agregó, que es menos de lo que parece
+
+**Un solo requisito**: 40 h de instrumentos, hasta 20 en simulador. Es el único de la
+HVI que se mide en horas de bitácora, y fue una decisión explícita del piloto, no una
+omisión.
+
+### Por qué son dos diales de instrumentos y no uno con dos metas
+
+Porque **no son el mismo número**. El tope de simulador se aplica sobre el acumulado y
+es distinto para cada licencia: 5 h para la PCA, 20 para la HVI. Con 8 h reales y 12
+simuladas, la PCA cuenta 13 y la HVI cuenta 20.
+
+Un solo dial tendría que elegir uno de los dos y el otro quedaría mal. Por eso
+`instrumentosCon(tope)` está parametrizado, cada fila lleva su `grupo` y su `nota` con
+el tope escrito, y los sellos usan íconos distintos: son dos marcas con casi el mismo
+nombre y números que no coinciden, y sin eso el que las mire va a suponer que una está
+rota.
+
+### Lo que **no** se agregó, y por qué está bien que no esté
+
+La HVI pide además cosas que **no viven en ninguna columna del libro**: la travesía IFR
+con aproximaciones en tres aeródromos distintos, el chequeo de pericia. Vector no puede
+saber si están.
+
+Se descartaron las dos salidas fáciles. Un dial siempre en cero sería un dato inventado;
+una lista sin estado sería ruido al pie de la card. **La card mide lo que puede medir y
+no pretende ser el trámite completo** — y el estado "todo cumplido" lo dice con todas
+las letras: *"Son las horas que se leen del libro. La HVI pide además cosas que Vector
+no puede ver, y eso lo confirmás vos."* Decir "cumplís los requisitos" con los diales en
+verde sería afirmar lo que no se sabe.
+
+### El bug que este agregado destapó
+
+**`ritmoMensual` devolvía siempre cero para instrumentos.** `EXTRACTORES` tenía
+`instrumentoReal` e `instrumentoSimulado` pero ninguna entrada llamada `instrumentos`,
+que es la clave del requisito; la búsqueda fallaba y la guarda `if (!extractor) return
+0` la tapaba en silencio. O sea: cuando lo que te frenaba eran las horas de
+instrumentos, la card contestaba **"no volaste nada de eso en los últimos 3 meses"** con
+las horas cargadas. Decir "no hay ritmo" teniendo ritmo es justo lo que ese módulo
+existe para no hacer.
+
+El extractor nuevo no aplica el tope, y no puede: un tope vive en el acumulado, no en un
+mes. Para quien ya lo agotó la proyección queda optimista, y eso está escrito al lado
+del código en vez de descubrirse.
+
+⚠️ **El arreglo tuvo dos mitades y la primera versión sólo hizo una.** Traducir la clave
+`instrumentosHvi` → `instrumentos` para buscar el extractor no alcanzaba: `sumar`
+volvía a leer la clave original y reventaba con `EXTRACTORES[clave] is not a function`.
+Lo agarró el test, no el navegador.
+
+### Verificación
+
+Nueve mutantes contra la aritmética nueva, los nueve muertos —incluidos los dos que
+intercambian los topes de 5 y 20 entre las licencias, que es el error que nadie vería en
+pantalla—. 41 tests en `pca-progress.test.ts`, y la card manejada con Chromium en claro
+y oscuro con un piloto de 6 h reales y 12 simuladas: los dos sellos muestran 11.0/10 y
+18.0/40, que es exactamente la divergencia que justifica que sean dos.
+
+Un tropiezo que vale anotar: el test de "con la HVI en juego el freno deja de ser de la
+PCA" fallaba porque el fixture no cumplía 61.620 de verdad — `nightLandingsOf` sólo
+cuenta todos los aterrizajes de una fila **sin una sola hora diurna**, y el vuelo mixto
+de la prueba aportaba uno. La función estaba bien; la prueba estaba mal.

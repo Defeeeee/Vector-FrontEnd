@@ -73,6 +73,27 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.16.0",
+    fecha: "2026-08-22",
+    titulo: "El tracker ahora mide la PCA y la HVI juntas",
+    novedades: [
+      {
+        icono: "grafico",
+        titulo: "Las dos licencias en la misma card, porque casi nadie hace la PCA sola",
+        texto:
+          "El camino normal acá es sacar la comercial y la habilitación por instrumentos como un solo tramo. El tracker mostraba sólo 61.620, y con los seis diales en verde podías estar a treinta horas de instrumentos del examen que en realidad vas a rendir. Ahora suma el requisito de la HVI: 40 horas de instrumentos, de las cuales hasta 20 pueden ser en simulador.",
+        href: "/dashboard",
+        cta: "Ver el tracker",
+      },
+      {
+        icono: "reloj",
+        titulo: "Y el dial de instrumentos dejó de decir que no volaste nada",
+        texto:
+          "Cuando lo que te frenaba eran las horas de instrumentos, la proyección contestaba siempre \"no volaste nada de eso en los últimos 3 meses\" aunque las tuvieras cargadas. Ya proyecta con tu ritmo real.",
+      },
+    ],
+  },
+  {
     version: "2.15.0",
     fecha: "2026-08-22",
     titulo: "Vector sin señal, y los simuladores en el libro",

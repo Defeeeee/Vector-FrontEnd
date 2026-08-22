@@ -1,7 +1,7 @@
 "use client";
 
 import { Aircraft, Flight, Logbook } from "@/types";
-import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Target, TrendingUp, Wallet } from "lucide-react";
+import { Award, CheckCircle2, Clock, Compass, Navigation, Moon, Radar, Target, TrendingUp, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   MESES_DE_RITMO,
@@ -9,7 +9,7 @@ import {
   horasQueFaltan,
   loQueFrena,
   mesesRestantes,
-  requisitosPCA,
+  requisitosLicencia,
   ritmoMensual,
 } from "@/lib/pca-progress";
 
@@ -23,6 +23,9 @@ const ICONOS: Record<string, React.ReactNode> = {
   pic: <Target className="w-4 h-4" />,
   picTravesia: <Compass className="w-4 h-4" />,
   instrumentos: <Navigation className="w-4 h-4" />,
+  // Ícono distinto del de la PCA a propósito: son dos sellos con el mismo nombre y
+  // números que no coinciden, y dos veces la misma flecha los hace ver un duplicado.
+  instrumentosHvi: <Radar className="w-4 h-4" />,
   nocturno: <Moon className="w-4 h-4" />,
   aterrizajesNocturnos: <Award className="w-4 h-4" />,
 };
@@ -59,7 +62,7 @@ export default function PCATracker({ flights, logbooks = [], aircraft = [], toda
     simulador sumaría a las 200 h de experiencia total. El componente ya las recibía
     para el costo por hora y no se las pasaba.
   */
-  const requisitos = requisitosPCA(flights, logbooks, aircraft);
+  const requisitos = requisitosLicencia(flights, logbooks, aircraft);
   const porClave = (clave: string) => requisitos.find((r) => r.clave === clave)!;
 
   const totalHours = porClave("total").actual;
@@ -78,8 +81,11 @@ export default function PCATracker({ flights, logbooks = [], aircraft = [], toda
     <section className="space-y-6">
       <div className="flex items-center justify-between px-2">
         <div className="space-y-1">
-          <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight transition-colors">Tracker PCA</h3>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Reg. 61.620</p>
+          {/* Las dos juntas y no la PCA sola: casi nadie hace la comercial sin la
+              habilitación por instrumentos, y una card que muestra media regulación da
+              una respuesta tranquilizadora a la pregunta equivocada. */}
+          <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight transition-colors">Tracker PCA + HVI</h3>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Reg. 61.620 y habilitación por instrumentos</p>
         </div>
         <div className="px-3 md:px-4 py-1.5 md:py-2 bg-zinc-900 dark:bg-white rounded-full shadow-cal-highlight flex items-center space-x-2 transition-colors">
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -151,6 +157,16 @@ export default function PCATracker({ flights, logbooks = [], aircraft = [], toda
                   <p className="text-xs font-semibold text-zinc-900 dark:text-white leading-tight">{req.label}</p>
                   <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
                     {req.esHoras ? req.actual.toFixed(1) : Math.round(req.actual)} / {req.objetivo} {req.unidad}
+                  </p>
+                  {/*
+                    Los dos sellos de instrumentos se ven casi iguales y llevan números
+                    distintos —10 contra 40, y topes de simulador de 5 contra 20—. Sin
+                    la etiqueta y sin el tope escrito son dos diales que nadie puede
+                    distinguir, y el que los mire va a suponer que uno está mal.
+                  */}
+                  <p className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 mt-0.5">
+                    <span className="font-bold uppercase tracking-wide">{req.grupo}</span>
+                    {req.nota && <span> · {req.nota}</span>}
                   </p>
                 </div>
                 {isComplete && (
@@ -252,10 +268,18 @@ export default function PCATracker({ flights, logbooks = [], aircraft = [], toda
             <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0" />
             <div>
               <p className="text-sm font-bold text-zinc-900 dark:text-white">
-                Cumplís los requisitos de experiencia de 61.620.
+                Cumplís las horas de 61.620 y las de instrumentos de la HVI.
               </p>
+              {/*
+                "Las horas", no "los requisitos". La HVI pide además cosas que no viven
+                en ninguna columna del libro —la travesía IFR con aproximaciones en tres
+                aeródromos, el chequeo de pericia—, así que Vector no puede saber si
+                están. Decir "cumplís los requisitos" con todos los diales en verde
+                sería afirmar lo que no se sabe, que es el error que parió media app.
+              */}
               <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                Lo que sigue es el examen, que no sale de tu libro de vuelo.
+                Son las horas que se leen del libro. La HVI pide además cosas que Vector
+                no puede ver —la travesía IFR y el chequeo—, y eso lo confirmás vos.
               </p>
             </div>
           </div>

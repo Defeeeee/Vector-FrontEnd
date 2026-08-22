@@ -3,7 +3,7 @@ import type { Aircraft, Flight, Logbook } from "@/types";
 import { idsDeSimuladores, separarSimuladores } from "@/lib/simulador";
 
 /**
- * El progreso hacia la PCA, convertido de informe en respuesta.
+ * El progreso hacia la PCA **y la HVI**, convertido de informe en respuesta.
  *
  * `PCATracker` ya mostraba seis diales —total, PIC, travesía, instrumentos,
  * nocturno, aterrizajes nocturnos— y ahí terminaba. El problema de seis diales es
@@ -20,16 +20,49 @@ import { idsDeSimuladores, separarSimuladores } from "@/lib/simulador";
  * tenían ni un test. Dos, que la aritmética de una licencia merece estar en un lugar
  * donde se la pueda leer sin JSX alrededor.
  *
- * Los mínimos son los de **RAAC 61.620** y estaban ya en el componente; esto los
- * mueve, no los reinterpreta.
+ * ## Por qué las dos licencias juntas y no la PCA sola
+ *
+ * Porque **casi nadie hace la PCA sola**. En Argentina el camino normal es sacar la
+ * comercial y la habilitación de vuelo por instrumentos como un solo tramo, y un
+ * tracker que muestra sólo la mitad da una respuesta tranquilizadora a la pregunta
+ * equivocada: se puede tener los seis diales de 61.620 en verde y estar a treinta horas
+ * de instrumentos del examen que en realidad se va a rendir.
+ *
+ * Por eso los requisitos llevan `grupo` y la card los muestra en una sola grilla: no
+ * son dos trámites que se planifican por separado, son las horas de un mismo libro.
+ *
+ * ## De dónde salen los números
+ *
+ * Los mínimos de la PCA son los de **RAAC 61.620** y estaban ya en el componente; esto
+ * los mueve, no los reinterpreta.
+ *
+ * De la HVI se registra **una sola exigencia, la que se mide en horas de bitácora**: 40
+ * horas de instrumentos, de las cuales hasta 20 pueden ser en simulador. Es la que el
+ * piloto confirmó, y es deliberado que sea la única: **la HVI pide más cosas que
+ * Vector no puede verificar** —la travesía IFR con aproximaciones en tres aeródromos
+ * distintos, el chequeo de pericia— y el libro no tiene columna donde eso viva.
+ * Mostrarlas como diales sería inventar un estado; listarlas sin estado sería ruido.
+ * **La card mide lo que puede medir y no pretende ser el trámite completo.**
  */
 
 /** Cuántos meses de historia definen "el ritmo al que venís volando". */
 export const MESES_DE_RITMO = 3;
 
+/**
+ * A cuál de las dos pertenece el mínimo.
+ *
+ * No es decorativo: los dos requisitos de instrumentos se ven casi iguales y llevan
+ * números distintos —10 h contra 40, y topes de simulador de 5 contra 20—, así que sin
+ * la etiqueta el piloto ve dos diales que no sabe distinguir.
+ */
+export type Grupo = "pca" | "hvi";
+
 export interface Requisito {
   clave: string;
   label: string;
+  grupo: Grupo;
+  /** Una línea corta bajo el número. Hoy: cuánto de eso puede ser simulador. */
+  nota?: string;
   /** Lo acumulado, incluidas las horas de apertura donde corresponde. */
   actual: number;
   objetivo: number;
@@ -56,6 +89,21 @@ const EXTRACTORES: Record<string, (f: Flight) => number> = {
   // por vuelo: por eso `instrumentos` se arma abajo y no acá.
   instrumentoReal: (f) => (f.imc_pil || 0) + (f.capota || 0),
   instrumentoSimulado: (f) => f.sim_pil_en_inst || 0,
+  /*
+    El agregado de los dos, que existe **para el ritmo**.
+
+    Los requisitos no lo usan: ellos aplican el tope de simulador sobre el acumulado y
+    se arman abajo. Pero `ritmoMensual` busca el extractor por la clave del requisito,
+    y sin una entrada llamada `instrumentos` devolvía cero — o sea que el dial de
+    instrumentos contestaba siempre *"no volaste nada de eso en los últimos 3 meses"*
+    aunque hubiera horas cargadas. Decir "no hay ritmo" teniendo ritmo es justo lo que
+    este archivo existe para no hacer.
+
+    ⚠️ **No aplica el tope**, y no puede: un tope vive en el acumulado, no en un mes.
+    Para quien ya lo agotó, la proyección queda optimista. Es preferible a la
+    alternativa —callarse— y está dicho acá para que el que lo afine sepa por qué.
+  */
+  instrumentos: (f) => (f.imc_pil || 0) + (f.capota || 0) + (f.sim_pil_en_inst || 0),
   nocturno: (f) => (f.pic_night_loc || 0) + (f.pic_night_tra || 0),
   aterrizajesNocturnos: (f) => nightLandingsOf(f),
 };
@@ -68,12 +116,12 @@ const apertura = (logbooks: Logbook[], pick: (l: Logbook) => number | undefined)
   logbooks.reduce((acc, l) => acc + (Number(pick(l)) || 0), 0);
 
 /**
- * Los seis requisitos de 61.620, con lo acumulado hasta hoy.
+ * Los requisitos de experiencia de la PCA y la HVI, con lo acumulado hasta hoy.
  *
  * Las horas de apertura entran acá y **no** en el ritmo: son horas sin fecha, así que
  * atribuirlas a un mes cualquiera inventaría una velocidad que el piloto no tuvo.
  */
-export function requisitosPCA(
+export function requisitosLicencia(
   todos: Flight[],
   logbooks: Logbook[] = [],
   aircraft: Aircraft[] = []
@@ -100,42 +148,60 @@ export function requisitosPCA(
     apertura(logbooks, (l) => l.opening_sic_day_loc) + apertura(logbooks, (l) => l.opening_sic_day_tra) +
     apertura(logbooks, (l) => l.opening_sic_night_loc) + apertura(logbooks, (l) => l.opening_sic_night_tra);
 
-  const instrumentos =
+  /*
+    El simulado sale de **las dos** listas: la columna de instrucción terrestre se puede
+    llenar tanto en una sesión de simulador —el caso normal— como en un vuelo real que
+    incluyó tiempo de instrumentos en tierra.
+  */
+  const simuladoCrudo = sumar(flights, "instrumentoSimulado") + sumar(simulados, "instrumentoSimulado");
+  const realDeInstrumentos =
     sumar(flights, "instrumentoReal") +
-    apertura(logbooks, (l) => l.opening_imc_pil) + apertura(logbooks, (l) => l.opening_capota) +
-    /*
-      El simulado sale de **las dos** listas: la columna de instrucción terrestre se
-      puede llenar tanto en una sesión de simulador —el caso normal— como en un vuelo
-      real que incluyó tiempo de instrumentos en tierra.
+    apertura(logbooks, (l) => l.opening_imc_pil) + apertura(logbooks, (l) => l.opening_capota);
 
-      El tope de 5 h de 61.620 se aplica sobre el acumulado y no vuelo por vuelo.
-    */
-    Math.min(sumar(flights, "instrumentoSimulado") + sumar(simulados, "instrumentoSimulado"), 5);
+  /*
+    **El tope de simulador se aplica sobre el acumulado, no vuelo por vuelo**, y es
+    distinto para cada licencia: 5 h para la PCA, 20 para la HVI. Por eso los dos
+    requisitos de instrumentos no son el mismo número contra dos metas — con 8 h reales
+    y 12 simuladas, la PCA cuenta 13 y la HVI cuenta 20.
+
+    Es exactamente el motivo por el que van como dos diales separados y cada uno dice su
+    tope: un solo dial tendría que elegir un número y el otro quedaría mal.
+  */
+  const instrumentosCon = (tope: number) => realDeInstrumentos + Math.min(simuladoCrudo, tope);
 
   return [
     {
-      clave: "total", label: "Experiencia total", unidad: "hs", esHoras: true,
+      clave: "total", label: "Experiencia total", grupo: "pca", unidad: "hs", esHoras: true,
       actual: sumar(flights, "total") + aperturaPic + aperturaSic,
       objetivo: 200,
     },
     {
-      clave: "pic", label: "PIC", unidad: "hs", esHoras: true,
+      clave: "pic", label: "PIC", grupo: "pca", unidad: "hs", esHoras: true,
       actual: sumar(flights, "pic") + aperturaPic,
       objetivo: 100, subObjetivo: 70,
     },
     {
-      clave: "picTravesia", label: "PIC Travesía", unidad: "hs", esHoras: true,
+      clave: "picTravesia", label: "PIC Travesía", grupo: "pca", unidad: "hs", esHoras: true,
       actual: sumar(flights, "picTravesia")
         + apertura(logbooks, (l) => l.opening_pic_day_tra)
         + apertura(logbooks, (l) => l.opening_pic_night_tra),
       objetivo: 20,
     },
     {
-      clave: "instrumentos", label: "Instrumentos", unidad: "hs", esHoras: true,
-      actual: instrumentos, objetivo: 10,
+      clave: "instrumentos", label: "Instrumentos", grupo: "pca", unidad: "hs", esHoras: true,
+      nota: "hasta 5 en simu",
+      actual: instrumentosCon(5), objetivo: 10,
     },
     {
-      clave: "nocturno", label: "PIC Nocturno", unidad: "hs", esHoras: true,
+      // La única exigencia de la HVI que se mide en horas de bitácora. Ver el
+      // encabezado del módulo: las otras no tienen columna donde vivir, y por eso no
+      // están — no porque no existan.
+      clave: "instrumentosHvi", label: "Instrumentos HVI", grupo: "hvi", unidad: "hs", esHoras: true,
+      nota: "hasta 20 en simu",
+      actual: instrumentosCon(20), objetivo: 40,
+    },
+    {
+      clave: "nocturno", label: "PIC Nocturno", grupo: "pca", unidad: "hs", esHoras: true,
       actual: sumar(flights, "nocturno")
         + apertura(logbooks, (l) => l.opening_pic_night_loc)
         + apertura(logbooks, (l) => l.opening_pic_night_tra),
@@ -145,7 +211,7 @@ export function requisitosPCA(
       // Los aterrizajes de apertura **no** se suman: vienen sin desglose día/noche y
       // suponerlos nocturnos infla un requisito, que es el error que manda a alguien
       // al examen corto. Ver `lib/landings.ts`.
-      clave: "aterrizajesNocturnos", label: "Aterrizajes Noct.", unidad: "atrr", esHoras: false,
+      clave: "aterrizajesNocturnos", label: "Aterrizajes Noct.", grupo: "pca", unidad: "atrr", esHoras: false,
       actual: sumar(flights, "aterrizajesNocturnos"), objetivo: 5,
     },
   ];
@@ -198,12 +264,21 @@ export function ritmoMensual(
   hoyIso: string,
   meses = MESES_DE_RITMO
 ): number {
-  const extractor = EXTRACTORES[clave];
+  // Los dos requisitos de instrumentos avanzan con las mismas horas: lo que cambia es
+  // el tope de simulador, y un tope no tiene ritmo. Sin este alias, el dial de la HVI
+  // proyectaría siempre "no hay ritmo del que proyectar" teniendo horas cargadas.
+  //
+  // Se resuelve **una vez** y se usa la clave resuelta también en `sumar`: la primera
+  // versión sólo tradujo la búsqueda del extractor y `sumar` volvía a leer la clave
+  // original, que no existe en la tabla. Reventaba con `EXTRACTORES[clave] is not a
+  // function` — el test lo agarró.
+  const clavePropia = clave === "instrumentosHvi" ? "instrumentos" : clave;
+  const extractor = EXTRACTORES[clavePropia];
   if (!extractor) return 0;
 
   const desde = restarMeses(hoyIso, meses);
   const recientes = flights.filter((f) => f.date && f.date >= desde && f.date <= hoyIso);
-  return sumar(recientes, clave) / meses;
+  return sumar(recientes, clavePropia) / meses;
 }
 
 /**

@@ -6,7 +6,7 @@ import {
   horasQueFaltan,
   loQueFrena,
   mesesRestantes,
-  requisitosPCA,
+  requisitosLicencia,
   ritmoMensual,
 } from "./pca-progress";
 
@@ -45,9 +45,9 @@ const libro = (over: Partial<Logbook> = {}): Logbook =>
   }) as Logbook;
 
 const buscar = (flights: Flight[], clave: string, logbooks: Logbook[] = []) =>
-  requisitosPCA(flights, logbooks).find((r) => r.clave === clave)!;
+  requisitosLicencia(flights, logbooks).find((r) => r.clave === clave)!;
 
-describe("requisitosPCA", () => {
+describe("requisitosLicencia", () => {
   it("suma las horas de vuelo al total", () => {
     expect(buscar([vuelo({ duration: 2 }), vuelo({ duration: 1.5 })], "total").actual).toBe(3.5);
   });
@@ -98,8 +98,8 @@ describe("loQueFrena", () => {
    */
   it("elige el que está más lejos en fracción, no en valor absoluto", () => {
     const reqs = [
-      { clave: "total", label: "Total", actual: 195, objetivo: 200, unidad: "hs", esHoras: true },
-      { clave: "tra", label: "Travesía", actual: 2, objetivo: 20, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "total", label: "Total", actual: 195, objetivo: 200, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "tra", label: "Travesía", actual: 2, objetivo: 20, unidad: "hs", esHoras: true },
     ];
     const freno = loQueFrena(reqs)!;
     // A "total" le faltan 5 h y a travesía 18: en absoluto travesía pide más, pero
@@ -110,29 +110,29 @@ describe("loQueFrena", () => {
 
   it("compara unidades distintas sin mezclarlas", () => {
     const reqs = [
-      { clave: "noct", label: "Nocturno", actual: 4, objetivo: 5, unidad: "hs", esHoras: true },
-      { clave: "atrr", label: "Aterrizajes", actual: 1, objetivo: 5, unidad: "atrr", esHoras: false },
+      { grupo: "pca" as const, clave: "noct", label: "Nocturno", actual: 4, objetivo: 5, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "atrr", label: "Aterrizajes", actual: 1, objetivo: 5, unidad: "atrr", esHoras: false },
     ];
     expect(loQueFrena(reqs)!.clave).toBe("atrr");
   });
 
   it("con todo cumplido no hay freno", () => {
-    const reqs = [{ clave: "a", label: "A", actual: 10, objetivo: 10, unidad: "hs", esHoras: true }];
+    const reqs = [{ grupo: "pca" as const, clave: "a", label: "A", actual: 10, objetivo: 10, unidad: "hs", esHoras: true }];
     expect(loQueFrena(reqs)).toBe(null);
   });
 
   /** `subObjetivo` es informativo: usarlo diría que alguien terminó cuando le falta. */
   it("el subobjetivo no cuenta como cumplido", () => {
     const reqs = [
-      { clave: "pic", label: "PIC", actual: 75, objetivo: 100, subObjetivo: 70, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "pic", label: "PIC", actual: 75, objetivo: 100, subObjetivo: 70, unidad: "hs", esHoras: true },
     ];
     expect(loQueFrena(reqs)!.clave).toBe("pic");
   });
 
   it("empatados en cero, gana el que pide más", () => {
     const reqs = [
-      { clave: "chico", label: "Chico", actual: 0, objetivo: 5, unidad: "hs", esHoras: true },
-      { clave: "grande", label: "Grande", actual: 0, objetivo: 20, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "chico", label: "Chico", actual: 0, objetivo: 5, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "grande", label: "Grande", actual: 0, objetivo: 20, unidad: "hs", esHoras: true },
     ];
     expect(loQueFrena(reqs)!.clave).toBe("grande");
   });
@@ -188,23 +188,23 @@ describe("horasQueFaltan", () => {
    */
   it("es la brecha más grande, no la suma de las brechas", () => {
     const reqs = [
-      { clave: "total", label: "Total", actual: 150, objetivo: 200, unidad: "hs", esHoras: true },
-      { clave: "tra", label: "Travesía", actual: 10, objetivo: 20, unidad: "hs", esHoras: true },
-      { clave: "noct", label: "Nocturno", actual: 0, objetivo: 5, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "total", label: "Total", actual: 150, objetivo: 200, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "tra", label: "Travesía", actual: 10, objetivo: 20, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "noct", label: "Nocturno", actual: 0, objetivo: 5, unidad: "hs", esHoras: true },
     ];
     expect(horasQueFaltan(reqs)).toBe(50);
   });
 
   it("los aterrizajes no entran: no se miden en horas", () => {
     const reqs = [
-      { clave: "total", label: "Total", actual: 199, objetivo: 200, unidad: "hs", esHoras: true },
-      { clave: "atrr", label: "Aterrizajes", actual: 0, objetivo: 5, unidad: "atrr", esHoras: false },
+      { grupo: "pca" as const, clave: "total", label: "Total", actual: 199, objetivo: 200, unidad: "hs", esHoras: true },
+      { grupo: "pca" as const, clave: "atrr", label: "Aterrizajes", actual: 0, objetivo: 5, unidad: "atrr", esHoras: false },
     ];
     expect(horasQueFaltan(reqs)).toBe(1);
   });
 
   it("con todo cumplido no falta nada", () => {
-    const reqs = [{ clave: "a", label: "A", actual: 210, objetivo: 200, unidad: "hs", esHoras: true }];
+    const reqs = [{ grupo: "pca" as const, clave: "a", label: "A", actual: 210, objetivo: 200, unidad: "hs", esHoras: true }];
     expect(horasQueFaltan(reqs)).toBe(0);
   });
 });
@@ -262,7 +262,7 @@ describe("las sesiones de simulador no son experiencia de vuelo", () => {
 
   it("**una hora de simulador no suma a la experiencia total**", () => {
     const sesion = vuelo({ aircraft_id: SIMU.id, duration: 1, sim_pil_en_inst: 1 });
-    const r = requisitosPCA([sesion], [], [SIMU, AVION]);
+    const r = requisitosLicencia([sesion], [], [SIMU, AVION]);
     expect(de(r, "total")).toBe(0);
     // Pero sí cuenta donde corresponde.
     expect(de(r, "instrumentos")).toBe(1);
@@ -270,7 +270,7 @@ describe("las sesiones de simulador no son experiencia de vuelo", () => {
 
   it("la misma fila en un avión de verdad sí suma", () => {
     const v = vuelo({ aircraft_id: AVION.id, duration: 1, sim_pil_en_inst: 1 });
-    const r = requisitosPCA([v], [], [SIMU, AVION]);
+    const r = requisitosLicencia([v], [], [SIMU, AVION]);
     expect(de(r, "total")).toBe(1);
     expect(de(r, "instrumentos")).toBe(1);
   });
@@ -286,7 +286,7 @@ describe("las sesiones de simulador no son experiencia de vuelo", () => {
       aircraft_id: SIMU.id, duration: 2, pic_day_loc: 2, pic_night_tra: 1,
       sim_pil_en_inst: 1, landings: 3,
     });
-    const r = requisitosPCA([sucia], [], [SIMU]);
+    const r = requisitosLicencia([sucia], [], [SIMU]);
     expect(de(r, "total")).toBe(0);
     expect(de(r, "pic")).toBe(0);
     expect(de(r, "picTravesia")).toBe(0);
@@ -297,7 +297,7 @@ describe("las sesiones de simulador no son experiencia de vuelo", () => {
   it("sin la lista de aeronaves nada se marca, y el resultado es el de siempre", () => {
     // La ausencia del dato no se interpreta: es la misma disciplina que `unavailable`.
     const sesion = vuelo({ aircraft_id: SIMU.id, duration: 1, sim_pil_en_inst: 1 });
-    expect(de(requisitosPCA([sesion]), "total")).toBe(1);
+    expect(de(requisitosLicencia([sesion]), "total")).toBe(1);
   });
 
   it("el tope de 5 h sigue valiendo, y suma las dos procedencias", () => {
@@ -310,8 +310,133 @@ describe("las sesiones de simulador no son experiencia de vuelo", () => {
       vuelo({ aircraft_id: SIMU.id, duration: 1, sim_pil_en_inst: 1 })
     );
     const enVuelo = vuelo({ aircraft_id: AVION.id, duration: 1, sim_pil_en_inst: 3 });
-    const r = requisitosPCA([...sesiones, enVuelo], [], [SIMU, AVION]);
+    const r = requisitosLicencia([...sesiones, enVuelo], [], [SIMU, AVION]);
     expect(de(r, "instrumentos")).toBe(5);
     expect(de(r, "total")).toBe(1);
+  });
+});
+
+/**
+ * La HVI, que es la mitad que faltaba.
+ *
+ * Casi nadie hace la PCA sola: el camino normal en Argentina es sacar la comercial y la
+ * habilitación por instrumentos como un solo tramo. Un tracker que muestra sólo 61.620
+ * puede tener sus seis diales en verde con el piloto a treinta horas del examen que en
+ * realidad va a rendir.
+ */
+describe("requisitosLicencia · HVI", () => {
+  const SIMU: Aircraft = {
+    id: "sim-1", user_id: "u", registration: "LV-ASG", icao: "C172", type: "C172",
+    is_simulator: true,
+  } as Aircraft;
+  const de = (r: Requisito[], clave: string) => r.find((x) => x.clave === clave)!;
+
+  it("existe el requisito de 40 h de instrumentos", () => {
+    const r = de(requisitosLicencia([]), "instrumentosHvi");
+    expect(r.objetivo).toBe(40);
+    expect(r.grupo).toBe("hvi");
+  });
+
+  it("los mínimos de 61.620 siguen siendo los de siempre", () => {
+    // El agregado de la HVI no reinterpreta la PCA: si alguno de estos se movió, se
+    // movió por accidente.
+    const r = requisitosLicencia([]);
+    const objetivo = (c: string) => de(r, c).objetivo;
+    expect(objetivo("total")).toBe(200);
+    expect(objetivo("pic")).toBe(100);
+    expect(objetivo("picTravesia")).toBe(20);
+    expect(objetivo("instrumentos")).toBe(10);
+    expect(objetivo("nocturno")).toBe(5);
+    expect(objetivo("aterrizajesNocturnos")).toBe(5);
+    expect(de(r, "pic").subObjetivo).toBe(70);
+  });
+
+  it("cada licencia tiene su tope de simulador, y por eso los números difieren", () => {
+    /*
+      El caso que obliga a dos diales y no a uno con dos metas: con 8 h reales y 12
+      simuladas, la PCA cuenta 8 + 5 = 13 y la HVI cuenta 8 + 12 = 20. Un solo dial
+      tendría que elegir un número y el otro quedaría mal.
+    */
+    const reales = vuelo({ imc_pil: 8 });
+    const simu = vuelo({ aircraft_id: SIMU.id, duration: 0, sim_pil_en_inst: 12 });
+    const r = requisitosLicencia([reales, simu], [], [SIMU]);
+    expect(de(r, "instrumentos").actual).toBe(13);
+    expect(de(r, "instrumentosHvi").actual).toBe(20);
+  });
+
+  it("el tope de la HVI es 20, no infinito", () => {
+    const simu = vuelo({ aircraft_id: SIMU.id, duration: 0, sim_pil_en_inst: 35 });
+    const r = requisitosLicencia([simu], [], [SIMU]);
+    expect(de(r, "instrumentosHvi").actual).toBe(20);
+  });
+
+  it("por debajo del tope de la PCA los dos diales dicen lo mismo", () => {
+    const r = requisitosLicencia([vuelo({ imc_pil: 3, capota: 1 })]);
+    expect(de(r, "instrumentos").actual).toBe(4);
+    expect(de(r, "instrumentosHvi").actual).toBe(4);
+  });
+
+  it("las horas de apertura de instrumentos entran en los dos", () => {
+    const l = libro({ opening_imc_pil: 6, opening_capota: 2 });
+    const r = requisitosLicencia([], [l]);
+    expect(de(r, "instrumentos").actual).toBe(8);
+    expect(de(r, "instrumentosHvi").actual).toBe(8);
+  });
+
+  it("cada dial dice su tope, porque si no son dos números sin explicación", () => {
+    const r = requisitosLicencia([]);
+    expect(de(r, "instrumentos").nota).toContain("5");
+    expect(de(r, "instrumentosHvi").nota).toContain("20");
+  });
+
+  it("con la HVI en juego, lo que frena deja de ser un requisito de la PCA", () => {
+    /*
+      Un piloto con 61.620 entero cumplido y sin horas de instrumentos: antes la card
+      decía "cumplís los requisitos" y era verdad a medias. Ahora el freno es la HVI.
+    */
+    const hecho = requisitosLicencia([
+      vuelo({ duration: 195, pic_day_tra: 95, imc_pil: 10, landings: 1 }),
+      // Entero nocturno y con cinco aterrizajes: `nightLandingsOf` sólo cuenta los
+      // cinco cuando no hay ni una hora diurna en la fila. Con un vuelo mixto contaría
+      // uno, y el freno pasaría a ser el de aterrizajes — que fue lo que pasó al
+      // escribir esto de la forma obvia.
+      vuelo({ duration: 5, pic_night_tra: 5, landings: 5 }),
+    ]);
+    const freno = loQueFrena(hecho);
+    expect(freno?.clave).toBe("instrumentosHvi");
+  });
+});
+
+describe("ritmoMensual · instrumentos", () => {
+  /**
+   * El bug que este agregado destapó: no había extractor llamado `instrumentos`, así
+   * que `ritmoMensual` devolvía cero y la card contestaba *"no volaste nada de eso en
+   * los últimos 3 meses"* con horas cargadas. Decir "no hay ritmo" teniendo ritmo es
+   * exactamente lo que este módulo existe para no hacer.
+   */
+  it("tiene ritmo, y no cero", () => {
+    const flights = [
+      vuelo({ date: "2026-07-01", imc_pil: 3 }),
+      vuelo({ date: "2026-06-15", capota: 3 }),
+    ];
+    expect(ritmoMensual(flights, "instrumentos", HOY)).toBe(2);
+  });
+
+  it("el simulado también cuenta para el ritmo", () => {
+    expect(ritmoMensual([vuelo({ date: "2026-07-01", sim_pil_en_inst: 3 })], "instrumentos", HOY)).toBe(1);
+  });
+
+  it("el dial de la HVI proyecta con el mismo ritmo que el de la PCA", () => {
+    // Son las mismas horas: lo que cambia entre los dos es el tope, y un tope no tiene
+    // ritmo. Sin el alias, el dial de la HVI diría siempre que no hay de dónde proyectar.
+    const flights = [vuelo({ date: "2026-07-01", imc_pil: 6 })];
+    expect(ritmoMensual(flights, "instrumentosHvi", HOY)).toBe(
+      ritmoMensual(flights, "instrumentos", HOY)
+    );
+    expect(ritmoMensual(flights, "instrumentosHvi", HOY)).toBe(2);
+  });
+
+  it("una clave que no existe sigue dando cero", () => {
+    expect(ritmoMensual([vuelo({ duration: 9 })], "inventada", HOY)).toBe(0);
   });
 });
