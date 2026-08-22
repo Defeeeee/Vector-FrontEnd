@@ -5,6 +5,7 @@ import { Plus, ChevronRight } from "lucide-react";
 import { addAircraft } from "@/actions/flight";
 import { LoadingButton } from "@/components/LoadingButton";
 import CamposPerformance from "./CamposPerformance";
+import CampoSimulador from "./CampoSimulador";
 
 export default function AircraftForm() {
   const [isPending, startTransition] = useTransition();
@@ -83,6 +84,9 @@ export default function AircraftForm() {
         </div>
 
         <div className="pt-2 border-t border-zinc-100 dark:border-white/5">
+          <div className="pt-6">
+            <CampoSimulador claseLabel="text-xs font-medium text-zinc-500 dark:text-zinc-400" />
+          </div>
           <div className="pt-6">
             <CamposPerformance
               claseLabel="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors"

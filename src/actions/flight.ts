@@ -234,6 +234,17 @@ function numeroOpcional(valor: FormDataEntryValue | null): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/**
+ * La casilla "es un simulador", leída del par hidden + checkbox de `CampoSimulador`.
+ *
+ * `getAll` y no `get`: el campo llega dos veces cuando está tildado y el primero es
+ * siempre el `"false"` del hidden, que existe para que desmarcar la casilla llegue
+ * como un `false` explícito en vez de como un campo ausente.
+ */
+function marcadoComoSimulador(formData: FormData): boolean {
+  return formData.getAll("is_simulator").includes("true");
+}
+
 export async function addAircraft(formData: FormData) {
   const registration = formData.get("registration") as string;
   const icao = formData.get("icao") as string;
@@ -244,6 +255,7 @@ export async function addAircraft(formData: FormData) {
     method: "POST",
     body: JSON.stringify({
       registration, icao, type, type_acft,
+      is_simulator: marcadoComoSimulador(formData),
       cruise_tas_kt: numeroOpcional(formData.get("cruise_tas_kt")),
       fuel_burn_lph: numeroOpcional(formData.get("fuel_burn_lph")),
       fuel_capacity_l: numeroOpcional(formData.get("fuel_capacity_l")),
@@ -278,6 +290,7 @@ export async function updateAircraft(formData: FormData) {
       method: "PATCH",
       body: JSON.stringify({
         registration, icao, type, type_acft,
+        is_simulator: marcadoComoSimulador(formData),
         cruise_tas_kt: numeroOpcional(formData.get("cruise_tas_kt")),
         fuel_burn_lph: numeroOpcional(formData.get("fuel_burn_lph")),
         fuel_capacity_l: numeroOpcional(formData.get("fuel_capacity_l")),

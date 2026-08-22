@@ -1,12 +1,21 @@
 import { apiFetch } from "@/lib/api";
-import { Flight } from "@/types";
+import { Aircraft, Flight } from "@/types";
 import { redirect } from "next/navigation";
 import PageHeader from "@/components/dashboard/PageHeader";
 import AirportsClient, { AirportHistory } from "@/components/dashboard/AirportsClient";
 import { splitRoute } from "@/lib/summary";
+import { soloVolados } from "@/lib/simulador";
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
+/**
+ * Lo volado, sin las sesiones de simulador.
+ *
+ * El filtro no es cosmético. La ruta de un simulador dice `LOCAL`, que no es un
+ * aeródromo: sin sacarla, esta pantalla lo listaría como un destino con visitas, cero
+ * horas y cero aterrizajes, y quedaría ahí para siempre. Es el mismo aeródromo
+ * fantasma contra el que el formulario de vuelo valida los códigos de cuatro letras.
+ */
 async function getFlights(): Promise<Flight[]> {
   const response = await apiFetch("/dashboard");
 
@@ -17,7 +26,7 @@ async function getFlights(): Promise<Flight[]> {
   if (!response.ok) return [];
 
   const data = await response.json();
-  return (data.flights || []) as Flight[];
+  return soloVolados((data.flights || []) as Flight[], (data.aircraft || []) as Aircraft[]);
 }
 
 /**

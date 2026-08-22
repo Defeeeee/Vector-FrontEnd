@@ -96,11 +96,28 @@ import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
 import CustomStatsRow from "@/components/dashboard/CustomStatsRow";
 import { listCustomStats } from "@/actions/custom-stat";
 import { splitRoute } from "@/lib/route";
+import { soloVolados } from "@/lib/simulador";
 import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
 
 export default async function Dashboard() {
-  const { flights, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable, transactions } =
+  const { flights: bitacora, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable, transactions } =
     await getDashboardData();
+
+  /*
+    `bitacora` es el libro entero; `flights` es lo que se voló.
+
+    Una sesión de simulador es una fila del libro —el de papel la tiene— pero no es un
+    vuelo, y casi todo lo de esta pantalla mide vuelo: la racha, el promedio mensual,
+    la vigencia de 61.060, los aeródromos visitados. Sus horas ya llegan en cero, así
+    que los totales no se moverían; lo que se rompe sin el filtro es lo que sale de la
+    columna de ruta —`LOCAL` como aeródromo visitado— y todo lo que se divide por la
+    cantidad de vuelos.
+
+    Las dos excepciones se pasan a mano y están marcadas donde se usan: el tracker de
+    la PCA, que necesita las horas de instrucción del simulador y hace su propio corte,
+    y los últimos vuelos, que muestran el libro.
+  */
+  const flights = soloVolados(bitacora as Flight[], aircraft as Aircraft[]);
 
   /** Si esa sección del payload se pudo leer. Ver `unavailable` más arriba. */
   const disponible = (seccion: string) => !unavailable.includes(seccion);
@@ -283,7 +300,7 @@ export default async function Dashboard() {
         planned={planned as PlannedFlight[]}
         aircraft={aircraft as Aircraft[]}
         todayIso={new Date().toISOString().slice(0, 10)}
-        tieneVuelos={flights.length > 0}
+        tieneVuelos={bitacora.length > 0}
       />
 
       <CustomStatsRow
@@ -371,10 +388,13 @@ export default async function Dashboard() {
         documentosDisponibles={documentosDisponibles}
       />
 
-      {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below */}
+      {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below.
+          Recibe el libro entero, no `flights`: las horas de instrumento en simulador
+          cuentan para el requisito, y el tracker hace su propio corte con
+          `separarSimuladores` para que no cuenten para nada más. */}
       {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
         <PCATracker
-          flights={flights}
+          flights={bitacora}
           logbooks={logbooks as Logbook[]}
           aircraft={aircraft as Aircraft[]}
           todayIso={new Date().toISOString().slice(0, 10)}
@@ -397,7 +417,9 @@ export default async function Dashboard() {
 
       {/* Closes the dashboard on the logbook itself. Everything above is
           aggregate; this is the last thing that actually happened. */}
-      <RecentFlights flights={flights as Flight[]} aircraft={aircraft as Aircraft[]} costos={costos} />
+      {/* El libro entero: una sesión de simulador es un renglón como cualquier otro
+          y esconderla acá sería esconder algo que el piloto acaba de cargar. */}
+      <RecentFlights flights={bitacora as Flight[]} aircraft={aircraft as Aircraft[]} costos={costos} />
 
     </div>
   );

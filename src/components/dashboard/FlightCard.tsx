@@ -7,6 +7,7 @@ import { useState, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculateFlightDuration } from "@/lib/utils";
 import { splitRoute } from "@/lib/route";
+import { horasDeLaFila } from "@/lib/simulador";
 import { pesos } from "@/lib/costos";
 
 const PURPOSE_OPTIONS = [
@@ -53,6 +54,11 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [origin, dest] = splitRoute(flight.route, "???");
+  // Un simulador no tiene dos extremos —su ruta es una palabra, `LOCAL`— y su tiempo
+  // total es cero a propósito. Por el camino del vuelo se leería "LOCAL → ??? · 0.0 h",
+  // que parece un registro roto y es uno bien cargado.
+  const enSimulador = Boolean(aircraft?.is_simulator);
+  const horas = horasDeLaFila(flight, enSimulador);
 
   const [takeoffTime, setTakeoffTime] = useState(new Date(flight.takeoff).toISOString().substring(11, 16));
   const [landingTime, setLandingTime] = useState(new Date(flight.landing).toISOString().substring(11, 16));
@@ -174,17 +180,13 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
 
         {/* Route (desktop column) */}
         <div className="hidden md:flex items-center gap-1.5 data font-bold text-zinc-900 dark:text-white text-sm">
-          <span>{origin}</span>
-          <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
-          <span>{dest}</span>
+          <Ruta origin={origin} dest={dest} enSimulador={enSimulador} />
         </div>
 
         {/* Aircraft / purpose (+ route on mobile) */}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 md:hidden data font-bold text-zinc-900 dark:text-white text-sm mb-0.5">
-            <span>{origin}</span>
-            <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
-            <span>{dest}</span>
+            <Ruta origin={origin} dest={dest} enSimulador={enSimulador} />
           </div>
           <div className="flex items-center gap-2 text-xs md:text-sm text-zinc-500 dark:text-zinc-400 truncate">
             <span className="data font-semibold text-zinc-700 dark:text-zinc-300 uppercase">{aircraft?.registration}</span>
@@ -199,7 +201,7 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
 
         {/* Duration */}
         <div className="text-right font-bold text-base md:text-lg text-zinc-900 dark:text-white data">
-          {flight.duration.toFixed(1)}<span className="text-xs font-medium text-zinc-400 dark:text-zinc-600 ml-0.5">h</span>
+          {horas.toFixed(1)}<span className="text-xs font-medium text-zinc-400 dark:text-zinc-600 ml-0.5">h</span>
         </div>
 
         {/* Actions */}
@@ -279,5 +281,32 @@ function MiniEdit({ name, label, val }: { name: string, label: string, val: any 
       <label className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 block">{label}</label>
       <input type="number" step="0.1" name={name} defaultValue={val || ""} className="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-xl px-2 py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:border-zinc-400 dark:focus:border-white/30 transition-colors shadow-sm" />
     </div>
+  );
+}
+
+/**
+ * La ruta del renglón: los dos extremos, o la palabra sola cuando fue un simulador.
+ *
+ * Está acá abajo y no repetida en línea porque el renglón la dibuja dos veces —una
+ * columna propia en escritorio, apilada en el teléfono— y dos copias de la misma
+ * condición son dos lugares donde arreglar el próximo caso.
+ */
+function Ruta({ origin, dest, enSimulador }: { origin: string; dest: string; enSimulador: boolean }) {
+  if (enSimulador) {
+    return (
+      <>
+        <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/10 px-1.5 py-0.5 rounded flex-shrink-0">
+          Sim
+        </span>
+        <span className="truncate">{origin}</span>
+      </>
+    );
+  }
+  return (
+    <>
+      <span>{origin}</span>
+      <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
+      <span>{dest}</span>
+    </>
   );
 }

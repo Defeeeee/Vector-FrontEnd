@@ -5420,3 +5420,128 @@ personales dejando el shell.
 Dos "fallas" del probe que no eran del código, y vale anotarlas porque cuestan tiempo:
 el cartel no aparecía porque la entrada tenía dos segundos y el umbral son veinte —o
 sea, funcionaba—; y una aserción sobre `h1` fallaba porque esa pantalla no tiene `h1`.
+
+---
+
+## Los simuladores, como renglones del libro de vuelo
+
+**El pedido, textual:** *"yo quiero meter simus como lo haria en un libro de vuelo, yo
+anoto por ejemplo 21 07 2230 ASG LOCAL 2330 INST y en las ultimas columnas de piloto en
+inst terrestre agrego 1.0"*.
+
+O sea: la fila es idéntica a la de un vuelo —fecha, horarios, equipo, ruta, finalidad—
+y lo único que cambia es **en qué columna caen las horas**. Ese fue el criterio de todo
+lo que sigue: no una pantalla aparte para simuladores, sino la misma fila con dos
+columnas distintas llenas.
+
+### La marca va en la aeronave, no en el vuelo
+
+`aircraft.is_simulator`, migración `015`. Se carga **una vez** al dar de alta el equipo
+y desde ahí cada fila que lo use queda marcada sola.
+
+Una casilla por vuelo habría sido más simple de escribir y peor de usar: se olvida, y
+olvidarla significa contar una hora de simulador como hora de vuelo — que infla el
+requisito más grande del tracker de la licencia sin que nada en pantalla lo delate. Es
+el mismo argumento por el que la performance de crucero vive en `aircraft` y no en el
+plan: lo que es del equipo se carga una vez.
+
+### Qué deja de contar, y por qué es *todo* y no sólo la duración
+
+`src/lib/simulador.ts`. Lo obvio sería descontar `duration` y dejar el resto. Pero una
+fila de simulador con `pic_day_loc` cargado —por un dedo, o importada de una planilla
+vieja— seguiría sumando horas de PIC que nadie voló, y PIC es el segundo requisito más
+grande de 61.620.
+
+En una sesión de simulador **la única columna que existe es la de instrucción
+terrestre**. Todo lo demás en esa fila es un error de carga, no un dato, así que
+`separarSimuladores` saca la fila entera de la agregación y `requisitosPCA` la vuelve a
+mirar sólo para `sim_pil_en_inst`. El formulario además impide escribir el resto, pero
+eso protege las filas nuevas y no las que ya están.
+
+### El aeródromo fantasma, que es el modo de falla no obvio
+
+La ruta de un simulador dice `LOCAL`. **No es un aeródromo**, y el que la mire como si
+lo fuera lo va a listar como uno. Sin filtro, `/dashboard/airports` mostraría `LOCAL`
+como un destino con visitas, cero horas y cero aterrizajes — y una vez adentro del
+directorio no se va más. Es exactamente el fantasma contra el que el formulario de vuelo
+valida los códigos de cuatro letras.
+
+Por eso el corte no está sólo en el tracker: el dashboard, el resumen y el directorio de
+aeródromos aplican `soloVolados` antes de agregar. La regla que quedó, y que conviene
+respetar en lo que venga:
+
+> **`bitacora` es el libro entero; `flights` es lo que se voló.** Las pantallas que
+> muestran el libro —últimos vuelos, historial— reciben `bitacora`. Todo lo que mide
+> vuelo —racha, promedio mensual, vigencia de 61.060, aeródromos visitados— recibe
+> `flights`. El tracker de la PCA es la excepción y recibe `bitacora`, porque necesita
+> las horas de instrucción del simulador y hace su propio corte adentro.
+
+### El panel de desglose se desmonta, y esa vez sí está bien
+
+El slide-over con las trece columnas ANAC está **siempre montado** a propósito: emite un
+`<input type="hidden">` por categoría, y desmontarlo hace que cada vuelo se guarde con el
+desglose vacío — en silencio, porque el backend acepta un campo ausente como cero. Está
+documentado en el componente.
+
+En modo simulador **sí se desmonta**, y ahí "todo en cero" es la respuesta correcta y no
+un accidente: las trece columnas reparten tiempo de vuelo y no hay. Las dos que sí se
+llenan —`sim_pil_en_inst` y `sim_instructor`— quedan escritas directo en la sección 02.
+Verificado en el navegador: con avión el formulario postea `duration=1.0`,
+`pic_day_loc=1.0` y las trece columnas; con simulador postea `duration=0.0`,
+`landings=0`, `sim_pil_en_inst=1.0` y **ninguna columna de PIC/SIC**.
+
+### Cómo se lee el renglón en una lista
+
+Un simulador rompe los dos supuestos de una fila de bitácora: **no tiene dos extremos**
+—su ruta es una palabra— y **su tiempo total es cero a propósito**. Por el camino del
+vuelo, `splitRoute("LOCAL")` da `["LOCAL", ""]` y con el fallback el renglón queda
+`LOCAL → ??? · 0.0 h`: parece un registro roto y es uno bien cargado.
+
+Los últimos vuelos y el historial muestran `SIM · LOCAL · LV-ASG · 1.0 h`, con las horas
+que salen de `horasDeLaFila`. Esa función **no suma las dos columnas de simulador**: en
+el libro de papel una sesión llena una sola, y sumarlas donde alguien haya cargado las
+dos daría el doble de lo que duró.
+
+### La casilla necesita un `hidden` al lado
+
+Un checkbox desmarcado **no se envía**. Sin un `<input type="hidden" name="is_simulator"
+value="false">` delante, un `PATCH` no puede distinguir "desmarcado" de "el formulario no
+trae el campo", y un equipo marcado por error no se podría volver a marcar como avión.
+Con el par, el campo llega una vez desmarcado y dos tildado, y la server action lee con
+`getAll(...).includes("true")` — `get` devolvería siempre el `"false"` del hidden.
+
+### La aclaración regulatoria que evitó tocar el tracker
+
+Antes de escribir una línea hubo que separar dos requisitos que el número "40 horas"
+mezcla:
+
+- **PCA (61.620):** 10 h de instrumentos, de las cuales **hasta 5** en simulador.
+- **HVI:** 40 h de instrumentos, de las cuales **hasta 20** en simulador.
+
+El 40/20 es de la habilitación por instrumentos, no de la licencia comercial. Por eso
+`requisitosPCA` sigue con `objetivo: 10` y `Math.min(…, 5)`, sin tocar. **Un tracker de
+HVI es trabajo aparte y todavía no existe.**
+
+### Lo que quedó afuera, con el motivo
+
+- **El costo de una sesión.** `_sync_flight_transaction` calcula
+  `duration * cost_per_hour`, y como la duración es cero un simulador nunca se cobra
+  solo, aunque el equipo tenga tarifa cargada. Cobrarlo bien sería multiplicar por las
+  horas de instrucción, y eso es un cambio del backend. Por ahora se carga como
+  transacción a mano.
+- **La regla de superposición del auditor** no se tocó: un piloto tampoco puede estar en
+  el simulador y en el aire a la misma hora, así que sigue siendo correcta.
+
+### Verificación
+
+Quince mutantes contra `simulador.ts`; **dos sobrevivieron y los dos enseñaron algo
+distinto**. Uno era código redundante de verdad —una guarda de `aircraftId` vacío que
+`some` ya cubría, y se borró—. El otro era una prueba floja: `normalizarRutaSimulador("local")`
+daba `"LOCAL"` aun sin `toUpperCase`, porque el filtro de caracteres borra las minúsculas
+y el respaldo devuelve `"LOCAL"` igual. Se cambió el caso a `"sim ifr"`, que no tiene
+esa salida de emergencia.
+
+1069 tests, `tsc` limpio, build y smoke en verde, y las tres pantallas manejadas con
+Chromium contra el build de producción en claro y oscuro: el hangar (la casilla manda
+`false` sola y `false,true` tildada, y la edición abre tildada), el formulario (los
+campos que se postean de cada lado) y las listas (ningún `???` en pantalla).

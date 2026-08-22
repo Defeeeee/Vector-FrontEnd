@@ -73,6 +73,35 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.15.0",
+    fecha: "2026-08-22",
+    titulo: "Vector sin señal, y los simuladores en el libro",
+    novedades: [
+      {
+        icono: "nube",
+        titulo: "La app abre en la plataforma aunque no haya señal",
+        texto:
+          "Instalala desde el navegador del celular y las pantallas que ya visitaste con conexión siguen abriendo sin ella, con un cartel que dice de cuándo es la foto que estás viendo. El planificador resuelve aeródromos, radioayudas y fixes con un catálogo que viaja adentro de la app: la ruta que armás sin señal da los mismos números que con señal.",
+        href: "/dashboard/planificador",
+        cta: "Abrir el planificador",
+      },
+      {
+        icono: "reloj",
+        titulo: "Ahora todo dato meteorológico dice de cuándo es",
+        texto:
+          "Debajo de cada METAR está la hora en que se observó, sacada del propio texto del reporte. Y pasadas las dos horas deja de mostrarse: un METAR viejo no es meteorología, es un texto viejo, y no alimenta ningún veredicto de ruta.",
+      },
+      {
+        icono: "avion",
+        titulo: "Los simuladores se cargan como en el libro de papel",
+        texto:
+          "Marcá el equipo como simulador en el hangar y la sesión se anota igual que un vuelo —fecha, horarios, ruta— pero las horas van enteras a la columna de instrucción terrestre y no suman tiempo total. La ruta acepta escribir LOCAL, que no es un aeródromo, y no se cuenta ni como aterrizaje ni como destino visitado.",
+        href: "/dashboard/settings",
+        cta: "Marcar un simulador",
+      },
+    ],
+  },
+  {
     version: "2.14.0",
     fecha: "2026-08-19",
     titulo: "Los 51 aeródromos controlados, con sus cartas",

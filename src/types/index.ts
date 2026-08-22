@@ -90,6 +90,15 @@ export interface Aircraft {
   fuel_burn_lph?: number;
   /** Utilizable, no total: el no utilizable no vuela. */
   fuel_capacity_l?: number;
+  /**
+   * `true` = dispositivo de entrenamiento, no aeronave.
+   *
+   * El simulador se anota en el libro como cualquier vuelo —fecha, horarios, el
+   * equipo— y las horas van a la columna de instrucción terrestre. Esta marca es lo
+   * que hace que **no** sumen a la experiencia total: las 200 h de 61.620 son horas de
+   * vuelo, y una sesión de simulador no lo es.
+   */
+  is_simulator?: boolean;
 }
 
 export interface Profile {

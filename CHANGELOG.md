@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.15.0 — Vector sin señal, y los simuladores en el libro
+
+_22 de agosto de 2026_
+
+- **La app abre en la plataforma aunque no haya señal** — Instalala desde el navegador del celular y las pantallas que ya visitaste con conexión siguen abriendo sin ella, con un cartel que dice de cuándo es la foto que estás viendo. El planificador resuelve aeródromos, radioayudas y fixes con un catálogo que viaja adentro de la app: la ruta que armás sin señal da los mismos números que con señal.
+- **Ahora todo dato meteorológico dice de cuándo es** — Debajo de cada METAR está la hora en que se observó, sacada del propio texto del reporte. Y pasadas las dos horas deja de mostrarse: un METAR viejo no es meteorología, es un texto viejo, y no alimenta ningún veredicto de ruta.
+- **Los simuladores se cargan como en el libro de papel** — Marcá el equipo como simulador en el hangar y la sesión se anota igual que un vuelo —fecha, horarios, ruta— pero las horas van enteras a la columna de instrucción terrestre y no suman tiempo total. La ruta acepta escribir LOCAL, que no es un aeródromo, y no se cuenta ni como aterrizaje ni como destino visitado.
+
 ## v2.14.0 — Los 51 aeródromos controlados, con sus cartas
 
 _19 de agosto de 2026_

@@ -54,7 +54,12 @@ export default function PCATracker({ flights, logbooks = [], aircraft = [], toda
   // Toda la aritmética de 61.620 vive en `lib/pca-progress.ts`. Estaba acá adentro y
   // por lo tanto sin un solo test: el proyecto corre vitest en `environment: "node"`
   // y no puede testear componentes, así que lo que queda en un `.tsx` no se verifica.
-  const requisitos = requisitosPCA(flights, logbooks);
+  /*
+    Las aeronaves entran para poder descontar los simuladores: sin ellas, una sesión de
+    simulador sumaría a las 200 h de experiencia total. El componente ya las recibía
+    para el costo por hora y no se las pasaba.
+  */
+  const requisitos = requisitosPCA(flights, logbooks, aircraft);
   const porClave = (clave: string) => requisitos.find((r) => r.clave === clave)!;
 
   const totalHours = porClave("total").actual;

@@ -21,7 +21,11 @@ async function getAeronaves(): Promise<Aircraft[]> {
   // acá no justifica romper la pantalla: es un autocompletado, no el dato central.
   if (!res.ok) return [];
   try {
-    return (await res.json()) as Aircraft[];
+    // Los simuladores quedan afuera: esta pantalla calcula rumbos, combustible y hora
+    // estimada de llegada, y ninguna de las tres significa algo para un equipo que no
+    // se mueve. Ofrecerlo en el selector sería ofrecer una respuesta sin pregunta.
+    const flota = (await res.json()) as Aircraft[];
+    return flota.filter((a) => !a.is_simulator);
   } catch {
     return [];
   }

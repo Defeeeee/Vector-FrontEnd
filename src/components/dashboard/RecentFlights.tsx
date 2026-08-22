@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { Flight, Aircraft } from "@/types";
 import { splitRoute } from "@/lib/route";
+import { horasDeLaFila } from "@/lib/simulador";
 import { costoDeVuelo, pesos } from "@/lib/costos";
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -63,6 +64,9 @@ export default function RecentFlights({
         {recent.map((f) => {
           const [origin, dest] = splitRoute(f.route, "???");
           const ac = f.aircraft_id ? byId.get(f.aircraft_id) : undefined;
+          // Una sesión de simulador no tiene dos extremos: su ruta es una palabra.
+          // Pasarla por el par origen→destino la mostraría como "LOCAL → ???".
+          const enSimulador = Boolean(ac?.is_simulator);
           // Assembled by hand rather than via toLocaleDateString: the es-AR
           // long form renders "25 de jul de 2026", and the two "de"s eat the
           // width that the route needs. Same reason FlightDeck shows "23 MAR
@@ -80,9 +84,20 @@ export default function RecentFlights({
               </span>
 
               <span className="flex items-center gap-2 min-w-0 col-span-2 md:col-span-1 order-3 md:order-none">
-                <span className="data text-sm font-bold text-zinc-900 dark:text-white">{origin}</span>
-                <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 shrink-0" />
-                <span className="data text-sm font-bold text-zinc-900 dark:text-white">{dest}</span>
+                {enSimulador ? (
+                  <>
+                    <span className="data text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/10 px-1.5 py-0.5 rounded shrink-0">
+                      Sim
+                    </span>
+                    <span className="data text-sm font-bold text-zinc-900 dark:text-white truncate">{origin}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="data text-sm font-bold text-zinc-900 dark:text-white">{origin}</span>
+                    <ArrowRight className="w-3 h-3 text-zinc-300 dark:text-zinc-600 shrink-0" />
+                    <span className="data text-sm font-bold text-zinc-900 dark:text-white">{dest}</span>
+                  </>
+                )}
                 {ac?.registration && (
                   <span className="data text-[11px] text-zinc-400 dark:text-zinc-500 truncate ml-1">
                     · {ac.registration}
@@ -97,7 +112,7 @@ export default function RecentFlights({
               */}
               <span className="text-right order-2 md:order-none">
                 <span className="data text-sm font-bold text-zinc-900 dark:text-white block">
-                  {f.duration.toFixed(1)}
+                  {horasDeLaFila(f, enSimulador).toFixed(1)}
                   <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-600 ml-0.5">hs</span>
                 </span>
                 {costoDeVuelo(f, costos) !== null && (

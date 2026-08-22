@@ -1,5 +1,6 @@
 import { nightLandingsOf } from "@/lib/landings";
 import type { Aircraft, Flight, Logbook } from "@/types";
+import { idsDeSimuladores, separarSimuladores } from "@/lib/simulador";
 
 /**
  * El progreso hacia la PCA, convertido de informe en respuesta.
@@ -72,7 +73,26 @@ const apertura = (logbooks: Logbook[], pick: (l: Logbook) => number | undefined)
  * Las horas de apertura entran acá y **no** en el ritmo: son horas sin fecha, así que
  * atribuirlas a un mes cualquiera inventaría una velocidad que el piloto no tuvo.
  */
-export function requisitosPCA(flights: Flight[], logbooks: Logbook[] = []): Requisito[] {
+export function requisitosPCA(
+  todos: Flight[],
+  logbooks: Logbook[] = [],
+  aircraft: Aircraft[] = []
+): Requisito[] {
+  /*
+    **Las sesiones de simulador salen de todo menos de la columna de instrumentos.**
+
+    Las 200 h de experiencia total son horas de vuelo, y una sesión de simulador no lo
+    es: contarla infla el requisito más grande del tracker, que es el error que manda a
+    alguien a presentarse antes de tiempo.
+
+    Se separa acá y no dentro de cada extractor para que la regla esté en un solo lugar
+    y sea imposible que un requisito nuevo se olvide de aplicarla.
+
+    Sin la lista de aeronaves —que es opcional para no romper a ningún llamador— nada
+    se marca como simulador y el resultado es el de siempre. Es el mismo criterio que
+    el resto de la app: **la ausencia del dato no se interpreta**.
+  */
+  const { volados: flights, simulados } = separarSimuladores(todos, idsDeSimuladores(aircraft));
   const aperturaPic =
     apertura(logbooks, (l) => l.opening_pic_day_loc) + apertura(logbooks, (l) => l.opening_pic_day_tra) +
     apertura(logbooks, (l) => l.opening_pic_night_loc) + apertura(logbooks, (l) => l.opening_pic_night_tra);
@@ -83,7 +103,14 @@ export function requisitosPCA(flights: Flight[], logbooks: Logbook[] = []): Requ
   const instrumentos =
     sumar(flights, "instrumentoReal") +
     apertura(logbooks, (l) => l.opening_imc_pil) + apertura(logbooks, (l) => l.opening_capota) +
-    Math.min(sumar(flights, "instrumentoSimulado"), 5);
+    /*
+      El simulado sale de **las dos** listas: la columna de instrucción terrestre se
+      puede llenar tanto en una sesión de simulador —el caso normal— como en un vuelo
+      real que incluyó tiempo de instrumentos en tierra.
+
+      El tope de 5 h de 61.620 se aplica sobre el acumulado y no vuelo por vuelo.
+    */
+    Math.min(sumar(flights, "instrumentoSimulado") + sumar(simulados, "instrumentoSimulado"), 5);
 
   return [
     {

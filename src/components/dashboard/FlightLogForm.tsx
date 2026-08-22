@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
 import { aLocal, aUtc } from "@/lib/horarios";
-import { ArrowRight, Loader2, Compass, User, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
+import { ArrowRight, Loader2, Compass, User, MonitorPlay, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import {
   calculateBlockMinutes,
   calculateFlightDuration,
@@ -16,6 +16,12 @@ import StyledSelect from "./StyledSelect";
 import TimeAllocator, { TimeCategory } from "./TimeAllocator";
 import { useAnacBreakdown } from "@/hooks/useAnacBreakdown";
 import { splitRoute } from "@/lib/route";
+import {
+  RUTA_SIMULADOR,
+  duracionQueSeGuarda,
+  esAeronaveSimulador,
+  normalizarRutaSimulador,
+} from "@/lib/simulador";
 import { legDistanceNm } from "@/lib/distance";
 
 const PURPOSE_OPTIONS = [
@@ -186,6 +192,36 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const [remarks, setRemarks] = useState("");
 
   /**
+   * Una sesión de simulador se anota como una fila más del libro —fecha, horarios,
+   * equipo— pero la columna de tiempo total va vacía y la de instrucción terrestre
+   * lleva las horas. Con la marca puesta en el equipo, el formulario se acomoda solo:
+   * no hay una casilla de "esto es un simu" que se pueda olvidar.
+   */
+  const esSimulador = esAeronaveSimulador(aircraftId, aircraft);
+
+  /**
+   * La ruta de un simulador es texto libre.
+   *
+   * En el libro esa columna dice `LOCAL`, que no es un aeródromo y no entra por los
+   * dos campos de código: cortan en cuatro caracteres y exigen que resuelva. Esa
+   * exigencia es correcta para un vuelo —impide escribir un aeródromo fantasma que
+   * después queda para siempre en el directorio— y no tiene sentido acá, donde no
+   * hubo despegue.
+   */
+  const [rutaSimulador, setRutaSimulador] = useState(RUTA_SIMULADOR);
+
+  /**
+   * Las dos columnas de simulador, en horas.
+   *
+   * `sim_pil_en_inst` arranca siguiendo a los horarios —2230 a 2330 son 1.0— y deja de
+   * seguirlos apenas el piloto escribe algo. Es la misma idea que el prellenado de
+   * "PIC Día" con el vuelo entero: el caso normal ya está escrito y corregirlo sigue
+   * siendo posible.
+   */
+  const [simPilEnInst, setSimPilEnInst] = useState("");
+  const [simInstructor, setSimInstructor] = useState("");
+
+  /**
    * Whether the two time fields are being typed in local time.
    *
    * `takeoff`/`landing` are stored — and read by the audit engine — as the UTC
@@ -246,27 +282,52 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const breakdown = useAnacBreakdown({ total, keys: picSicKeys, pooled: true, remainderKey });
   const conditions = useAnacBreakdown({ total, keys: conditionKeys, pooled: false });
 
+  // ── Lo que se guarda cuando la fila es de simulador ───────────────────────
+  //
+  // La decisión de fondo —el tiempo total va en cero— vive en `src/lib/simulador.ts`
+  // con sus tests, porque es la que sostiene el tracker de la licencia. Acá sólo se
+  // aplica.
+  const duracionAGuardar = duracionQueSeGuarda(esSimulador, total);
+  const rutaAGuardar = esSimulador
+    ? normalizarRutaSimulador(rutaSimulador)
+    : `${canonicalOrigin} ${canonicalDestination}`.trim();
+
+  /** Las horas de instrucción, siguiendo a los horarios hasta que el piloto escriba. */
+  const horasInstruccion = simPilEnInst !== "" ? simPilEnInst : total > 0 ? total.toFixed(1) : "";
+  const horasInstruccionNum = parseFloat(horasInstruccion) || 0;
+  const horasInstructorNum = parseFloat(simInstructor) || 0;
+
   async function handleSubmit(formData: FormData) {
     setError(null);
 
-    if (!isValidCode(origin, originAirport)) {
-      setError("Ingresá un aeródromo de salida válido.");
-      return;
-    }
-    if (!isValidCode(destination, destinationAirport)) {
-      setError("Ingresá un aeródromo de llegada válido.");
-      return;
-    }
-    if (total <= 0) {
-      setError("El vuelo necesita un tiempo total mayor a cero.");
-      return;
+    if (esSimulador) {
+      // No se validan aeródromos: no los hay. Lo que no puede faltar es la única
+      // columna que una sesión de simulador llena — sin horas ahí la fila no dice
+      // nada, y como el tiempo total va en cero se guardaría un renglón vacío.
+      if (horasInstruccionNum <= 0 && horasInstructorNum <= 0) {
+        setError("Cargá las horas de simulador en la columna de instrucción.");
+        return;
+      }
+    } else {
+      if (!isValidCode(origin, originAirport)) {
+        setError("Ingresá un aeródromo de salida válido.");
+        return;
+      }
+      if (!isValidCode(destination, destinationAirport)) {
+        setError("Ingresá un aeródromo de llegada válido.");
+        return;
+      }
+      if (total <= 0) {
+        setError("El vuelo necesita un tiempo total mayor a cero.");
+        return;
+      }
     }
 
     setIsPending(true);
     // The allocator can't produce an over-assigned breakdown, so there is no
     // sum check here any more — the backend still validates as a backstop.
-    formData.set("route", `${canonicalOrigin} ${canonicalDestination}`);
-    formData.set("duration", total.toFixed(1));
+    formData.set("route", rutaAGuardar);
+    formData.set("duration", duracionAGuardar.toFixed(1));
 
     try {
       await logFlight(formData);
@@ -335,62 +396,78 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
             <div className="lg:grid lg:grid-cols-2 lg:gap-x-10 lg:items-start space-y-6 lg:space-y-0">
               {/* Left column — the flight itself. */}
               <div className="space-y-6">
-            {/* Route — two resolving chips joined by an arrow. */}
+            {/* Route — two resolving chips joined by an arrow, or, on a simulator,
+                the one free-text column the paper book has. */}
             <div className="space-y-4">
-              <div className="flex items-start gap-3 md:gap-4">
-                <div className="flex-1 min-w-0">
-                  <AirportResolver
-                    label="Salida"
-                    value={origin}
-                    onChange={setOrigin}
-                    onResolve={setOriginAirport}
-                    placeholder="SADM"
+              {esSimulador ? (
+                <LedgerField label="Ruta">
+                  <input
+                    value={rutaSimulador}
+                    onChange={(e) => setRutaSimulador(e.target.value.toUpperCase())}
+                    maxLength={20}
+                    placeholder={RUTA_SIMULADOR}
+                    className={`${ledgerInput} uppercase`}
                   />
+                </LedgerField>
+              ) : (
+                <div className="flex items-start gap-3 md:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <AirportResolver
+                      label="Salida"
+                      value={origin}
+                      onChange={setOrigin}
+                      onResolve={setOriginAirport}
+                      placeholder="SADM"
+                    />
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 shrink-0 mt-9" />
+                  <div className="flex-1 min-w-0">
+                    <AirportResolver
+                      label="Llegada"
+                      value={destination}
+                      onChange={setDestination}
+                      onResolve={setDestinationAirport}
+                      placeholder="SAEZ"
+                    />
+                  </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-zinc-300 dark:text-zinc-600 shrink-0 mt-9" />
-                <div className="flex-1 min-w-0">
-                  <AirportResolver
-                    label="Llegada"
-                    value={destination}
-                    onChange={setDestination}
-                    onResolve={setDestinationAirport}
-                    placeholder="SAEZ"
-                  />
-                </div>
-              </div>
+              )}
               {/* Canonical, matching what handleSubmit sets. It overwrites this
                   field anyway, so a raw value here would never reach the server —
                   but a hidden input that disagrees with what gets posted is the
                   kind of thing someone debugs for an hour. */}
-              <input type="hidden" name="route" value={`${canonicalOrigin} ${canonicalDestination}`.trim()} />
+              <input type="hidden" name="route" value={rutaAGuardar} />
 
-              {/* Auto-set from the two codes, but still the pilot's call. */}
-              <div className="flex items-center gap-2">
-                <SegmentToggle
-                  active={!isCrossCountry}
-                  onClick={() => setCrossCountryOverride(false)}
-                  label="Local"
-                />
-                <SegmentToggle
-                  active={isCrossCountry}
-                  onClick={() => setCrossCountryOverride(true)}
-                  label="Travesía"
-                />
-                {legDistance !== null && legDistance > 0 && (
-                  <span className="text-[10px] font-bold data text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
-                    {legDistance} NM
-                  </span>
-                )}
-                {crossCountryOverride !== null && (
-                  <button
-                    type="button"
-                    onClick={() => setCrossCountryOverride(null)}
-                    className="text-[10px] font-semibold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 uppercase tracking-wide"
-                  >
-                    Auto
-                  </button>
-                )}
-              </div>
+              {/* Auto-set from the two codes, but still the pilot's call. En un
+                  simulador no hay travesía posible: no se recorrió distancia. */}
+              {!esSimulador && (
+                <div className="flex items-center gap-2">
+                  <SegmentToggle
+                    active={!isCrossCountry}
+                    onClick={() => setCrossCountryOverride(false)}
+                    label="Local"
+                  />
+                  <SegmentToggle
+                    active={isCrossCountry}
+                    onClick={() => setCrossCountryOverride(true)}
+                    label="Travesía"
+                  />
+                  {legDistance !== null && legDistance > 0 && (
+                    <span className="text-[10px] font-bold data text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
+                      {legDistance} NM
+                    </span>
+                  )}
+                  {crossCountryOverride !== null && (
+                    <button
+                      type="button"
+                      onClick={() => setCrossCountryOverride(null)}
+                      className="text-[10px] font-semibold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 uppercase tracking-wide"
+                    >
+                      Auto
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
               {/* Times sit with the route because together they *are* the
@@ -431,13 +508,25 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
               </div>
 
               {/* Block time vs. ANAC time — the distinction the old single
-                  "Tiempo (h)" field hid. */}
-              <TimeSummary
-                blockMinutes={blockMinutes}
-                total={total}
-                manualDuration={manualDuration}
-                onManualDuration={setManualDuration}
-              />
+                  "Tiempo (h)" field hid. En un simulador la columna del total va
+                  vacía, así que en vez del editor se explica por qué. */}
+              {esSimulador ? (
+                <>
+                  <SesionDeSimulador duracion={total} />
+                  {/* `handleSubmit` lo vuelve a poner igual. Está acá para que el
+                      formulario diga por sí solo lo que manda: el `duration` de
+                      `TimeSummary` no se monta en este modo, y un campo que sólo
+                      existe dentro de la función es el que después nadie encuentra. */}
+                  <input type="hidden" name="duration" value={duracionAGuardar.toFixed(1)} />
+                </>
+              ) : (
+                <TimeSummary
+                  blockMinutes={blockMinutes}
+                  total={total}
+                  manualDuration={manualDuration}
+                  onManualDuration={setManualDuration}
+                />
+              )}
             </div>
 
             {/* Right column — what classifies the flight. */}
@@ -494,9 +583,14 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   />
                 </LedgerField>
 
-                <LedgerField label="Aterrizajes">
-                  <LandingsStepper value={landings} onChange={setLandings} />
-                </LedgerField>
+                {/* Un simulador no aterriza. Contarle un aterrizaje inflaría el
+                    requisito de aterrizajes nocturnos con uno que nunca pasó. */}
+                {!esSimulador && (
+                  <LedgerField label="Aterrizajes">
+                    <LandingsStepper value={landings} onChange={setLandings} />
+                  </LedgerField>
+                )}
+                {esSimulador && <input type="hidden" name="landings" value="0" />}
               </div>
 
               {/* The paper ANAC logbook has an observations column and Vector
@@ -531,10 +625,47 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
               unassigned warning right on the button. */}
           <div className="space-y-3 pt-6 border-t border-zinc-200 dark:border-white/10">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">02. Desglose ANAC</p>
-              <User className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+              <p className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+                {esSimulador ? "02. Instrucción terrestre" : "02. Desglose ANAC"}
+              </p>
+              {esSimulador ? (
+                <MonitorPlay className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+              ) : (
+                <User className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+              )}
             </div>
 
+            {/* En un simulador las trece filas del desglose sobran: doce de ellas
+                reparten tiempo de vuelo y acá no hay. Quedan las dos columnas que el
+                libro de papel sí llena, escritas directo en vez de detrás del panel. */}
+            {esSimulador ? (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <LedgerField label="Piloto en instrucción (h)">
+                  <input
+                    type="number"
+                    name="sim_pil_en_inst"
+                    min="0"
+                    step="0.1"
+                    placeholder="0.0"
+                    value={horasInstruccion}
+                    onChange={(e) => setSimPilEnInst(e.target.value)}
+                    className={ledgerInput}
+                  />
+                </LedgerField>
+                <LedgerField label="Instructor (h)">
+                  <input
+                    type="number"
+                    name="sim_instructor"
+                    min="0"
+                    step="0.1"
+                    placeholder="0.0"
+                    value={simInstructor}
+                    onChange={(e) => setSimInstructor(e.target.value)}
+                    className={ledgerInput}
+                  />
+                </LedgerField>
+              </div>
+            ) : (
             <button
               type="button"
               onClick={() => setBreakdownOpen(true)}
@@ -563,6 +694,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                 <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600" />
               </span>
             </button>
+            )}
           </div>
 
           {/* 03. Discounts — untouched, this is Vector's own concept. Renumbered from
@@ -614,7 +746,15 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
             AnimatePresence approach) removes them from the form, and every flight
             saves with an empty breakdown — silently, because the server action
             accepts a missing field as zero. `display:none` inputs still submit,
-            so hiding is safe; unmounting is not. */}
+            so hiding is safe; unmounting is not.
+
+            La excepción es el simulador, donde el panel **sí** se desmonta: ahí
+            "todo en cero" es la respuesta correcta y no un accidente. Las trece
+            columnas reparten tiempo de vuelo y una sesión de simulador no tiene;
+            dejarlas montadas con el total en cero funcionaría igual, pero mantendría
+            en pantalla un panel que sólo puede contestar cero. Las dos columnas que
+            sí se llenan están escritas arriba, en la sección 02. */}
+        {!esSimulador && (
         <div
           className={`fixed inset-0 z-[120] ${breakdownOpen ? "" : "pointer-events-none"}`}
           aria-hidden={!breakdownOpen}
@@ -691,6 +831,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
             </div>
           </div>
         </div>
+        )}
 
         {/* Inside a dialog the actions stick to the bottom of the scroller so
             they're reachable without scrolling to the end of the form — the
@@ -726,7 +867,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <span>Registrar vuelo</span>
+                <span>{esSimulador ? "Registrar sesión" : "Registrar vuelo"}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -734,6 +875,33 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
         </div>
       </div>
     </form>
+  );
+}
+
+/**
+ * Lo que ocupa el lugar del resumen de tiempo cuando la fila es de simulador.
+ *
+ * Dice el número que sale de los horarios y, en la misma línea, que ese número **no**
+ * va a la columna de tiempo total. La alternativa —esconder el bloque— dejaría al
+ * piloto sin saber si el formulario entendió que son 1.0 h, y la peor de todas sería
+ * mostrar "1.0 h" a secas: idéntico a un vuelo, y contando distinto.
+ */
+function SesionDeSimulador({ duracion }: { duracion: number }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-zinc-900 dark:bg-white/5 px-5 py-4">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          Sesión
+        </p>
+        <p className="data text-2xl font-bold text-white leading-tight">
+          {duracion.toFixed(1)} <span className="text-base text-white/40">h</span>
+        </p>
+      </div>
+      <p className="text-[11px] text-white/50 leading-relaxed flex-1 min-w-[12rem]">
+        No suma tiempo total de vuelo. Va entero a la columna de instrucción terrestre,
+        acá abajo.
+      </p>
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Aircraft, Flight, Logbook } from "@/types";
+import type { Requisito } from "./pca-progress";
 import {
   costoPorHora,
   horasQueFaltan,
@@ -241,5 +242,76 @@ describe("costoPorHora", () => {
       vuelo({ date: "2026-08-01", aircraft_id: "sin", duration: 50 }),
     ];
     expect(costoPorHora(flights, flota, HOY)).toBe(200);
+  });
+});
+
+describe("las sesiones de simulador no son experiencia de vuelo", () => {
+  /*
+    El caso real del piloto: anota el simulador en el libro como cualquier vuelo
+    —fecha, horarios, LV-ASG tipo C172— y la hora va a la columna de instrucción
+    terrestre. Lo que no puede pasar es que esa hora cuente para las 200 h de 61.620.
+  */
+  const SIMU: Aircraft = {
+    id: "sim-1", user_id: "u", registration: "LV-ASG", icao: "C172", type: "C172",
+    is_simulator: true,
+  };
+  const AVION: Aircraft = {
+    id: "av-1", user_id: "u", registration: "LV-XYZ", icao: "C152", type: "C152",
+  };
+  const de = (r: Requisito[], clave: string) => r.find((x) => x.clave === clave)!.actual;
+
+  it("**una hora de simulador no suma a la experiencia total**", () => {
+    const sesion = vuelo({ aircraft_id: SIMU.id, duration: 1, sim_pil_en_inst: 1 });
+    const r = requisitosPCA([sesion], [], [SIMU, AVION]);
+    expect(de(r, "total")).toBe(0);
+    // Pero sí cuenta donde corresponde.
+    expect(de(r, "instrumentos")).toBe(1);
+  });
+
+  it("la misma fila en un avión de verdad sí suma", () => {
+    const v = vuelo({ aircraft_id: AVION.id, duration: 1, sim_pil_en_inst: 1 });
+    const r = requisitosPCA([v], [], [SIMU, AVION]);
+    expect(de(r, "total")).toBe(1);
+    expect(de(r, "instrumentos")).toBe(1);
+  });
+
+  it("**se excluye todo, no sólo la duración**", () => {
+    /*
+      Una fila de simulador con PIC cargado —por un dedo, o importada de una planilla
+      vieja— sumaría horas de PIC que nadie voló, y PIC es el segundo requisito más
+      grande. En una sesión de simulador lo único que existe es la columna de
+      instrucción terrestre; el resto es un error de carga, no un dato.
+    */
+    const sucia = vuelo({
+      aircraft_id: SIMU.id, duration: 2, pic_day_loc: 2, pic_night_tra: 1,
+      sim_pil_en_inst: 1, landings: 3,
+    });
+    const r = requisitosPCA([sucia], [], [SIMU]);
+    expect(de(r, "total")).toBe(0);
+    expect(de(r, "pic")).toBe(0);
+    expect(de(r, "picTravesia")).toBe(0);
+    expect(de(r, "nocturno")).toBe(0);
+    expect(de(r, "aterrizajesNocturnos")).toBe(0);
+  });
+
+  it("sin la lista de aeronaves nada se marca, y el resultado es el de siempre", () => {
+    // La ausencia del dato no se interpreta: es la misma disciplina que `unavailable`.
+    const sesion = vuelo({ aircraft_id: SIMU.id, duration: 1, sim_pil_en_inst: 1 });
+    expect(de(requisitosPCA([sesion]), "total")).toBe(1);
+  });
+
+  it("el tope de 5 h sigue valiendo, y suma las dos procedencias", () => {
+    /*
+      La columna de instrucción terrestre se puede llenar en una sesión de simulador
+      —el caso normal— y también en un vuelo real con tiempo de instrumentos en tierra.
+      Las dos cuentan, contra el mismo tope acumulado.
+    */
+    const sesiones = Array.from({ length: 4 }, () =>
+      vuelo({ aircraft_id: SIMU.id, duration: 1, sim_pil_en_inst: 1 })
+    );
+    const enVuelo = vuelo({ aircraft_id: AVION.id, duration: 1, sim_pil_en_inst: 3 });
+    const r = requisitosPCA([...sesiones, enVuelo], [], [SIMU, AVION]);
+    expect(de(r, "instrumentos")).toBe(5);
+    expect(de(r, "total")).toBe(1);
   });
 });

@@ -6,6 +6,7 @@ import CompartirTarjeta from "@/components/dashboard/CompartirTarjeta";
 import SummaryClient from "@/components/dashboard/SummaryClient";
 import { getAirport } from "@/lib/airports";
 import { splitRoute } from "@/lib/summary";
+import { soloVolados } from "@/lib/simulador";
 
 async function getSummaryData() {
   const response = await apiFetch("/dashboard");
@@ -36,7 +37,16 @@ async function getSummaryData() {
 }
 
 export default async function SummaryPage() {
-  const { flights, aircraft, logbooks } = await getSummaryData();
+  const { flights: bitacora, aircraft, logbooks } = await getSummaryData();
+
+  /*
+    Esta pantalla responde "qué volé", y una sesión de simulador no es algo que se
+    voló. Sus horas ya llegan en cero —el formulario no las escribe en el total—, así
+    que los promedios no se moverían; lo que sí se rompe sin este filtro es todo lo que
+    sale de la columna de ruta: `LOCAL` aparecería como un aeródromo visitado, y una
+    vez adentro del directorio no se va más.
+  */
+  const flights = soloVolados(bitacora, aircraft);
 
   // Resolved here rather than in the client: `getAirport` reads the in-memory
   // TSV index, which is server-only. Only the codes this pilot actually flew

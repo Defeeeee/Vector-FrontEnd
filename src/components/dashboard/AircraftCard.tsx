@@ -2,10 +2,11 @@
 
 import { Aircraft } from "@/types";
 import { updateAircraft, deleteAircraft } from "@/actions/flight";
-import { Plane, Edit2, Trash2, X, Check, Loader2, ChevronRight } from "lucide-react";
+import { Plane, MonitorPlay, Edit2, Trash2, X, Check, Loader2, ChevronRight } from "lucide-react";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import CamposPerformance from "./CamposPerformance";
+import CampoSimulador from "./CampoSimulador";
 
 interface AircraftCardProps {
   aircraft: Aircraft;
@@ -85,6 +86,12 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
 
           <div className="pt-2 border-t border-zinc-200 dark:border-white/10">
             <div className="pt-6">
+              <CampoSimulador
+                aeronave={aircraft}
+                claseLabel="text-[11px] font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500"
+              />
+            </div>
+            <div className="pt-6">
               <CamposPerformance
                 aeronave={aircraft}
                 claseLabel="text-[11px] font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 ml-1"
@@ -111,8 +118,15 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
   return (
     <div className="relative bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-5 hover:border-zinc-300 dark:hover:border-white/20 hover:shadow-md dark:hover:bg-white/[0.04] transition-all group flex flex-col gap-4">
       <div className="flex items-start justify-between">
+        {/* Otro ícono, no un cartelito al costado: en una grilla de tarjetas es lo
+            primero que se ve, y confundir el simulador con el avión al cargar un vuelo
+            es exactamente el error que esta marca existe para evitar. */}
         <div className="w-11 h-11 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center shadow-lg transition-transform group-hover:scale-105 duration-500">
-          <Plane className="w-5 h-5" strokeWidth={1.5} />
+          {aircraft.is_simulator ? (
+            <MonitorPlay className="w-5 h-5" strokeWidth={1.5} />
+          ) : (
+            <Plane className="w-5 h-5" strokeWidth={1.5} />
+          )}
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -133,6 +147,14 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
       <div className="min-w-0">
         <p className="font-bold font-display text-xl text-zinc-900 dark:text-white tracking-tight uppercase truncate">{aircraft.registration}</p>
         <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium truncate mt-0.5">
+          {aircraft.is_simulator && (
+            <>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                Simulador
+              </span>
+              <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">/</span>
+            </>
+          )}
           {aircraft.type}
           <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">/</span>
           {aircraft.icao}
