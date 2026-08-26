@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
 
   let enviados = 0;
   const problemas: string[] = [];
+  const exitosos: string[] = [];
 
   for (const p of pendientes) {
     if (!p.email) {
@@ -175,8 +176,27 @@ export async function POST(req: NextRequest) {
     });
 
     const r = await enviarMail({ para: p.email, ...mensaje });
-    if (r.enviado) enviados++;
-    else problemas.push(`${p.planned_id}: ${r.motivo}`);
+    if (r.enviado) {
+      enviados++;
+      exitosos.push(p.planned_id);
+    } else {
+      problemas.push(`${p.planned_id}: ${r.motivo}`);
+    }
+  }
+
+  if (exitosos.length > 0) {
+    try {
+      await fetch(`${API_URL}/flight-briefings/mark-sent`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Cron-Secret": esperado,
+        },
+        body: JSON.stringify(exitosos),
+      });
+    } catch (err) {
+      problemas.push(`No se pudo marcar como notificados en el backend: ${err}`);
+    }
   }
 
   /*
