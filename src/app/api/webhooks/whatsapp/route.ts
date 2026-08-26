@@ -406,7 +406,7 @@ async function desmarcarAvisoFallido(messageId: string): Promise<void> {
     return;
   }
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
+  const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
   try {
     // El id va por query string y el secreto por cabecera, igual que en el resto
     // del barrido: la URL entera se escribe en el access log de nginx.
@@ -573,7 +573,7 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
+    const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
 
     // H1.1, paso 2 de 3. El secreto y el teléfono viajan en cabeceras y ya no en
     // la URL: la query string queda escrita en texto plano en los logs de nginx y

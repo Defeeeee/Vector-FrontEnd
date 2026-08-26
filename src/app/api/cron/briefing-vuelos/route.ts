@@ -6,7 +6,7 @@ import { componentesDePista, mejorPista } from "@/lib/briefing";
 import { getAirport } from "@/lib/airports";
 import { parsearRuta, rutaAUrl } from "@/lib/ruta-planificada";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://vector.fdiaznem.com.ar";
 
 /**

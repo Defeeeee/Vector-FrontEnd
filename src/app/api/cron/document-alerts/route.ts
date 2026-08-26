@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
 
 /**
  * Daily sweep that delivers document expiry warnings over WhatsApp.

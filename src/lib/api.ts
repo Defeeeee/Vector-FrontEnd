@@ -1,7 +1,7 @@
 import { getSessionToken } from "@/actions/auth";
 import { redirect } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.flightlog.fdiaznem.com.ar";
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
 
 /**
  * Cuánto se espera antes de dar por muerta una respuesta.
