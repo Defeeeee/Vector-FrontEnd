@@ -73,6 +73,25 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.17.0",
+    fecha: "2026-08-26",
+    titulo: "Cargar un vuelo ya no dice que hubo un error cuando no lo hubo",
+    novedades: [
+      {
+        icono: "avion",
+        titulo: "El formulario confirma que el vuelo se guardó, en vez de tirar un error",
+        texto:
+          "Desde la PWA, guardar un vuelo pintaba un cartel rojo aunque el vuelo se hubiera cargado bien —vos lo veías en la bitácora, pero el formulario decía que había fallado—. Ahora se cierra solo y aparece un aviso con la ruta, las horas y la aeronave.",
+      },
+      {
+        icono: "reloj",
+        titulo: "Y la app dejó de sentirse lenta al navegar",
+        texto:
+          "El service worker esperaba a terminar de guardar la página entera en el teléfono antes de mostrártela, en cada navegación. Ahora te la muestra apenas llega y guarda la copia después, en segundo plano.",
+      },
+    ],
+  },
+  {
     version: "2.16.0",
     fecha: "2026-08-22",
     titulo: "El tracker ahora mide la PCA y la HVI juntas",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Archive } from "lucide-react";
-import { CACHE_PAGINAS, HEADER_CAPTURA } from "@/lib/pwa";
+import { CACHE_PAGINAS, HEADER_CAPTURA, claveDeLoServido } from "@/lib/pwa";
 
 /**
  * "Última vez que pudimos actualizar: jueves 14:20."
@@ -23,17 +23,34 @@ import { CACHE_PAGINAS, HEADER_CAPTURA } from "@/lib/pwa";
  * El Cache API está disponible en `window`, no sólo en el worker. Se abre la caja y se
  * lee el header que el service worker estampó **al guardar**.
  *
+ * ## Por qué se lee una clave aparte, y no la entrada de la página
+ *
+ * La entrada de `vector-paginas` para esta URL puede reescribirse **después** de que
+ * el service worker ya respondió: cuando gana la copia guardada, el pedido de red que
+ * perdió la carrera de 3 s sigue vivo en `waitUntil` y, al terminar, pisa esa misma
+ * entrada con una fecha nueva — justo mientras este componente recién está montando.
+ *
+ * Leer esa entrada directamente tenía el modo de falla que el resto de este archivo
+ * dice que no puede pasar: el sello fresco del perdedor tapaba la fecha real de lo que
+ * el piloto tenía en pantalla, y el cartel se callaba sobre una página vieja.
+ *
+ * `claveDeLoServido` es una entrada que el service worker escribe **antes** de
+ * responder, con la fecha de lo que decidió servir en esa navegación puntual — y a la
+ * que ningún pedido posterior de esta misma navegación vuelve a tocar. Al ser un
+ * `Response` que arma el propio worker, no lleva el `Vary` que trae el HTML de Next, así
+ * que ni hace falta `ignoreVary` para encontrarla.
+ *
  * ## Y por qué eso alcanza, que es la parte no obvia
  *
  * Con red primero **no hace falta saber si la página vino del cache**: las dos
  * respuestas posibles se distinguen solas.
  *
- * - Si vino de la red, el service worker acaba de reescribir la copia y su fecha es de
- *   hace segundos → por debajo del umbral, no se muestra nada.
- * - Si vino del cache, la fecha es de la última vez que hubo red → se muestra.
- * - Si no hay copia, no hay nada que decir, que es el comportamiento de siempre.
+ * - Si sirvió la red, la marca es de hace segundos → por debajo del umbral, no se
+ *   muestra nada.
+ * - Si sirvió la copia guardada, la marca es la fecha de esa copia → se muestra.
+ * - Si no hay marca, no hay nada que decir, que es el comportamiento de siempre.
  *
- * El único modo de falla es callarse sobre una página de ocho segundos. **Falla del
+ * El único modo de falla es callarse sobre una página de pocos segundos. **Falla del
  * lado seguro**, y no depende de que el worker esté despierto.
  */
 
@@ -50,14 +67,12 @@ export default function VistoPorUltimaVez() {
       try {
         if (typeof caches === "undefined") return;
         const cache = await caches.open(CACHE_PAGINAS);
-        /*
-          `ignoreVary` porque Next sirve el HTML con `Vary: RSC,
-          Next-Router-State-Tree, …`, y un `match` desde la página arma un pedido sin
-          esos headers: sin esto no coincide nunca y el cartel no aparecería jamás.
-          Es seguro acá — **no se usa el cuerpo, sólo la fecha del header**.
-        */
-        const guardada = await cache.match(window.location.href, { ignoreVary: true });
-        const sello = guardada?.headers.get(HEADER_CAPTURA);
+        // La misma clave que el service worker calcula en `marcarLoServido`. Es una
+        // entrada propia, no la de la página, así que un `match` simple alcanza sin
+        // `ignoreVary`: el `Response` lo arma el propio worker y no lleva el `Vary`
+        // que trae el HTML de Next.
+        const marca = await cache.match(claveDeLoServido(window.location.pathname));
+        const sello = marca?.headers.get(HEADER_CAPTURA);
         if (!sello || !vivo) return;
 
         const cuando = new Date(sello);

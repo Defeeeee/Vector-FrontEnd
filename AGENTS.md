@@ -5775,3 +5775,162 @@ Chromium contra el build de producción, interceptando la respuesta de
 `/api/charts`: sin el flag no se pide nada y la sección no aparece; con el flag
 aparece con las categorías y el nombre de archivo, y el link de descarga arma bien
 la URL con espacios codificados. Claro y oscuro.
+
+---
+
+## Plan 14 — El alta de vuelo dejó de mentir, y el service worker dejó de bufferear
+
+**El reporte, textual:** *"la web se siente demasiado lenta hace un par de versiones,
+ademas cuando mando el form de nuevo vuelo no se carga directamente y tengo que
+refreshear para verlo, no obtengo confirmacion que se cargo el vuelo"*.
+
+"Un par de versiones" ubicó el problema en la 2.15 —la PWA—, y la investigación
+encontró dos defectos independientes, uno por síntoma, más un tercero que los agrava.
+Los tres se leyeron en el código; el primero, además, en el fuente de Next.
+
+### El cartel rojo que decía `NEXT_REDIRECT`
+
+`logFlight` terminaba en `redirect("/dashboard/history")`. **Next 16 rechaza a
+propósito la promesa de una server action que redirige**, para que la maneje el
+`RedirectBoundary` — verificado leyendo
+`server-action-reducer.js` del propio `node_modules`:
+
+```js
+// Internal redirect. Triggers an SPA navigation.
+const redirectError = createRedirectErrorForAction(redirectHref, navigateType);
+reject(redirectError);
+```
+
+Ese error es literalmente `new Error("NEXT_REDIRECT")`. Y `FlightLogForm` lo
+atrapaba en su `catch`, lo pintaba como el error del formulario, y volvía a habilitar
+el botón — **en cada carga exitosa**. El `onSuccess` que debía cerrar el modal era
+código muerto: nunca podía correr, porque `logFlight` siempre terminaba en un
+redirect. El piloto que reportó "no obtengo confirmación" estaba viendo exactamente
+eso: no faltaba la confirmación, sobraba un error falso en su lugar.
+
+**El arreglo:** `logFlight` devuelve `{error}` o `{success, id}`, como el resto de
+las acciones de `flight.ts` (`updateFlight`, `deleteFlight`, `bulkLogFlights`, que ya
+tenían la guarda `if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e` en su propio
+`catch` — un redirect ajeno que apareciera en el camino tiene que llegar al
+`RedirectBoundary`, no pintarse como si el vuelo no se hubiera guardado). Se agregó
+la misma guarda en `FlightLogForm`. Un helper nuevo,
+`revalidarLoQueCambiaUnVuelo()`, reemplaza las revalidaciones sueltas de las cuatro
+acciones y suma cinco pantallas que un vuelo nuevo también cambia y no se estaban
+revalidando: resumen, balance, aeródromos, auditoría, ajustes.
+
+**Los tres puntos de entrada, resueltos distinto porque son distintos:**
+- `NewFlightModal` (el caso común, un modal sobre una ruta interceptada): pasa
+  `onSuccess={close}`, que es `router.back()`. Sin el `redirect()` de antes, que
+  empujaba una entrada de historial encima de la del modal, el gesto de volver del
+  teléfono ya no reabre el formulario vacío — no hizo falta un arreglo aparte para
+  eso, desapareció solo con la causa.
+- `FlightLogModal` (la sesión en vivo): ya pasaba `onSuccess={onClose}`. Empezó a
+  funcionar solo, sin tocarlo.
+- `/dashboard/log-flight` como página completa (deep link o refresh, sin modal que
+  cerrar): `FlightLogForm` ganó un prop `redirectTo` —un string, no una función,
+  porque quien la renderiza es un Server Component y una función no cruza esa
+  frontera— y hace `router.replace(redirectTo)`, no `push`, por el mismo motivo que
+  el punto anterior.
+
+### El service worker bufferaba el documento entero antes de entregar un byte
+
+`paginaConRespaldo` en `sw.ts`: la promesa `red` no resolvía cuando llegaban las
+cabeceras, resolvía **después** de `await copia.blob()` + `await cache.put(...)`.
+Dos costos:
+
+1. **Anulaba el streaming de Next en toda navegación dura.** Nada llegaba al
+   navegador hasta que el documento entero había pasado por memoria del worker y
+   por disco.
+2. **La carrera de 3 s dejaba de medir lo que dice medir.** No comparaba "3 s contra
+   el primer byte", comparaba "3 s contra descarga completa + escritura". Una página
+   del App Router mantiene el cuerpo streameando hasta cerrar el último boundary de
+   Suspense, así que contra eso **la red pierde por construcción** — y ésa es la
+   causa de fondo de "cargo un vuelo y tengo que refrescar para verlo": el pedido
+   perdedor sí actualiza la copia (`waitUntil(red)`), pero un ciclo tarde.
+
+**El arreglo**, aplicado igual en las cuatro funciones que tenían el mismo patrón
+(`paginaConRespaldo`, `delCacheODeLaRed` para assets, `guardadoYRefrescar` para el
+planificador, `redOMeteoGuardada` para meteo): la escritura del cache pasa a
+`evento.waitUntil()`, sin bloquear la respuesta, y donde hacía falta estampar la
+fecha de captura se usa `new Response(copia.body, …)` en vez de
+`new Response(await copia.blob(), …)` — el cuerpo se pasa como stream, sin
+bufferearlo entero en memoria primero. Las dos escrituras con sello quedaron en un
+solo helper compartido, `guardarConSello`.
+
+Verificado leyendo **el artefacto compilado real** (`public/sw.js`), no sólo la
+fuente: `grep -c '\.blob(' public/sw.js` da `0`. Y de punta a punta con Chromium
+contra el build de producción, sin necesitar sesión: el service worker registra sin
+errores, cachea 45 entradas de assets sin excepciones, y un pedido a
+`/api/airports/search` cacheado por `guardadoYRefrescar` con el cuerpo como stream
+llega **byte a byte idéntico** al original cuando se relee offline — la prueba de
+que pasar `copia.body` en vez de `await copia.blob()` no corrompe nada.
+
+### El cartel que avisa "esto es una foto vieja" se autosilenciaba
+
+Cuando la copia guardada ganaba la carrera, el pedido de red que perdió seguía vivo
+en `waitUntil` y **reescribía la entrada general de la página** con una fecha nueva
+— justo mientras `VistoPorUltimaVez` recién montaba y preguntaba por primera vez "¿de
+cuándo es esto?". El componente leía el sello fresco del perdedor y callaba, aunque
+lo que el piloto tenía en pantalla fuera la copia vieja. Es el modo de falla exacto
+que el propio archivo decía que no podía pasar.
+
+**El arreglo:** una clave sintética separada, `claveDeLoServido(pathname)` en
+`pwa.ts` (`/__vector__/servido<pathname>`), que el service worker escribe **antes**
+de responder, con la fecha de lo que decidió servir en **esa** navegación puntual —
+la de la copia si sirvió la copia, "ahora" si sirvió la red. Ningún pedido posterior
+de la misma navegación vuelve a tocarla. `VistoPorUltimaVez` pasó a leer esa clave en
+vez de la entrada de la página, y de paso ya no necesita `ignoreVary`: el `Response`
+lo arma el propio worker y no lleva el `Vary` que trae el HTML de Next.
+
+### Limpieza que la investigación dejó a la vista
+
+`CACHES_SIN_VERSION` estaba importado en `sw.ts` y no se usaba ahí (sí en
+`pwa.test.ts`, donde queda). `ESQUEMA` se definía, no se usaba en ningún lado, y el
+comentario de al lado prometía una migración que nunca se escribió — se borró en vez
+de fingir que existe, con una nota de que diseñarla ahora sería diseñar contra un
+requisito que no existe todavía. El comentario de la regla de RSC decía "se dejan
+fallar" cuando el código hace `"ignorar"` —el service worker se hace a un lado y el
+navegador resuelve solo, y con red eso funciona normal—: se corrigió el texto, no el
+código.
+
+### El aviso que faltaba en toda la app, no sólo en vuelos
+
+Ninguna mutación de Vector confirmaba que había salido bien — ni un vuelo, ni una
+aeronave, ni un documento. `src/lib/avisos.ts` es el mecanismo genérico: una cola
+pura y testeada (`agregarAviso`, `quitarAviso`, `visibles` con un tope de 3
+simultáneos, `DURACION_MS` distinto por tipo — un error da más tiempo porque hay que
+leerlo y decidir algo, no sólo confirmar de reojo). El componente
+(`Avisos.tsx`, `AvisosProvider` + `useAvisos()`) es sólo plomería de montaje y
+animación, sin librería nueva: el molde visual es el mismo que ya usan
+`SinConexionBanner` y `VistoPorUltimaVez`.
+
+Se estrena en el alta de vuelo — *"Vuelo cargado — SADF → SAAK · 1.2 h · LV-S114"*,
+con los datos que `FlightLogForm` ya tenía, sin pedirle nada más al backend — y
+queda disponible para aeronaves, documentos y libros, que hoy tampoco confirman
+nada.
+
+**Por qué el texto de cada aviso no vive en `avisos.ts`:** el módulo no sabe qué es
+un vuelo. Construir el mensaje es trabajo de quien conoce el dominio, porque cada
+mutación tiene sus propios datos y su propia forma de contarlos — meterlo en la cola
+la habría atado a los vuelos, justo lo que la hace reusable para todo lo demás.
+
+### Verificación
+
+Un mutante real apareció escribiendo el test de `claveDeLoServido`: devolver la ruta
+tal cual como clave colisiona con la entrada real de la página, y el test lo agarró.
+Cinco mutantes más contra `avisos.ts`, todos muertos — incluido uno donde el propio
+test comparaba contra la constante que estaba mutando (`TOPE_VISIBLES`) y por eso no
+la detectaba; se corrigió comparando contra un valor fijo.
+
+1096 tests, `tsc` limpio, build y smoke en verde. Manejado con Chromium contra el
+build de producción: el aviso de éxito y de error conviven, el cierre manual
+funciona, el tope de 3 corta bien con 5 disparos simultáneos, respeta
+`prefers-reduced-motion`, y se ve correcto en claro y oscuro. El service worker se
+verificó de punta a punta como se describe arriba.
+
+**Lo que no se pudo verificar desde acá:** un alta de vuelo real contra el backend
+de producción, porque el sandbox no tiene sesión ni credenciales de ningún piloto —
+no se fabricó una para no escribir datos de prueba en una bitácora real. La
+confianza en el arreglo sale de haber leído el mecanismo exacto de Next que causaba
+el bug (no de haberlo reproducido) y de que quitar el `redirect()` lo hace
+estructuralmente imposible, no sólo menos probable.

@@ -2,14 +2,39 @@
 
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 function getNumber(val: any): number | null {
   const n = parseFloat(val);
   return isNaN(n) ? null : n;
 }
 
-export async function logFlight(formData: FormData) {
+/**
+ * Las pantallas que un vuelo nuevo, editado o borrado también cambia.
+ *
+ * Compartida por `logFlight`, `updateFlight`, `deleteFlight` y `bulkLogFlights`
+ * porque las cuatro tocan la misma bitácora y hasta ahora cada una revalidaba un
+ * subconjunto distinto —ninguna incluía resumen, balance, aeródromos, auditoría
+ * ni ajustes—, así que un vuelo cargado podía verse en Historial y seguir
+ * faltando en el promedio mensual de Resumen hasta que algo más revalidara esa
+ * ruta. Mismo patrón que `revalidateEverythingThatCounts` en `logbook.ts` y
+ * `revalidarProgramados` en `planned-flight.ts`.
+ */
+function revalidarLoQueCambiaUnVuelo() {
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/summary");
+  revalidatePath("/dashboard/balance");
+  revalidatePath("/dashboard/airports");
+  revalidatePath("/dashboard/audit");
+  revalidatePath("/dashboard/settings");
+  // El plan que se acaba de cerrar tiene que desaparecer del calendario sin que
+  // el piloto refresque a mano.
+  revalidatePath("/dashboard/calendario");
+}
+
+export async function logFlight(
+  formData: FormData
+): Promise<{ error: string } | { success: true; id: string | null }> {
   const aircraft_id = formData.get("aircraft_id") as string;
   // Optional: the picker only renders with more than one logbook, and the
   // backend files the flight in the pilot's default when this is absent.
@@ -38,7 +63,9 @@ export async function logFlight(formData: FormData) {
   ].reduce((acc, val) => acc + (parseFloat(val as string) || 0), 0);
 
   if (sumLogs > total + 0.01) {
-    throw new Error(`La suma de tiempos PIC/SIC (${sumLogs.toFixed(1)}h) no puede superar el total (${total.toFixed(1)}h)`);
+    return {
+      error: `La suma de tiempos PIC/SIC (${sumLogs.toFixed(1)}h) no puede superar el total (${total.toFixed(1)}h)`,
+    };
   }
 
   const payload = {
@@ -75,8 +102,8 @@ export async function logFlight(formData: FormData) {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || "Failed to log flight");
+    const error = await response.json().catch(() => ({}));
+    return { error: error.detail || "No se pudo registrar el vuelo" };
   }
 
   // El vuelo creado, con su id. La respuesta se descartaba, pero cerrar un vuelo
@@ -104,14 +131,21 @@ export async function logFlight(formData: FormData) {
     }
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/history");
-  // El plan que se acaba de cerrar tiene que desaparecer del calendario sin que el
-  // piloto refresque a mano. Los GET se cachean 20 s.
-  revalidatePath("/dashboard/calendario");
-  // Va último: `redirect` tira NEXT_REDIRECT, así que nada de lo de arriba puede
-  // ir después.
-  redirect("/dashboard/history");
+  /*
+    **Ya no hay `redirect()` acá, y no es un detalle menor.** Next 16 rechaza la
+    promesa de una server action que redirige —a propósito, para que la maneje el
+    `RedirectBoundary`— y `FlightLogForm` esperaba una promesa que resuelve: el
+    `catch` atrapaba ese rechazo y pintaba un cartel de error con el texto
+    `NEXT_REDIRECT`, en **cada** carga exitosa. El piloto que reportó "no obtengo
+    confirmación que se cargó el vuelo" estaba viendo exactamente eso: no faltaba
+    la confirmación, sobraba un error falso en su lugar.
+
+    Devolver `{ success }` es la misma convención que `updateFlight`,
+    `deleteFlight` y el resto de las acciones de este archivo — y la que
+    `FlightLogForm` puede manejar sin que la promesa se rechace nunca.
+  */
+  revalidarLoQueCambiaUnVuelo();
+  return { success: true, id: creado?.id ?? null };
 }
 
 export async function updateFlight(formData: FormData) {
@@ -191,8 +225,7 @@ export async function updateFlight(formData: FormData) {
       return { error: error.detail || "Error de validación en el servidor" };
     }
 
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/history");
+    revalidarLoQueCambiaUnVuelo();
     return { success: true };
   } catch (e: any) {
     if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
@@ -211,8 +244,7 @@ export async function deleteFlight(id: string) {
       return { error: error.detail || "Error al eliminar el vuelo" };
     }
 
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/history");
+    revalidarLoQueCambiaUnVuelo();
     return { success: true };
   } catch (e: any) {
     if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
@@ -412,8 +444,7 @@ export async function bulkLogFlights(flights: any[]) {
       }
     }
 
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/history");
+    revalidarLoQueCambiaUnVuelo();
     return { success: true };
   } catch (err: any) {
     console.error("bulkLogFlights error:", err);

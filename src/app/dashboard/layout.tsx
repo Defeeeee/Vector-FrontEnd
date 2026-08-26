@@ -10,6 +10,7 @@ import { AuditSummary, Profile } from "@/types";
 import ChatWidget from "@/components/dashboard/ChatWidget";
 import SinConexionBanner from "@/components/dashboard/SinConexionBanner";
 import VistoPorUltimaVez from "@/components/dashboard/VistoPorUltimaVez";
+import { AvisosProvider } from "@/components/dashboard/Avisos";
 
 import { redirect } from "next/navigation";
 
@@ -75,6 +76,11 @@ export default async function DashboardLayout({
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
   return (
+    // Envuelve `{children}` **y** `{modal}`: los dos son hijos de este mismo
+    // `return`, y un vuelo se carga la mayoría de las veces desde el modal de
+    // Nuevo Vuelo — el aviso de "se guardó" tiene que poder dispararse desde
+    // cualquiera de los dos y verse por encima de los dos.
+    <AvisosProvider>
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black w-full relative text-zinc-900 dark:text-white antialiased transition-colors duration-300">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }} />
@@ -194,5 +200,6 @@ export default async function DashboardLayout({
       {/* AI Chat Widget */}
       <ChatWidget />
     </div>
+    </AvisosProvider>
   );
 }

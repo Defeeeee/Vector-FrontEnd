@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 `AGENTS.md`.
 
+## v2.17.0 — Cargar un vuelo ya no dice que hubo un error cuando no lo hubo
+
+_26 de agosto de 2026_
+
+- **El formulario confirma que el vuelo se guardó, en vez de tirar un error** — Desde la PWA, guardar un vuelo pintaba un cartel rojo aunque el vuelo se hubiera cargado bien —vos lo veías en la bitácora, pero el formulario decía que había fallado—. Ahora se cierra solo y aparece un aviso con la ruta, las horas y la aeronave.
+- **Y la app dejó de sentirse lenta al navegar** — El service worker esperaba a terminar de guardar la página entera en el teléfono antes de mostrártela, en cada navegación. Ahora te la muestra apenas llega y guarda la copia después, en segundo plano.
+
 ## v2.16.0 — El tracker ahora mide la PCA y la HVI juntas
 
 _22 de agosto de 2026_

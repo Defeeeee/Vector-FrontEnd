@@ -1,7 +1,6 @@
 /// <reference lib="webworker" />
 
 import {
-  CACHES_SIN_VERSION,
   CACHE_DATOS,
   CACHE_METEO,
   CACHE_PAGINAS,
@@ -13,6 +12,7 @@ import {
   RUTA_PUNTOS,
   cachesABorrar,
   capturaVigente,
+  claveDeLoServido,
   estrategiaPara,
   paginaCacheable,
   topeMeteo,
@@ -190,7 +190,7 @@ async function guardarLoQueNecesitaElRespaldo(cache: Cache): Promise<void> {
  * imprudente y acá es exacto: `/_next/static/**` lleva el hash adentro del nombre, y
  * lo del precache se renueva junto con la versión del cache.
  */
-async function delCacheODeLaRed(pedido: Request): Promise<Response> {
+async function delCacheODeLaRed(evento: FetchEvent, pedido: Request): Promise<Response> {
   const cache = await caches.open(CACHE_SHELL);
   const guardado = await cache.match(pedido);
   if (guardado) return guardado;
@@ -199,7 +199,13 @@ async function delCacheODeLaRed(pedido: Request): Promise<Response> {
   // **Sólo 200.** Un 404 o un 503 guardado envenena el cache hasta la próxima
   // versión, y se vería como una app rota que ningún deploy arregla.
   if (respuesta.ok && respuesta.status === 200) {
-    await cache.put(pedido, respuesta.clone());
+    /*
+      `waitUntil` y no `await`: antes esto esperaba a que la escritura en disco
+      terminara antes de entregarle el chunk al navegador, así que en la primera
+      visita a cada versión **cada** asset de `/_next/static/**` pagaba esa espera
+      — decenas de escrituras, una por chunk, todas antes del primer byte.
+    */
+    evento.waitUntil(cache.put(pedido, respuesta.clone()));
   }
   return respuesta;
 }
@@ -248,20 +254,42 @@ const ESPERA_MS = 3000;
  */
 async function paginaConRespaldo(evento: FetchEvent): Promise<Response> {
   const pedido = evento.request;
+  const pathname = new URL(pedido.url).pathname;
   const cache = await caches.open(CACHE_PAGINAS);
 
+  /*
+    ⚠️ **`red` resuelve apenas llegan las cabeceras**, y no es un detalle de estilo.
+
+    Antes resolvía recién después de `await copia.blob()` seguido de `await
+    cache.put(...)` — o sea que la promesa que compite en la carrera de más abajo no
+    terminaba cuando el navegador tenía la respuesta, sino cuando el documento
+    **entero** había pasado por memoria del worker y quedado escrito en disco. Dos
+    costos, los dos reales:
+
+    1. **Se anulaba el streaming de Next en toda navegación dura.** Nada llegaba al
+       navegador hasta que la escritura terminaba.
+    2. **La carrera de `ESPERA_MS` medía otra cosa que la que dice medir.** Una
+       página del App Router mantiene el cuerpo streameando hasta cerrar el último
+       boundary de Suspense, así que contra "descarga completa + escritura en
+       disco" la red **pierde por construcción** — y eso es lo que hacía que cargar
+       un vuelo y volver al dashboard sirviera casi siempre la copia vieja: recién
+       el *siguiente* refresh mostraba el vuelo, porque para entonces el pedido
+       perdedor ya había terminado de escribir.
+
+    La escritura ahora es un efecto aparte, colgado de `evento.waitUntil()`, que
+    nunca demora esta respuesta.
+  */
   const red = fetch(pedido)
-    .then(async (respuesta) => {
+    .then((respuesta) => {
       /*
         Sólo 200 y sólo lo que la lista blanca permite. Un redirect opaco —"tu sesión
         venció"— no se puede cachear ni leer, y se devuelve tal cual: eso es lo que hace
         **imposible** servir el dashboard guardado por encima de un "volvé a entrar".
       */
-      if (respuesta.status === 200 && paginaCacheable(new URL(pedido.url).pathname)) {
-        const copia = respuesta.clone();
-        const cabeceras = new Headers(copia.headers);
-        cabeceras.set(HEADER_CAPTURA, new Date().toISOString());
-        await cache.put(pedido, new Response(await copia.blob(), { status: 200, headers: cabeceras }));
+      if (respuesta.status === 200 && paginaCacheable(pathname)) {
+        // Clonar ANTES de que el cuerpo se le entregue a nadie: cada clon tiene su
+        // propio stream, así que guardar uno no le saca nada al otro.
+        evento.waitUntil(guardarConSello(cache, pedido, respuesta.clone()));
       }
       return respuesta;
     })
@@ -270,7 +298,9 @@ async function paginaConRespaldo(evento: FetchEvent): Promise<Response> {
   const guardada = await cache.match(pedido);
   if (!guardada) {
     const respuesta = await red;
-    return respuesta ?? (await respaldoSinConexion());
+    if (!respuesta) return await respaldoSinConexion();
+    evento.waitUntil(marcarLoServido(cache, pathname, new Date().toISOString()));
+    return respuesta;
   }
 
   // Con copia guardada se corre la carrera. La promesa perdedora **no se aborta**.
@@ -278,10 +308,43 @@ async function paginaConRespaldo(evento: FetchEvent): Promise<Response> {
     red,
     new Promise<null>((listo) => setTimeout(() => listo(null), ESPERA_MS)),
   ]);
-  if (gano) return gano;
+  if (gano) {
+    evento.waitUntil(marcarLoServido(cache, pathname, new Date().toISOString()));
+    return gano;
+  }
 
   evento.waitUntil(red);
+  /*
+    Lo que se sirve es **esta** copia, con **esta** fecha — no la que `red` termine
+    escribiendo después, en segundo plano. Marcarlo acá, antes de devolver, es lo
+    que evita que `VistoPorUltimaVez` lea el sello que el pedido perdedor deja un
+    rato más tarde sobre la entrada general, en vez del de lo que el piloto
+    realmente tiene en pantalla ahora. Ver `claveDeLoServido` en `lib/pwa.ts`.
+  */
+  evento.waitUntil(marcarLoServido(cache, pathname, guardada.headers.get(HEADER_CAPTURA)));
   return guardada;
+}
+
+/**
+ * Guarda una respuesta con su fecha de captura estampada — la misma operación que
+ * antes hacían por separado `paginaConRespaldo` y `redOMeteoGuardada`, cada una con
+ * su propio `await copia.blob()` bloqueante. `copia.body` y no `.blob()`: el cuerpo
+ * se pasa como stream, sin bufferearlo entero en memoria antes de escribirlo.
+ */
+async function guardarConSello(cache: Cache, pedido: Request, copia: Response): Promise<void> {
+  const cabeceras = new Headers(copia.headers);
+  cabeceras.set(HEADER_CAPTURA, new Date().toISOString());
+  await cache.put(pedido, new Response(copia.body, { status: 200, headers: cabeceras }));
+}
+
+/**
+ * Deja constancia de qué se le sirvió de verdad a esta navegación. Ver
+ * `claveDeLoServido` en `lib/pwa.ts` para el motivo de que sea una entrada aparte.
+ */
+async function marcarLoServido(cache: Cache, pathname: string, capturadoEn: string | null): Promise<void> {
+  if (!capturadoEn) return;
+  const clave = new URL(claveDeLoServido(pathname), self.location.origin).toString();
+  await cache.put(clave, new Response(null, { headers: { [HEADER_CAPTURA]: capturadoEn } }));
 }
 
 async function respaldoSinConexion(): Promise<Response> {
@@ -342,21 +405,29 @@ async function catalogoDeBordo(): Promise<Catalogo | null> {
  * El ciclo AIRAC es de 28 días, así que servir la respuesta de ayer mientras llega la
  * de hoy no cuesta nada — y sí cuesta esperar la red en cada tecla del autocompletado.
  */
-async function guardadoYRefrescar(pedido: Request): Promise<Response> {
+async function guardadoYRefrescar(evento: FetchEvent, pedido: Request): Promise<Response> {
   const cache = await caches.open(CACHE_DATOS);
   const guardado = await cache.match(pedido);
 
+  /*
+    `red` resuelve apenas llega la respuesta — la escritura en cache es un efecto
+    aparte, en `waitUntil`, que ya no la demora. Antes el `await cache.put(...)`
+    vivía adentro del `.then()`, así que en la rama de abajo sin copia guardada
+    —la tecla en frío del autocompletado del planificador— la respuesta esperaba a
+    que la escritura en disco terminara antes de llegarle al navegador.
+  */
   const red = fetch(pedido)
-    .then(async (respuesta) => {
-      if (respuesta.status === 200) await cache.put(pedido, respuesta.clone());
+    .then((respuesta) => {
+      if (respuesta.status === 200) evento.waitUntil(cache.put(pedido, respuesta.clone()));
       return respuesta;
     })
     .catch(() => null);
 
   if (guardado) {
-    // El refresco sigue solo. `waitUntil` no está disponible acá, pero la promesa
-    // queda viva mientras el worker lo esté, que alcanza para el caso normal.
-    void red;
+    // Antes era `void red`, con la promesa viva sólo mientras el worker lo
+    // estuviera "por las dudas" — `waitUntil` no estaba disponible en esta firma
+    // todavía. Ahora sí, y es la garantía real que el comentario anterior pedía.
+    evento.waitUntil(red);
     return guardado;
   }
 
@@ -415,16 +486,16 @@ async function resolverConCatalogoLocal(pedido: Request): Promise<Response | nul
  * dos importan, y `lib/frescura.ts` se encarga de la segunda leyendo el propio texto
  * del METAR.
  */
-async function redOMeteoGuardada(pedido: Request, maximoMin: number): Promise<Response> {
+async function redOMeteoGuardada(evento: FetchEvent, pedido: Request, maximoMin: number): Promise<Response> {
   const cache = await caches.open(CACHE_METEO);
 
   try {
     const respuesta = await fetch(pedido);
     if (respuesta.status === 200) {
-      const copia = respuesta.clone();
-      const cabeceras = new Headers(copia.headers);
-      cabeceras.set(HEADER_CAPTURA, new Date().toISOString());
-      await cache.put(pedido, new Response(await copia.blob(), { status: 200, headers: cabeceras }));
+      // Igual que en `paginaConRespaldo`: la escritura no puede demorar la
+      // respuesta, y antes la demoraba — `await copia.blob()` bufferizaba el METAR
+      // entero en memoria antes de que la pantalla lo viera.
+      evento.waitUntil(guardarConSello(cache, pedido, respuesta.clone()));
     }
     return respuesta;
   } catch {
@@ -479,11 +550,11 @@ self.addEventListener("fetch", (evento) => {
   // imita peor.
   if (estrategia === "ignorar") return;
 
-  if (estrategia === "assets") return evento.respondWith(delCacheODeLaRed(pedido));
-  if (estrategia === "datos") return evento.respondWith(guardadoYRefrescar(pedido));
+  if (estrategia === "assets") return evento.respondWith(delCacheODeLaRed(evento, pedido));
+  if (estrategia === "datos") return evento.respondWith(guardadoYRefrescar(evento, pedido));
   if (estrategia === "meteo") {
     const tope = topeMeteo(new URL(pedido.url).pathname);
-    return evento.respondWith(redOMeteoGuardada(pedido, tope ?? 0));
+    return evento.respondWith(redOMeteoGuardada(evento, pedido, tope ?? 0));
   }
   /*
     Las páginas de la lista blanca guardan una copia fechada; el resto —alta de vuelos,

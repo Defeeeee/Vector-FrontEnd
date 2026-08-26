@@ -35,21 +35,15 @@ export const CACHE_SHELL = `vector-shell-${VERSION}`;
  * ver sin señal**, que es exactamente lo que este plan viene a darle. Un deploy no
  * puede tener ese efecto.
  *
- * Se migran por `ESQUEMA`, que sube sólo cuando cambia la *forma* de lo guardado.
+ * ⚠️ **No hay todavía un mecanismo de migración si la forma de lo guardado
+ * cambia** —por ejemplo si cambiara el header con el que se estampa la fecha de
+ * captura. Diseñarlo ahora sería diseñar contra un requisito que no existe; el día
+ * que haga falta, un número de esquema en el nombre del cache es la forma obvia de
+ * resolverlo.
  */
 export const CACHE_PAGINAS = "vector-paginas";
 export const CACHE_DATOS = "vector-datos";
 export const CACHE_METEO = "vector-meteo";
-
-/**
- * La forma de lo guardado en los caches sin versión.
- *
- * Subir este número es la única manera de descartarlos a propósito. Se sube cuando
- * un cambio hace que lo guardado ya no se pueda interpretar —por ejemplo si cambia
- * el header con el que se estampa la fecha de captura—, **no** cuando cambia el
- * contenido de la app.
- */
-export const ESQUEMA = 1;
 
 /** Los caches con datos del piloto. Se borran al cerrar sesión; los otros no. */
 export const CACHES_PERSONALES = [CACHE_PAGINAS, CACHE_METEO];
@@ -202,6 +196,36 @@ export const RUTAS_METEO: { ruta: string; maximoMin: number }[] = [
 /** Cuándo se guardó una respuesta. Lo estampa el service worker. */
 export const HEADER_CAPTURA = "X-Vector-Capturado-En";
 
+/**
+ * La clave de "qué le serví de verdad a esta navegación", separada de la entrada
+ * general de la página.
+ *
+ * ## El problema que resuelve
+ *
+ * La entrada de `vector-paginas` para una URL puede reescribirse **después** de
+ * haber contestado: cuando la copia guardada gana la carrera de 3 s, el pedido de
+ * red que perdió sigue vivo en `waitUntil` y termina escribiendo una fecha de
+ * captura nueva sobre esa misma entrada — encima, esto pasa segundos después de
+ * responder, justo cuando `VistoPorUltimaVez` recién está montando y por primera
+ * vez pregunta "¿de cuándo es esto?".
+ *
+ * Sin esta separación, esa pregunta se contesta leyendo un dato que ya cambió: el
+ * componente ve el sello fresco que dejó el perdedor y calla, aunque lo que el
+ * piloto tiene en pantalla sea la copia vieja que sí se sirvió. Es el modo de falla
+ * exacto que el propio componente dice que no puede pasar.
+ *
+ * ## Por qué una clave sintética y no otra cosa
+ *
+ * El service worker escribe acá, **antes de responder**, el sello de lo que
+ * efectivamente decidió servir — la fecha de la copia si sirvió la copia, o "ahora"
+ * si sirvió la red — y esa escritura no vuelve a tocarse por ningún pedido
+ * posterior a esta misma navegación. Es una entrada de una sola escritura por
+ * respuesta, en vez de una que compite con el resto del tráfico de fondo.
+ */
+export function claveDeLoServido(pathname: string): string {
+  return `/__vector__/servido${pathname}`;
+}
+
 /** El tope de esa ruta, o `null` si no es de las que se guardan. */
 export function topeMeteo(pathname: string): number | null {
   return RUTAS_METEO.find((r) => r.ruta === pathname)?.maximoMin ?? null;
@@ -256,13 +280,20 @@ export interface Pedido {
  * **Nada de otro origen.** Los tiles del mapa son de un tercero y son muchos MB; el
  * backend está en otro dominio y ni siquiera pasa por el navegador.
  *
- * **Los pedidos con header `RSC` se dejan fallar.** Son las navegaciones blandas de
- * `next/link`: devuelven un payload de Flight, no HTML, y vienen con
+ * **Los pedidos con header `RSC` se ignoran, no se cachean.** Son las navegaciones
+ * blandas de `next/link`: devuelven un payload de Flight, no HTML, y vienen con
  * `Vary: RSC, Next-Router-State-Tree, …`, o sea que la misma URL produce respuestas
  * distintas según de dónde venías. Cachearlos es inútil —el `Vary` casi nunca vuelve
  * a coincidir— y servirlos ignorando el `Vary` es peor: se pinta un árbol que no
- * corresponde. Al fallar, el router cae a navegación dura, y **ahí** el service
- * worker puede hacer algo útil.
+ * corresponde.
+ *
+ * "Ignorar" acá quiere decir lo mismo que en todos lados en este archivo: el service
+ * worker no llama a `respondWith`, así que el navegador resuelve el pedido por su
+ * cuenta. Con red, eso funciona normal — no es que el pedido se haga fallar a
+ * propósito. Es **sin** red que la navegación blanda no tiene con qué contestarse, y
+ * ahí el router de Next cae solo a una navegación dura — momento en el que **esta
+ * misma función** vuelve a consultarse, ahora para un pedido con `modo: "navigate"`,
+ * y `paginaConRespaldo` puede hacer algo útil.
  *
  * ## Lo que sí
  *

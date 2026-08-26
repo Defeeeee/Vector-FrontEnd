@@ -114,7 +114,25 @@ export default function NewFlightModal({
           {sinAeronaves ? (
             <SinAeronaves />
           ) : (
-            <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={initialData} plannedId={plannedId} inModal stickyActions onCancel={close} />
+            <FlightLogForm
+              aircraft={aircraft}
+              logbooks={logbooks}
+              initialData={initialData}
+              plannedId={plannedId}
+              inModal
+              stickyActions
+              onCancel={close}
+              /*
+                `close` es `router.back()`: cierra el modal volviendo a la página que
+                estaba debajo, la misma que `revalidatePath` ya dejó al día. `logFlight`
+                ya no hace su propio `redirect()` — antes lo hacía, y ese redirect
+                empujaba una entrada de historial encima de ésta, así que el gesto de
+                volver del teléfono terminaba reabriendo este mismo formulario vacío.
+                Sin ese `redirect()`, `onSuccess` es simplemente cerrar, y no queda
+                ninguna entrada de más.
+              */
+              onSuccess={close}
+            />
           )}
         </div>
       </motion.div>

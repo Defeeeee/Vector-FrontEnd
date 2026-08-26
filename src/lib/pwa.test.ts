@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PRECACHE,
   capturaVigente,
+  claveDeLoServido,
   estrategiaPara,
   topeMeteo,
   type Pedido,
@@ -260,5 +261,31 @@ describe("estrategiaPara", () => {
     expect(estrategiaPara(crudo("no-es-una-url"), ORIGEN)).toBe("ignorar");
     expect(estrategiaPara(crudo(""), ORIGEN)).toBe("ignorar");
     expect(estrategiaPara(crudo("chrome-extension://abc/x.js"), ORIGEN)).toBe("ignorar");
+  });
+});
+
+describe("claveDeLoServido", () => {
+  /*
+    Existe para separar "qué le serví a esta navegación" de la entrada general de la
+    página, que un pedido de fondo puede reescribir después de haber respondido. El
+    único contrato real es que **no coincida jamás** con la clave de la página que
+    describe, para que un `cache.match` no confunda una cosa con la otra.
+  */
+  it("no es la misma clave que la página que describe", () => {
+    expect(claveDeLoServido("/dashboard")).not.toBe("/dashboard");
+  });
+
+  it("dos rutas distintas no comparten clave", () => {
+    expect(claveDeLoServido("/dashboard")).not.toBe(claveDeLoServido("/dashboard/history"));
+  });
+
+  it("es estable: la misma ruta siempre da la misma clave", () => {
+    expect(claveDeLoServido("/dashboard/history")).toBe(claveDeLoServido("/dashboard/history"));
+  });
+
+  it("la raíz también tiene una clave propia, no una cadena vacía", () => {
+    // Una clave vacía se confundiría con "no hay marca" en el lado que lee.
+    expect(claveDeLoServido("/")).toBeTruthy();
+    expect(claveDeLoServido("/")).not.toBe("/");
   });
 });

@@ -78,7 +78,19 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2 order-2 lg:order-1">
-          <FlightLogForm aircraft={aircraft} logbooks={logbooks} initialData={prefillData} plannedId={plannedId} />
+          <FlightLogForm
+            aircraft={aircraft}
+            logbooks={logbooks}
+            initialData={prefillData}
+            plannedId={plannedId}
+            /*
+              Acá no hay modal que cerrar: es la página completa, para un deep link
+              o un refresh. Antes de esto, `logFlight` redirigía sola con `push`, así
+              que volver atrás desde `/dashboard/history` reabría este mismo
+              formulario vacío. `replace` no deja esa entrada.
+            */
+            redirectTo="/dashboard/history"
+          />
         </div>
         
         <div className="lg:col-span-1 order-1 lg:order-2 space-y-6 md:space-y-8">

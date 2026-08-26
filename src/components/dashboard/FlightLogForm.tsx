@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
+import { useAvisos } from "./Avisos";
 import { aLocal, aUtc } from "@/lib/horarios";
 import { ArrowRight, Loader2, Compass, User, MonitorPlay, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import {
@@ -100,6 +102,19 @@ interface FlightLogFormProps {
     purpose?: string;
   };
   onSuccess?: () => void;
+  /**
+   * A dónde navegar tras guardar, cuando no hay un `onSuccess` que cierre un
+   * modal — el caso de `/dashboard/log-flight` como página completa, sin
+   * diálogo que cerrar. Un string y no una función porque quien renderiza esta
+   * pantalla es un Server Component, y una función no cruza esa frontera.
+   *
+   * `router.replace` y no `push`: `logFlight` ya no hace su propio `redirect()`
+   * —antes lo hacía, y ese `redirect` empujaba una entrada de historial que el
+   * gesto de volver del teléfono deshacía reabriendo este mismo formulario
+   * vacío—, así que el reemplazo evita dejar la carga anterior en la pila para
+   * que alguien vuelva a caer en ella sin querer.
+   */
+  redirectTo?: string;
   inModal?: boolean;
   /**
    * Renders a "Cancelar" next to the submit. Only passed by the new-flight
@@ -154,7 +169,9 @@ function isValidCode(code: string, airport: AirportRef | null): boolean {
   return cleaned.length === 4 && /^[A-Z0-9]+$/.test(cleaned);
 }
 
-export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, inModal = false, onCancel, stickyActions = false, plannedId }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, onCancel, stickyActions = false, plannedId }: FlightLogFormProps) {
+  const router = useRouter();
+  const { notificar } = useAvisos();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -330,9 +347,43 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
     formData.set("duration", duracionAGuardar.toFixed(1));
 
     try {
-      await logFlight(formData);
+      const resultado = await logFlight(formData);
+      if ("error" in resultado) {
+        setError(resultado.error);
+        setIsPending(false);
+        return;
+      }
+      /*
+        La única confirmación real de que el vuelo se guardó. Antes de esto no había
+        ninguna — cerrar el modal o volver a Historial no le dice al piloto que la
+        carga salió bien, sólo que el formulario terminó. Con los datos que este
+        mismo formulario ya tiene, sin pedirle nada más al backend.
+      */
+      const matricula = aircraft.find((a) => a.id === aircraftId)?.registration;
+      notificar({
+        tipo: "exito",
+        titulo: esSimulador ? "Sesión cargada" : "Vuelo cargado",
+        detalle: [
+          esSimulador ? rutaAGuardar : `${canonicalOrigin} → ${canonicalDestination}`,
+          `${(esSimulador ? horasInstruccionNum : duracionAGuardar).toFixed(1)} h`,
+          matricula,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
       if (onSuccess) onSuccess();
+      else if (redirectTo) router.replace(redirectTo);
     } catch (e: any) {
+      /*
+        `logFlight` ya no redirige — devuelve `{error}` o `{success}`, como el
+        resto de las acciones de este archivo — así que este `catch` es sólo para
+        fallas de red reales. El guard de `NEXT_REDIRECT` se queda igual: es el
+        mismo que ya usan `updateFlight` y `deleteFlight` en `actions/flight.ts`
+        para que un redirect ajeno, si alguna vez vuelve a haber uno en el
+        camino, llegue al `RedirectBoundary` en vez de pintarse acá como si el
+        vuelo no se hubiera guardado.
+      */
+      if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
       setError(e.message || "Error al registrar el vuelo");
       setIsPending(false);
     }
