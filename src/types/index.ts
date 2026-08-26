@@ -109,6 +109,12 @@ export interface Profile {
   tracking_mode?: 'packs' | 'balance';
   api_key?: string;
   whatsapp_phone?: string;
+  /**
+   * Si puede ver las cartas Jeppesen del servidor. Se pone a mano por SQL —no
+   * hay todavía flujo de pago— y a propósito no se puede tocar desde el propio
+   * formulario de perfil: el PATCH del piloto no declara este campo.
+   */
+  jeppesen_access?: boolean;
 }
 
 export interface FlightPack {

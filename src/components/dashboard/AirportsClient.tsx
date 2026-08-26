@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Layers,
   Compass,
+  Lock,
 } from "lucide-react";
 import { AirportRef } from "@/types";
 
@@ -105,13 +106,26 @@ function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; va
   );
 }
 
+export interface CartaJeppesen {
+  categoria: string;
+  archivo: string;
+}
+
 export default function AirportsClient({
   history,
   initialIcao,
+  jeppesenAccess = false,
 }: {
   /** ICAO -> what the pilot flew there. Only codes present in their logbook. */
   history: Record<string, AirportHistory>;
   initialIcao: string | null;
+  /**
+   * Si este piloto tiene `profiles.jeppesen_access`. Resuelto en el server porque
+   * el flag vive en un campo que el propio piloto no puede leer de su sesión de
+   * otra forma sin exponerlo — y porque así, sin el flag, ni siquiera se intenta
+   * el fetch de `/api/charts`.
+   */
+  jeppesenAccess?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AirportRef[]>([]);
@@ -119,6 +133,7 @@ export default function AirportsClient({
   const [weather, setWeather] = useState<Weather | null>(null);
   const [notams, setNotams] = useState<NotamItem[]>([]);
   const [madhelFull, setMadhelFull] = useState<MadhelFull | null>(null);
+  const [jeppesenCharts, setJeppesenCharts] = useState<CartaJeppesen[]>([]);
   const [loadingWx, setLoadingWx] = useState(false);
   const [loadingNotams, setLoadingNotams] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -170,6 +185,7 @@ export default function AirportsClient({
     setWeather(null);
     setNotams([]);
     setMadhelFull(null);
+    setJeppesenCharts([]);
 
     const res = await fetch(`/api/airports/search?icao=${icao}`);
     if (!res.ok) return;
@@ -180,9 +196,15 @@ export default function AirportsClient({
     setLoadingNotams(true);
 
     try {
-      const [wxRes, notamRes] = await Promise.all([
+      const [wxRes, notamRes, chartsRes] = await Promise.all([
         fetch(`/api/weather?icao=${icao}`).catch(() => null),
         fetch(`/api/notams?icao=${icao}`).catch(() => null),
+        // Sin `jeppesenAccess` ni se pide: para casi todos los pilotos el pedido
+        // volvería `[]` de todas formas (`/api/charts` lo resuelve así a
+        // propósito), pero no tiene sentido gastar el round trip en el caso común.
+        jeppesenAccess
+          ? fetch(`/api/charts?icao=${icao}`).catch(() => null)
+          : Promise.resolve(null),
       ]);
 
       if (wxRes && wxRes.ok) {
@@ -192,6 +214,10 @@ export default function AirportsClient({
         const notamData = await notamRes.json();
         setNotams(notamData.notams || []);
         setMadhelFull(notamData.madhel || null);
+      }
+      if (chartsRes && chartsRes.ok) {
+        const cartas = await chartsRes.json();
+        setJeppesenCharts(Array.isArray(cartas) ? cartas : []);
       }
     } catch {
       // Ignore network errors gracefully
@@ -525,6 +551,47 @@ export default function AirportsClient({
                         </span>
                       </a>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/*
+                Cartas Jeppesen — distinto de lo de arriba en las dos cosas que
+                importan. Son de pago y viven en un servidor propio, no en el sitio
+                de ANAC, así que el link no sale al PDF directo sino al proxy
+                autenticado (`/api/charts/download`), que es el único lugar donde el
+                token de la sesión puede sumarse al pedido.
+
+                No hay estado de "no tenés acceso": para casi todos los pilotos
+                `jeppesenCharts` nunca deja de estar vacío, y una sección que no
+                aparece nunca no necesita explicarse.
+              */}
+              {jeppesenCharts.length > 0 && (
+                <div className="pt-4 border-t border-zinc-100 dark:border-white/10 space-y-2">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-aviation-blue" />
+                    Cartas Jeppesen
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {jeppesenCharts.map((carta) => {
+                      const href = `/api/charts/download?icao=${encodeURIComponent(selected.icao)}&categoria=${encodeURIComponent(carta.categoria)}&archivo=${encodeURIComponent(carta.archivo)}`;
+                      return (
+                        <a
+                          key={`${carta.categoria}/${carta.archivo}`}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group flex items-baseline gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200/60 dark:border-white/10 hover:border-aviation-blue/40 transition-colors"
+                        >
+                          <span className="data text-[10px] font-bold text-aviation-blue shrink-0 uppercase">
+                            {carta.categoria}
+                          </span>
+                          <span className="text-xs font-semibold text-zinc-900 dark:text-white group-hover:underline truncate">
+                            {carta.archivo.replace(/\.pdf$/i, "")}
+                          </span>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}

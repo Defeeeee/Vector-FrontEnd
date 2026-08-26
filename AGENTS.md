@@ -5682,3 +5682,96 @@ distintos y el S114 cambió de base en mayo—, y encima los paquetes de 10 h **
 tarifa por tres meses**. O sea que la tarifa de un vuelo no sale de la lista de precios:
 sale de qué paquete tenía comprado el piloto ese día. Las listas están en el chat; las
 compras, no. El tramo de marzo a mayo lo confirmó el piloto; no se dedujo.
+
+---
+
+## Las cartas Jeppesen: gateadas por perfil, servidas desde el backend
+
+**El pedido:** el piloto tiene una carpeta `Charts/Argentina/<ICAO>/<categoría>/*.pdf`
+en el servidor del backend —Airport Diagrams, IACs, SID, STAR, cientos de archivos— y
+quiere verlas en Vector, hoy sólo para su propia cuenta y más adelante con niveles
+pagos.
+
+### Por qué el backend, no el frontend, decide quién puede ver qué
+
+El deploy del frontend es `git reset --hard` + `npm ci --omit=dev` + build; el del
+backend es lo mismo contra su propio repo. Ninguno de los dos es un lugar para
+cientos de PDF de Jeppesen: son binarios pesados que no cambian con el código, y un
+`git reset --hard` sobre un repo con esos archivos adentro los volatiliza en cada
+deploy si no están commiteados, o hincha el repo para siempre si lo están.
+
+Quedaron donde ya estaban —en un directorio del servidor del backend, fuera de
+git— y el backend expone `GET /charts/{icao}` (lista) y
+`GET /charts/{icao}/{categoria}/{archivo}` (el PDF, con `Content-Disposition: inline`
+para que abra en el navegador como las cartas del AIP). La variable de entorno
+**`JEPPESEN_CHARTS_DIR`** en el `.env` del servidor apunta a esa carpeta; sin
+configurarla, el controller falla cerrado —lista vacía, 404— en vez de reventar,
+mismo criterio que `documents_alert_secret`.
+
+### `jeppesen_access`, un booleano y no un sistema de niveles
+
+Migración 016 del backend. Hoy hay un piloto con acceso, puesto a mano por SQL. Un
+esquema de tiers sin un solo piloto pagando sería diseñar contra un requisito que no
+existe — la misma disciplina que el resto de este repo aplica en "Lo que este plan
+no hace". Cuando haya un flujo de pago de verdad, pasar de un booleano a una tabla de
+suscripciones es barato; lo caro sería lo inverso.
+
+**A propósito ausente de `ProfileUpdate`.** `PATCH /profiles` sólo declara los campos
+que un piloto puede tocar de sí mismo, y este no es uno: agregarlo dejaría que
+cualquiera se autoconceda acceso a contenido pago con un PATCH bien armado.
+
+⚠️ **Nota para cuando llegue el paywall real:** redistribuir cartas Jeppesen —contenido
+con licencia propia, no de ANAC— a otros pilotos pagos necesita que esa licencia lo
+permita. Servírselas a uno mismo, con contenido al que ya se tiene acceso, es un uso
+personal sin nada que objetar; venderle el acceso a un tercero es una pregunta de
+licencia, no de código, y hay que resolverla antes de construir la parte de cobro.
+
+### El mutante que apareció escribiendo el test, y por qué importa
+
+`resolver_carta` recibe `categoria` y `archivo` de la URL — cualquiera que sepa armar
+un pedido decide qué valen. La primera versión sólo comprobaba que la ruta final,
+una vez resuelta, siguiera **adentro de la raíz configurada**
+(`Path.resolve()` + `relative_to`). Sonaba suficiente, y el test lo probó con
+`archivo="../../secreto.pdf"` esperando que fallara.
+
+**No falló.** `raiz/SADF/IACs/../../secreto.pdf` resuelve a `raiz/secreto.pdf` —
+sigue *adentro* de la raíz, sólo se salió del subárbol del aeródromo. El chequeo
+"¿seguís adentro de la raíz?" es necesario y no alcanza: hay que exigir además que
+`categoria` y `archivo` sean **un solo segmento**, sin separadores. La lección es la
+misma que ya dejó `isValidCode` del lado del frontend: una comprobación que suena
+completa y no lo es se nota escribiendo el caso que se supone que rechaza, no
+leyendo el código de nuevo.
+
+### La integración con la pantalla de aeródromos
+
+`AirportsClient` recibe `jeppesenAccess` resuelto en el server (de `profile.jeppesen_access`
+en el payload de `/dashboard`, que ya viajaba y no se leía) y **sólo pide
+`/api/charts` cuando ese flag es `true`**. Para el resto de los pilotos la sección
+"Cartas Jeppesen" no existe — no hay un estado de "no tenés acceso" que mostrar,
+porque no hay nada que ofrecer.
+
+Dos proxies nuevos en el frontend, `/api/charts` y `/api/charts/download`, existen
+por el mismo motivo de siempre: el navegador abre el link directo, sin pasar por
+`apiFetch`, así que el token de la cookie `httpOnly` tiene que salir del lado del
+servidor. El de descarga reenvía el header `Range` en las dos direcciones —para que
+un visor de PDF pida de a partes— y fuerza `next: { revalidate: 0 }` en vez de
+`cache: "no-store"`: las dos juntas son la combinación que Next marca como
+conflictiva, y hacía falta apagar el cache de datos igual — cachea por URL sin mirar
+`Range`, así que una respuesta parcial guardada podría servirse después como si
+fuera el archivo entero.
+
+### Verificación
+
+Backend: `test_charts_service.py` arma su propio árbol de PDF en un directorio
+temporal — incluye el caso del mutante de arriba, un ICAO de tres letras con un
+archivo real adentro (para que un regex de ICAO roto no quede tapado por el 404 de
+"no existe"), y una ruta absoluta como nombre de archivo. `test_models.py` y
+`test_audit_engine.py` siguen en verde, la app importa. Migración 016 aplicada a
+Supabase y el flag puesto en la cuenta del piloto.
+
+Frontend: 1081 tests, `tsc` limpio, build con las dos rutas nuevas
+(`/api/charts`, `/api/charts/download`) en la lista de dinámicas. Manejado con
+Chromium contra el build de producción, interceptando la respuesta de
+`/api/charts`: sin el flag no se pide nada y la sección no aparece; con el flag
+aparece con las categorías y el nombre de archivo, y el link de descarga arma bien
+la URL con espacios codificados. Claro y oscuro.

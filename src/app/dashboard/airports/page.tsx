@@ -16,17 +16,20 @@ const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "
  * horas y cero aterrizajes, y quedaría ahí para siempre. Es el mismo aeródromo
  * fantasma contra el que el formulario de vuelo valida los códigos de cuatro letras.
  */
-async function getFlights(): Promise<Flight[]> {
+async function getDashboardData(): Promise<{ flights: Flight[]; jeppesenAccess: boolean }> {
   const response = await apiFetch("/dashboard");
 
   if (response.status === 401) {
     console.log("AirportsPage: 401 Unauthorized. Redirecting to logout...");
     redirect("/api/auth/logout?redirect=/?expired=true");
   }
-  if (!response.ok) return [];
+  if (!response.ok) return { flights: [], jeppesenAccess: false };
 
   const data = await response.json();
-  return soloVolados((data.flights || []) as Flight[], (data.aircraft || []) as Aircraft[]);
+  return {
+    flights: soloVolados((data.flights || []) as Flight[], (data.aircraft || []) as Aircraft[]),
+    jeppesenAccess: Boolean(data.profile?.jeppesen_access),
+  };
 }
 
 /**
@@ -85,7 +88,7 @@ function buildHistory(flights: Flight[]): Record<string, AirportHistory> {
 }
 
 export default async function AirportsPage() {
-  const flights = await getFlights();
+  const { flights, jeppesenAccess } = await getDashboardData();
   const history = buildHistory(flights);
 
   // Opens on the aerodrome the pilot uses most — usually their home field.
@@ -98,7 +101,7 @@ export default async function AirportsPage() {
         eyebrow="Ficha, clima y tu historial en cada aeródromo"
         title="Aeropuertos"
       />
-      <AirportsClient history={history} initialIcao={initialIcao} />
+      <AirportsClient history={history} initialIcao={initialIcao} jeppesenAccess={jeppesenAccess} />
     </div>
   );
 }
