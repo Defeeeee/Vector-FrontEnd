@@ -43,6 +43,16 @@
 }
 
 @layer base {
+  /* Reserva el ancho de la scrollbar siempre, haya o no contenido para scrollear.
+     Sin esto, bloquear el scroll del body al abrir un modal (`overflow: hidden`)
+     hace desaparecer la scrollbar y todo el layout se corre unos pixeles — el
+     salto que un modal centrado (no full-bleed) hace bien visible en desktop.
+     Con el gutter reservado de antemano, prender y apagar `overflow` no mueve
+     nada. Ver `NewFlightModal.tsx`. */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-white text-charcoal antialiased selection:bg-charcoal selection:text-white;
     font-feature-settings: "ss01", "ss02", "cv01", "cv11";

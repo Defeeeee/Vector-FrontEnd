@@ -5997,3 +5997,39 @@ Mejora de UX crítica. El sistema ya cuenta con el mapa interactivo de destinos 
 **Qué se hizo:**
 1. **Red Interna (Localhost):** Se modificó el fallback de la constante `API_URL` en los componentes de servidor y crons para usar `http://127.0.0.1:7477`. Esto evita que las peticiones Server-to-Server en el VPS salgan a internet y tengan que volver a entrar por el Nginx proxy.
 2. **Fix Colapso Modal (Al Cerrar):** Se deshabilitaron los esqueletos nativos (`_loading.tsx`) de las vistas del dashboard (`history`, `summary`, `balance`, `settings`). Esto evita que Next.js lance una pantalla de carga intrusiva y vacía al hacer `router.back()` cuando la caché del cliente expiró, forzando a React a usar concurrencia silenciosa (dejar la UI anterior hasta que la nueva esté lista).
+
+### 2026-08-26 — Revisión de lo anterior: dos correcciones
+
+El piloto pidió una revisión de esta tanda de cambios de Antigravity. Dos cosas no
+estaban bien:
+
+1. **El fix del punto 2 de arriba rompió el lock de scroll del fondo, sin tocar el
+   comentario que promete lo contrario.** `NewFlightModal.tsx` sacó
+   `document.body.style.overflow = "hidden"` para evitar el salto de layout que
+   deja la scrollbar al desaparecer — pero el comentario de al lado sigue diciendo
+   *"the page behind must not scroll while the dialog owns the screen"*, y en
+   desktop el modal no es full-bleed (queda centrado, con fondo visible): sin el
+   lock, la rueda del mouse sobre ese fondo scrollea el dashboard de atrás mientras
+   el modal está abierto. La causa del salto no era el lock en sí, era que la
+   scrollbar reserva su propio ancho: `scrollbar-gutter: stable` en `html`
+   (`globals.css`) reserva ese espacio siempre, así que `overflow: hidden` deja de
+   mover nada y el lock vuelve sin reintroducir el salto.
+
+2. **`API_URL` (el atajo por localhost) no documentaba el paso manual que necesita
+   para activarse.** Es server-only y sólo pisa `NEXT_PUBLIC_API_URL` si el proceso
+   de PM2 en el VPS la tiene seteada — `.env.example` no la mencionaba, así que no
+   había forma de saber, leyendo el repo, que hacía falta agregarla a mano en el
+   servidor para que el atajo deje de ser un no-op. Se documentó en `.env.example`
+   con esa advertencia explícita.
+
+Backend (commit aparte en `flightlog-backend`): el nuevo `GET /flights/history`
+tenía `limit`/`offset` sin tope — alguien podía pedir `limit=999999` — y un
+comentario de debugging en voz alta (*"Wait, PostgREST can do..."*) que quedó
+pegado al código de producción. Se acotó `limit` a `[1, 200]` y se limpió el
+comentario.
+
+No se tocó el resto de lo que armó Antigravity: el endpoint `/flights/history` en
+sí sigue sin usarse desde el frontend (la mitigación real del lag de renderizado
+es la paginación de DOM en `FlightListClient`, que sigue trayendo el historial
+completo por `/dashboard`), y el cambio de `<form action={fn}>` a `onSubmit`
+manual en un par de formularios es una inconsistencia de estilo, no un bug.

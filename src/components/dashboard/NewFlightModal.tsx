@@ -53,15 +53,20 @@ export default function NewFlightModal({
   const sinAeronaves = aircraft.length === 0;
 
   // Escape closes, and the page behind must not scroll while the dialog owns
-  // the screen.
+  // the screen. El lock no corre el layout al prenderse: `scrollbar-gutter:
+  // stable` en `html` (globals.css) ya reserva ese ancho de entrada.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
     document.addEventListener("keydown", onKey);
 
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     return () => {
       document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
