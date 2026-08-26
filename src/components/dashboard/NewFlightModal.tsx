@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plane, X } from "lucide-react";
@@ -38,7 +38,11 @@ export default function NewFlightModal({
   plannedId?: string;
 }) {
   const router = useRouter();
-  const close = () => router.back();
+  const close = () => {
+    startTransition(() => {
+      router.back();
+    });
+  };
 
   // Sin aeronaves no hay formulario que completar. El branch va acá y no en la
   // ruta que monta este modal, porque el chrome —cierre, título, gesto de
@@ -56,12 +60,8 @@ export default function NewFlightModal({
     };
     document.addEventListener("keydown", onKey);
 
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
