@@ -394,7 +394,13 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
     "w-full bg-transparent border-b-2 border-zinc-200 dark:border-white/10 focus:border-zinc-900 dark:focus:border-white py-2 text-sm font-semibold text-zinc-900 dark:text-white outline-none transition-colors placeholder:text-zinc-300 dark:placeholder:text-zinc-700";
 
   return (
-    <form action={handleSubmit} className="w-full">
+    <form 
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit(new FormData(e.currentTarget));
+      }} 
+      className="w-full"
+    >
       {/* Lo que después cierra el vuelo programado. Ver `logFlight`. */}
       {plannedId && <input type="hidden" name="planned_id" value={plannedId} />}
       <AnimatePresence>
