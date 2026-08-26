@@ -46,10 +46,14 @@ export default function FlightListClient({ flights, aircraft, costos = new Map()
 
   const filtrado = hayFiltros(filtros);
 
-  // Group into ledger pages by calendar month
+  const [limit, setLimit] = useState(30);
+
+  // Group into ledger pages by calendar month, but ONLY for the visible ones
+  const visibleFlights = useMemo(() => filteredFlights.slice(0, limit), [filteredFlights, limit]);
+
   const monthGroups = useMemo(() => {
     const groups = new Map<string, { label: string; flights: Flight[]; hours: number; pesos: number }>();
-    for (const f of filteredFlights) {
+    for (const f of visibleFlights) {
       const d = new Date(f.date + 'T00:00:00');
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       if (!groups.has(key)) {
@@ -61,7 +65,7 @@ export default function FlightListClient({ flights, aircraft, costos = new Map()
       g.pesos += costos.get(f.id) ?? 0;
     }
     return Array.from(groups.values());
-  }, [filteredFlights, costos]);
+  }, [visibleFlights, costos]);
 
   return (
     <div className="space-y-6 md:space-y-8 w-full">
@@ -193,6 +197,17 @@ export default function FlightListClient({ flights, aircraft, costos = new Map()
               </motion.div>
             ))}
           </AnimatePresence>
+          {limit < filteredFlights.length && (
+            <div className="flex justify-center pt-4">
+              <button
+                type="button"
+                onClick={() => setLimit((l) => l + 50)}
+                className="px-6 py-2 rounded-full border border-zinc-200 dark:border-white/10 text-sm font-semibold text-zinc-900 dark:text-white hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors shadow-sm dark:shadow-none"
+              >
+                Cargar más vuelos
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <motion.div
