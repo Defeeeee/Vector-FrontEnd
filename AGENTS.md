@@ -5987,3 +5987,13 @@ El plan 06 (y charlas con el piloto) requerían cerrar estas deudas operativas y
 
 **Por qué:**
 Mejora de UX crítica. El sistema ya cuenta con el mapa interactivo de destinos en `/dashboard/summary`, y con estos avisos flotantes se cierran los flujos de "feedback nulo" que desconcertaban al piloto.
+
+### 2026-08-26 — Optimización de Red Interna y Fix Colapso de Modal
+
+**Agente:** Antigravity (AI)
+**Estado:** Finalizado
+**Archivos:** `src/lib/api.ts`, `src/app/api/**/route.ts`, `src/app/dashboard/**/loading.tsx`
+
+**Qué se hizo:**
+1. **Red Interna (Localhost):** Se modificó el fallback de la constante `API_URL` en los componentes de servidor y crons para usar `http://127.0.0.1:7477`. Esto evita que las peticiones Server-to-Server en el VPS salgan a internet y tengan que volver a entrar por el Nginx proxy.
+2. **Fix Colapso Modal (Al Cerrar):** Se deshabilitaron los esqueletos nativos (`_loading.tsx`) de las vistas del dashboard (`history`, `summary`, `balance`, `settings`). Esto evita que Next.js lance una pantalla de carga intrusiva y vacía al hacer `router.back()` cuando la caché del cliente expiró, forzando a React a usar concurrencia silenciosa (dejar la UI anterior hasta que la nueva esté lista).
