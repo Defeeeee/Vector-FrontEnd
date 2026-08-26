@@ -14,6 +14,7 @@ import {
 } from "@/lib/expiry-rules";
 import { createDocument, deleteDocument, updateDocument } from "@/actions/document";
 import StyledSelect from "./StyledSelect";
+import { useAvisos } from "./Avisos";
 
 const KIND_OPTIONS: { value: DocumentKind; label: string }[] = [
   { value: "cma", label: "Certificado médico (CMA)" },
@@ -133,13 +134,19 @@ export default function DocumentsManager({
     setPresetKind(null);
   };
 
+  const { notificar } = useAvisos();
+
   const remove = (doc: PilotDocument) => {
     if (!confirm(`¿Borrar "${doc.name}"?`)) return;
     setBusyId(doc.id);
     setError(null);
     startTransition(async () => {
       const result = await deleteDocument(doc.id);
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        notificar({ tipo: "exito", titulo: "Documento eliminado", detalle: `Se borró "${doc.name}" correctamente.` });
+      }
       setBusyId(null);
     });
   };
@@ -347,6 +354,7 @@ function DocumentForm({
   const cantidad = Number(offset) || 0;
   const presetName = presetKind ? QUICK_ADD.find((q) => q.kind === presetKind)?.name : undefined;
   const [pending, startTransition] = useTransition();
+  const { notificar } = useAvisos();
 
   const submit = (formData: FormData) => {
     onError(null);
@@ -356,13 +364,21 @@ function DocumentForm({
         onError(result.error);
         return;
       }
+      notificar({
+        tipo: "exito",
+        titulo: doc ? "Documento guardado" : "Documento agregado",
+        detalle: `Se guardó "${formData.get("name")}" correctamente.`
+      });
       onDone();
     });
   };
 
   return (
     <form
-      action={submit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit(new FormData(e.currentTarget));
+      }}
       className="bg-white dark:bg-white/[0.02] rounded-[2rem] border border-zinc-900/20 dark:border-white/20 shadow-cal dark:shadow-none p-5 md:p-6 space-y-5"
     >
       <div className="flex items-center justify-between">

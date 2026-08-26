@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import CamposPerformance from "./CamposPerformance";
 import CampoSimulador from "./CampoSimulador";
+import { useAvisos } from "./Avisos";
 
 interface AircraftCardProps {
   aircraft: Aircraft;
@@ -15,13 +16,15 @@ interface AircraftCardProps {
 export default function AircraftCard({ aircraft }: AircraftCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { notificar } = useAvisos();
 
   async function handleUpdate(formData: FormData) {
     startTransition(async () => {
       const result = await updateAircraft(formData);
       if (result?.error) {
-        alert(result.error);
+        notificar({ tipo: "error", titulo: "Error", detalle: result.error });
       } else {
+        notificar({ tipo: "exito", titulo: "Aeronave guardada", detalle: "Los cambios se guardaron correctamente." });
         setIsEditing(false);
       }
     });
@@ -32,7 +35,9 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
       startTransition(async () => {
         const result = await deleteAircraft(aircraft.id);
         if (result?.error) {
-          alert(result.error);
+          notificar({ tipo: "error", titulo: "Error", detalle: result.error });
+        } else {
+          notificar({ tipo: "exito", titulo: "Aeronave eliminada", detalle: "La aeronave fue eliminada del hangar." });
         }
       });
     }

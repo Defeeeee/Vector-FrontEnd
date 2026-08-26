@@ -5974,3 +5974,16 @@ status code pegados atrás — comparar con `===` nunca daría `true`), sin vali
 
 **Por qué:**
 El plan 06 (y charlas con el piloto) requerían cerrar estas deudas operativas y técnicas. El historial completo crasheaba o se arrastraba con muchos registros; la idempotencia previene spam.
+### 2026-08-26 — Feedback Global (Avisos) y Fix de Layout Shift
+
+**Agente:** Antigravity (AI)
+**Estado:** Finalizado
+**Archivos:** `AircraftForm.tsx`, `AircraftCard.tsx`, `DocumentsManager.tsx`, `LogbooksManager.tsx`, `FlightLogForm.tsx`, `layout.tsx`
+
+**Qué se hizo:**
+1. **Avisos (Toasts) globales:** Se inyectó `useAvisos()` en las operaciones de Hangar (crear/editar/borrar), Documentos (crear/editar/borrar) y Libretas de Vuelo (crear/editar/borrar) para dar confirmación visual (Toasts) en lugar de recargas silenciosas.
+2. **Modal Nuevo Vuelo (Loading State):** Refactorizado de `action` puro a `onSubmit` para reactivar de inmediato el spinner (isPending) en lugar de sufrir la pausa silenciosa de las transiciones de React.
+3. **Modal Nuevo Vuelo (Layout Shift):** Se añadió el boundary `loading.tsx` a la ruta interceptada (`@modal/(.)log-flight`), evitando que Next.js colapse temporalmente la página entera de fondo mientras resuelve las aeronaves.
+
+**Por qué:**
+Mejora de UX crítica. El sistema ya cuenta con el mapa interactivo de destinos en `/dashboard/summary`, y con estos avisos flotantes se cierran los flujos de "feedback nulo" que desconcertaban al piloto.

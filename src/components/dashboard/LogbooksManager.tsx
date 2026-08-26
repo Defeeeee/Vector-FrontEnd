@@ -10,6 +10,7 @@ import {
   OpeningBalanceInput,
 } from "@/actions/logbook";
 import OpeningBalanceFields, { openingTotal } from "./OpeningBalanceFields";
+import { useAvisos } from "./Avisos";
 
 function openingOf(book: Logbook): OpeningBalanceInput {
   return {
@@ -35,14 +36,18 @@ export default function LogbooksManager({ logbooks }: { logbooks: Logbook[] }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const { notificar } = useAvisos();
+
   const handleDelete = (book: Logbook) => {
     setError(null);
     setBusyId(book.id);
     startTransition(async () => {
       const result = await deleteLogbook(book.id);
-      // The backend says how many flights are in the way. That number is the
-      // useful part of the message, so it is shown as-is.
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        notificar({ tipo: "exito", titulo: "Libro eliminado", detalle: `Se borró "${book.name}".` });
+      }
       setBusyId(null);
     });
   };
@@ -166,6 +171,8 @@ function LogbookForm({
     setOpening((prev) => ({ ...prev, [key]: raw === "" ? undefined : Number(raw) }));
   };
 
+  const { notificar } = useAvisos();
+
   const submit = () => {
     onError(null);
     startTransition(async () => {
@@ -173,8 +180,16 @@ function LogbookForm({
       const result = book
         ? await updateLogbook(book.id, payload)
         : await createLogbook(payload);
-      if (result?.error) onError(result.error);
-      else onClose();
+      if (result?.error) {
+        onError(result.error);
+      } else {
+        notificar({
+          tipo: "exito",
+          titulo: book ? "Libro guardado" : "Libro creado",
+          detalle: `Se guardó "${payload.name}" correctamente.`
+        });
+        onClose();
+      }
     });
   };
 

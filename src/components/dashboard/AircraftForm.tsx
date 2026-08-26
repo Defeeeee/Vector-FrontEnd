@@ -6,17 +6,26 @@ import { addAircraft } from "@/actions/flight";
 import { LoadingButton } from "@/components/LoadingButton";
 import CamposPerformance from "./CamposPerformance";
 import CampoSimulador from "./CampoSimulador";
+import { useAvisos } from "./Avisos";
 
 export default function AircraftForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { notificar } = useAvisos();
 
   async function handleSubmit(formData: FormData) {
     setError(null);
     startTransition(async () => {
       try {
         await addAircraft(formData);
-        // On success, the form will be revalidated by the server action
+        notificar({
+          tipo: "exito",
+          titulo: "Aeronave agregada",
+          detalle: `Se guardó ${formData.get("registration")?.toString().toUpperCase()} correctamente.`
+        });
+        // Clear the form
+        const form = document.getElementById("add-aircraft-form") as HTMLFormElement;
+        if (form) form.reset();
       } catch (e: any) {
         setError(e.message || "Error al registrar la aeronave");
       }
@@ -32,7 +41,7 @@ export default function AircraftForm() {
         <h4 className="text-sm md:text-base font-semibold text-zinc-900 dark:text-white">Agregar nueva aeronave</h4>
       </div>
       
-      <form action={handleSubmit} className="space-y-6">
+      <form id="add-aircraft-form" action={handleSubmit} className="space-y-6">
         {error && (
             <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 text-red-600 dark:text-red-500 text-sm font-medium">
                 {error}
