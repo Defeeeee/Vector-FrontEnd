@@ -2,6 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
+import { esErrorDeRedirect } from "@/lib/redirect-error";
 import type { PlannedFlight, PlannedStatus } from "@/types";
 
 /**
@@ -72,7 +73,7 @@ export async function createPlannedFlight(payload: PlannedPayload) {
     revalidarProgramados();
     return { success: true as const };
   } catch (e: any) {
-    if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+    if (esErrorDeRedirect(e)) throw e;
     return { error: e?.message || "No se pudo programar el vuelo" };
   }
 }
@@ -90,7 +91,7 @@ export async function updatePlannedFlight(id: string, payload: PlannedPayload) {
     revalidarProgramados();
     return { success: true as const };
   } catch (e: any) {
-    if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+    if (esErrorDeRedirect(e)) throw e;
     return { error: e?.message || "No se pudo actualizar el vuelo programado" };
   }
 }
@@ -105,7 +106,7 @@ export async function deletePlannedFlight(id: string) {
     revalidarProgramados();
     return { success: true as const };
   } catch (e: any) {
-    if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+    if (esErrorDeRedirect(e)) throw e;
     return { error: e?.message || "No se pudo borrar el vuelo programado" };
   }
 }

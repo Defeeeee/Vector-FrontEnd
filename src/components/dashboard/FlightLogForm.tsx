@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
+import { esErrorDeRedirect } from "@/lib/redirect-error";
 import { useAvisos } from "./Avisos";
 import { aLocal, aUtc } from "@/lib/horarios";
 import { ArrowRight, Loader2, Compass, User, MonitorPlay, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
@@ -377,13 +378,13 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
       /*
         `logFlight` ya no redirige — devuelve `{error}` o `{success}`, como el
         resto de las acciones de este archivo — así que este `catch` es sólo para
-        fallas de red reales. El guard de `NEXT_REDIRECT` se queda igual: es el
-        mismo que ya usan `updateFlight` y `deleteFlight` en `actions/flight.ts`
-        para que un redirect ajeno, si alguna vez vuelve a haber uno en el
-        camino, llegue al `RedirectBoundary` en vez de pintarse acá como si el
-        vuelo no se hubiera guardado.
+        fallas de red reales. `esErrorDeRedirect` es el mismo chequeo que ya usan
+        `updateFlight` y `deleteFlight` en `actions/flight.ts`, con test propio en
+        `redirect-error.test.ts`: si alguna vez vuelve a haber un redirect en el
+        camino, tiene que llegar al `RedirectBoundary` en vez de pintarse acá como
+        si el vuelo no se hubiera guardado.
       */
-      if (e?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+      if (esErrorDeRedirect(e)) throw e;
       setError(e.message || "Error al registrar el vuelo");
       setIsPending(false);
     }

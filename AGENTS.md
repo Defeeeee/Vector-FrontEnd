@@ -5934,3 +5934,29 @@ no se fabricó una para no escribir datos de prueba en una bitácora real. La
 confianza en el arreglo sale de haber leído el mecanismo exacto de Next que causaba
 el bug (no de haberlo reproducido) y de que quitar el `redirect()` lo hace
 estructuralmente imposible, no sólo menos probable.
+
+---
+
+## Seguimiento del Plan 14: `esErrorDeRedirect`, una sola vez y no ocho
+
+Al cerrar el Plan 14 quedó un ítem de verificación sin cumplir de verdad: *"que el
+test del `catch` de 1.2 muera si alguien vuelve a tragarse el `NEXT_REDIRECT`"*. La
+guarda `e?.digest?.startsWith("NEXT_REDIRECT")` vivía inline en `handleSubmit`, dentro
+de un `.tsx` — y este repo no puede testear componentes (`vitest` corre en
+`environment: "node"`, sin DOM). No había forma de mutar esa línea y ver un test caer.
+
+Buscando dónde más vivía la misma condición aparecieron **ocho copias**: cuatro en
+`actions/flight.ts` (`updateFlight`, `deleteFlight`, `toggleFlightSession` no la tenía,
+`bulkLogFlights` tampoco porque no redirige — quedaron las que sí podían recibir un
+redirect ajeno), tres en `actions/planned-flight.ts`, y la de `FlightLogForm.tsx`.
+Ninguna tenía un test. Es la misma lección que dejó `splitRoute`, escrita cinco veces
+con cuatro criterios distintos en algún momento de este repo.
+
+Se extrajo a `src/lib/redirect-error.ts` — `esErrorDeRedirect(error: unknown):
+boolean`, puro, sin nada de Next importado — y las ocho copias pasaron a llamarla.
+Siete mutantes deliberados, los siete muertos: sin la guarda de objeto/null, exigiendo
+el string exacto en vez de `startsWith` (un digest real trae el tipo, la URL y el
+status code pegados atrás — comparar con `===` nunca daría `true`), sin validar que
+`digest` sea de tipo string, y la función devolviendo siempre `true`.
+
+1103 tests, `tsc` limpio, build y smoke en verde.
