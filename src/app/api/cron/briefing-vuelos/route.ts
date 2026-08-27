@@ -6,7 +6,8 @@ import { componentesDePista, mejorPista } from "@/lib/briefing";
 import { getAirport } from "@/lib/airports";
 import { parsearRuta, rutaAUrl } from "@/lib/ruta-planificada";
 
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+// Local por defecto: este cron corre en el mismo VPS que el backend. Ver `lib/api.ts`.
+const API_URL = process.env.API_URL || "http://127.0.0.1:7477";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://vector.fdiaznem.com.ar";
 
 /**

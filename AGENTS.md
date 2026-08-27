@@ -6033,3 +6033,23 @@ sí sigue sin usarse desde el frontend (la mitigación real del lag de renderiza
 es la paginación de DOM en `FlightListClient`, que sigue trayendo el historial
 completo por `/dashboard`), y el cambio de `<form action={fn}>` a `onSubmit`
 manual en un par de formularios es una inconsistencia de estilo, no un bug.
+
+### 2026-08-26 — El atajo por localhost pasa a ser el default, no un opt-in
+
+El piloto pidió que el default sea el local directamente, sin depender de setear
+`API_URL` a mano en el servidor. Antes la prioridad era `API_URL || NEXT_PUBLIC_API_URL
+|| local`: como `NEXT_PUBLIC_API_URL` ya está seteada en producción (la necesita el
+resto de la app), el atajo de Antigravity nunca se activaba solo — necesitaba ese paso
+manual que además no estaba documentado.
+
+Se invirtió la prioridad en los cinco lugares server-only que hacen esta llamada
+(`lib/api.ts`, los dos crons y las dos ocurrencias del webhook de WhatsApp): ahora es
+`API_URL || local`, sin `NEXT_PUBLIC_API_URL` en el medio. Es seguro sacarla de la
+cadena en estos cinco puntos porque los cinco son exclusivamente de servidor —
+verificado que ningún componente `"use client"` importa `lib/api.ts`, y las rutas de
+cron/webhook son Route Handlers que sólo corren en el servidor por definición—, así que
+no hay riesgo de que un navegador intente pegarle a `127.0.0.1` y falle. `API_URL` queda
+como escape hatch explícito para el día que el backend deje de estar en el mismo VPS.
+
+`.env.example` actualizado para reflejar el nuevo default. `tsc`, los 1103 tests y
+`npm run build` en verde.

@@ -1,7 +1,15 @@
 import { getSessionToken } from "@/actions/auth";
 import { redirect } from "next/navigation";
 
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+/*
+  Local por defecto y no NEXT_PUBLIC_API_URL: esto sólo corre en el servidor (importa
+  `getSessionToken`, que lee cookies), y el servidor de Vector y el del backend viven en
+  el mismo VPS. Sin esto, cada llamada server-to-server salía a internet por el dominio
+  público y volvía a entrar por el proxy de nginx — una vuelta completa para pegarle al
+  proceso de al lado. `API_URL` sigue como escape hatch explícito para el día que dejen
+  de estar en la misma máquina.
+*/
+const API_URL = process.env.API_URL || "http://127.0.0.1:7477";
 
 /**
  * Cuánto se espera antes de dar por muerta una respuesta.
