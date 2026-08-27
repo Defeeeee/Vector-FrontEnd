@@ -6109,3 +6109,70 @@ prefijo) en los cinco puntos, y esta vez sí es el único camino (sin
 ahora está probado contra el servidor real antes de desplegarlo, no después.
 
 `tsc`, los 1103 tests y `npm run build` en verde.
+
+### 2026-08-27 — CI estaba en rojo desde ayer, y dos premisas falsas de esta tanda
+
+Al piloto le llegaron tres mails de "Run failed: CI" por mis últimos tres commits. El
+problema resultó más viejo y más chico de lo que parecía, y de paso se cayeron dos
+ideas de mejora que estaban por entrar a un plan.
+
+**CI venía fallando desde `8bf1bab`** —el *"fallback to internal localhost backend url"*
+de Antigravity—; `b01096a`, inmediatamente anterior, fue el último verde. Del log del job
+`verificar`:
+
+```
+apiFetch: sin respuesta de /profiles: TypeError: fetch failed
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:7477
+```
+
+`npm run smoke` levanta el build y pega a las rutas; las que tienen SSR llaman a
+`apiFetch`, que apunta al localhost. **El runner de GitHub no tiene backend.** Antes de
+`8bf1bab` el último fallback del código era la URL pública, así que el smoke salía a
+producción y pasaba.
+
+Mi "revert" de la mañana (`e12eff1`) no lo arregló porque restauré la **prioridad** pero
+dejé el localhost como valor final hardcodeado, y en CI ninguna de las dos variables
+está seteada. Vale anotarlo: *revertir la forma de una expresión no es revertir su
+resultado*, y no lo verifiqué porque estaba mirando el deploy, que sí estaba verde —
+el health check del deploy pega a `/api/airports/search`, que lee los TSV del disco y
+nunca toca el backend. **Dos pipelines, dos verdades, y yo estaba leyendo la que no
+era.**
+
+El arreglo va donde está la excepción: `API_URL` en el paso `Smoke` de `ci.yml`
+apuntando al dominio público. El default local se queda como está, que es lo que el
+piloto pidió y lo que ya está probado andando en el VPS.
+
+**Sin `/api` al final**, al revés que el default local. Verificado en las dos
+direcciones antes de escribirlo: `https://api.flightlog.fdiaznem.com.ar/profiles` → 401
+(la ruta existe, falta sesión) y `/api/profiles` → 404. Es la misma asimetría de nginx
+que causó el corte de la mañana, ahora comprobada en vez de supuesta.
+
+Alcanza con la variable en ese paso y no hace falta tocar `Build`: en el bundle del
+servidor la expresión sobrevive como lectura de runtime —
+`process.env.API_URL||"http://127.0.0.1:7477/api"` literal en
+`.next/server/chunks/[root-of-the-server]__*.js`— así que se resuelve cuando el smoke
+levanta la app, no cuando se compila.
+
+#### Dos números que estaban mal y conviene dejar corregidos
+
+**El historial no tiene 2000 vuelos, tiene 45.** La entrada de Antigravity de más
+arriba dice que *"el historial completo crasheaba o se arrastraba con muchos
+registros"*. Contra la base: `select user_id, count(*) from flights group by user_id`
+devuelve **una sola fila, 45 vuelos**. La paginación de DOM que agregó (30 + "Cargar
+más") no está resolviendo un problema que exista. El piloto decidió dejarla —es
+inofensiva y ya estaría lista si el volumen crece— pero yo repetí el 2000 sin
+verificarlo y sobre esa base llegué a proponer paginación del lado del servidor. **El
+número salía de una entrada de bitácora, no de la base.**
+
+**`recharts` y `leaflet` ya eran lazy.** Se iba a proponer cargarlos por `next/dynamic`.
+Ya lo están, con `ssr: false` y estado de carga, en `DashboardChartsLazy.tsx`,
+`FlightMap.tsx` y `PlanMapa.tsx`. Son chunks grandes (408 KB y 148 KB) **porque** están
+separados y se piden sólo donde se usan; leer su tamaño en el build como si fuera peso
+inicial es exactamente al revés.
+
+Las dos quedan escritas porque las dos ya hicieron perder tiempo una vez.
+
+`tsc` y los 1103 tests en verde. El smoke local pasa (28 rutas) pero **no reproduce el
+fallo**: sin `SMOKE_EMAIL`/`SMOKE_PASSWORD` las rutas del dashboard cortan en 307 antes
+de llegar a `apiFetch`. El único indicador real de que esto quedó arreglado es el run
+de CI del commit, que es donde hay credenciales y no hay backend.
