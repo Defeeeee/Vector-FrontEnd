@@ -6,8 +6,9 @@ import { componentesDePista, mejorPista } from "@/lib/briefing";
 import { getAirport } from "@/lib/airports";
 import { parsearRuta, rutaAUrl } from "@/lib/ruta-planificada";
 
-// Revertido: el atajo local rompió el dashboard en producción. Ver `lib/api.ts`.
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+// Local por defecto, con /api: nginx lo agrega solo por el dominio público, acá no
+// hay nginx de por medio. Causa de la caída del 2026-08-27, ver `lib/api.ts`.
+const API_URL = process.env.API_URL || "http://127.0.0.1:7477/api";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://vector.fdiaznem.com.ar";
 
 /**

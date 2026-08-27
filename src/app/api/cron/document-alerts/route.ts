@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
-// Revertido: el atajo local rompió el dashboard en producción. Ver `lib/api.ts`.
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+// Local por defecto, con /api: nginx lo agrega solo por el dominio público, acá no
+// hay nginx de por medio. Causa de la caída del 2026-08-27, ver `lib/api.ts`.
+const API_URL = process.env.API_URL || "http://127.0.0.1:7477/api";
 
 /**
  * Daily sweep that delivers document expiry warnings over WhatsApp.

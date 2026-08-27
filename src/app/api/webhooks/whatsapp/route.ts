@@ -406,8 +406,9 @@ async function desmarcarAvisoFallido(messageId: string): Promise<void> {
     return;
   }
 
-  // Revertido: el atajo local rompió el dashboard en producción. Ver `lib/api.ts`.
-  const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+  // Local por defecto, con /api: nginx lo agrega solo por el dominio público, acá
+  // no hay nginx de por medio. Causa de la caída del 2026-08-27, ver `lib/api.ts`.
+  const API_URL = process.env.API_URL || "http://127.0.0.1:7477/api";
   try {
     // El id va por query string y el secreto por cabecera, igual que en el resto
     // del barrido: la URL entera se escribe en el access log de nginx.
@@ -574,8 +575,9 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
-    // Revertido: el atajo local rompió el dashboard en producción. Ver `lib/api.ts`.
-    const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+    // Local por defecto, con /api: nginx lo agrega solo por el dominio público, acá
+    // no hay nginx de por medio. Causa de la caída del 2026-08-27, ver `lib/api.ts`.
+    const API_URL = process.env.API_URL || "http://127.0.0.1:7477/api";
 
     // H1.1, paso 2 de 3. El secreto y el teléfono viajan en cabeceras y ya no en
     // la URL: la query string queda escrita en texto plano en los logs de nginx y

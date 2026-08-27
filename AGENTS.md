@@ -6082,3 +6082,30 @@ antes de la entrada anterior.
 
 `tsc`, los 1103 tests y `npm run build` en verde. `.env.example` vuelve a marcar
 `API_URL` como opt-in, con la advertencia de qué pasó la última vez.
+
+### 2026-08-27 — La causa real: falta el `/api`, no era de red
+
+El piloto pasó los logs del VPS y la causa quedó clara. `curl -v http://127.0.0.1:7477/health`
+**conectó y contestó al toque** (404, pero contestó) — la conexión de red nunca fue el
+problema, esa hipótesis de la entrada anterior estaba mal.
+
+El log de `flightlog-7477-out.log` lo muestra en la cara: junto a llamadas que
+funcionan —`GET /api/dashboard" 200`, `GET /api/profiles" 200`, `GET /api/health"
+200`— hay una ráfaga de las mismas rutas **sin el `/api`** devolviendo 404: `GET
+/profiles" 404`, `GET /dashboard" 404`, `GET /audit/summary" 404`, `GET /logbooks"
+404`, y así con cada endpoint que pega `apiFetch`. Las rutas reales del backend viven
+bajo `/api/`; nginx agrega ese prefijo solo cuando la llamada entra por el dominio
+público. Saltar directo a `127.0.0.1:7477` saca a nginx del medio, y como el código de
+estos cinco archivos nunca escribe `/api` en el path (`${API_URL}/profiles`, no
+`${API_URL}/api/profiles` — a propósito, según el comentario de `briefing-vuelos`
+sobre por qué no hay que agregarlo), cada pedido local le llegaba al backend sin el
+prefijo que necesita. Por eso el corte fue el dashboard **entero**, no un endpoint: la
+ruta que fallaba era literalmente todas.
+
+Confirmado en el VPS antes de aplicar nada: `curl http://127.0.0.1:7477/api/health` →
+`{"status":"healthy",...}`. El default pasa a ser `http://127.0.0.1:7477/api` (con el
+prefijo) en los cinco puntos, y esta vez sí es el único camino (sin
+`NEXT_PUBLIC_API_URL` en la cadena) — es lo que el piloto pidió desde el principio, y
+ahora está probado contra el servidor real antes de desplegarlo, no después.
+
+`tsc`, los 1103 tests y `npm run build` en verde.

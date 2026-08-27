@@ -2,15 +2,15 @@ import { getSessionToken } from "@/actions/auth";
 import { redirect } from "next/navigation";
 
 /*
-  Revertido a 2026-08-27: con el localhost como único default, el piloto vio el
-  dashboard entero caer a "Sin conexión con el servidor" apenas salió el deploy —
-  `127.0.0.1:7477` no está respondiendo desde donde corre este proceso, sea cual sea
-  la razón exacta (todavía sin confirmar contra el VPS real). Vuelve
-  NEXT_PUBLIC_API_URL como red de seguridad delante del atajo local: `API_URL`
-  sigue disponible para forzar el salto por localhost una vez que se confirme que
-  funciona de verdad, pero hasta entonces no puede ser el único camino.
+  Causa real de la caída del 2026-08-27: las rutas del backend viven bajo `/api/`
+  (`/api/profiles`, `/api/dashboard`...) y **nginx agrega ese prefijo solo** cuando la
+  llamada entra por el dominio público. `127.0.0.1:7477` a secas salta a nginx —la
+  conexión de red andaba perfecta— pero cada pedido de acá (`/profiles`, `/dashboard`)
+  le llegaba al backend sin el `/api/` que necesita, y devolvía 404 en absolutamente
+  todo. Confirmado en el VPS: `curl http://127.0.0.1:7477/api/health` → 200; sin el
+  `/api`, 404. Local por defecto, con el prefijo puesto.
 */
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
+const API_URL = process.env.API_URL || "http://127.0.0.1:7477/api";
 
 /**
  * Cuánto se espera antes de dar por muerta una respuesta.
