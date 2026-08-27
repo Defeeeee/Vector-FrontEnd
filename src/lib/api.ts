@@ -2,14 +2,15 @@ import { getSessionToken } from "@/actions/auth";
 import { redirect } from "next/navigation";
 
 /*
-  Local por defecto y no NEXT_PUBLIC_API_URL: esto sólo corre en el servidor (importa
-  `getSessionToken`, que lee cookies), y el servidor de Vector y el del backend viven en
-  el mismo VPS. Sin esto, cada llamada server-to-server salía a internet por el dominio
-  público y volvía a entrar por el proxy de nginx — una vuelta completa para pegarle al
-  proceso de al lado. `API_URL` sigue como escape hatch explícito para el día que dejen
-  de estar en la misma máquina.
+  Revertido a 2026-08-27: con el localhost como único default, el piloto vio el
+  dashboard entero caer a "Sin conexión con el servidor" apenas salió el deploy —
+  `127.0.0.1:7477` no está respondiendo desde donde corre este proceso, sea cual sea
+  la razón exacta (todavía sin confirmar contra el VPS real). Vuelve
+  NEXT_PUBLIC_API_URL como red de seguridad delante del atajo local: `API_URL`
+  sigue disponible para forzar el salto por localhost una vez que se confirme que
+  funciona de verdad, pero hasta entonces no puede ser el único camino.
 */
-const API_URL = process.env.API_URL || "http://127.0.0.1:7477";
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
 
 /**
  * Cuánto se espera antes de dar por muerta una respuesta.

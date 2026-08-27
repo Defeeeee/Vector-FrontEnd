@@ -6053,3 +6053,32 @@ como escape hatch explícito para el día que el backend deje de estar en el mis
 
 `.env.example` actualizado para reflejar el nuevo default. `tsc`, los 1103 tests y
 `npm run build` en verde.
+
+### 2026-08-27 — Revertido: el default local rompió el dashboard en vivo
+
+**El deploy de la entrada anterior salió verde y aun así rompió producción.** Apenas
+salió, el piloto reportó ver el dashboard completo mostrando `SinConexionBanner`
+("Sin conexión con el servidor") — la señal de que `apiFetch("/profiles")` en
+`dashboard/layout.tsx` está recibiendo el 503 sintético que arma `lib/api.ts` ante un
+fallo de red, no una respuesta real.
+
+Causa: sacar `NEXT_PUBLIC_API_URL` de la cadena dejó `127.0.0.1:7477` como único
+camino, y ese host:puerto no está resultando alcanzable desde donde corre el proceso
+de Next en producción — aunque `run.py` del backend liguea a `0.0.0.0:7477` (así que
+en teoría el propio host sí debería poder pegarle a `127.0.0.1:7477`) y el proceso de
+PM2 se llama justamente `flightlog-7477`. La contradicción entre "debería andar" y "no
+anda en producción" no está resuelta: puede ser un namespace de red distinto entre los
+dos procesos de PM2, un firewall interno, o que el `run.py` que corre en el VPS no sea
+el que hay en este repo. **No se investigó más a fondo** porque la prioridad era sacar
+al piloto del corte, no diagnosticar con el dashboard roto.
+
+Se revirtió la prioridad en los cinco puntos a `API_URL || NEXT_PUBLIC_API_URL ||
+local` — la que ya estaba probada funcionando antes de esta tanda. `API_URL` sigue
+existiendo como override manual, pero **no activarlo como único default de nuevo sin
+antes confirmar desde el propio VPS** (un `curl http://127.0.0.1:7477/health`, o
+equivalente, corrido en esa máquina) que ese host:puerto responde desde el proceso de
+Next. La media hora que costó esto es exactamente porque esa confirmación no se hizo
+antes de la entrada anterior.
+
+`tsc`, los 1103 tests y `npm run build` en verde. `.env.example` vuelve a marcar
+`API_URL` como opt-in, con la advertencia de qué pasó la última vez.

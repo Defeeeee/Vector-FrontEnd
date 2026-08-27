@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
-// Local por defecto: este cron corre en el mismo VPS que el backend. Ver `lib/api.ts`.
-const API_URL = process.env.API_URL || "http://127.0.0.1:7477";
+// Revertido: el atajo local rompió el dashboard en producción. Ver `lib/api.ts`.
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:7477";
 
 /**
  * Daily sweep that delivers document expiry warnings over WhatsApp.
