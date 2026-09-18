@@ -40,7 +40,7 @@ export default function NewFlightModal({
   const router = useRouter();
   const close = () => {
     startTransition(() => {
-      router.back();
+      window.history.back();
     });
   };
 
