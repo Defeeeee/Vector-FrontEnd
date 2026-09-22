@@ -97,7 +97,7 @@ export default function ComposerPublicacion({
       onSuccess?.();
       notificar({ tipo: "exito", titulo: "Publicado en tu red" });
     } catch (err) {
-      notificar({ tipo: "error", titulo: "No se pudo publicar: " + err.message });
+      notificar({ tipo: "error", titulo: "No se pudo publicar: " + (err as Error).message });
     } finally {
       setLoading(false);
     }
