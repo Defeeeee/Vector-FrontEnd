@@ -23,6 +23,7 @@ const FUERA_DE_LA_BARRA: Record<string, string> = {
   "/dashboard/novedades": "se abre desde la tarjeta de novedades del inicio",
   "/dashboard/log-flight": "es una acción: el botón + del rail y de la píldora del teléfono",
   "/dashboard/log-flight/import": "se abre desde Registrar vuelo",
+  "/dashboard/pilotos/publicar": "es una acción social o link directo de bitácora",
 };
 
 /** Las rutas con `page.tsx` bajo `src/app/dashboard`, sin grupos ni slots. */
@@ -113,21 +114,26 @@ describe("seccionDe", () => {
     expect(seccionDe("/dashboard/tools")?.clave).toBe("preparar");
   });
 
-  it("no le asigna sección a las pantallas que están fuera de la barra", () => {
-    for (const ruta of Object.keys(FUERA_DE_LA_BARRA)) expect(seccionDe(ruta)).toBeNull();
+  it("no le asigna sección a las pantallas sueltas que están fuera de la barra", () => {
+    const excepcionesConSeccion = new Set(["/dashboard/pilotos/publicar"]);
+    for (const ruta of Object.keys(FUERA_DE_LA_BARRA)) {
+      if (!excepcionesConSeccion.has(ruta)) {
+        expect(seccionDe(ruta)).toBeNull();
+      }
+    }
   });
 
   it("toma como propia una pantalla que cuelga de una pestaña", () => {
     expect(seccionDe("/dashboard/airports/SADF")?.clave).toBe("preparar");
   });
 
-  it("distingue Buscar de Solicitudes aunque una cuelgue de la otra", () => {
-    // `/dashboard/pilotos/solicitudes` empieza con `/dashboard/pilotos/`: por prefijo
+  it("distingue Red de Actividad aunque una cuelgue de la otra", () => {
+    // `/dashboard/pilotos/actividad` empieza con `/dashboard/pilotos/`: por prefijo
     // las dos pestañas de Pilotos se iluminarían a la vez.
     const pilotos = SECCIONES.find((s) => s.clave === "pilotos")!;
-    expect(seccionDe("/dashboard/pilotos/solicitudes")?.clave).toBe("pilotos");
-    expect(pestanaActiva(pilotos, "/dashboard/pilotos/solicitudes")?.label).toBe("Solicitudes");
-    expect(pestanaActiva(pilotos, "/dashboard/pilotos")?.label).toBe("Buscar");
+    expect(seccionDe("/dashboard/pilotos/actividad")?.clave).toBe("pilotos");
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos/actividad")?.label).toBe("Actividad");
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos")?.label).toBe("Red");
   });
 
   it("en cada sección se ilumina a lo sumo una pestaña por pantalla", () => {
