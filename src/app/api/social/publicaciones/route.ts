@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
-  const res = await apiFetch("/social/publicaciones", {
+  const res = await apiFetch("/publicaciones", {
     method: "POST",
     body: formData,
   });

@@ -15,7 +15,7 @@ export default async function RedPage() {
   const tieneHandle = !!resumen.handle;
 
   const [feedRes, perfilRes] = await Promise.all([
-    apiFetch("/social/feed", { cache: "no-store" }),
+    apiFetch("/red/feed", { cache: "no-store" }),
     tieneHandle ? apiFetch(`/publico/pilotos/${resumen.handle}`, { cache: "no-store" }, { anonimo: true }) : Promise.resolve(null),
   ]);
 
