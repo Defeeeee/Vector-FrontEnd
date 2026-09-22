@@ -116,23 +116,13 @@ interface FlightLogFormProps {
    * que alguien vuelva a caer en ella sin querer.
    */
   redirectTo?: string;
+  /**
+   * Sin la tarjeta propia: la dibuja el modal que cierra una sesión en vivo
+   * (`FlightLogModal`). Hubo otro, el de Nuevo Vuelo, que además traía un
+   * "Cancelar" y las acciones fijas abajo; se sacó en septiembre de 2026 junto
+   * con esas dos opciones, que sólo usaba él.
+   */
   inModal?: boolean;
-  /**
-   * Renders a "Cancelar" next to the submit. Only passed by the new-flight
-   * dialog — the live-session modal has its own way out and doesn't want a
-   * second dismiss control competing with it.
-   */
-  onCancel?: () => void;
-  /**
-   * Pins the actions to the bottom of the scroller instead of letting them sit
-   * at the end of the form.
-   *
-   * Opt-in rather than implied by `inModal`, because it bleeds past the
-   * horizontal padding to cover the full dialog width — a measurement that only
-   * matches the new-flight dialog. The live-session modal uses different
-   * padding and keeps the actions inline.
-   */
-  stickyActions?: boolean;
   /**
    * El vuelo programado que esta carga cierra, si el piloto llegó por "Completar".
    *
@@ -170,7 +160,7 @@ function isValidCode(code: string, airport: AirportRef | null): boolean {
   return cleaned.length === 4 && /^[A-Z0-9]+$/.test(cleaned);
 }
 
-export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, onCancel, stickyActions = false, plannedId }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, plannedId }: FlightLogFormProps) {
   const router = useRouter();
   const { notificar } = useAvisos();
   const [isPending, setIsPending] = useState(false);
@@ -417,11 +407,9 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
         )}
       </AnimatePresence>
 
-      {/* `overflow-hidden` clips the card's rounded corners on the page, but
-          inside a dialog it would also make this box the sticky footer's scroll
-          context — pinning the actions to a 1400 px-tall element instead of to
-          the visible scroller, i.e. not pinning them at all. The modal draws
-          its own rounding, so here the clip is pure downside. */}
+      {/* On the page this is the card, and `overflow-hidden` clips its rounded
+          corners. Inside a dialog the dialog draws its own card, so this box
+          stays bare. */}
       <div
         className={`${
           inModal
@@ -891,29 +879,13 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
         </div>
         )}
 
-        {/* Inside a dialog the actions stick to the bottom of the scroller so
-            they're reachable without scrolling to the end of the form — the
-            form is long, and burying "Registrar" under it is what made the
-            page version feel like paperwork rather than a quick action. */}
         <div
-          className={`${
-            stickyActions
-              ? "sticky bottom-0 z-20 -mx-6 md:-mx-10 px-6 md:px-10 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:pb-8 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-zinc-200 dark:border-white/10 flex items-center gap-3"
-              : inModal
-                ? "p-0 pt-6 flex items-center gap-3"
-                : "p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5"
-          }`}
+          className={
+            inModal
+              ? "p-0 pt-6 flex items-center gap-3"
+              : "p-6 md:p-8 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5"
+          }
         >
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={isPending}
-              className="shrink-0 px-6 py-5 md:py-6 rounded-xl md:rounded-[1.5rem] text-sm font-semibold text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-          )}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}

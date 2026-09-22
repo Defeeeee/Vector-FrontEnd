@@ -4,12 +4,28 @@ import { redirect } from "next/navigation";
 import PageHeader from "@/components/dashboard/PageHeader";
 import CompartirTarjeta from "@/components/dashboard/CompartirTarjeta";
 import SummaryClient from "@/components/dashboard/SummaryClient";
+import ComoVenisVolando from "@/components/dashboard/ComoVenisVolando";
+import CustomStatsRow from "@/components/dashboard/CustomStatsRow";
+import GraficosDeHoras from "@/components/dashboard/GraficosDeHorasLazy";
+import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
+import { listCustomStats } from "@/actions/custom-stat";
 import { getAirport } from "@/lib/airports";
-import { splitRoute } from "@/lib/summary";
+import { openingTotals, splitRoute } from "@/lib/summary";
 import { soloVolados } from "@/lib/simulador";
+import { buildActivityHeatmap } from "@/lib/utils";
+import { horasAcumuladas, horasPorMes } from "@/lib/tendencia";
 
+/**
+ * Los tres pedidos en paralelo. `/logbooks` iba después de `/dashboard` sin depender
+ * de él, y cada viaje al backend cuesta lo suyo; las métricas propias se sumaron al
+ * mudarse desde el inicio y degradan solas a lista vacía.
+ */
 async function getSummaryData() {
-  const response = await apiFetch("/dashboard");
+  const [response, logbooksResponse, customStats] = await Promise.all([
+    apiFetch("/dashboard"),
+    apiFetch("/logbooks"),
+    listCustomStats(),
+  ]);
 
   if (response.status === 401) {
     console.log("SummaryPage: 401 Unauthorized. Redirecting to logout...");
@@ -17,27 +33,23 @@ async function getSummaryData() {
   }
 
   if (!response.ok) {
-    return { flights: [] as Flight[], aircraft: [] as Aircraft[], logbooks: [] as Logbook[] };
+    return { flights: [] as Flight[], aircraft: [] as Aircraft[], logbooks: [] as Logbook[], customStats };
   }
 
   const data = await response.json();
-
-  // `/dashboard` does not carry logbooks yet, so they come from their own
-  // endpoint. One extra round trip on a page that already waits for the
-  // dashboard payload; folding it into that response is the better fix but
-  // belongs in the backend.
-  const logbooksResponse = await apiFetch("/logbooks");
+  // `/dashboard` does not carry logbooks yet, so they come from their own endpoint.
   const logbooks: Logbook[] = logbooksResponse.ok ? await logbooksResponse.json() : [];
 
   return {
     flights: (data.flights || []) as Flight[],
     aircraft: (data.aircraft || []) as Aircraft[],
     logbooks,
+    customStats,
   };
 }
 
 export default async function SummaryPage() {
-  const { flights: bitacora, aircraft, logbooks } = await getSummaryData();
+  const { flights: bitacora, aircraft, logbooks, customStats } = await getSummaryData();
 
   /*
     Esta pantalla responde "qué volé", y una sesión de simulador no es algo que se
@@ -82,6 +94,13 @@ export default async function SummaryPage() {
         title="Resumen de horas"
         action={<CompartirTarjeta />}
       />
+
+      {/* Lo reciente primero: la racha y este mes contra tu promedio. Se mudó desde
+          el inicio junto con los gráficos y el heatmap de más abajo. */}
+      <ComoVenisVolando flights={flights} todayIso={todayIso} />
+
+      <CustomStatsRow stats={customStats} flights={flights} aircraft={aircraft} />
+
       <SummaryClient
         flights={flights}
         aircraft={aircraft}
@@ -90,6 +109,15 @@ export default async function SummaryPage() {
         airportNames={airportNames}
         airportDetails={airportDetails}
       />
+
+      {/* Carrera entera, sin filtro de período: la curva arranca en las horas de
+          apertura para que su total coincida con el de arriba. */}
+      <GraficosDeHoras
+        monthlyData={horasPorMes(flights, todayIso)}
+        cumulativeData={horasAcumuladas(flights, todayIso, openingTotals(logbooks).totalHours)}
+      />
+
+      <ActivityHeatmap data={buildActivityHeatmap(flights)} />
     </div>
   );
 }

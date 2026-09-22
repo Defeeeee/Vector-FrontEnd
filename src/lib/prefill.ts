@@ -1,13 +1,10 @@
 /**
  * El prefill de "Nuevo Vuelo", en un solo lugar.
  *
- * `/dashboard/log-flight` y su gemelo interceptado `@modal/(.)log-flight` tienen
- * que parsear los mismos parámetros, y hasta ahora lo hacían con el mismo objeto
- * literal escrito dos veces. Los dos archivos llevan un comentario avisando que el
- * par ya derivó una vez y que hay que tocar los dos.
- *
- * **Un tercer comentario no arregla eso; borrar la duplicación sí.** Además esto es
- * un `.ts` puro, así que —a diferencia de las páginas— se puede testear, y el
+ * Salió de las páginas cuando había dos —`/dashboard/log-flight` y un modal
+ * interceptado que parseaba los mismos parámetros con el mismo objeto literal
+ * escrito dos veces—. El modal ya no existe, pero el parser se queda acá: es un
+ * `.ts` puro, así que —a diferencia de las páginas— se puede testear, y el
  * `vitest.config.mts` de este repo sólo mira `src/**\/*.test.ts`.
  *
  * Quién genera estas URLs:

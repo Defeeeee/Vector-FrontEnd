@@ -1,40 +1,44 @@
-import { MapPin, Zap, Compass, Activity, ArrowRight, Plane } from "lucide-react";
-import { apiFetch } from "@/lib/api";
-import { buildActivityHeatmap } from "@/lib/utils";
-import { Flight, Aircraft, Profile, FlightPack, AuditSummary, PilotDocument, Logbook, PlannedFlight, Transaction } from "@/types";
-import DashboardCharts from "@/components/dashboard/DashboardChartsLazy";
-import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
-import LogbookHealthCard from "@/components/dashboard/LogbookHealthCard";
-import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
-import GastoDelMes from "@/components/dashboard/GastoDelMes";
-import ComoVenisVolando from "@/components/dashboard/ComoVenisVolando";
-import PCATracker from "@/components/dashboard/PCATracker";
-import WeatherWidget from "@/components/dashboard/WeatherWidget";
-import RecentFlights from "@/components/dashboard/RecentFlights";
+import { Activity, ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+import { Flight, Aircraft, FlightPack, PilotDocument, Logbook, PlannedFlight, Transaction, Profile } from "@/types";
+import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
+import VuelosPendientes from "@/components/dashboard/VuelosPendientes";
+import PrimerosPasos from "@/components/dashboard/PrimerosPasos";
+import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
+import ProximoVencimiento from "@/components/dashboard/ProximoVencimiento";
+import PCATracker from "@/components/dashboard/PCATracker";
+import SaldoCard from "@/components/dashboard/SaldoCard";
+import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
+import RecentFlights from "@/components/dashboard/RecentFlights";
+import { listPlannedFlights } from "@/actions/planned-flight";
+import { estadoOnboarding } from "@/lib/onboarding";
+import { soloVolados } from "@/lib/simulador";
+import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
+import { openingTotals } from "@/lib/summary";
+import { horasPorMes } from "@/lib/tendencia";
 
 /**
- * Los tres endpoints que necesita esta pantalla, en paralelo.
+ * Los endpoints que necesita esta pantalla, en paralelo.
  *
- * Estaban encadenados —`/dashboard`, después `/logbooks`, después
- * `/custom-stats`— sin que ninguno dependiera del anterior. Medido contra
- * producción, una llamada trivial al backend (`/health`, una sola consulta)
- * tarda ~547 ms: tres en serie es cerca de un segundo y medio de espera que se
- * puede colapsar al tiempo de la más lenta.
+ * Estaban encadenados sin que ninguno dependiera del anterior. Medido contra
+ * producción, una llamada trivial al backend tarda ~547 ms: en serie es cerca de un
+ * segundo y medio de espera que se puede colapsar al tiempo de la más lenta.
  *
  * `Promise.all` y no `allSettled`: si `/dashboard` falla, la página no tiene nada
  * que mostrar igual. Los otros dos degradan solos a lista vacía más abajo.
+ *
+ * Las métricas propias ya no se piden acá: se mudaron al Resumen con el resto de
+ * los números sobre lo que se voló.
  */
 async function getDashboardData() {
-  const [response, logbooksResponse, customStats, planned] = await Promise.all([
+  const [response, logbooksResponse, planned] = await Promise.all([
     apiFetch("/dashboard"),
     apiFetch("/logbooks"),
-    listCustomStats(),
-    // Cuarto viaje y no una extensión de `/dashboard`: ese endpoint ya devuelve la
-    // bitácora entera sin paginar, y el plan 09 se dedicó a sacarle viajes, no a
-    // darle más carga. `listPlannedFlights` degrada a lista vacía sola, así que un
-    // backend sin la migración 009 no rompe esta pantalla.
+    // Aparte y no como extensión de `/dashboard`: ese endpoint ya devuelve la
+    // bitácora entera sin paginar. `listPlannedFlights` degrada a lista vacía sola,
+    // así que un backend sin la migración 009 no rompe esta pantalla.
     listPlannedFlights(),
   ]);
 
@@ -43,16 +47,14 @@ async function getDashboardData() {
     redirect("/api/auth/logout?redirect=/?expired=true");
   }
 
-  const emptyAudit: AuditSummary = { critical: 0, warning: 0, suppressed: 0, open_total: 0, by_rule: {} };
-
   if (!response.ok) {
     // Nada de esto es "no hay": es "no pudimos preguntar". `unavailable` con
     // todas las secciones para que abajo nadie saque conclusiones de las listas
     // vacías. Ver `pilotStatus`.
     return {
       flights: [], aircraft: [], profile: null, session: { active: false }, packs: [],
-      audit: emptyAudit, documents: [], logbooks: [] as Logbook[], customStats: [],
-      planned: [] as PlannedFlight[], transactions: [] as Transaction[],
+      documents: [], logbooks: [] as Logbook[], planned: [] as PlannedFlight[],
+      transactions: [] as Transaction[], balance: 0,
       unavailable: ["profile", "aircraft", "flights", "session", "packs", "transactions", "audit", "documents"],
     };
   }
@@ -65,7 +67,6 @@ async function getDashboardData() {
 
   return {
     logbooks,
-    customStats,
     planned,
     /**
      * Qué secciones del payload no se pudieron leer. El backend las nombra en vez
@@ -76,48 +77,46 @@ async function getDashboardData() {
     unavailable: (data.unavailable as string[]) || [],
     flights: data.flights || [],
     aircraft: data.aircraft || [],
-    profile: data.profile || null,
+    profile: (data.profile as Profile) || null,
     session: data.session || { active: false },
-    packs: data.packs || [],
-    audit: (data.audit as AuditSummary) || emptyAudit,
+    packs: (data.packs as FlightPack[]) || [],
     documents: (data.documents as PilotDocument[]) || [],
-    // Ya venían en el payload de `/dashboard` y se descartaban. Son lo que hace
-    // posible mostrar cuánto salió cada vuelo. Ver `src/lib/costos.ts`.
-    transactions: (data.transactions as Transaction[]) || []
+    // Son lo que hace posible mostrar cuánto salió cada vuelo. Ver `src/lib/costos.ts`.
+    transactions: (data.transactions as Transaction[]) || [],
+    /** Suma de las transacciones, calculada en el backend. Ver `SaldoCard`. */
+    balance: typeof data.balance === "number" ? data.balance : 0,
   };
 }
 
-import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
-import VuelosPendientes from "@/components/dashboard/VuelosPendientes";
-import { listPlannedFlights } from "@/actions/planned-flight";
-import PrimerosPasos from "@/components/dashboard/PrimerosPasos";
-import { estadoOnboarding } from "@/lib/onboarding";
-import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
-import CustomStatsRow from "@/components/dashboard/CustomStatsRow";
-import { listCustomStats } from "@/actions/custom-stat";
-import { splitRoute } from "@/lib/route";
-import { soloVolados } from "@/lib/simulador";
-import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
-
+/**
+ * El inicio contesta tres preguntas, y en este orden:
+ *
+ * 1. **¿Puedo volar hoy?** — el semáforo de RAAC 61.060 y el próximo vencimiento.
+ * 2. **¿Cuánto me falta?** — el tracker de la PCA, o las horas totales si la
+ *    licencia no va camino a la comercial.
+ * 3. **¿Cuánto me queda?** — el saldo con la escuela, o las horas del pack.
+ *
+ * Y cierra con lo último que se voló. Todo lo demás que vivía acá —gráficos, heatmap,
+ * récords, promedios, métricas propias— se mudó al Resumen, que es donde se va a
+ * mirar lo que ya pasó; el clima, a "Preparar vuelo"; y la salud del libro, a la
+ * pestaña Auditoría, que lleva el contador en la barra. Eran más de una docena de
+ * bloques para alguien que abre la app a ver si puede volar el sábado.
+ */
 export default async function Dashboard() {
-  const { flights: bitacora, aircraft, profile, session, packs, audit, documents, logbooks, customStats, planned, unavailable, transactions } =
+  const { flights: bitacora, aircraft, profile, session, packs, documents, logbooks, planned, unavailable, transactions, balance } =
     await getDashboardData();
 
   /*
     `bitacora` es el libro entero; `flights` es lo que se voló.
 
     Una sesión de simulador es una fila del libro —el de papel la tiene— pero no es un
-    vuelo, y casi todo lo de esta pantalla mide vuelo: la racha, el promedio mensual,
-    la vigencia de 61.060, los aeródromos visitados. Sus horas ya llegan en cero, así
-    que los totales no se moverían; lo que se rompe sin el filtro es lo que sale de la
-    columna de ruta —`LOCAL` como aeródromo visitado— y todo lo que se divide por la
-    cantidad de vuelos.
-
-    Las dos excepciones se pasan a mano y están marcadas donde se usan: el tracker de
-    la PCA, que necesita las horas de instrucción del simulador y hace su propio corte,
-    y los últimos vuelos, que muestran el libro.
+    vuelo: no cuenta para la vigencia de 61.060 ni para el gasto del mes. Las dos
+    excepciones se pasan a mano y están marcadas donde se usan: el tracker de la PCA,
+    que necesita las horas de instrucción del simulador y hace su propio corte, y los
+    últimos vuelos, que muestran el libro.
   */
   const flights = soloVolados(bitacora as Flight[], aircraft as Aircraft[]);
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   /** Si esa sección del payload se pudo leer. Ver `unavailable` más arriba. */
   const disponible = (seccion: string) => !unavailable.includes(seccion);
@@ -126,143 +125,34 @@ export default async function Dashboard() {
   // Cuánto salió cada vuelo, del cobro que quedó registrado. Vacío en modo `packs`,
   // donde el vuelo consume horas y no pesos. Ver `src/lib/costos.ts`.
   const costos = costosPorVuelo(transactions as Transaction[]);
-  const gastoMes = gastoDelMes(flights as Flight[], costos, new Date().toISOString().slice(0, 7));
+  const gastoMes = gastoDelMes(flights as Flight[], costos, todayIso.slice(0, 7));
 
-  const totalFlights = flights.length;
-  const flownHours = flights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
+  /*
+    El saldo sólo se muestra si se sabe. Con la consulta de transacciones caída, o sin
+    un solo movimiento cargado, el backend manda cero — y "$ 0" se leería como "no
+    tenés plata" cuando lo cierto es "no lo sabemos".
+  */
+  const saldoConocido =
+    profile?.tracking_mode === "balance" && disponible("transactions") && transactions.length > 0;
 
-  // Hours carried into the logbooks without their flights. They belong in the
-  // headline totals — a pilot who migrated 500 h from paper should not see 46 —
-  // but NOT in anything divided by the flight count: an opening balance has no
-  // flights behind it, so folding it into the average would invent 500 h spread
-  // over 39 entries.
-  const openingHours = (logbooks as Logbook[]).reduce(
-    (acc, l) =>
-      acc + Number(l.opening_pic_day_loc || 0) + Number(l.opening_pic_day_tra || 0)
-      + Number(l.opening_pic_night_loc || 0) + Number(l.opening_pic_night_tra || 0)
-      + Number(l.opening_sic_day_loc || 0) + Number(l.opening_sic_day_tra || 0)
-      + Number(l.opening_sic_night_loc || 0) + Number(l.opening_sic_night_tra || 0),
-    0
-  );
-  const openingLandings = (logbooks as Logbook[]).reduce(
-    (acc, l) => acc + Number(l.opening_landings || 0), 0
-  );
-
-  const totalHours = flownHours + openingHours;
-  const totalLandings = flights.reduce((acc: number, f: Flight) => acc + f.landings, 0) + openingLandings;
-
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const lastMonthFlights = flights.filter((f: Flight) => new Date(f.date + 'T00:00:00') >= thirtyDaysAgo);
-  const lastMonthHours = lastMonthFlights.reduce((acc: number, f: Flight) => acc + f.duration, 0);
-
-  const monthlyMap = new Map<string, number>();
-  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const label = `${monthNames[d.getMonth()]}`;
-    monthlyMap.set(label, 0);
-  }
-  flights.forEach((f: Flight) => {
-    const d = new Date(f.date + 'T00:00:00');
-    const label = `${monthNames[d.getMonth()]}`;
-    if (monthlyMap.has(label)) {
-      monthlyMap.set(label, (monthlyMap.get(label) || 0) + f.duration);
-    }
-  });
-  const chartData = Array.from(monthlyMap.entries()).map(([name, hours]) => ({
-    name,
-    hours: Number(hours.toFixed(1))
-  }));
-
-  const aircraftMap = new Map<string, Aircraft>(aircraft.map((a: Aircraft) => [a.id, a]));
-  const regMap = new Map<string, number>();
-  flights.forEach((f: Flight) => {
-    const ac = f.aircraft_id ? aircraftMap.get(f.aircraft_id) : undefined;
-    const reg = ac?.registration || "Unknown";
-    regMap.set(reg, (regMap.get(reg) || 0) + f.duration);
-  });
-
-  const aircraftData = Array.from(regMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, value], i) => ({
-      name,
-      value: Number(value.toFixed(1)),
-      color: ["#18181b", "#71717a", "#e4e4e7", "#f9fafb"][i % 4]
-    }));
-
-  // Cumulative hours — one point per calendar month so scale is consistent
-  const monthNamesShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const cumulativeData = (() => {
-    if (flights.length === 0) return [];
-    // Sum hours per month key "YYYY-MM"
-    const monthTotals = new Map<string, number>();
-    for (const f of flights as Flight[]) {
-      const key = f.date.slice(0, 7); // "YYYY-MM"
-      monthTotals.set(key, (monthTotals.get(key) || 0) + f.duration);
-    }
-    // Build a continuous range from first flight month to current month
-    const allKeys = Array.from(monthTotals.keys()).sort();
-    const [startYear, startMonth] = allKeys[0].split("-").map(Number);
-    const now = new Date();
-    const points: { date: string; total: number; monthHours: number }[] = [];
-    let running = 0;
-    let y = startYear, m = startMonth;
-    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth() + 1)) {
-      const key = `${y}-${String(m).padStart(2, "0")}`;
-      const hrs = monthTotals.get(key) || 0;
-      running += hrs;
-      points.push({
-        date: `${monthNamesShort[m - 1]} ${String(y).slice(2)}`,
-        total: Number(running.toFixed(1)),
-        monthHours: Number(hrs.toFixed(1)),
-      });
-      m++;
-      if (m > 12) { m = 1; y++; }
-    }
-    return points;
-  })();
-
-  const airportFreq = new Map<string, number>();
-  flights.forEach((f: Flight) => {
-    const [origin, dest] = splitRoute(f.route, "???");
-    if (origin !== "???") {
-      const o = origin.toUpperCase();
-      airportFreq.set(o, (airportFreq.get(o) || 0) + 1);
-    }
-    if (dest !== "???") {
-      const d = dest.toUpperCase();
-      airportFreq.set(d, (airportFreq.get(d) || 0) + 1);
-    }
-  });
-
-  const sortedAirports = Array.from(airportFreq.entries()).sort((a, b) => b[1] - a[1]);
-  const mostVisited = sortedAirports[0]?.[0] || "---";
-  const airports = new Set(airportFreq.keys());
-
-  // Laid out here rather than in the client component so SSR and hydration
-  // agree on which day is "today" regardless of the browser's timezone.
-  const heatmapData = buildActivityHeatmap(flights as Flight[]);
-
-  const longestFlight = flights.length > 0 ? Math.max(...flights.map((f: Flight) => f.duration)) : 0;
-  const avgFlightTime = totalFlights > 0 ? flownHours / totalFlights : 0;
+  const licencia = profile?.license_type?.toUpperCase() ?? "";
+  const vaALaComercial = (licencia.includes("PPA") || licencia.includes("PRIVADO")) && !licencia.includes("PCA");
 
   return (
-    <div className="space-y-10 md:space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
+    <div className="space-y-8 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
       {/* Header */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-8 pt-4">
         <div className="space-y-2 md:space-y-3">
           <p className="eyebrow flex items-center gap-2">
-             <Activity className="w-3.5 h-3.5" />
-             <span>Centro de operaciones</span>
+            <Activity className="w-3.5 h-3.5" />
+            <span>Centro de operaciones</span>
           </p>
           <h2 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
             {profile?.first_name || "Comandante"}
           </h2>
         </div>
 
-        {session.active && (
+        {session.active ? (
           <Link
             href="/dashboard/log-flight"
             className="inline-flex items-center gap-3 pl-3 pr-4 py-2.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors self-start md:self-auto"
@@ -271,49 +161,51 @@ export default async function Dashboard() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 animate-blip" />
             </span>
             <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-              Vuelo en curso · {aircraftMap.get(session.session.aircraft_id)?.registration || "Unknown"}
+              Vuelo en curso · {(aircraft as Aircraft[]).find((a) => a.id === session.session?.aircraft_id)?.registration || "Unknown"}
             </span>
             <ArrowRight className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+          </Link>
+        ) : (
+          // La acción principal de la app, con su nombre. El "+" del rail y de la
+          // píldora del teléfono no dicen qué hacen, y un alumno nuevo no tiene por
+          // qué adivinarlo.
+          <Link
+            href="/dashboard/log-flight"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold shadow-cal-highlight dark:shadow-none hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors self-start md:self-auto"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            Registrar vuelo
           </Link>
         )}
       </section>
 
-      {/* "¿Puedo volar hoy?" — las cuatro condiciones de RAAC 61.060(a)(1).
-          Va arriba de todo porque es la única pregunta de esta pantalla que tiene
-          consecuencias antes de despegar; el resto es historia. */}
-      <FlightStatusCard
-        flights={flights as Flight[]}
-        aircraft={aircraft as Aircraft[]}
-        documents={documents as PilotDocument[]}
-        profile={profile}
-        documentosDisponibles={documentosDisponibles}
-      />
+      {/* 1. ¿Puedo volar hoy? — las cuatro condiciones de RAAC 61.060(a)(1), y
+          debajo lo que vence primero. Va arriba de todo porque es la única pregunta
+          de esta pantalla con consecuencias antes de despegar. */}
+      <div className="space-y-3">
+        <FlightStatusCard
+          flights={flights as Flight[]}
+          aircraft={aircraft as Aircraft[]}
+          documents={documents as PilotDocument[]}
+          profile={profile}
+          documentosDisponibles={documentosDisponibles}
+        />
+        {documentosDisponibles && <ProximoVencimiento documents={documents as PilotDocument[]} />}
+      </div>
 
       {/* "¿Volaste esto?" — el vuelo que el piloto programó y cuya fecha ya pasó.
-          Va acá porque es lo único de la pantalla, además del semáforo, que le pide
-          algo: un vuelo sin registrar es un agujero en el libro. Y va antes de las
-          métricas porque todas se calculan sobre los vuelos, así que hasta que este
-          se cargue todas están cortas.
-
-          "Hoy" baja resuelto desde el server, como en el resumen y el heatmap. */}
+          Es lo único de la pantalla, además del semáforo, que le pide algo: un vuelo
+          sin registrar es un agujero en el libro. "Hoy" baja resuelto desde el
+          server, como en el resumen y el heatmap. */}
       <VuelosPendientes
         planned={planned as PlannedFlight[]}
         aircraft={aircraft as Aircraft[]}
-        todayIso={new Date().toISOString().slice(0, 10)}
+        todayIso={todayIso}
         tieneVuelos={bitacora.length > 0}
       />
 
-      <CustomStatsRow
-        stats={customStats}
-        flights={flights as Flight[]}
-        aircraft={aircraft as Aircraft[]}
-      />
-
-      {/* Va después del semáforo, que es la única pregunta de esta pantalla con
-          consecuencias antes de despegar, y antes de las métricas, que para una
-          cuenta nueva son todas cero. Desaparece solo cuando los cuatro pasos
-          están hechos. Los datos ya vienen del Promise.all de arriba: no agrega
-          ni un viaje al backend. */}
+      {/* Desaparece solo cuando los cuatro pasos están hechos. Los datos ya vienen
+          del Promise.all de arriba: no agrega ni un viaje al backend. */}
       <PrimerosPasos
         // `null` y no `false` en cada paso cuya consulta falló: el paso no se
         // dibuja, en vez de pedirle al piloto que cargue algo que ya tiene.
@@ -332,111 +224,84 @@ export default async function Dashboard() {
         })}
       />
 
-      {/* Novedades de la versión */}
       <ChangelogNotice />
 
-      {/* Headline row. Replaces the split-flap hero card that used to sit here.
-          That card was ~340px tall and repeated itself: the same 46.3 also shows
-          up in "Horas acumuladas" and in the activity grid further down, and its
-          inline "Horas por mes" chart is the same series as "Tendencia temporal".
-          One black tile among white siblings keeps the total as the loudest thing
-          on the screen without spending a third of the fold on it. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <HeadlineStat
-          feature
-          label="Horas totales"
-          value={totalHours.toFixed(1)}
-          unit="hs"
-          caption={`+${lastMonthHours.toFixed(1)} hs en 30 días`}
-          href="/dashboard/history"
-          spark={chartData.map((d) => d.hours)}
-        />
-        <HeadlineStat label="Vuelos" value={String(totalFlights)} caption="Entradas de log" />
-        <HeadlineStat label="Aeródromos" value={String(airports.size)} caption="Códigos ICAO únicos" />
-        <HeadlineStat label="Récord" value={longestFlight.toFixed(1)} unit="h" caption="Vuelo más largo" />
-      </div>
-
-      {/* Secondary stat strip — one bordered instrument cluster, not four separate boxes */}
-      <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none grid grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 divide-x-0 md:divide-x divide-zinc-100 dark:divide-white/10 overflow-hidden">
-        <StatCell icon={<Zap className="w-4 h-4" />} label="Promedio Vuelo" value={`${avgFlightTime.toFixed(1)}h`} />
-        <StatCell icon={<Compass className="w-4 h-4" />} label="Aterrizajes" value={totalLandings.toString()} />
-        <StatCell icon={<MapPin className="w-4 h-4" />} label="Destino" value={mostVisited} />
-        <StatCell icon={<Plane className="w-4 h-4" />} label="Aeronaves" value={aircraft.length.toString()} />
-      </div>
-
-      {/* Flight Hours Packs */}
-      {/* La plata: lo que va del mes y, debajo, los packs. Van juntos porque
-          contestan la misma pregunta desde los dos modos de seguimiento —quien usa
-          saldo ve pesos, quien usa packs ve horas— y ninguno de los dos se dibuja
-          si no tiene nada que decir. */}
-      {/* Cómo venís volando: la racha y este mes contra tu propio promedio. Van
-          antes de la plata porque son la causa — las horas primero, lo que
-          costaron después. */}
-      <ComoVenisVolando flights={flights as Flight[]} todayIso={new Date().toISOString().slice(0, 10)} />
-
-      <GastoDelMes gasto={gastoMes} />
-
-      <FlightPackWidget packs={packs} />
-
-      {/* METAR/TAF Weather Widget - Full width horizontal card */}
-
-      {/* Logbook health + expiries — both answer "is anything wrong that the
-          flight list won't show me", so they sit together above the PCA tracker. */}
-      <LogbookHealthCard
-        audit={audit}
-        documents={documents}
-        documentosDisponibles={documentosDisponibles}
-      />
-
-      {/* PCA Tracker (only for PPA/Privado working towards PCA) - Full width below.
-          Recibe el libro entero, no `flights`: las horas de instrumento en simulador
-          cuentan para el requisito, y el tracker hace su propio corte con
-          `separarSimuladores` para que no cuenten para nada más. */}
-      {(profile?.license_type?.toUpperCase().includes("PPA") || profile?.license_type?.toUpperCase().includes("PRIVADO")) && !profile?.license_type?.toUpperCase().includes("PCA") && (
+      {/* 2. ¿Cuánto me falta? — Recibe el libro entero, no `flights`: las horas de
+          instrumento en simulador cuentan para el requisito, y el tracker hace su
+          propio corte con `separarSimuladores` para que no cuenten para nada más. */}
+      {vaALaComercial ? (
         <PCATracker
           flights={bitacora}
           logbooks={logbooks as Logbook[]}
           aircraft={aircraft as Aircraft[]}
-          todayIso={new Date().toISOString().slice(0, 10)}
+          todayIso={todayIso}
         />
+      ) : (
+        <HorasTotales flights={flights as Flight[]} logbooks={logbooks as Logbook[]} todayIso={todayIso} />
       )}
 
-      {/* Analytics */}
-      <DashboardCharts monthlyData={chartData} aircraftData={aircraftData} cumulativeData={cumulativeData} />
+      {/* 3. ¿Cuánto me queda? — pesos para quien lleva saldo, horas para quien lleva
+          packs. Ninguno de los dos se dibuja si no tiene nada que decir. */}
+      {profile?.tracking_mode === "balance" ? (
+        saldoConocido && <SaldoCard saldo={balance} gasto={gastoMes} />
+      ) : (
+        <FlightPackWidget packs={packs} />
+      )}
 
-      {/* Activity grid — sits right under "Horas acumuladas": that card answers
-          "how much", this one answers "how regularly". */}
-      {/* Heatmap y estación juntos, como en FlightDeck: uno responde "cómo vengo
-          volando" y el otro "cómo está mi base ahora". A ancho completo la
-          estación ocupaba una franja entera para cuatro números, y el heatmap
-          quedaba lejos del resto del contexto. */}
-      <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-start">
-        <ActivityHeatmap data={heatmapData} />
-        <WeatherWidget defaultAirport={mostVisited} />
-      </div>
-
-      {/* Closes the dashboard on the logbook itself. Everything above is
-          aggregate; this is the last thing that actually happened. */}
-      {/* El libro entero: una sesión de simulador es un renglón como cualquier otro
-          y esconderla acá sería esconder algo que el piloto acaba de cargar. */}
-      <RecentFlights flights={bitacora as Flight[]} aircraft={aircraft as Aircraft[]} costos={costos} />
-
+      {/* Cierra con el libro mismo. Todo lo de arriba es estado; esto es lo último
+          que pasó. Una sesión de simulador es un renglón como cualquier otro y
+          esconderla acá sería esconder algo que el piloto acaba de cargar. */}
+      <RecentFlights flights={bitacora as Flight[]} aircraft={aircraft as Aircraft[]} costos={costos} limit={3} />
     </div>
+  );
+}
+
+/**
+ * Para quien no va camino a la PCA —ya es comercial, o su licencia no es de
+ * privado—, la segunda pregunta no es "cuánto me falta" sino "cuánto llevo".
+ *
+ * Suma las horas de apertura de los libros: un piloto que migró 500 horas del libro de
+ * papel no puede ver 46. Es el mismo total que el Resumen, que es adonde lleva.
+ */
+function HorasTotales({ flights, logbooks, todayIso }: { flights: Flight[]; logbooks: Logbook[]; todayIso: string }) {
+  const voladas = flights.reduce((acc, f) => acc + f.duration, 0);
+  const total = voladas + openingTotals(logbooks).totalHours;
+  // Una cuenta nueva no tiene nada que contar todavía, y de eso ya se ocupa
+  // `PrimerosPasos`. Un cero grande acá sería ruido.
+  if (total === 0) return null;
+
+  const hace30 = new Date(Date.parse(`${todayIso}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
+  const ultimos30 = flights.filter((f) => f.date >= hace30).reduce((acc, f) => acc + f.duration, 0);
+
+  return (
+    <Link
+      href="/dashboard/summary"
+      className="group flex items-end justify-between gap-6 rounded-[1.75rem] border p-5 md:p-6 bg-zinc-900 dark:bg-[#111111] border-zinc-900 dark:border-white/10 shadow-xl hover:bg-zinc-800 dark:hover:bg-[#161616] transition-colors"
+    >
+      <div>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/50">Horas totales</p>
+        <p className="data text-3xl md:text-4xl font-bold leading-none mt-2 text-white">
+          {total.toFixed(1)}
+          <span className="text-base font-medium ml-1 text-white/50">hs</span>
+        </p>
+        <p className="text-[11px] text-white/50 mt-2">+{ultimos30.toFixed(1)} hs en 30 días · Ver resumen</p>
+      </div>
+      <Sparkline points={horasPorMes(flights, todayIso).map((m) => m.hours)} />
+    </Link>
   );
 }
 
 /**
  * Six months of hours as a bare polyline.
  *
- * Hand-rolled SVG rather than pulling the chart library into this row: the
- * charts bundle is lazy-loaded further down the page, and importing it here to
- * draw seven points would drag it into the first paint.
+ * Hand-rolled SVG rather than pulling the chart library into the first paint to
+ * draw six points.
  *
  * Coordinates are rounded before they reach the path — Math on floats
  * serializes differently in Node and Chrome, which is a hydration mismatch. The
  * radial dial on the summary page already got caught by exactly this.
  */
-function Sparkline({ points, feature }: { points: number[]; feature?: boolean }) {
+function Sparkline({ points }: { points: number[] }) {
   if (points.length < 2 || points.every((p) => p === 0)) return null;
 
   const max = Math.max(...points, 1);
@@ -448,98 +313,8 @@ function Sparkline({ points, feature }: { points: number[]; feature?: boolean })
     .join(" ");
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-[72px] h-5 overflow-visible" aria-hidden="true">
-      <path
-        d={d}
-        fill="none"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={feature ? "stroke-white/45" : "stroke-zinc-300 dark:stroke-zinc-600"}
-      />
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-[72px] h-5 overflow-visible shrink-0" aria-hidden="true">
+      <path d={d} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-white/45" />
     </svg>
-  );
-}
-
-/**
- * One tile of the headline row. `feature` paints it black so the row has a
- * single obvious entry point instead of four equal boxes competing.
- */
-function HeadlineStat({
-  label,
-  value,
-  unit,
-  caption,
-  feature,
-  href,
-  spark,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  caption: string;
-  feature?: boolean;
-  href?: string;
-  /** Six-month series for the sparkline. Omit to render none. */
-  spark?: number[];
-}) {
-  const body = (
-    <>
-      <p
-        className={`font-mono text-[10px] font-bold uppercase tracking-wider ${
-          feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"
-        }`}
-      >
-        {label}
-      </p>
-      <p
-        className={`data text-3xl md:text-4xl font-bold leading-none mt-2 ${
-          feature ? "text-white" : "text-zinc-900 dark:text-white"
-        }`}
-      >
-        {value}
-        {unit && (
-          <span className={`text-base font-medium ml-1 ${feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"}`}>
-            {unit}
-          </span>
-        )}
-      </p>
-      <div className="flex items-end justify-between gap-3 mt-2">
-        <p className={`text-[11px] ${feature ? "text-white/50" : "text-zinc-400 dark:text-zinc-500"}`}>
-          {caption}
-        </p>
-        {spark && <Sparkline points={spark} feature={feature} />}
-      </div>
-    </>
-  );
-
-  const className = `rounded-[1.75rem] border p-5 md:p-6 transition-colors ${
-    feature
-      ? "bg-zinc-900 dark:bg-[#111111] border-zinc-900 dark:border-white/10 shadow-xl hover:bg-zinc-800 dark:hover:bg-[#161616]"
-      : "bg-white dark:bg-white/[0.02] border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none"
-  }`;
-
-  return href ? (
-    <Link href={href} className={`${className} block`}>
-      {body}
-    </Link>
-  ) : (
-    <div className={className}>{body}</div>
-  );
-}
-
-
-
-function StatCell({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
-  return (
-    <div className="px-6 py-6 md:py-8 flex flex-col items-start md:items-center md:text-center gap-3 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors">
-      <div className="text-zinc-900 dark:text-white bg-zinc-100 dark:bg-white/10 p-2.5 rounded-xl">
-        {icon}
-      </div>
-      <div className="flex flex-col md:items-center">
-        <p className="text-xl md:text-2xl font-bold data text-zinc-900 dark:text-white tracking-tight leading-none">{value}</p>
-        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1.5 line-clamp-1">{label}</p>
-      </div>
-    </div>
   );
 }

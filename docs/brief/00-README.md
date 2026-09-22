@@ -1,5 +1,9 @@
 # Brief para Opus 5 — Rediseño UX/UI de Vector inspirado en FlightDeck
 
+> **Nota del 2026-09-22:** esta carpeta es historia, no backlog. Lo vigente está en
+> `AGENTS.md`, y la bitácora —con la vieja sección "Pasos a seguir" que se menciona
+> abajo— se mudó a `docs/bitacora/`.
+
 > **Estado al 2026-08-01: las Fases 0 a 5 del plan original están
 > implementadas**, igual que la corrección del copiloto. Los documentos `01`,
 > `02` y `03` quedaron **tal como fueron escritos**, o sea que siguen

@@ -4,7 +4,16 @@ Generado por `npm run build:changelog` desde `src/lib/changelog.ts`. **No editar
 lo que se escriba acá se pierde en la próxima corrida.
 
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
-`AGENTS.md`.
+la bitácora de `docs/bitacora/`.
+
+## v2.18.0 — Menos íconos, y un inicio que va al grano
+
+_22 de septiembre de 2026_
+
+- **La barra pasó de nueve íconos a cuatro** — Inicio, Bitácora, Balance y Preparar vuelo. Resumen, Calendario y Auditoría ahora son pestañas de la Bitácora; Aeropuertos, Clima y Herramientas, de Preparar vuelo. No se fue nada: todo sigue a un toque, agrupado donde se usa, y en el teléfono ya no hace falta abrir "Más".
+- **El inicio contesta tres preguntas** — ¿Podés volar hoy?, ¿cuánto te falta para la comercial? y ¿cuánto te queda? Debajo del semáforo aparece el próximo vencimiento, y si llevás saldo con la escuela lo ves sin entrar a Balance. Los gráficos, el heatmap y tus métricas se mudaron al Resumen, y el clima a Preparar vuelo.
+- **Registrar un vuelo es siempre la misma pantalla** — Antes a veces se abría como una ventana encima de lo que estabas mirando y a veces como página, y cerrarla fallaba de maneras distintas. Ahora es una sola página, con el formulario a lo ancho.
+- **Y el gráfico de horas por mes dejó de perder meses** — Los días 29, 30 y 31 el gráfico podía repetir un mes y saltearse otro, según cuántos días tuviera cada uno. Ahora cuenta los meses sin mirar el día.
 
 ## v2.17.0 — Cargar un vuelo ya no dice que hubo un error cuando no lo hubo
 

@@ -12,9 +12,7 @@ import { redirect } from "next/navigation";
 async function getData() {
   // Order matters and has already bitten once: `/logbooks` was added in the
   // middle of this array without moving the names, so `logbooks` got the session
-  // object and the page died on `logbooks.find is not a function`. It only showed
-  // up on a direct hit or a refresh — coming from the "+" renders the intercepted
-  // route at @modal/(.)log-flight, which fetches its own data and was fine.
+  // object and the page died on `logbooks.find is not a function`.
   const [acRes, lbRes, sessionRes] = await Promise.all([
     apiFetch("/aircraft"),
     apiFetch("/logbooks"),
@@ -39,8 +37,8 @@ interface PageProps {
 
 export default async function LogFlightPage({ searchParams }: PageProps) {
   const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
-  // Un solo parser, compartido con `@modal/(.)log-flight`. Este par ya derivó una
-  // vez; la duplicación se borró en vez de comentarse por tercera vez.
+  // El mismo parser que usan los links de "Completar" del calendario y los atajos
+  // de iOS. Ver `src/lib/prefill.ts`.
   const { initialData: prefillData, plannedId } = parsePrefill(resolvedParams);
 
   const { aircraft, session, logbooks } = await getData();
@@ -70,38 +68,39 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
         Sin aeronaves no hay nada que completar: el select queda vacío y el
         `required` bloquea el submit sin salida. La cabecera se mantiene arriba
         para no dejar al piloto sin el botón de volver.
-
-        Este branch tiene que existir igual en `@modal/(.)log-flight/page.tsx`.
       */}
       {aircraft.length === 0 ? (
         <SinAeronaves />
       ) : (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
-        <div className="lg:col-span-2 order-2 lg:order-1">
+      /*
+        Ésta es la única forma de registrar un vuelo desde que se sacó el modal
+        interceptado, así que el formulario va primero y a lo ancho: al lado del
+        cronómetro, en dos tercios de la pantalla, sus dos columnas quedaban
+        apretadas en casi cualquier notebook. El cronómetro va al costado recién
+        donde sobra lugar (`xl`), y abajo en el resto.
+
+        La excepción es un vuelo en curso: ahí el piloto vino a cortar el
+        cronómetro —el cartel "Vuelo en curso" del inicio trae acá—, así que va
+        arriba del formulario.
+      */
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-8 md:gap-12 items-start">
+        <div className={session?.active ? "order-2 xl:order-1" : undefined}>
           <FlightLogForm
             aircraft={aircraft}
             logbooks={logbooks}
             initialData={prefillData}
             plannedId={plannedId}
             /*
-              Acá no hay modal que cerrar: es la página completa, para un deep link
-              o un refresh. Antes de esto, `logFlight` redirigía sola con `push`, así
-              que volver atrás desde `/dashboard/history` reabría este mismo
-              formulario vacío. `replace` no deja esa entrada.
+              Antes de esto, `logFlight` redirigía sola con `push`, así que volver
+              atrás desde `/dashboard/history` reabría este mismo formulario vacío.
+              `replace` no deja esa entrada.
             */
             redirectTo="/dashboard/history"
           />
         </div>
-        
-        <div className="lg:col-span-1 order-1 lg:order-2 space-y-6 md:space-y-8">
+
+        <div className={session?.active ? "order-1 xl:order-2" : undefined}>
           <LiveSessionController aircraft={aircraft} activeSession={session} />
-          
-          <div className="p-8 md:p-10 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] shadow-cal dark:shadow-none space-y-3 md:space-y-4 hidden lg:block">
-            <h4 className="text-sm font-semibold text-zinc-900 dark:text-white">Ayuda operativa</h4>
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium leading-relaxed">
-              Usa el cronómetro para un registro preciso. Al finalizar, los tiempos se sincronizarán con tu bitácora.
-            </p>
-          </div>
         </div>
       </div>
       )}

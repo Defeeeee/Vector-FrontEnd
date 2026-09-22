@@ -1,15 +1,12 @@
 "use client";
 
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
   ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie,
   AreaChart,
   Area,
   CartesianGrid,
@@ -17,31 +14,24 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import type { HorasDelMes, PuntoAcumulado } from "@/lib/tendencia";
 
-interface ChartData {
-  name: string;
-  hours: number;
+/**
+ * "Horas por mes" y "Horas acumuladas", en el Resumen.
+ *
+ * Vivían en el inicio como `DashboardCharts`, con una torta de horas por aeronave al
+ * lado. La torta no vino: el Resumen ya tiene "Por aeronave", con vuelos, horas PIC
+ * y totales por matrícula, y dos gráficos de lo mismo en una pantalla son uno de más.
+ *
+ * Las series llegan armadas desde el server (`src/lib/tendencia.ts`), así que acá no
+ * se hace ninguna cuenta con fechas.
+ */
+interface GraficosDeHorasProps {
+  monthlyData: HorasDelMes[];
+  cumulativeData: PuntoAcumulado[];
 }
 
-interface PieData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface CumulativePoint {
-  date: string;
-  total: number;
-  monthHours: number;
-}
-
-interface DashboardChartsProps {
-  monthlyData: ChartData[];
-  aircraftData: PieData[];
-  cumulativeData: CumulativePoint[];
-}
-
-export default function DashboardCharts({ monthlyData, aircraftData, cumulativeData }: DashboardChartsProps) {
+export default function GraficosDeHoras({ monthlyData, cumulativeData }: GraficosDeHorasProps) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -60,6 +50,10 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
   const maxTotal = cumulativeData.length > 0 ? cumulativeData[cumulativeData.length - 1].total : 0;
   const milestones = [50, 100, 150, 200, 300, 500, 750, 1000].filter(m => m <= maxTotal * 1.1 && m >= maxTotal * 0.1);
 
+  // Con un solo mes no hay curva que dibujar; el de barras ocupa el ancho entero.
+  const conCurva = cumulativeData.length > 1;
+  const grilla = `grid grid-cols-1 ${conCurva ? "lg:grid-cols-2" : ""} gap-6 w-full`;
+
   const CustomCumulativeTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     const d = payload[0].payload;
@@ -74,32 +68,28 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
 
   if (!mounted) {
     return (
-      <div className="space-y-6 w-full mt-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] h-[450px]" />
-          <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] h-[450px]" />
-        </div>
+      <div className={grilla}>
         <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] h-[420px]" />
+        {conCurva && <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] h-[420px]" />}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 w-full mt-12">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className={grilla}>
       {/* Bar Chart: Flight Hours by Month */}
-      <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[450px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
+      <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[420px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
         <div className="flex flex-col space-y-1">
           <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Horas por mes</h3>
-          <p className="eyebrow">Tendencia temporal</p>
+          <p className="eyebrow">Los últimos seis meses</p>
         </div>
         <div className="flex-1 w-full -ml-4 min-h-0">
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <XAxis 
-                dataKey="name" 
-                axisLine={false} 
-                tickLine={false} 
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
                 tick={{ fill: textColor, fontSize: 12, fontWeight: 500 }}
                 dy={10}
               />
@@ -120,10 +110,10 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
                 itemStyle={{ color: tooltipTextColor, fontWeight: 700, fontSize: '13px' }}
                 labelStyle={{ color: textColor, marginBottom: '4px', fontSize: '12px', fontWeight: 600 }}
               />
-              <Bar 
-                dataKey="hours" 
-                fill={barColor} 
-                radius={[6, 6, 0, 0]} 
+              <Bar
+                dataKey="hours"
+                fill={barColor}
+                radius={[6, 6, 0, 0]}
                 barSize={32}
               />
             </BarChart>
@@ -131,61 +121,8 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
         </div>
       </div>
 
-      {/* Pie Chart: Hours by Aircraft */}
-      <div className="p-8 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[450px] shadow-cal hover:shadow-lg dark:hover:bg-white/[0.04] transition-all group">
-        <div className="flex flex-col space-y-1">
-          <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Horas por aeronave</h3>
-          <p className="eyebrow">Distribución de flota</p>
-        </div>
-        <div className="flex-1 w-full relative min-h-0">
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-            <PieChart>
-              <Pie
-                data={aircraftData}
-                cx="50%"
-                cy="45%"
-                innerRadius={85}
-                outerRadius={115}
-                paddingAngle={6}
-                dataKey="value"
-                stroke="none"
-                cornerRadius={4}
-              >
-                {aircraftData.map((entry, index) => {
-                  const colors = isDark ? ["#38bdf8", "#a1a1aa", "#52525b", "#27272a"] : ["#2563eb", "#71717a", "#e4e4e7", "#f9fafb"];
-                  return <Cell key={`cell-${index}`} fill={colors[index % 4]} />;
-                })}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: tooltipBg, 
-                  border: `1px solid ${tooltipBorder}`, 
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-                }}
-                itemStyle={{ color: tooltipTextColor, fontWeight: 700, fontSize: '13px' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          
-          {/* Minimal Legend */}
-          <div className="absolute bottom-0 left-0 right-0 flex flex-wrap justify-center gap-4">
-            {aircraftData.slice(0, 4).map((item, i) => {
-              const colors = isDark ? ["#38bdf8", "#a1a1aa", "#52525b", "#27272a"] : ["#2563eb", "#71717a", "#e4e4e7", "#f9fafb"];
-              return (
-                <div key={i} className="flex items-center space-x-2">
-                  <div className="w-2 h-2 rounded-full border border-zinc-200 dark:border-zinc-700" style={{ backgroundColor: colors[i % 4] }} />
-                  <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{item.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      </div>
-
       {/* Cumulative Hours Area Chart */}
-      {cumulativeData.length > 1 && (
+      {conCurva && (
         <div className="p-8 bg-zinc-900 dark:bg-[#111111] border border-zinc-800 dark:border-white/10 rounded-[2.5rem] flex flex-col space-y-8 h-[420px] shadow-2xl hover:shadow-lg transition-all group relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-aviation-blue/10 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none transition-transform group-hover:scale-110" />
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 relative z-10">
@@ -193,7 +130,9 @@ export default function DashboardCharts({ monthlyData, aircraftData, cumulativeD
               <h3 className="text-2xl font-bold font-display text-white tracking-tight">Horas acumuladas</h3>
               <p className="eyebrow eyebrow-invert">Progresión total de experiencia</p>
             </div>
-            <div className="flex items-baseline space-x-2">
+            {/* `whitespace-nowrap`: a media pantalla la tarjeta es angosta, y "hs
+                totales" se partía en dos renglones debajo del número. */}
+            <div className="flex items-baseline space-x-2 whitespace-nowrap shrink-0">
               <span className="text-4xl font-display font-bold text-white tracking-tight leading-none">{maxTotal.toFixed(1)}</span>
               <span className="text-sm font-medium text-zinc-500">hs totales</span>
             </div>

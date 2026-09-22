@@ -48,7 +48,8 @@
      hace desaparecer la scrollbar y todo el layout se corre unos pixeles — el
      salto que un modal centrado (no full-bleed) hace bien visible en desktop.
      Con el gutter reservado de antemano, prender y apagar `overflow` no mueve
-     nada. Ver `NewFlightModal.tsx`. */
+     nada. Lo agregó el viejo modal de Nuevo Vuelo, que ya no existe; queda porque
+     no cuesta nada y cubre al próximo diálogo que bloquee el scroll. */
   html {
     scrollbar-gutter: stable;
   }

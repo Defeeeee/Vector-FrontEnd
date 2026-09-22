@@ -3,14 +3,14 @@ import { CustomStat, evaluateStat } from "@/lib/custom-stats";
 import { AlertTriangle, Check } from "lucide-react";
 
 /**
- * Las métricas del piloto, en el dashboard.
+ * Las métricas del piloto, en el Resumen.
  *
  * Se evalúan acá y no en el servidor: los vuelos ya están cargados en esta
  * pantalla, así que recalcular del otro lado sería trabajo de más — y el regex
  * que pueda tener una métrica corre en la pestaña de quien lo escribió.
  *
  * Si el piloto no definió ninguna, no se renderiza nada. Un bloque vacío
- * invitando a configurar algo es ruido en la pantalla que más se mira.
+ * invitando a configurar algo es ruido.
  */
 export default function CustomStatsRow({
   stats,

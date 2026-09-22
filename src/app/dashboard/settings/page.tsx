@@ -179,7 +179,7 @@ export default async function SettingsPage() {
           </div>
 
           <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed">
-            Armá los números que querés seguir y aparecen en tu dashboard. Sirven para
+            Armá los números que querés seguir y aparecen en el Resumen de la Bitácora. Sirven para
             recencia, habilitaciones por tipo o cualquier hito que te propongas.
           </p>
 

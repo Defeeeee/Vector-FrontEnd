@@ -43,8 +43,10 @@ export async function fromApi(row: Record<string, unknown>): Promise<CustomStat>
 }
 
 function revalidate() {
-  // Las métricas se ven en el dashboard y se editan en el Hangar.
-  revalidatePath("/dashboard");
+  // Las métricas se ven en el Resumen y se editan en el Hangar. Vivían en el inicio
+  // hasta septiembre de 2026; si se mudan otra vez, esta lista se muda con ellas o
+  // la métrica recién creada tarda en aparecer lo que dure el cache de `apiFetch`.
+  revalidatePath("/dashboard/summary");
   revalidatePath("/dashboard/settings");
 }
 

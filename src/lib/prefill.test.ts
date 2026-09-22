@@ -3,9 +3,10 @@
  * que un valor basura que pase de largo se convierte en un dato inventado en un
  * registro regulatorio.
  *
- * El test existe además por una razón de mantenimiento: este parseo vivía duplicado
- * en `/dashboard/log-flight` y en su gemelo interceptado, un par que ya derivó una
- * vez en producción. Ahora hay un solo parser, y esto es lo que lo mantiene honesto.
+ * El test existe además por una razón de mantenimiento: este parseo vivió duplicado
+ * en `/dashboard/log-flight` y en un modal interceptado que ya no existe, un par que
+ * derivó una vez en producción. Hay un solo parser, y esto es lo que lo mantiene
+ * honesto.
  */
 
 import { describe, expect, it } from "vitest";

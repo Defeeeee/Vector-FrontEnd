@@ -15,10 +15,9 @@ import AircraftForm from "./AircraftForm";
  * pedirle que vuelva solo. `AircraftForm` ya trae su `try/catch`, su estado de
  * pending y su banner de error, así que se embebe tal cual.
  *
- * ⚠️ **Lo usan dos rutas** —`/dashboard/log-flight` y el modal interceptado
- * `@modal/(.)log-flight`— y ese par ya derivó una vez (ver el comentario sobre el
- * orden del `Promise.all` en `log-flight/page.tsx`). Por eso es un componente y no
- * un `if` copiado en cada una.
+ * Nació como componente porque lo compartían `/dashboard/log-flight` y el modal
+ * interceptado de Nuevo Vuelo. El modal se sacó en septiembre de 2026 —Registrar
+ * es una sola página— y esto quedó como el estado vacío de esa página.
  */
 export default function SinAeronaves() {
   return (

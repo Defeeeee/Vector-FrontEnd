@@ -69,7 +69,7 @@ const lineas = [
   "lo que se escriba acá se pierde en la próxima corrida.",
   "",
   "Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en",
-  "`AGENTS.md`.",
+  "la bitácora de `docs/bitacora/`.",
   "",
 ];
 

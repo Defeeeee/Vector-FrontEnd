@@ -15,7 +15,7 @@ import { MAX_TILES, TILES, TILES_POR_DEFECTO, serializeTiles, type TileId } from
  * Y el preview **es literalmente la imagen final**: el mismo endpoint, los mismos
  * bytes. La alternativa —dibujar una vista previa en HTML— sería una segunda
  * implementación del mismo diseño sin nada que las mantenga sincronizadas, que es
- * el problema que este repo ya tiene con el par página/modal de Nuevo Vuelo. Y acá
+ * el problema que este repo tuvo con el par página/modal de Nuevo Vuelo. Y acá
  * sería peor: no hay harness de tests de componentes que lo pueda atrapar.
  */
 

@@ -24,7 +24,7 @@
  *
  * Sólo lo que el piloto **ve**. La higiene interna —tests, refactors, timeouts, la
  * columna de variación magnética— importa muchísimo y no es una novedad que alguien
- * quiera leer en su dashboard. Eso vive en `AGENTS.md`.
+ * quiera leer en su dashboard. Eso vive en la bitácora, `docs/bitacora/`.
  */
 
 /**
@@ -72,6 +72,41 @@ export interface VersionPublicada {
  * `CHANGELOG[0]` y nada más, así que una entrada fuera de orden anunciaría lo viejo.
  */
 export const CHANGELOG: VersionPublicada[] = [
+  {
+    version: "2.18.0",
+    fecha: "2026-09-22",
+    titulo: "Menos íconos, y un inicio que va al grano",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "La barra pasó de nueve íconos a cuatro",
+        texto:
+          "Inicio, Bitácora, Balance y Preparar vuelo. Resumen, Calendario y Auditoría ahora son pestañas de la Bitácora; Aeropuertos, Clima y Herramientas, de Preparar vuelo. No se fue nada: todo sigue a un toque, agrupado donde se usa, y en el teléfono ya no hace falta abrir \"Más\".",
+        href: "/dashboard/history",
+        cta: "Ver la Bitácora",
+      },
+      {
+        icono: "avion",
+        titulo: "El inicio contesta tres preguntas",
+        texto:
+          "¿Podés volar hoy?, ¿cuánto te falta para la comercial? y ¿cuánto te queda? Debajo del semáforo aparece el próximo vencimiento, y si llevás saldo con la escuela lo ves sin entrar a Balance. Los gráficos, el heatmap y tus métricas se mudaron al Resumen, y el clima a Preparar vuelo.",
+        href: "/dashboard/summary",
+        cta: "Ir al Resumen",
+      },
+      {
+        icono: "llave",
+        titulo: "Registrar un vuelo es siempre la misma pantalla",
+        texto:
+          "Antes a veces se abría como una ventana encima de lo que estabas mirando y a veces como página, y cerrarla fallaba de maneras distintas. Ahora es una sola página, con el formulario a lo ancho.",
+      },
+      {
+        icono: "reloj",
+        titulo: "Y el gráfico de horas por mes dejó de perder meses",
+        texto:
+          "Los días 29, 30 y 31 el gráfico podía repetir un mes y saltearse otro, según cuántos días tuviera cada uno. Ahora cuenta los meses sin mirar el día.",
+      },
+    ],
+  },
   {
     version: "2.17.0",
     fecha: "2026-08-26",

@@ -127,11 +127,9 @@ export function resumenPendientes(pendientes: PlannedFlight[]): ResumenPendiente
 /**
  * El link para completar un plan: el **único** lugar que arma esta URL.
  *
- * Reusa el prefill que ya existe (`log-flight/page.tsx` y su gemelo interceptado lo
- * parsean desde que lo estrenó el camino de WhatsApp/Atajos), así que completar un
- * vuelo programado **no necesita un formulario nuevo**: es un link al que ya está.
- * Y como es la misma URL de siempre, entra por la ruta interceptada y se abre como
- * modal sobre el dashboard, gratis.
+ * Reusa el prefill que ya existe (`log-flight/page.tsx` lo parsea desde que lo
+ * estrenó el camino de WhatsApp/Atajos), así que completar un vuelo programado **no
+ * necesita un formulario nuevo**: es un link al que ya está.
  *
  * Las claves ausentes **no se emiten**. Un `?aircraft_id=undefined` llega al form
  * como la cadena literal `"undefined"` y queda seleccionado un avión que no existe:

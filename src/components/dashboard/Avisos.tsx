@@ -73,8 +73,8 @@ export function AvisosProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       {/*
-        `z-[200]`, por encima de los modales (`z-[100]`) a propósito: un vuelo se
-        carga la mayoría de las veces desde el modal de Nuevo Vuelo, y el aviso
+        `z-[200]`, por encima de los modales (`z-[100]`) a propósito: un vuelo
+        también se carga desde el modal que cierra una sesión en vivo, y el aviso
         tiene que seguir visible cuando el modal ya se cerró — así que no puede
         quedar atrapado debajo de nada que esté por desaparecer.
 

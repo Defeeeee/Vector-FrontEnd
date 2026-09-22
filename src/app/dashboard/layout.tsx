@@ -1,6 +1,7 @@
 import { Compass, Plus } from "lucide-react";
 import Link from "next/link";
 import DashboardNav from "@/components/dashboard/DashboardNav";
+import SeccionTabs from "@/components/dashboard/SeccionTabs";
 import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
@@ -62,24 +63,16 @@ async function getAuditCount(): Promise<number> {
   }
 }
 
-export default async function DashboardLayout({
-  children,
-  modal,
-}: {
-  children: React.ReactNode;
-  /** Intercepting-route slot — see dashboard/@modal. Empty on most routes. */
-  modal: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [{ profile, disponible }, auditCount] = await Promise.all([getProfile(), getAuditCount()]);
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
   return (
-    // Envuelve `{children}` **y** `{modal}`: los dos son hijos de este mismo
-    // `return`, y un vuelo se carga la mayoría de las veces desde el modal de
-    // Nuevo Vuelo — el aviso de "se guardó" tiene que poder dispararse desde
-    // cualquiera de los dos y verse por encima de los dos.
+    // Envuelve el layout entero y no sólo `{children}`: el aviso de "se guardó" se
+    // dispara desde un formulario y tiene que seguir viéndose después de que ese
+    // formulario navega a otra pantalla.
     <AvisosProvider>
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black w-full relative text-zinc-900 dark:text-white antialiased transition-colors duration-300">
       {/* Subtle Background Pattern */}
@@ -168,8 +161,12 @@ export default async function DashboardLayout({
         {/* Main Content Area */}
         <main className="relative z-10 flex-1 w-full p-4 md:p-8 lg:p-12 pt-24 lg:pt-12 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12 overflow-y-auto custom-scrollbar transition-colors">
           <div className="w-full max-w-6xl mx-auto">
-            {/* Arriba de todo: si la consulta base falló, el piloto tiene que
-                enterarse antes de leer un solo número de la pantalla. */}
+            {/* Las pestañas de la sección van antes que los carteles: son
+                navegación y no datos, y así no cambian de lugar cuando aparece
+                un cartel. */}
+            <SeccionTabs auditCount={auditCount} />
+            {/* Arriba de todo lo demás: si la consulta base falló, el piloto
+                tiene que enterarse antes de leer un solo número de la pantalla. */}
             {!disponible && <SinConexionBanner />}
             {/*
               Los dos carteles contestan preguntas distintas y pueden aparecer juntos.
@@ -190,9 +187,6 @@ export default async function DashboardLayout({
       >
         <DashboardNav variant="mobile" auditCount={auditCount} />
       </div>
-
-      {/* Intercepted routes that render over the current page (Nuevo Vuelo). */}
-      {modal}
 
       {/* Onboarding Logic */}
       <OnboardingOverlay profile={profile} />

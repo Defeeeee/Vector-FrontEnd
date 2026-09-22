@@ -10,8 +10,8 @@ const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "O
  * transacción guardó el precio **del día en que se voló**, así que esto muestra los
  * aumentos reales de la escuela y no el precio de hoy proyectado hacia atrás.
  *
- * SVG a mano y no la librería de gráficos: `DashboardCharts` se carga en diferido
- * en el dashboard justamente para no pagarla en el primer paint, y traerla a la
+ * SVG a mano y no la librería de gráficos: `GraficosDeHoras` se carga en diferido
+ * en el Resumen justamente para no pagarla en el primer paint, y traerla a la
  * pantalla de saldo para dibujar seis puntos sería pagarla de nuevo.
  *
  * Las coordenadas se redondean antes de entrar al `path`: la aritmética de floats
