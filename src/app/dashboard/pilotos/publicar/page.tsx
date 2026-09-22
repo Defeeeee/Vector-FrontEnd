@@ -4,11 +4,14 @@ import { apiFetch } from "@/lib/api";
 import { ResumenSocial } from "@/types";
 import Link from "next/link";
 import { AtSign } from "lucide-react";
-import { redirect } from "next/navigation";
 
 export const metadata = { title: "Publicar | Vector" };
 
-export default async function PublicarPage() {
+export default async function PublicarPage({
+  searchParams,
+}: {
+  searchParams: { vuelo?: string };
+}) {
   const resumenRes = await apiFetch("/social/resumen", { cache: "no-store" });
   const resumen: ResumenSocial = resumenRes.ok
     ? await resumenRes.json()
@@ -35,8 +38,28 @@ export default async function PublicarPage() {
     );
   }
 
-  const perfilRes = await apiFetch(`/publico/pilotos/${handle}`, { cache: "no-store" }, { anonimo: true });
+  const perfilRes = await apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}`, { cache: "no-store" }, { anonimo: true });
   const perfilInfo = perfilRes.ok ? await perfilRes.json() : null;
+
+  let vueloInicial = undefined;
+  
+  if (searchParams.vuelo) {
+    const dashboardRes = await apiFetch("/dashboard", { cache: "no-store" });
+    if (dashboardRes.ok) {
+      const data = await dashboardRes.json();
+      const flight = data.flights?.find((f: any) => f.id === searchParams.vuelo);
+      if (flight) {
+        const acft = data.aircraft?.find((a: any) => a.id === flight.aircraft_id);
+        vueloInicial = {
+          id: flight.id,
+          ruta: flight.route,
+          duracion: flight.duration,
+          aeronave: acft?.registration,
+          fecha: flight.date
+        };
+      }
+    }
+  }
 
   return (
     <div className="space-y-8 w-full max-w-2xl mx-auto animate-in fade-in duration-700">
@@ -44,6 +67,7 @@ export default async function PublicarPage() {
       <ComposerPublicacion
         avatarUrl={resumen.avatar_url}
         nombre={perfilInfo?.nombre_visible || "Piloto"}
+        vueloInicial={vueloInicial}
       />
     </div>
   );
