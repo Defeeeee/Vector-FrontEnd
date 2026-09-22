@@ -5,7 +5,7 @@ import { Publicacion, Comentario } from "@/types";
 import { Flame, MessageCircle, Trash2, X } from "lucide-react";
 import AvatarPiloto from "./AvatarPiloto";
 import { useAvisos } from "@/components/dashboard/Avisos";
-import { apiFetch } from "@/lib/api";
+import { toggleAplauso as toggleAplausoServer, borrarPublicacion } from "@/actions/social";
 import Link from "next/link";
 
 export default function PublicacionCard({ publicacion, onDeleted }: { publicacion: Publicacion; onDeleted?: () => void }) {
@@ -18,14 +18,18 @@ export default function PublicacionCard({ publicacion, onDeleted }: { publicacio
   const toggleAplauso = async () => {
     if (loadingAplauso) return;
     setLoadingAplauso(true);
-    const method = aplaudida ? "DELETE" : "POST";
-    const res = await apiFetch(`/social/publicaciones/${publicacion.id}/aplauso`, { method });
     
-    if (res.ok) {
-      const data = await res.json();
-      setAplaudida(data.aplaudida);
-      setAplausos(data.aplausos);
-    } else {
+    // Optimistic UI
+    const estabaAplaudida = aplaudida;
+    setAplaudida(!estabaAplaudida);
+    setAplausos(a => estabaAplaudida ? a - 1 : a + 1);
+    
+    const res = await toggleAplausoServer(publicacion.id, !estabaAplaudida, publicacion.autor.handle);
+    
+    if (!res.ok) {
+      // Revert Optimistic UI
+      setAplaudida(estabaAplaudida);
+      setAplausos(a => estabaAplaudida ? a + 1 : a - 1);
       notificar({ tipo: "error", titulo: "Error al aplaudir" });
     }
     setLoadingAplauso(false);
@@ -33,12 +37,12 @@ export default function PublicacionCard({ publicacion, onDeleted }: { publicacio
 
   const handleDelete = async () => {
     if (!confirm("¿Borrar esta publicación?")) return;
-    const res = await apiFetch(`/social/publicaciones/${publicacion.id}`, { method: "DELETE" });
+    const res = await borrarPublicacion(publicacion.id);
     if (res.ok) {
       onDeleted?.();
       notificar({ tipo: "exito", titulo: "Publicación eliminada" });
     } else {
-      notificar({ tipo: "error", titulo: "Error al borrar" });
+      notificar({ tipo: "error", titulo: res.error || "Error al borrar" });
     }
   };
 

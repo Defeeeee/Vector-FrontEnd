@@ -10,8 +10,9 @@ export const metadata = { title: "Publicar | Vector" };
 export default async function PublicarPage({
   searchParams,
 }: {
-  searchParams: { vuelo?: string };
+  searchParams: Promise<{ vuelo?: string }>;
 }) {
+  const sp = await searchParams;
   const resumenRes = await apiFetch("/social/resumen", { cache: "no-store" });
   const resumen: ResumenSocial = resumenRes.ok
     ? await resumenRes.json()
@@ -43,11 +44,11 @@ export default async function PublicarPage({
 
   let vueloInicial = undefined;
   
-  if (searchParams.vuelo) {
+  if (sp.vuelo) {
     const dashboardRes = await apiFetch("/dashboard", { cache: "no-store" });
     if (dashboardRes.ok) {
       const data = await dashboardRes.json();
-      const flight = data.flights?.find((f: any) => f.id === searchParams.vuelo);
+      const flight = data.flights?.find((f: any) => f.id === sp.vuelo);
       if (flight) {
         const acft = data.aircraft?.find((a: any) => a.id === flight.aircraft_id);
         vueloInicial = {

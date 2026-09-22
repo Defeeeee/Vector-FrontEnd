@@ -167,3 +167,22 @@ export async function sacarSeguidor(handle: string, miHandle?: string | null): P
   revalidarRed(h, miHandle);
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Interacciones de la red
+// ---------------------------------------------------------------------------
+
+export async function toggleAplauso(id: string, activo: boolean, handleAutor?: string): Promise<Resultado<object>> {
+  const method = activo ? "POST" : "DELETE";
+  const r = await enviar(`/social/publicaciones/${encodeURIComponent(id)}/aplauso`, method, "No se pudo aplaudir.");
+  if (!r.ok) return r;
+  revalidarRed(handleAutor);
+  return { ok: true };
+}
+
+export async function borrarPublicacion(id: string, miHandle?: string | null): Promise<Resultado<object>> {
+  const r = await enviar(`/social/publicaciones/${encodeURIComponent(id)}`, "DELETE", "No se pudo borrar la publicación.");
+  if (!r.ok) return r;
+  revalidarRed(miHandle);
+  return { ok: true };
+}

@@ -5,7 +5,6 @@ import { Image as ImageIcon, Plane, X, Loader2 } from "lucide-react";
 import { useAvisos } from "@/components/dashboard/Avisos";
 import { comprimirImagen } from "@/lib/imagen-cliente";
 import AvatarPiloto from "./AvatarPiloto";
-import { apiFetch } from "@/lib/api";
 
 interface VueloMinimo {
   id: string;
@@ -85,7 +84,7 @@ export default function ComposerPublicacion({
         formData.append(`foto_${i}`, foto);
       });
 
-      const res = await apiFetch("/social/publicaciones", {
+      const res = await fetch("/api/social/publicaciones", {
         method: "POST",
         body: formData,
       });
