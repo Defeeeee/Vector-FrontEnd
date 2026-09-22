@@ -23,7 +23,7 @@ export interface PuntoMapa {
  * Por eso los puntos van numerados y no dimensionados por cantidad de visitas: el dato
  * que el piloto necesita leer del mapa es **en qué orden**, no cuánto.
  */
-export default function PlanMapaInner({ puntos }: { puntos: PuntoMapa[] }) {
+export default function PlanMapaInner({ puntos, className }: { puntos: PuntoMapa[], className?: string }) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<L.Map | null>(null);
 
@@ -106,7 +106,7 @@ export default function PlanMapaInner({ puntos }: { puntos: PuntoMapa[] }) {
   return (
     <div
       ref={contenedorRef}
-      className="w-full h-[300px] md:h-[420px] rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 z-0"
+      className={className || "w-full h-[300px] md:h-[420px] rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 z-0"}
     />
   );
 }

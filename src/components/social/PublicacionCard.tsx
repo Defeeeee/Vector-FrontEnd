@@ -80,8 +80,8 @@ export default function PublicacionCard({ publicacion, onDeleted }: { publicacio
       {publicacion.vuelo && (
         <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.02]">
           {publicacion.vuelo.puntos_mapa && publicacion.vuelo.puntos_mapa.length > 0 && (
-            <div className="w-full h-32 md:h-48 bg-zinc-100 dark:bg-white/5 border-b border-zinc-200 dark:border-white/10 relative">
-              <PlanMapa puntos={publicacion.vuelo.puntos_mapa} />
+            <div className="w-full h-32 md:h-48 border-b border-zinc-200 dark:border-white/10 relative">
+              <PlanMapa puntos={publicacion.vuelo.puntos_mapa} className="w-full h-full z-0" />
             </div>
           )}
           
