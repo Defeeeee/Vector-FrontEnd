@@ -125,6 +125,12 @@ const ROUTES = [
   { path: "/dashboard/calendario", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/planificador", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/clima", expect: (s) => s === 307 || s === 302 },
+  { path: "/dashboard/pilotos", expect: (s) => s === 307 || s === 302 },
+  // El perfil público se abre sin cuenta. Un @ que no existe tiene que dar 404 y no
+  // 500: el que recibe un link roto por WhatsApp tiene que ver "no existe", no un
+  // error de servidor. Un @ con formato inválido, lo mismo.
+  { path: "/u/no.existe.smoke", expect: (s) => s === 404 },
+  { path: "/u/%40%40", expect: (s) => s === 404 },
   { path: "/dashboard/novedades", expect: (s) => s === 307 || s === 302 },
   // La tarjeta compartible sale de la sesión del piloto. Que sin sesión conteste
   // 401 es lo que comprueba que la comprobación de auth sigue ahí: es una imagen
@@ -150,6 +156,8 @@ const AUTH_ROUTES = [
   "/dashboard/calendario",
   "/dashboard/planificador",
   "/dashboard/clima",
+  "/dashboard/pilotos",
+  "/dashboard/pilotos/solicitudes",
   "/dashboard/novedades",
   // Un `.ttf` faltante o mal nombrado pasa `tsc` y pasa `next build`: la ruta tira
   // 500 recién cuando alguien pide la imagen. Esto es lo único automático que lo

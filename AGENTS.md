@@ -11,7 +11,8 @@ de cada decisión está en la bitácora (`docs/bitacora/`); acá queda lo vigent
 ## Qué es Vector
 
 Bitácora digital para pilotos argentinos: formato ANAC, desglose de horas, vencimientos
-y "¿puedo volar hoy?" según la RAAC 61. **El público es el alumno de escuela que va de
+y "¿puedo volar hoy?" según la RAAC 61. Desde la 2.19.0, además, una red de pilotos con
+@ y perfil público. **El público es el alumno de escuela que va de
 PPA a PCA**: no es dueño del avión, paga por hora o por pack, y abre la app para saber
 si puede volar, cuánto le falta y cuánto le queda.
 
@@ -30,7 +31,8 @@ si puede volar, cuánto le falta y cuánto le queda.
 | Dónde | Qué |
 |---|---|
 | `src/app/dashboard/` | Las pantallas logueadas. El layout trae la barra, las pestañas de sección, los carteles de red y el copiloto. |
-| `src/lib/secciones.ts` | Las **cuatro secciones** de la barra y sus pestañas (ver abajo). |
+| `src/lib/secciones.ts` | Las **cinco secciones** de la barra y sus pestañas (ver abajo). |
+| `src/app/u/[handle]/` | El perfil público de la red social, fuera del dashboard: se abre sin cuenta. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
 | `src/lib/api.ts` | `apiFetch`: único camino al backend, con el token de la cookie. Cachea los GET 20 s. |
@@ -42,9 +44,16 @@ si puede volar, cuánto le falta y cuánto le queda.
 
 ### La navegación
 
-Cuatro secciones: **Inicio, Bitácora, Balance, Preparar vuelo**. Las pantallas que no son
-sección son pestañas: Bitácora = Vuelos · Resumen · Calendario · Auditoría; Preparar
-vuelo = Planificador · Aeropuertos · Clima · Herramientas. Las URLs son las de siempre.
+Cinco secciones: **Inicio, Bitácora, Balance, Preparar vuelo, Pilotos**. Las pantallas que
+no son sección son pestañas:
+
+- Bitácora = Vuelos · Resumen · Calendario · Auditoría.
+- Preparar vuelo = Planificador · Aeropuertos · Clima · Herramientas.
+- Pilotos = Buscar · Solicitudes.
+
+Las URLs son las de siempre. **Cinco es el techo**, porque es lo que entra en la píldora
+del teléfono sin la hoja "Más", y un test lo fija. La pestaña activa es la de `href` más
+específico (`pestanaActiva`): por prefijo, Buscar y Solicitudes se prenderían juntas.
 
 - Una pantalla nueva **se agrega en `SECCIONES`** y aparece sola en la barra y en las
   pestañas (`SeccionTabs`, en el layout). Si no va en ninguna sección, va en
@@ -95,6 +104,15 @@ vuelo = Planificador · Aeropuertos · Clima · Herramientas. Las URLs son las d
     direcciones. Un número que no aparece en la fuente no entra.
 13. **Los números de un plan salen de la base, no de la bitácora.** Una entrada dijo "2000
     vuelos" cuando había 45, y casi se diseñó paginación de servidor sobre eso.
+14. **De la red social, hacia afuera salen sólo agregados.** El perfil público
+    (`/u/[handle]`) se abre sin cuenta. El backend decide qué ve cada uno con
+    `puede_ver_horas` **antes** de leer nada, y devuelve cinco números de horas. Ninguna
+    fila de `flights` ni ningún `user_id` cruza la API. La regla se repite en el RLS de la
+    migración 018 del backend.
+    - Si agregás un dato al perfil público, va en la política de privacidad y en el texto
+      del formulario del Hangar, porque crear el @ es el consentimiento.
+    - La vista previa (`opengraph-image`) pide **siempre como anónimo**: el link lo recibe
+      cualquiera.
 
 ## Comandos
 
@@ -156,6 +174,12 @@ tests, build y smoke en cada push.
 - **Propuestas de simplificación sin decidir:** congelar lo que hoy no usa nadie
   (métricas propias, calendario, la UI de múltiples libros) y poner detrás de un permiso
   por perfil lo que excede al alumno (aerovías, HVI, Jeppesen).
+- **La red social tiene deliberadamente fuera del MVP** feed, fotos, aplausos,
+  comentarios, bloquear usuarios, redirigir un @ viejo y páginas de escuela o
+  aeródromo. Además:
+  - el login siempre vuelve a `/dashboard`, no al perfil desde el que se fue a ingresar;
+  - la búsqueda no tiene límite de pedidos, más allá de exigir sesión y un tope de 20
+    resultados.
 
 ## La bitácora
 

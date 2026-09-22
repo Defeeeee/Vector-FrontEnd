@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { SECCIONES, esPestanaActiva, hrefDeSeccion, seccionDe } from "./secciones";
+import { SECCIONES, esPestanaActiva, hrefDeSeccion, pestanaActiva, seccionDe } from "./secciones";
 
 /**
  * El riesgo de agrupar pantallas en secciones no es que una pestaña quede mal
@@ -42,10 +42,15 @@ function pantallasDelDashboard(): string[] {
 }
 
 describe("las secciones", () => {
-  it("son cuatro, en el orden de los íconos que ya estaban", () => {
+  it("van en el orden de los íconos que ya estaban, y lo nuevo al final", () => {
     // Inicio, Bitácora, Balance y el Planificador ocupaban los primeros cuatro
     // lugares. Cambiar este orden mueve íconos que la gente ya tiene en la mano.
-    expect(SECCIONES.map((s) => s.clave)).toEqual(["inicio", "bitacora", "balance", "preparar"]);
+    expect(SECCIONES.map((s) => s.clave)).toEqual(["inicio", "bitacora", "balance", "preparar", "pilotos"]);
+  });
+
+  it("no pasan de cinco, lo que entra en la píldora del teléfono", () => {
+    // Una sexta vuelve a necesitar la hoja "Más", que se sacó en la 2.18.0.
+    expect(SECCIONES.length).toBeLessThanOrEqual(5);
   });
 
   it("no repiten una pantalla en dos lugares", () => {
@@ -84,6 +89,7 @@ describe("las secciones", () => {
       "/dashboard/history",
       "/dashboard/balance",
       "/dashboard/planificador",
+      "/dashboard/pilotos",
     ]);
   });
 });
@@ -113,6 +119,21 @@ describe("seccionDe", () => {
 
   it("toma como propia una pantalla que cuelga de una pestaña", () => {
     expect(seccionDe("/dashboard/airports/SADF")?.clave).toBe("preparar");
+  });
+
+  it("distingue Buscar de Solicitudes aunque una cuelgue de la otra", () => {
+    // `/dashboard/pilotos/solicitudes` empieza con `/dashboard/pilotos/`: por prefijo
+    // las dos pestañas de Pilotos se iluminarían a la vez.
+    const pilotos = SECCIONES.find((s) => s.clave === "pilotos")!;
+    expect(seccionDe("/dashboard/pilotos/solicitudes")?.clave).toBe("pilotos");
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos/solicitudes")?.label).toBe("Solicitudes");
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos")?.label).toBe("Buscar");
+  });
+
+  it("en cada sección se ilumina a lo sumo una pestaña por pantalla", () => {
+    for (const s of SECCIONES) {
+      for (const p of s.pestanas) expect(pestanaActiva(s, p.href)?.href).toBe(p.href);
+    }
   });
 
   it("no confunde un prefijo de texto con un segmento", () => {

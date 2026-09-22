@@ -318,3 +318,52 @@ export interface Logbook {
   opening_imc_cop: number;
   opening_capota: number;
 }
+
+/**
+ * La red social. Espejo de `src/models/social.py` del backend.
+ *
+ * Ningún tipo de acá lleva `user_id`: hacia afuera un piloto se identifica por su @.
+ */
+export type Visibilidad = "publico" | "privado";
+
+/** Qué es el que mira respecto de un perfil. `anonimo` = sin sesión (el link de WhatsApp). */
+export type RelacionSocial = "anonimo" | "propio" | "siguiendo" | "pendiente" | "ninguna";
+
+export interface PerfilPublico {
+  handle: string;
+  nombre_visible: string;
+  licencia?: string | null;
+  bio?: string | null;
+  visibilidad: Visibilidad;
+  created_at?: string | null;
+}
+
+/** Las únicas horas que salen de la cuenta de un piloto hacia otros. */
+export interface HorasPublicas {
+  total: number;
+  pic: number;
+  travesia: number;
+  noche: number;
+  instrumentos: number;
+}
+
+export interface PilotoResumen {
+  handle: string;
+  nombre_visible: string;
+  licencia?: string | null;
+  visibilidad: Visibilidad;
+  relacion: RelacionSocial;
+}
+
+export interface PilotoPublico extends PilotoResumen {
+  bio?: string | null;
+  seguidores: number;
+  siguiendo: number;
+  /** `null` si el que mira no puede verlas, que no es lo mismo que cero horas. */
+  horas: HorasPublicas | null;
+}
+
+export interface ResumenSocial {
+  handle: string | null;
+  solicitudes_pendientes: number;
+}

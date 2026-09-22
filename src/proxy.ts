@@ -180,5 +180,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*"],
+  /*
+    `/u/:path*` es el perfil público. No se protege —se abre sin cuenta—, pero sí se
+    renueva la sesión de quien la tenga: sin eso, con el token vencido, el perfil lo
+    vería como anónimo y el botón le diría "Creá tu cuenta" a un piloto logueado.
+  */
+  matcher: ["/", "/dashboard/:path*", "/u/:path*"],
 };

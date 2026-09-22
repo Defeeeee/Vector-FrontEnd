@@ -24,6 +24,10 @@ const RECURSOS: Array<[clave: string, ruta: string]> = [
   ["documentos", "/documents"],
   ["paquetes", "/flight-packs"],
   ["transacciones", "/transactions"],
+  // La red social: el @ con lo que publicaste, a quién seguís y quién te sigue.
+  ["perfil_publico", "/perfil-publico"],
+  ["siguiendo", "/social/siguiendo"],
+  ["seguidores", "/social/seguidores"],
 ];
 
 export async function GET() {

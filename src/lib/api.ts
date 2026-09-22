@@ -36,9 +36,21 @@ export const TIMEOUT_IMAGEN_MS = 25000;
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {},
-  { timeoutMs = TIMEOUT_POR_DEFECTO_MS }: { timeoutMs?: number } = {}
+  {
+    timeoutMs = TIMEOUT_POR_DEFECTO_MS,
+    anonimo = false,
+  }: {
+    timeoutMs?: number;
+    /**
+     * Pedir como alguien sin sesión, aunque la cookie esté. Lo usa la vista previa
+     * del perfil público (`/u/[handle]/opengraph-image`): esa imagen la ve cualquiera
+     * que reciba el link, así que tiene que mostrar lo que ve un anónimo y nunca lo
+     * que ve un seguidor que justo la abrió.
+     */
+    anonimo?: boolean;
+  } = {}
 ) {
-  const token = await getSessionToken();
+  const token = anonimo ? undefined : await getSessionToken();
 
   const headers = {
     "Content-Type": "application/json",

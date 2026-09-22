@@ -1,13 +1,14 @@
 import { Compass, Plus } from "lucide-react";
 import Link from "next/link";
-import DashboardNav from "@/components/dashboard/DashboardNav";
+import DashboardNav, { type AlertasDeSeccion } from "@/components/dashboard/DashboardNav";
 import SeccionTabs from "@/components/dashboard/SeccionTabs";
 import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
-import { AuditSummary, Profile } from "@/types";
+import { AuditSummary, Profile, ResumenSocial } from "@/types";
+import { AUDITORIA_HREF, SOLICITUDES_HREF } from "@/lib/secciones";
 import ChatWidget from "@/components/dashboard/ChatWidget";
 import SinConexionBanner from "@/components/dashboard/SinConexionBanner";
 import VistoPorUltimaVez from "@/components/dashboard/VistoPorUltimaVez";
@@ -63,8 +64,38 @@ async function getAuditCount(): Promise<number> {
   }
 }
 
+/**
+ * Si el piloto tiene @ y cuántas solicitudes para seguirlo esperan respuesta.
+ *
+ * Mismo criterio que `getAuditCount`: un punto rojo no vale tirar abajo el dashboard,
+ * así que cualquier falla —incluido un backend sin la migración 018— cuenta como
+ * "nada pendiente".
+ */
+async function getResumenSocial(): Promise<ResumenSocial> {
+  try {
+    const res = await apiFetch("/social/resumen");
+    if (!res.ok) return { handle: null, solicitudes_pendientes: 0 };
+    return (await res.json()) as ResumenSocial;
+  } catch {
+    return { handle: null, solicitudes_pendientes: 0 };
+  }
+}
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [{ profile, disponible }, auditCount] = await Promise.all([getProfile(), getAuditCount()]);
+  const [{ profile, disponible }, auditCount, social] = await Promise.all([
+    getProfile(),
+    getAuditCount(),
+    getResumenSocial(),
+  ]);
+  const solicitudes = social.solicitudes_pendientes;
+  const alertas: AlertasDeSeccion = {
+    bitacora: { cantidad: auditCount, texto: `${auditCount} en auditoría` },
+    pilotos: {
+      cantidad: solicitudes,
+      texto: `${solicitudes} ${solicitudes === 1 ? "solicitud" : "solicitudes"}`,
+    },
+  };
+  const contadores = { [AUDITORIA_HREF]: auditCount, [SOLICITUDES_HREF]: solicitudes };
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
@@ -85,7 +116,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </Link>
 
         <div className="flex-1 flex flex-col justify-center">
-          <DashboardNav variant="rail" auditCount={auditCount} />
+          <DashboardNav variant="rail" alertas={alertas} />
         </div>
 
         <div className="flex flex-col items-center gap-1 mt-auto">
@@ -164,7 +195,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {/* Las pestañas de la sección van antes que los carteles: son
                 navegación y no datos, y así no cambian de lugar cuando aparece
                 un cartel. */}
-            <SeccionTabs auditCount={auditCount} />
+            <SeccionTabs contadores={contadores} />
             {/* Arriba de todo lo demás: si la consulta base falló, el piloto
                 tiene que enterarse antes de leer un solo número de la pantalla. */}
             {!disponible && <SinConexionBanner />}
@@ -185,7 +216,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         className="lg:hidden fixed left-4 right-[9.5rem] z-50 pointer-events-auto"
         style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
       >
-        <DashboardNav variant="mobile" auditCount={auditCount} />
+        <DashboardNav variant="mobile" alertas={alertas} />
       </div>
 
       {/* Onboarding Logic */}

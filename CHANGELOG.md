@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.19.0 — Tu @, y la red de pilotos
+
+_22 de septiembre de 2026_
+
+- **Un perfil con tus horas, para mandar por WhatsApp** — Elegí tu @ en el Hangar y tenés un perfil en /u/tu.nombre con tus horas totales, PIC, de travesía, de noche y de instrumentos. Se abre sin tener cuenta, y la vista previa del link ya muestra tus horas. Nunca se publican vuelos, rutas, fechas ni aeronaves.
+- **Buscá y seguí a otros pilotos** — La barra suma Pilotos: buscás por @ o por nombre y seguís. A un perfil público lo seguís directo; a uno privado le pedís permiso, y si el tuyo es privado, vos decidís a quién aceptar.
+
 ## v2.18.0 — Menos íconos, y un inicio que va al grano
 
 _22 de septiembre de 2026_

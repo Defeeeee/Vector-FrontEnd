@@ -19,10 +19,14 @@ export const metadata: Metadata = {
  *   - Cualquier afirmación sobre jurisdicción.
  *
  * Ver T3.10 en docs/brief/06-plan-post-flightdeck.md.
+ *
+ * La sección "Perfil público y red de pilotos" (2026-09-22) describe lo que hace el
+ * código: qué campos publica `perfiles_publicos` y qué devuelve
+ * `GET /publico/pilotos/{handle}` del backend. Si eso cambia, esto cambia.
  */
 export default function PrivacidadPage() {
   return (
-    <LegalShell title="Política de Privacidad" updated="4 de agosto de 2026">
+    <LegalShell title="Política de Privacidad" updated="22 de septiembre de 2026">
       <section>
         <h2>Qué es esto</h2>
         <p>
@@ -67,7 +71,37 @@ export default function PrivacidadPage() {
         <p>
           En una base de datos gestionada por <strong>Supabase</strong>. Cada usuario sólo
           puede leer y escribir sus propios registros: la base aplica reglas de acceso por
-          fila, no depende de que la aplicación se acuerde de filtrar.
+          fila, no depende de que la aplicación se acuerde de filtrar. La única excepción es
+          el perfil público, si decidís crearlo (ver abajo).
+        </p>
+      </section>
+
+      <section>
+        <h2>Perfil público y red de pilotos</h2>
+        <p>
+          Es opcional. Sólo existe si elegís un @ en el Hangar, y crearlo es aceptar que se
+          publique lo siguiente:
+        </p>
+        <ul>
+          <li>
+            <strong>Siempre visibles para cualquiera</strong>, con o sin cuenta en Vector: tu
+            @, el nombre que elijas mostrar, tu licencia y tu bio, y cuántos seguidores tenés
+            y a cuántos pilotos seguís.
+          </li>
+          <li>
+            <strong>Tus horas agregadas</strong> —totales, PIC, de travesía, de noche y de
+            instrumentos—: visibles para cualquiera si tu perfil es público, o sólo para los
+            pilotos que aceptes si es privado.
+          </li>
+        </ul>
+        <p>
+          <strong>Nunca se publican</strong> tus vuelos, rutas, fechas, horarios, aeronaves,
+          documentos ni ningún otro dato de tu cuenta. Las horas son las que cargaste vos; no
+          son una certificación de ANAC.
+        </p>
+        <p>
+          Podés pasar de público a privado, editar lo publicado o borrar tu perfil cuando
+          quieras desde el Hangar. Borrarlo elimina también tus seguidores y a quién seguís.
         </p>
       </section>
 

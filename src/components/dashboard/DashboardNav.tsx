@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, History, LayoutDashboard, Wallet, type LucideIcon } from "lucide-react";
+import { Compass, History, LayoutDashboard, Users, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -18,22 +18,23 @@ const ICONOS: Record<ClaveSeccion, LucideIcon> = {
   bitacora: History,
   balance: Wallet,
   preparar: Compass,
+  pilotos: Users,
 };
 
 /**
- * La auditoría ya no tiene ícono propio: es una pestaña de la Bitácora. El punto rojo
- * de hallazgos abiertos se muda con ella, para que siga viéndose desde cualquier
- * pantalla y no sólo desde adentro de la sección.
+ * Lo que pide atención en cada sección: un punto rojo en el ícono y, en el rail, el
+ * texto del tooltip. Los hallazgos de auditoría van en la Bitácora, que es donde vive
+ * esa pestaña, y las solicitudes para seguirte en Pilotos. Cero o ausente no dibuja
+ * nada.
  */
-const SECCION_CON_AUDITORIA: ClaveSeccion = "bitacora";
+export type AlertasDeSeccion = Partial<Record<ClaveSeccion, { cantidad: number; texto: string }>>;
 
 export default function DashboardNav({
   variant,
-  auditCount = 0,
+  alertas = {},
 }: {
   variant: "rail" | "mobile";
-  /** Unsuppressed findings. Drives the badge; 0 hides it. */
-  auditCount?: number;
+  alertas?: AlertasDeSeccion;
 }) {
   const pathname = usePathname();
   const activa = seccionDe(pathname)?.clave;
@@ -44,7 +45,8 @@ export default function DashboardNav({
         {SECCIONES.map((seccion) => {
           const active = seccion.clave === activa;
           const Icon = ICONOS[seccion.clave];
-          const flagged = seccion.clave === SECCION_CON_AUDITORIA && auditCount > 0;
+          const alerta = alertas[seccion.clave];
+          const flagged = !!alerta && alerta.cantidad > 0;
 
           return (
             <Link
@@ -74,11 +76,7 @@ export default function DashboardNav({
               {/* The rail is icon-only, so the tooltip carries the label. */}
               <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg bg-zinc-900 text-white text-xs font-semibold px-3 py-1.5 opacity-0 scale-95 origin-left group-hover:opacity-100 group-hover:scale-100 transition-all z-50 shadow-xl border border-white/10">
                 {seccion.label}
-                {flagged && (
-                  <span className="ml-1.5 text-red-400">
-                    {auditCount} en auditoría
-                  </span>
-                )}
+                {flagged && <span className="ml-1.5 text-red-400">{alerta.texto}</span>}
               </span>
             </Link>
           );
@@ -93,7 +91,7 @@ export default function DashboardNav({
     names live in each icon's `aria-label`, in the rail's tooltips and in the tabs of
     each section.
 
-    With four sections everything fits in the pill, so the "Más" sheet that used to
+    With five sections everything fits in the pill, so the "Más" sheet that used to
     hold the overflow is gone — and with it the extra tap to reach half the app.
   */
   return (
@@ -107,7 +105,7 @@ export default function DashboardNav({
             label={seccion.label}
             icon={<Icon className="w-[22px] h-[22px]" strokeWidth={2} />}
             active={seccion.clave === activa}
-            flagged={seccion.clave === SECCION_CON_AUDITORIA && auditCount > 0}
+            flagged={(alertas[seccion.clave]?.cantidad ?? 0) > 0}
           />
         );
       })}
@@ -156,12 +154,12 @@ function MobileNavItem({
 }
 
 /**
- * Attention marker for open audit findings.
+ * Attention marker: open audit findings, pending follow requests.
  *
  * A dot rather than a count bubble: the number was big enough to break the
  * pill's silhouette and had nowhere to sit that wasn't overlapping the rounded
  * edge. The exact figure still shows where there's room for it — the tooltip on
- * the rail, the Auditoría tab and the audit page itself.
+ * the rail and the section's tab.
  *
  * Anchored to the icon, not to the slot: the slot is a flex column whose width
  * depends on how many destinations are visible, so positioning against it left

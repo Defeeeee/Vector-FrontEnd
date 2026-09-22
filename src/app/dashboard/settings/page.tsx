@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile, FlightPack, PilotDocument, Logbook, Flight } from "@/types";
-import { Plane, User, Package, CalendarClock, BookOpen, Download, Gauge } from "lucide-react";
+import { Aircraft, Profile, FlightPack, PilotDocument, Logbook, Flight, PerfilPublico } from "@/types";
+import { Plane, User, Package, CalendarClock, BookOpen, Download, Gauge, AtSign } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
 import FlightPackCard from "@/components/dashboard/FlightPackCard";
@@ -14,11 +14,12 @@ import PageHeader from "@/components/dashboard/PageHeader";
 
 import { redirect } from "next/navigation";
 import CustomStatsManager from "@/components/dashboard/CustomStatsManager";
+import PerfilPublicoForm from "@/components/social/PerfilPublicoForm";
 import { listCustomStats } from "@/actions/custom-stat";
 import { recencyWindowDays } from "@/lib/recency";
 
 async function getSettingsData() {
-  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes, flightsRes] =
+  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes, flightsRes, perfilPublicoRes] =
     await Promise.all([
       apiFetch("/profiles"),
       apiFetch("/aircraft"),
@@ -30,6 +31,9 @@ async function getSettingsData() {
       // ofrecer la lista de la que se elige el vuelo ancla. Va en el mismo
       // `Promise.all`, así que no agrega latencia — sí agrega una respuesta grande.
       apiFetch("/flights"),
+      // El @ de la red. Sin cache: se acaba de crear o editar desde esta misma
+      // pantalla, y el formulario no puede volver con el valor de hace 20 s.
+      apiFetch("/perfil-publico", { cache: "no-store" }),
     ]);
 
   if (profilesRes.status === 401 || aircraftRes.status === 401 || packsRes.status === 401) {
@@ -43,13 +47,16 @@ async function getSettingsData() {
   const documents: PilotDocument[] = documentsRes.ok ? await documentsRes.json() : [];
   const logbooks: Logbook[] = logbooksRes.ok ? await logbooksRes.json() : [];
   const flights: Flight[] = flightsRes.ok ? await flightsRes.json() : [];
+  const perfilPublico: PerfilPublico | null = perfilPublicoRes.ok
+    ? ((await perfilPublicoRes.json()) as { perfil: PerfilPublico | null }).perfil
+    : null;
 
-  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, flights };
+  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, flights, perfilPublico };
 }
 
 export default async function SettingsPage() {
   const customStats = await listCustomStats();
-  const { profile, aircraft, packs, documents, logbooks, flights } = await getSettingsData();
+  const { profile, aircraft, packs, documents, logbooks, flights, perfilPublico } = await getSettingsData();
   const cma = documents.find(doc => doc.kind === "cma");
 
   return (
@@ -80,6 +87,23 @@ export default async function SettingsPage() {
         <div className="bg-white dark:bg-white/[0.02] p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 dark:border-white/10 shadow-cal dark:shadow-none hover:shadow-lg dark:hover:bg-white/[0.04] transition-all">
           <ProfileForm profile={profile} cmaExpiry={cma?.expiry_date} />
         </div>
+      </section>
+
+      {/* El @ y lo que se publica. Pegado al perfil porque es su versión pública, y
+          con ancla: "Creá tu @" en la red y en los perfiles de otros traen acá.
+          `scroll-mt` para que el encabezado fijo del teléfono no lo tape. */}
+      <section id="perfil-publico" className="space-y-4 md:space-y-6 scroll-mt-24">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+            <AtSign className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
+          </div>
+          <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Tu perfil de piloto</h3>
+        </div>
+        <PerfilPublicoForm
+          perfil={perfilPublico}
+          nombreSugerido={[profile?.first_name, profile?.last_name].filter(Boolean).join(" ")}
+          licenciaSugerida={profile?.license_type && profile.license_type !== "-" ? profile.license_type : null}
+        />
       </section>
 
       {/* Documents / expiry tracker */}

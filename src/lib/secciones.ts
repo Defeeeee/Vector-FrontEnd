@@ -4,8 +4,10 @@
  * La barra llegó a tener **nueve destinos**, porque cada pantalla nueva se agregaba al
  * final para no mover las de adelante. En el teléfono cinco entraban y cuatro quedaban
  * en la hoja "Más", y un alumno nuevo tenía que aprenderse nueve íconos para cargar un
- * vuelo. Ahora son cuatro secciones, y las pantallas que antes eran destinos sueltos
- * pasan a ser pestañas de la sección a la que pertenecen.
+ * vuelo. En la 2.18.0 pasaron a cuatro secciones, y las pantallas que antes eran
+ * destinos sueltos, a pestañas de la sección a la que pertenecen. La 2.19.0 sumó la
+ * quinta, Pilotos, con la red social. Cinco es el techo: es lo que entra en la píldora
+ * del teléfono sin volver a la hoja "Más".
  *
  * **Las URLs no cambian.** Hay links a estas pantallas en los mails del briefing, en las
  * novedades, en el cache del service worker y en el smoke. Agrupar es una decisión de
@@ -20,7 +22,7 @@
  * testearlo en `environment: "node"`, igual que `changelog.ts`.
  */
 
-export type ClaveSeccion = "inicio" | "bitacora" | "balance" | "preparar";
+export type ClaveSeccion = "inicio" | "bitacora" | "balance" | "preparar" | "pilotos";
 
 export interface Pestana {
   href: string;
@@ -39,6 +41,9 @@ export interface Seccion {
 
 /** Lleva el contador de hallazgos abiertos, en la barra y en su pestaña. */
 export const AUDITORIA_HREF = "/dashboard/audit";
+
+/** Lleva el contador de solicitudes para seguirte, en la barra y en su pestaña. */
+export const SOLICITUDES_HREF = "/dashboard/pilotos/solicitudes";
 
 export const SECCIONES: Seccion[] = [
   {
@@ -72,6 +77,17 @@ export const SECCIONES: Seccion[] = [
       { href: "/dashboard/tools", label: "Herramientas" },
     ],
   },
+  // La red social. Al final por lo mismo que todo lo que se agregó a esta barra: no
+  // mueve de lugar los íconos que la gente ya tiene en la mano. El perfil de cada uno
+  // vive fuera del dashboard, en `/u/[handle]`, porque se abre sin cuenta.
+  {
+    clave: "pilotos",
+    label: "Pilotos",
+    pestanas: [
+      { href: "/dashboard/pilotos", label: "Buscar" },
+      { href: SOLICITUDES_HREF, label: "Solicitudes" },
+    ],
+  },
 ];
 
 /** Adónde lleva el ícono de la sección: su primera pestaña. */
@@ -88,6 +104,21 @@ export function hrefDeSeccion(seccion: Seccion): string {
 export function esPestanaActiva(pestana: Pestana, pathname: string): boolean {
   if (pathname === pestana.href) return true;
   return pestana.href !== "/dashboard" && pathname.startsWith(`${pestana.href}/`);
+}
+
+/**
+ * La pestaña que se ilumina: de las que coinciden, la más específica.
+ *
+ * Con sólo `esPestanaActiva`, en `/dashboard/pilotos/solicitudes` se prendían las dos
+ * pestañas de Pilotos, porque esa ruta también cuelga de `/dashboard/pilotos`. Gana la
+ * de `href` más largo, que es la que describe la pantalla de verdad.
+ */
+export function pestanaActiva(seccion: Seccion, pathname: string): Pestana | null {
+  return (
+    seccion.pestanas
+      .filter((p) => esPestanaActiva(p, pathname))
+      .sort((a, b) => b.href.length - a.href.length)[0] ?? null
+  );
 }
 
 /**

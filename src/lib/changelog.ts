@@ -73,6 +73,29 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.19.0",
+    fecha: "2026-09-22",
+    titulo: "Tu @, y la red de pilotos",
+    novedades: [
+      {
+        icono: "compartir",
+        titulo: "Un perfil con tus horas, para mandar por WhatsApp",
+        texto:
+          "Elegí tu @ en el Hangar y tenés un perfil en /u/tu.nombre con tus horas totales, PIC, de travesía, de noche y de instrumentos. Se abre sin tener cuenta, y la vista previa del link ya muestra tus horas. Nunca se publican vuelos, rutas, fechas ni aeronaves.",
+        href: "/dashboard/settings",
+        cta: "Elegir mi @",
+      },
+      {
+        icono: "lupa",
+        titulo: "Buscá y seguí a otros pilotos",
+        texto:
+          "La barra suma Pilotos: buscás por @ o por nombre y seguís. A un perfil público lo seguís directo; a uno privado le pedís permiso, y si el tuyo es privado, vos decidís a quién aceptar.",
+        href: "/dashboard/pilotos",
+        cta: "Ir a Pilotos",
+      },
+    ],
+  },
+  {
     version: "2.18.0",
     fecha: "2026-09-22",
     titulo: "Menos íconos, y un inicio que va al grano",
