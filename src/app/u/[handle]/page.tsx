@@ -79,8 +79,8 @@ export default async function PerfilPiloto({ params }: Params) {
     conSesion ? apiFetch("/social/resumen", { cache: "no-store" }) : Promise.resolve(null),
   ]);
 
-  if (res.status === 404) notFound();
-  if (!res.ok) throw new Error(`No se pudo cargar el perfil (${res.status})`);
+  
+  if (!res.ok) notFound();
 
   const piloto = (await res.json()) as PilotoPublico;
   const publicacionesPage = pubRes.ok ? ((await pubRes.json()) as PaginaPublicaciones) : { publicaciones: [] };
