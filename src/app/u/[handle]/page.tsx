@@ -67,6 +67,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+import { enriquecerPublicacionesConMapa } from "@/lib/enriquecer-publicaciones";
+
 export default async function PerfilPiloto({ params }: Params) {
   const handle = handleDe((await params).handle);
   // Un @ con formato imposible no existe: no hace falta preguntarle al backend.
@@ -87,6 +89,8 @@ export default async function PerfilPiloto({ params }: Params) {
   const resumen: ResumenSocial | null = resumenRes?.ok ? await resumenRes.json() : null;
   const esPropio = piloto.relacion === "propio";
   const anonimo = piloto.relacion === "anonimo";
+  
+  const publicaciones = enriquecerPublicacionesConMapa(publicacionesPage.publicaciones || []);
 
   return (
     <div className="min-h-screen w-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white">
@@ -189,7 +193,7 @@ export default async function PerfilPiloto({ params }: Params) {
           <section className="mt-8">
             <h2 className="text-xl font-display font-bold text-zinc-900 dark:text-white mb-4">Publicaciones</h2>
             <div className="space-y-4">
-              {publicacionesPage.publicaciones.map(pub => (
+              {publicaciones.map(pub => (
                 <PublicacionCard key={pub.id} publicacion={pub} />
               ))}
             </div>

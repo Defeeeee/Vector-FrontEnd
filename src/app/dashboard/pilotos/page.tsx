@@ -4,10 +4,11 @@ import { PaginaPublicaciones, ResumenSocial, PilotoResumen } from "@/types";
 import ComposerPublicacion from "@/components/social/ComposerPublicacion";
 import PublicacionCard from "@/components/social/PublicacionCard";
 import TuRedCard from "@/components/social/TuRedCard";
+import { enriquecerPublicacionesConMapa } from "@/lib/enriquecer-publicaciones";
 
-export const metadata = { title: "La Red | Vector" };
+export const metadata = { title: "Pilotos | Vector" };
 
-export default async function RedPage() {
+export default async function PaginaRed() {
   const resumenRes = await apiFetch("/social/resumen", { cache: "no-store" });
   const resumen: ResumenSocial = resumenRes.ok
     ? await resumenRes.json()
@@ -19,8 +20,10 @@ export default async function RedPage() {
     tieneHandle ? apiFetch(`/publico/pilotos/${resumen.handle}`, { cache: "no-store" }, { anonimo: true }) : Promise.resolve(null),
   ]);
 
-  const feedData: PaginaPublicaciones = feedRes.ok ? await feedRes.json() : { publicaciones: [] };
-  const perfilInfo = perfilRes?.ok ? await perfilRes.json() : null;
+  const feedBody = feedRes.ok ? await feedRes.json() : null;
+  const perfilBody = perfilRes?.ok ? await perfilRes.json() : null;
+
+  const publicaciones = feedBody ? enriquecerPublicacionesConMapa(feedBody.publicaciones || []) : [];
 
   return (
     <div className="space-y-6 w-full max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -29,15 +32,15 @@ export default async function RedPage() {
       {tieneHandle && (
         <ComposerPublicacion
           avatarUrl={resumen.avatar_url}
-          nombre={perfilInfo?.nombre_visible || "Piloto"}
+          nombre={perfilBody?.nombre_visible || "Piloto"}
         />
       )}
 
       {!tieneHandle && <TuRedCard tieneHandle={false} nuevaActividad={0} />}
 
       <div className="mt-8">
-        {feedData.publicaciones.length > 0 ? (
-          feedData.publicaciones.map(pub => (
+        {publicaciones.length > 0 ? (
+          publicaciones.map(pub => (
             <PublicacionCard key={pub.id} publicacion={pub} />
           ))
         ) : (

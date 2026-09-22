@@ -389,6 +389,7 @@ export interface VueloChip {
   duracion?: number | null;
   aeronave?: string | null;
   fecha?: string | null;
+  puntos_mapa?: { codigo: string; label: string; lat: number; lon: number; }[];
 }
 
 export interface Publicacion {

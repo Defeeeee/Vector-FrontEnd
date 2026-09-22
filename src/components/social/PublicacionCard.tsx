@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Publicacion, Comentario } from "@/types";
-import { Flame, MessageCircle, Trash2, X } from "lucide-react";
+import { Flame, MessageCircle, Trash2, X, Plane } from "lucide-react";
 import AvatarPiloto from "./AvatarPiloto";
 import { useAvisos } from "@/components/dashboard/Avisos";
 import { toggleAplauso as toggleAplausoServer, borrarPublicacion } from "@/actions/social";
 import Link from "next/link";
+import PlanMapa from "@/components/dashboard/PlanMapa";
 
 export default function PublicacionCard({ publicacion, onDeleted }: { publicacion: Publicacion; onDeleted?: () => void }) {
   const [aplaudida, setAplaudida] = useState(publicacion.aplaudida);
@@ -77,19 +78,46 @@ export default function PublicacionCard({ publicacion, onDeleted }: { publicacio
       )}
 
       {publicacion.vuelo && (
-        <div className="mb-4 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl p-3 inline-flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-          {publicacion.vuelo.ruta && (
-            <div className="flex items-center gap-1.5"><span className="font-medium">Ruta:</span> {publicacion.vuelo.ruta}</div>
+        <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.02]">
+          {publicacion.vuelo.puntos_mapa && publicacion.vuelo.puntos_mapa.length > 0 && (
+            <div className="w-full h-32 md:h-48 bg-zinc-100 dark:bg-white/5 border-b border-zinc-200 dark:border-white/10 relative">
+              <PlanMapa puntos={publicacion.vuelo.puntos_mapa} />
+            </div>
           )}
-          {publicacion.vuelo.duracion !== undefined && publicacion.vuelo.duracion !== null && (
-            <div className="flex items-center gap-1.5"><span className="font-medium">Tiempo:</span> {(publicacion.vuelo.duracion).toFixed(1)}h</div>
-          )}
-          {publicacion.vuelo.aeronave && (
-            <div className="flex items-center gap-1.5"><span className="font-medium">Equipo:</span> {publicacion.vuelo.aeronave}</div>
-          )}
-          {publicacion.vuelo.fecha && (
-            <div className="flex items-center gap-1.5"><span className="font-medium">Fecha:</span> {publicacion.vuelo.fecha}</div>
-          )}
+          
+          <div className="p-4 md:p-5">
+            <div className="flex items-center gap-2 mb-3 text-aviation-blue font-bold text-sm uppercase tracking-wider">
+              <Plane className="w-4 h-4" />
+              <span>Vuelo Registrado</span>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {publicacion.vuelo.ruta && (
+                <div>
+                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Ruta</div>
+                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{publicacion.vuelo.ruta}</div>
+                </div>
+              )}
+              {publicacion.vuelo.duracion !== undefined && publicacion.vuelo.duracion !== null && (
+                <div>
+                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Tiempo</div>
+                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{(publicacion.vuelo.duracion).toFixed(1)}h</div>
+                </div>
+              )}
+              {publicacion.vuelo.aeronave && (
+                <div>
+                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Aeronave</div>
+                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{publicacion.vuelo.aeronave}</div>
+                </div>
+              )}
+              {publicacion.vuelo.fecha && (
+                <div>
+                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Fecha</div>
+                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{publicacion.vuelo.fecha}</div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
