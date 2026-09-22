@@ -1,0 +1,32 @@
+import { NextRequest } from "next/server";
+import { apiFetch } from "@/lib/api";
+
+export async function POST(req: NextRequest) {
+  const formData = await req.formData();
+  const res = await apiFetch("/perfil-publico/avatar", {
+    method: "POST",
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    return new Response(errorText, { status: res.status });
+  }
+  
+  const data = await res.json();
+  return Response.json(data);
+}
+
+export async function DELETE() {
+  const res = await apiFetch("/perfil-publico/avatar", {
+    method: "DELETE",
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    return new Response(errorText, { status: res.status });
+  }
+  
+  const data = await res.json();
+  return Response.json(data);
+}

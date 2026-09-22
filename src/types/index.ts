@@ -353,6 +353,7 @@ export interface PilotoResumen {
   licencia?: string | null;
   visibilidad: Visibilidad;
   relacion: RelacionSocial;
+  avatar_url?: string | null;
 }
 
 export interface PilotoPublico extends PilotoResumen {
@@ -365,5 +366,73 @@ export interface PilotoPublico extends PilotoResumen {
 
 export interface ResumenSocial {
   handle: string | null;
+  avatar_url?: string | null;
   solicitudes_pendientes: number;
+  actividad_nueva: number;
+}
+
+export interface AutorPublicacion {
+  handle: string;
+  nombre_visible: string;
+  licencia?: string | null;
+  avatar_url?: string | null;
+}
+
+export interface FotoPublicacion {
+  url: string;
+  ancho: number;
+  alto: number;
+}
+
+export interface VueloChip {
+  ruta?: string | null;
+  duracion?: number | null;
+  aeronave?: string | null;
+  fecha?: string | null;
+}
+
+export interface Publicacion {
+  id: string;
+  autor: AutorPublicacion;
+  texto?: string | null;
+  vuelo?: VueloChip | null;
+  fotos: FotoPublicacion[];
+  aplausos: number;
+  aplaudida: boolean;
+  comentarios: number;
+  es_mia: boolean;
+  vuelo_id?: string | null;
+  created_at: string;
+}
+
+export interface PaginaPublicaciones {
+  publicaciones: Publicacion[];
+  siguiente?: string | null;
+}
+
+export interface Comentario {
+  id: string;
+  autor: AutorPublicacion;
+  texto: string;
+  created_at: string;
+  puede_borrar: boolean;
+}
+
+export interface EstadoAplauso {
+  aplausos: number;
+  aplaudida: boolean;
+}
+
+export type TipoEventoActividad = "seguidor" | "solicitud" | "aplauso" | "comentario";
+
+export interface EventoActividad {
+  tipo: TipoEventoActividad;
+  piloto: AutorPublicacion;
+  created_at: string;
+  nuevo: boolean;
+  texto?: string | null;
+}
+
+export interface Actividad {
+  eventos: EventoActividad[];
 }

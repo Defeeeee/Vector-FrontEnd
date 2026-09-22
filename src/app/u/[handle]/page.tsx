@@ -9,7 +9,8 @@ import { estadoHitos } from "@/lib/hitos";
 import AvatarPiloto from "@/components/social/AvatarPiloto";
 import BotonSeguir from "@/components/social/BotonSeguir";
 import CompartirPerfil from "@/components/social/CompartirPerfil";
-import type { HorasPublicas, PilotoPublico, ResumenSocial } from "@/types";
+import PublicacionCard from "@/components/social/PublicacionCard";
+import type { HorasPublicas, PilotoPublico, ResumenSocial, PaginaPublicaciones } from "@/types";
 
 /**
  * El perfil público de un piloto: `/u/<handle>`.
@@ -72,8 +73,9 @@ export default async function PerfilPiloto({ params }: Params) {
   if (problemaDelHandle(handle)) notFound();
   const conSesion = !!(await getSessionToken());
 
-  const [res, resumenRes] = await Promise.all([
+  const [res, pubRes, resumenRes] = await Promise.all([
     apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}`, { cache: "no-store" }),
+    apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}/publicaciones`, { cache: "no-store" }),
     conSesion ? apiFetch("/social/resumen", { cache: "no-store" }) : Promise.resolve(null),
   ]);
 
@@ -81,6 +83,7 @@ export default async function PerfilPiloto({ params }: Params) {
   if (!res.ok) throw new Error(`No se pudo cargar el perfil (${res.status})`);
 
   const piloto = (await res.json()) as PilotoPublico;
+  const publicacionesPage = pubRes.ok ? ((await pubRes.json()) as PaginaPublicaciones) : { publicaciones: [] };
   const resumen: ResumenSocial | null = resumenRes?.ok ? await resumenRes.json() : null;
   const esPropio = piloto.relacion === "propio";
   const anonimo = piloto.relacion === "anonimo";
@@ -181,9 +184,21 @@ export default async function PerfilPiloto({ params }: Params) {
           </section>
         )}
 
+        {/* Publicaciones ----------------------------------------------------------- */}
+        {piloto.horas && publicacionesPage.publicaciones.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-xl font-display font-bold text-zinc-900 dark:text-white mb-4">Publicaciones</h2>
+            <div className="space-y-4">
+              {publicacionesPage.publicaciones.map(pub => (
+                <PublicacionCard key={pub.id} publicacion={pub} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Para quien llegó por el link ------------------------------------------ */}
         {anonimo && (
-          <section className="rounded-[2rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-900 dark:border-white/10 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-4">
+          <section className="rounded-[2rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-900 dark:border-white/10 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-4 mt-8">
             <div className="flex-1">
               <p className="font-display font-bold text-xl text-white">¿Sos piloto?</p>
               <p className="text-sm text-white/60 mt-1">

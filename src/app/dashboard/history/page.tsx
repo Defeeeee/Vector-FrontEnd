@@ -6,6 +6,7 @@ import Link from "next/link";
 import ExportFlightsButton from "@/components/dashboard/ExportFlightsButton";
 import FlightListClient from "@/components/dashboard/FlightListClient";
 import PageHeader from "@/components/dashboard/PageHeader";
+import BannerCompartirVuelo from "@/components/social/BannerCompartirVuelo";
 
 import { redirect } from "next/navigation";
 
@@ -33,7 +34,13 @@ async function getHistoryData() {
 }
 
 export default async function HistoryPage() {
-  const { flights, aircraft, profile, transactions } = await getHistoryData();
+  const [{ flights, aircraft, profile, transactions }, resumenRes] = await Promise.all([
+    getHistoryData(),
+    apiFetch("/social/resumen", { cache: "no-store" })
+  ]);
+  const resumen = resumenRes.ok ? await resumenRes.json() : null;
+  const tieneHandle = !!resumen?.handle;
+
   const costos = costosPorVuelo(transactions);
 
   const sortedFlights = [...flights].sort(
@@ -65,6 +72,7 @@ export default async function HistoryPage() {
         </div>
       </PageHeader>
 
+      {tieneHandle && <BannerCompartirVuelo />}
       <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} />
     </div>
   );

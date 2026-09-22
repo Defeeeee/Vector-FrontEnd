@@ -52,9 +52,16 @@ export async function apiFetch(
 ) {
   const token = anonimo ? undefined : await getSessionToken();
 
-  const headers = {
-    "Content-Type": "application/json",
+  const baseHeaders: Record<string, string> = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  if (!(options.body instanceof FormData)) {
+    baseHeaders["Content-Type"] = "application/json";
+  }
+
+  const headers = {
+    ...baseHeaders,
     ...options.headers,
   };
 

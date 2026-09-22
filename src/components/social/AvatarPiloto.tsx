@@ -1,20 +1,40 @@
-import { iniciales } from "@/lib/social";
+"use client";
 
-/**
- * Las iniciales del piloto en un círculo. Las fotos son de una fase siguiente; hasta
- * entonces, las iniciales alcanzan para distinguir una fila de otra en una lista.
- */
-export default function AvatarPiloto({ nombre, tamano = "md" }: { nombre: string; tamano?: "md" | "lg" }) {
-  const clase =
-    tamano === "lg"
-      ? "w-20 h-20 md:w-24 md:h-24 text-2xl md:text-3xl"
-      : "w-11 h-11 text-sm";
+import { iniciales } from "@/lib/social";
+import { useState } from "react";
+
+export default function AvatarPiloto({
+  nombre,
+  avatarUrl,
+  tamano = "md",
+}: {
+  nombre: string;
+  avatarUrl?: string | null;
+  tamano?: "md" | "lg" | "sm";
+}) {
+  const [error, setError] = useState(false);
+
+  let clase = "w-11 h-11 text-sm";
+  if (tamano === "lg") clase = "w-20 h-20 md:w-24 md:h-24 text-2xl md:text-3xl";
+  if (tamano === "sm") clase = "w-8 h-8 text-xs";
+
+  const showInitials = !avatarUrl || error;
+
   return (
     <div
       aria-hidden="true"
-      className={`${clase} shrink-0 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-display font-bold`}
+      className={`${clase} shrink-0 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-display font-bold overflow-hidden`}
     >
-      {iniciales(nombre)}
+      {showInitials ? (
+        iniciales(nombre)
+      ) : (
+        <img
+          src={avatarUrl}
+          alt={nombre}
+          className="w-full h-full object-cover"
+          onError={() => setError(true)}
+        />
+      )}
     </div>
   );
 }

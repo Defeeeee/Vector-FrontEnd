@@ -42,8 +42,8 @@ export interface Seccion {
 /** Lleva el contador de hallazgos abiertos, en la barra y en su pestaña. */
 export const AUDITORIA_HREF = "/dashboard/audit";
 
-/** Lleva el contador de solicitudes para seguirte, en la barra y en su pestaña. */
-export const SOLICITUDES_HREF = "/dashboard/pilotos/solicitudes";
+/** Lleva el contador de solicitudes y actividad nueva, en la barra y en su pestaña. */
+export const ACTIVIDAD_HREF = "/dashboard/pilotos/actividad";
 
 export const SECCIONES: Seccion[] = [
   {
@@ -84,8 +84,9 @@ export const SECCIONES: Seccion[] = [
     clave: "pilotos",
     label: "Pilotos",
     pestanas: [
-      { href: "/dashboard/pilotos", label: "Buscar" },
-      { href: SOLICITUDES_HREF, label: "Solicitudes" },
+      { href: "/dashboard/pilotos", label: "Red" },
+      { href: "/dashboard/pilotos/buscar", label: "Buscar" },
+      { href: ACTIVIDAD_HREF, label: "Actividad" },
     ],
   },
 ];

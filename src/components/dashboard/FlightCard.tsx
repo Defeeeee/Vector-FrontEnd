@@ -2,9 +2,10 @@
 
 import { Flight, Aircraft } from "@/types";
 import { updateFlight, deleteFlight } from "@/actions/flight";
-import { ArrowRight, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor } from "lucide-react";
+import { ArrowRight, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor, Share2 } from "lucide-react";
 import { useState, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { calculateFlightDuration } from "@/lib/utils";
 import { splitRoute } from "@/lib/route";
 import { horasDeLaFila } from "@/lib/simulador";
@@ -207,19 +208,49 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
         {/* Actions */}
         <div className="hidden md:flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
+          <Link href={`/dashboard/pilotos/publicar?vuelo=${flight.id}`} onClick={(e) => e.stopPropagation()} className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-aviation-blue dark:hover:text-aviation-blue rounded-full transition-all"><Share2 className="w-3.5 h-3.5" /></Link>
           <button onClick={handleDelete} className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 rounded-full transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden md:hidden"
+          >
+            <div className="flex flex-col gap-2 pt-3 mt-3 border-t border-zinc-100 dark:border-white/5">
+              {aircraft && (
+                <div className="flex items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Equipo:</span>
+                  {aircraft.type} {aircraft.is_simulator ? "(Simulador)" : ""}
+                </div>
+              )}
+              {flight.purpose && (
+                <div className="flex items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Finalidad:</span>
+                  {flight.purpose}
+                </div>
+              )}
+              <div className="flex items-center gap-2 pb-1 mt-1">
+                <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1"><Edit2 className="w-3.5 h-3.5" /> Editar</button>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <Link href={`/dashboard/pilotos/publicar?vuelo=${flight.id}`} onClick={(e) => e.stopPropagation()} className="text-xs font-semibold text-aviation-blue flex items-center gap-1"><Share2 className="w-3.5 h-3.5" /> Compartir</Link>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <button onClick={handleDelete} className="text-xs font-semibold text-red-500 flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Eliminar</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
             <div className="px-4 md:px-6 pb-6 pt-1 space-y-5 bg-zinc-50/60 dark:bg-white/[0.02]">
-              <div className="flex items-center gap-2 md:hidden pb-1">
-                <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1"><Edit2 className="w-3 h-3" /> Editar</button>
-                <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                <button onClick={handleDelete} className="text-xs font-semibold text-red-500 flex items-center gap-1"><Trash2 className="w-3 h-3" /> Eliminar</button>
-              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
                 <DetailItem label="Takeoff" value={new Date(flight.takeoff).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })} />
                 <DetailItem label="Landing" value={new Date(flight.landing).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })} />

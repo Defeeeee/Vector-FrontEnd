@@ -363,7 +363,13 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
           .join(" · "),
       });
       if (onSuccess) onSuccess();
-      else if (redirectTo) router.replace(redirectTo);
+      else if (redirectTo) {
+        if (resultado.id) {
+          router.replace(`${redirectTo}${redirectTo.includes('?') ? '&' : '?'}nuevo=${resultado.id}`);
+        } else {
+          router.replace(redirectTo);
+        }
+      }
     } catch (e: any) {
       /*
         `logFlight` ya no redirige — devuelve `{error}` o `{success}`, como el

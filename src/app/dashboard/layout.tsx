@@ -8,7 +8,7 @@ import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
 import { AuditSummary, Profile, ResumenSocial } from "@/types";
-import { AUDITORIA_HREF, SOLICITUDES_HREF } from "@/lib/secciones";
+import { AUDITORIA_HREF, ACTIVIDAD_HREF } from "@/lib/secciones";
 import ChatWidget from "@/components/dashboard/ChatWidget";
 import SinConexionBanner from "@/components/dashboard/SinConexionBanner";
 import VistoPorUltimaVez from "@/components/dashboard/VistoPorUltimaVez";
@@ -74,10 +74,10 @@ async function getAuditCount(): Promise<number> {
 async function getResumenSocial(): Promise<ResumenSocial> {
   try {
     const res = await apiFetch("/social/resumen");
-    if (!res.ok) return { handle: null, solicitudes_pendientes: 0 };
+    if (!res.ok) return { handle: null, solicitudes_pendientes: 0, actividad_nueva: 0 };
     return (await res.json()) as ResumenSocial;
   } catch {
-    return { handle: null, solicitudes_pendientes: 0 };
+    return { handle: null, solicitudes_pendientes: 0, actividad_nueva: 0 };
   }
 }
 
@@ -88,14 +88,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getResumenSocial(),
   ]);
   const solicitudes = social.solicitudes_pendientes;
+  const actividad = social.actividad_nueva || 0;
+  const totalPilotos = solicitudes + actividad;
   const alertas: AlertasDeSeccion = {
     bitacora: { cantidad: auditCount, texto: `${auditCount} en auditoría` },
     pilotos: {
-      cantidad: solicitudes,
-      texto: `${solicitudes} ${solicitudes === 1 ? "solicitud" : "solicitudes"}`,
+      cantidad: totalPilotos,
+      texto: `${totalPilotos} ${totalPilotos === 1 ? "novedad" : "novedades"}`,
     },
   };
-  const contadores = { [AUDITORIA_HREF]: auditCount, [SOLICITUDES_HREF]: solicitudes };
+  const contadores = { [AUDITORIA_HREF]: auditCount, [ACTIVIDAD_HREF]: actividad || solicitudes };
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
