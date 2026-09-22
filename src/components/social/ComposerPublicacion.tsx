@@ -80,8 +80,8 @@ export default function ComposerPublicacion({
         if (flags.fecha) formData.append("mostrar_fecha", "1");
       }
       
-      fotos.forEach((foto, i) => {
-        formData.append(`foto_${i}`, foto);
+      fotos.forEach((foto) => {
+        formData.append("fotos", foto);
       });
 
       const res = await fetch("/api/social/publicaciones", {
@@ -89,7 +89,7 @@ export default function ComposerPublicacion({
         body: formData,
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) { const txt = await res.text(); console.error("Error from backend:", txt); throw new Error(txt); }
       
       setTexto("");
       setFotos([]);
@@ -97,7 +97,7 @@ export default function ComposerPublicacion({
       onSuccess?.();
       notificar({ tipo: "exito", titulo: "Publicado en tu red" });
     } catch (err) {
-      notificar({ tipo: "error", titulo: "No se pudo publicar" });
+      notificar({ tipo: "error", titulo: "No se pudo publicar: " + err.message });
     } finally {
       setLoading(false);
     }

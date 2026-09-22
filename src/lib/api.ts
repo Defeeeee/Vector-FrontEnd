@@ -56,7 +56,7 @@ export async function apiFetch(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  if (!(options.body instanceof FormData)) {
+  if (!(options.body instanceof FormData || (options.body && options.body.constructor && options.body.constructor.name === "FormData"))) {
     baseHeaders["Content-Type"] = "application/json";
   }
 
