@@ -18,6 +18,7 @@ import {
   topeMeteo,
 } from "@/lib/pwa";
 import { catalogoDesdeJson, type CatalogoSerializado } from "@/lib/catalogo-json";
+import { destinoDelAviso, leerAviso } from "@/lib/push";
 import { resolverPunto } from "@/lib/resolucion-puntos";
 import type { Catalogo } from "@/lib/catalogo";
 
@@ -138,10 +139,57 @@ self.addEventListener("message", (evento) => {
     evento.waitUntil(
       (async () => {
         await Promise.all(CACHES_PERSONALES.map((n) => caches.delete(n)));
+        /*
+          Los avisos push también son del piloto: en un teléfono compartido, el que
+          entre después vería "Fulano comentó tu publicación". Se da de baja la
+          suscripción del navegador; la fila del backend se borra sola la próxima vez
+          que el servicio de push le conteste que ya no existe (`services/avisos.py`).
+        */
+        const suscripcion = await self.registration.pushManager?.getSubscription().catch(() => null);
+        await suscripcion?.unsubscribe().catch(() => false);
         evento.ports[0]?.postMessage({ ok: true });
       })()
     );
   }
+});
+
+/*
+  Los avisos push de la red: "te siguió", "aplaudió", "comentó". Qué dice cada uno lo
+  arma el backend (`services/avisos.py`); acá sólo se muestra. Cómo se lee lo que llega
+  y a dónde lleva tocarlo lo deciden `leerAviso` y `destinoDelAviso` (`lib/push.ts`, con
+  tests): sólo a rutas de Vector.
+
+  Sin `badge`: en Android se dibuja como silueta, y la de un ícono cuadrado y opaco es
+  un cuadrado blanco. Mejor el ícono por defecto del navegador.
+*/
+self.addEventListener("push", (evento) => {
+  const aviso = leerAviso(evento.data?.text());
+  evento.waitUntil(
+    self.registration.showNotification(aviso.titulo, {
+      body: aviso.cuerpo,
+      icon: "/icono-192.png",
+      tag: aviso.etiqueta,
+      data: { url: aviso.url },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (evento) => {
+  evento.notification.close();
+  const destino = new URL(destinoDelAviso(evento.notification.data?.url), self.location.origin).href;
+  evento.waitUntil(
+    (async () => {
+      // Si Vector ya está abierta, se usa esa pestaña en vez de abrir otra.
+      const ventanas = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const abierta = ventanas.find((v) => new URL(v.url).origin === self.location.origin);
+      if (abierta) {
+        await abierta.focus().catch(() => undefined);
+        // `navigate` sólo anda en una pestaña que este service worker controla.
+        if (await abierta.navigate(destino).catch(() => null)) return;
+      }
+      await self.clients.openWindow(destino);
+    })()
+  );
 });
 
 /**

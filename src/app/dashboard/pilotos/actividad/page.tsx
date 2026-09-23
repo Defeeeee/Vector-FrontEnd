@@ -1,5 +1,6 @@
 import PageHeader from "@/components/dashboard/PageHeader";
 import AccionSocial from "@/components/social/AccionSocial";
+import AvisosPush from "@/components/social/AvisosPush";
 import AvisoNoSePudo from "@/components/social/AvisoNoSePudo";
 import CrearHandleRapido from "@/components/social/CrearHandleRapido";
 import FilaPiloto from "@/components/social/FilaPiloto";
@@ -49,10 +50,14 @@ export default async function ActividadPage() {
     );
   }
 
-  const [actividadRes, solicitudesRes] = await Promise.all([
+  const [actividadRes, solicitudesRes, clavePushRes] = await Promise.all([
     apiFetch("/red/actividad", { cache: "no-store" }),
     apiFetch("/social/solicitudes", { cache: "no-store" }),
+    apiFetch("/push/clave"),
   ]);
+  const clavePush = clavePushRes.ok
+    ? ((await clavePushRes.json().catch(() => null)) as { clave?: string | null } | null)?.clave ?? null
+    : null;
   const eventos: EventoActividad[] | null = actividadRes.ok
     ? prepararEventos(((await actividadRes.json().catch(() => null)) as Actividad | null)?.eventos ?? [])
     : null;
@@ -63,6 +68,9 @@ export default async function ActividadPage() {
   return (
     <div className="space-y-6 md:space-y-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
       <PageHeader eyebrow="Lo que pasa con lo tuyo" title="Actividad" />
+
+      {/* Sólo aparece si hay algo para hacer: activarlos, o instalar la app en el iPhone. */}
+      <AvisosPush clave={clavePush} compacto />
 
       {solicitudes === null ? (
         <AvisoNoSePudo texto="No pudimos cargar tus solicitudes." />

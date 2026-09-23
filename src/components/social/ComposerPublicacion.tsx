@@ -46,6 +46,7 @@ export default function ComposerPublicacion({
   autor,
   vuelos,
   vueloInicialId = null,
+  textoInicial = "",
   compacto = false,
   alPublicar = "ir-a-la-red",
 }: {
@@ -53,6 +54,8 @@ export default function ComposerPublicacion({
   /** Los vuelos propios que se pueden adjuntar, del más nuevo al más viejo. */
   vuelos: VueloParaCompartir[];
   vueloInicialId?: string | null;
+  /** El texto con el que arranca: el de un hito, desde la Bitácora. */
+  textoInicial?: string;
   /** Arranca cerrado, como una línea para tocar: en la Red, arriba del feed. */
   compacto?: boolean;
   /** Después de publicar: ir a la Red, o volver a dibujar la pantalla en la que está. */
@@ -63,7 +66,7 @@ export default function ComposerPublicacion({
   const vueloInicial = vuelos.find((v) => v.id === vueloInicialId) ?? null;
 
   const [abierto, setAbierto] = useState(!compacto || !!vueloInicial);
-  const [texto, setTexto] = useState("");
+  const [texto, setTexto] = useState(textoInicial);
   const [fotos, setFotos] = useState<FotoElegida[]>([]);
   const [procesando, setProcesando] = useState(0);
   const [vueloId, setVueloId] = useState<string | null>(vueloInicial?.id ?? null);

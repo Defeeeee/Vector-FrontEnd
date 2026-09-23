@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile, FlightPack, PilotDocument, Logbook, Flight, PerfilPublico } from "@/types";
+import { Aircraft, Profile, FlightPack, PilotDocument, Logbook, Flight, PerfilPublico, PilotoResumen } from "@/types";
 import { Plane, User, Package, CalendarClock, BookOpen, Download, Gauge, AtSign } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 import AircraftCard from "@/components/dashboard/AircraftCard";
@@ -15,11 +15,13 @@ import PageHeader from "@/components/dashboard/PageHeader";
 import { redirect } from "next/navigation";
 import CustomStatsManager from "@/components/dashboard/CustomStatsManager";
 import PerfilPublicoForm from "@/components/social/PerfilPublicoForm";
+import AvisosPush from "@/components/social/AvisosPush";
+import ListaBloqueados from "@/components/social/ListaBloqueados";
 import { listCustomStats } from "@/actions/custom-stat";
 import { recencyWindowDays } from "@/lib/recency";
 
 async function getSettingsData() {
-  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes, flightsRes, perfilPublicoRes] =
+  const [profilesRes, aircraftRes, packsRes, documentsRes, logbooksRes, flightsRes, perfilPublicoRes, bloqueadosRes, clavePushRes] =
     await Promise.all([
       apiFetch("/profiles"),
       apiFetch("/aircraft"),
@@ -34,6 +36,10 @@ async function getSettingsData() {
       // El @ de la red. Sin cache: se acaba de crear o editar desde esta misma
       // pantalla, y el formulario no puede volver con el valor de hace 20 s.
       apiFetch("/perfil-publico", { cache: "no-store" }),
+      // A quiénes bloqueaste, para desbloquear desde acá. Sin cache por lo mismo que el @.
+      apiFetch("/social/bloqueados", { cache: "no-store" }),
+      // La clave de los avisos push: `null` si el backend no los tiene configurados.
+      apiFetch("/push/clave"),
     ]);
 
   if (profilesRes.status === 401 || aircraftRes.status === 401 || packsRes.status === 401) {
@@ -51,12 +57,18 @@ async function getSettingsData() {
     ? ((await perfilPublicoRes.json()) as { perfil: PerfilPublico | null }).perfil
     : null;
 
-  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, flights, perfilPublico };
+  const bloqueados: PilotoResumen[] = bloqueadosRes.ok ? await bloqueadosRes.json() : [];
+  const clavePush: string | null = clavePushRes.ok
+    ? ((await clavePushRes.json().catch(() => null)) as { clave?: string | null } | null)?.clave ?? null
+    : null;
+
+  return { profile: profiles[0] || null, aircraft, packs, documents, logbooks, flights, perfilPublico, bloqueados, clavePush };
 }
 
 export default async function SettingsPage() {
   const customStats = await listCustomStats();
-  const { profile, aircraft, packs, documents, logbooks, flights, perfilPublico } = await getSettingsData();
+  const { profile, aircraft, packs, documents, logbooks, flights, perfilPublico, bloqueados, clavePush } =
+    await getSettingsData();
   const cma = documents.find(doc => doc.kind === "cma");
 
   return (
@@ -104,6 +116,9 @@ export default async function SettingsPage() {
           nombreSugerido={[profile?.first_name, profile?.last_name].filter(Boolean).join(" ")}
           licenciaSugerida={profile?.license_type && profile.license_type !== "-" ? profile.license_type : null}
         />
+        {/* Los avisos y los bloqueados son de la red: sin @, no hay nada que avisar. */}
+        {perfilPublico && <AvisosPush clave={clavePush} />}
+        {perfilPublico && <ListaBloqueados bloqueados={bloqueados} />}
       </section>
 
       {/* Documents / expiry tracker */}

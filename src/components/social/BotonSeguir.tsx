@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Clock, Loader2, UserPlus } from "lucide-react";
-import { dejarDeSeguirPiloto, seguirPiloto } from "@/actions/social";
+import { Ban, Check, Clock, Loader2, UserPlus } from "lucide-react";
+import { dejarDeSeguirPiloto, desbloquearPiloto, seguirPiloto } from "@/actions/social";
 import { conArroba } from "@/lib/handle";
 import type { RelacionSocial, Visibilidad } from "@/types";
 
@@ -17,6 +17,9 @@ import type { RelacionSocial, Visibilidad } from "@/types";
  *
  * Dejar de seguir pide confirmación y cancelar una solicitud no: lo primero puede
  * costar volver a pedir permiso; lo segundo, no.
+ *
+ * A alguien que bloqueaste no se lo sigue: el botón es para desbloquearlo, y seguirlo
+ * después es otro paso (desbloquear no devuelve los seguimientos).
  */
 export default function BotonSeguir({
   handle,
@@ -67,7 +70,12 @@ export default function BotonSeguir({
     if (relacion === "siguiendo" && !window.confirm(`¿Dejar de seguir a ${conArroba(handle)}?`)) return;
     setError(null);
     startTransition(async () => {
-      const r = relacion === "ninguna" ? await seguirPiloto(handle) : await dejarDeSeguirPiloto(handle);
+      const r =
+        relacion === "bloqueado"
+          ? await desbloquearPiloto(handle)
+          : relacion === "ninguna"
+            ? await seguirPiloto(handle)
+            : await dejarDeSeguirPiloto(handle);
       if (!r.ok) {
         setError(r.error);
         return;
@@ -79,7 +87,14 @@ export default function BotonSeguir({
   };
 
   const { texto, icono, estilo, titulo } =
-    relacion === "siguiendo"
+    relacion === "bloqueado"
+      ? {
+          texto: "Desbloquear",
+          icono: <Ban className="w-4 h-4" />,
+          estilo: "border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/5",
+          titulo: `Bloqueaste a ${conArroba(handle)}`,
+        }
+      : relacion === "siguiendo"
       ? {
           texto: "Siguiendo",
           icono: <Check className="w-4 h-4" />,

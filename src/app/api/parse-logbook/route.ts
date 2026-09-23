@@ -1,19 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { getSessionToken } from "@/actions/auth";
+import { apiFetch } from "@/lib/api";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+/** Un libro escaneado entero entra holgado; más que esto no es un libro de vuelo. */
+const PDF_MAX_BYTES = 15 * 1024 * 1024;
+
+/**
+ * Importar el libro de papel: el PDF va a Gemini, que devuelve los vuelos.
+ *
+ * **Pide sesión antes de tocar nada.** Hasta el 2026-09-23 no la pedía: `/api/*` no
+ * pasa por el proxy, así que cualquiera podía mandar PDFs y gastar la cuota de Gemini
+ * del proyecto. La cookie sola no alcanza —el proxy no verifica firmas—, así que se le
+ * pregunta al backend quién es.
+ */
 export async function POST(req: NextRequest) {
   try {
+    if (!(await getSessionToken())) {
+      return NextResponse.json({ error: "Tu sesión venció. Volvé a entrar." }, { status: 401 });
+    }
+    const quien = await apiFetch("/profiles", { cache: "no-store" });
+    if (quien.status === 401) {
+      return NextResponse.json({ error: "Tu sesión venció. Volvé a entrar." }, { status: 401 });
+    }
+    if (!quien.ok) {
+      return NextResponse.json({ error: "No se pudo verificar tu sesión. Probá de nuevo." }, { status: 503 });
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json({ error: "Gemini API Key no configurada" }, { status: 500 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
+    // Antes de leer el cuerpo: un archivo enorme ni se baja a memoria.
+    if (Number(req.headers.get("content-length") || 0) > PDF_MAX_BYTES + 1024 * 1024) {
+      return NextResponse.json({ error: "El PDF pesa demasiado (máximo 15 MB)." }, { status: 413 });
+    }
 
-    if (!file) {
+    const formData = await req.formData();
+    const file = formData.get("file");
+
+    if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No se subió ningún archivo PDF" }, { status: 400 });
+    }
+    if (file.size > PDF_MAX_BYTES) {
+      return NextResponse.json({ error: "El PDF pesa demasiado (máximo 15 MB)." }, { status: 413 });
     }
 
     // Convert file to base64 buffer for inline Gemini ingestion

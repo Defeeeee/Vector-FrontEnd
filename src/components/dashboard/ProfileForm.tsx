@@ -96,6 +96,20 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
           <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
         </EditField>
 
+        {/* El número de licencia y el legajo van en el encabezado de cada hoja del libro
+            en PDF, como en el libro de papel. Opcionales: sin ellos, el casillero
+            queda en blanco para completar a mano. */}
+        <EditField label="Nº de licencia">
+          <input name="licencia_numero" defaultValue={profile?.licencia_numero || ""} placeholder="Opcional" maxLength={30} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+        </EditField>
+
+        <EditField label="Legajo (ANAC)">
+          <input name="legajo" defaultValue={profile?.legajo || ""} placeholder="Opcional" maxLength={30} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
+            Los dos van en el encabezado del libro de vuelo en PDF.
+          </p>
+        </EditField>
+
         {/* The label used to read "WhatsApp (para Copiloto IA)", which is very
             likely why 9 of 10 profiles have it empty: a pilot who does not use
             the AI copilot skips it, not knowing the same number is what gates

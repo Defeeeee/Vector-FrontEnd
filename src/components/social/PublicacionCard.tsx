@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Loader2, MessageCircle, PartyPopper, Trash2 } from "lucide-react";
+import { Ban, Flag, Loader2, MessageCircle, MoreHorizontal, PartyPopper, Trash2 } from "lucide-react";
 import AvatarPiloto from "./AvatarPiloto";
 import ChipVuelo from "./ChipVuelo";
 import ComentariosPublicacion from "./ComentariosPublicacion";
+import DialogoReportar from "./DialogoReportar";
 import GaleriaFotos from "./GaleriaFotos";
+import MenuAcciones, { type AccionDeMenu } from "@/components/MenuAcciones";
 import { useAvisos } from "@/components/dashboard/Avisos";
-import { aplaudir, borrarPublicacion } from "@/actions/social";
+import { aplaudir, bloquearPiloto, borrarPublicacion } from "@/actions/social";
 import { conArroba, rutaPerfil, rutaPerfilApp } from "@/lib/handle";
 import type { Publicacion } from "@/types";
 
@@ -21,11 +24,13 @@ import type { Publicacion } from "@/types";
  *   aplaudir o comentar hace falta que el otro sepa quién sos); `sin-sesion` desde un
  *   link; `solo-lectura` en la vista "así te ven", donde no se toca nada.
  * - `comoAnonimo`: todo lo que se pida, pedirlo sin sesión (la misma vista).
+ * - `miHandle`: el @ de quien mira, para no ofrecerle reportar lo suyo.
  */
 export interface ContextoPublicacion {
   modo: "app" | "publico";
   interaccion: "completa" | "sin-handle" | "sin-sesion" | "solo-lectura";
   comoAnonimo?: boolean;
+  miHandle?: string | null;
 }
 
 export default function PublicacionCard({
@@ -42,7 +47,9 @@ export default function PublicacionCard({
   const [verComentarios, setVerComentarios] = useState(false);
   const [borrada, setBorrada] = useState(false);
   const [borrando, startBorrar] = useTransition();
+  const [reportando, setReportando] = useState(false);
   const { notificar } = useAvisos();
+  const router = useRouter();
 
   if (borrada) return null;
 
@@ -80,6 +87,40 @@ export default function PublicacionCard({
       notificar({ tipo: "exito", titulo: "Publicación borrada" });
     });
   };
+
+  /** Bloquear desde una publicación: se esconde ésta y la pantalla vuelve sin las suyas. */
+  const alBloquear = () => {
+    const arroba = conArroba(p.autor.handle);
+    const seguro = window.confirm(
+      `¿Bloquear a ${arroba}?\n\nNo va a ver tu perfil ni lo que publicás, vos no vas a ver lo suyo, y dejan de seguirse. No se le avisa.`
+    );
+    if (!seguro) return;
+    startBorrar(async () => {
+      const r = await bloquearPiloto(p.autor.handle);
+      if (!r.ok) {
+        notificar({ tipo: "error", titulo: r.error });
+        return;
+      }
+      setBorrada(true);
+      notificar({ tipo: "exito", titulo: `Bloqueaste a ${arroba}`, detalle: "Lo podés desbloquear desde el Hangar." });
+      router.refresh();
+    });
+  };
+
+  const acciones: AccionDeMenu[] = !puedeInteractuar
+    ? []
+    : p.es_mia
+      ? [{ etiqueta: "Borrar publicación", icono: Trash2, peligro: true, alElegir: alBorrar }]
+      : [
+          { etiqueta: "Reportar publicación", icono: Flag, alElegir: () => setReportando(true) },
+          {
+            etiqueta: `Bloquear a ${conArroba(p.autor.handle)}`,
+            detalle: "Deja de ver lo tuyo, y vos lo suyo",
+            icono: Ban,
+            peligro: true,
+            alElegir: alBloquear,
+          },
+        ];
 
   const accion =
     "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-semibold transition-colors";
@@ -120,19 +161,17 @@ export default function PublicacionCard({
             )}
           </p>
         </div>
-        {p.es_mia && puedeInteractuar && (
-          <button
-            type="button"
-            onClick={alBorrar}
-            disabled={borrando}
-            aria-label="Borrar publicación"
-            title="Borrar publicación"
-            className="-mr-1 p-2 rounded-full text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50"
+        {acciones.length > 0 && (
+          <MenuAcciones
+            acciones={acciones}
+            etiqueta="Más opciones"
+            claseBoton="-mr-1.5 -mt-1 p-2 rounded-full text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
           >
-            {borrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-          </button>
+            {borrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}
+          </MenuAcciones>
         )}
       </header>
+      {reportando && <DialogoReportar tipo="publicacion" objetivo={p.id} alCerrar={() => setReportando(false)} />}
 
       <div className="mt-3 space-y-3">
         {p.texto && (

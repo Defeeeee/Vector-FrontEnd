@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import CamposPerformance from "./CamposPerformance";
 import CampoSimulador from "./CampoSimulador";
+import CampoPotencia from "./CampoPotencia";
 import { useAvisos } from "./Avisos";
 
 interface AircraftCardProps {
@@ -60,19 +61,19 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
         <form action={handleUpdate} className="space-y-8">
           <input type="hidden" name="id" value={aircraft.id} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <EditField label="Registration">
+            <EditField label="Matrícula">
               <input name="registration" defaultValue={aircraft.registration} required className="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all uppercase" />
             </EditField>
 
-            <EditField label="ICAO Type">
+            <EditField label="Tipo OACI">
               <input name="icao" defaultValue={aircraft.icao} required className="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all uppercase" />
             </EditField>
 
-            <EditField label="Make & Model">
+            <EditField label="Marca y modelo">
               <input name="type" defaultValue={aircraft.type} required className="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all uppercase" />
             </EditField>
 
-            <EditField label="Category (ANAC)">
+            <EditField label="Categoría (ANAC)">
               <div className="relative">
                 <select
                   name="type_acft"
@@ -87,6 +88,12 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
                 <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400 rotate-90 pointer-events-none" />
               </div>
             </EditField>
+
+            <CampoPotencia
+              valor={aircraft.potencia_hp}
+              claseLabel="text-xs font-medium text-zinc-500 dark:text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors"
+              claseInput="w-full bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-sm font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 transition-all"
+            />
           </div>
 
           <div className="pt-2 border-t border-zinc-200 dark:border-white/10">
@@ -173,8 +180,9 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
 
         {/* Sólo si hay algo que mostrar. Una fila de guiones no informa: el que no
             cargó performance ya lo sabe, y la tarjeta queda más limpia sin ella. */}
-        {(aircraft.cruise_tas_kt || aircraft.fuel_burn_lph || aircraft.fuel_capacity_l) && (
+        {(aircraft.potencia_hp || aircraft.cruise_tas_kt || aircraft.fuel_burn_lph || aircraft.fuel_capacity_l) && (
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+            {aircraft.potencia_hp && <span>{aircraft.potencia_hp} HP</span>}
             {aircraft.cruise_tas_kt && <span>{aircraft.cruise_tas_kt} kt</span>}
             {aircraft.fuel_burn_lph && <span>{aircraft.fuel_burn_lph} L/h</span>}
             {aircraft.fuel_capacity_l && <span>{aircraft.fuel_capacity_l} L</span>}

@@ -95,6 +95,8 @@ export async function logFlight(
     discount_type: (formData.get("discount_type") as string) || null,
     discount_amount: getNumber(formData.get("discount_amount")),
     purpose: (formData.get("purpose") as string) || "VP",
+    // "Cerrar la hoja después de este vuelo": el último renglón de su hoja en el libro.
+    cierra_hoja: formData.get("cierra_hoja") === "true",
   };
 
   const response = await apiFetch("/flights", {
@@ -147,6 +149,31 @@ export async function logFlight(
   */
   revalidarLoQueCambiaUnVuelo();
   return { success: true, id: creado?.id ?? null };
+}
+
+/**
+ * "Cerrar la hoja" en un vuelo ya cargado: pasa a ser el último renglón de su hoja en
+ * el libro de papel, y en el PDF lo que queda en blanco se tacha (`lib/libro-anac.ts`).
+ *
+ * Manda sólo la marca: el backend la guarda sin recalcular el cobro del vuelo, que con
+ * el precio por hora de hoy reescribiría lo que se cobró ese día.
+ */
+export async function marcarCierreDeHoja(id: string, cierra: boolean) {
+  try {
+    const response = await apiFetch(`/flights/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ cierra_hoja: cierra }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      return { error: error.detail || "No se pudo marcar la hoja." };
+    }
+    revalidatePath("/dashboard/history");
+    return { success: true };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { error: "Error de conexión con el servidor" };
+  }
 }
 
 export async function updateFlight(formData: FormData) {
@@ -267,6 +294,12 @@ function numeroOpcional(valor: FormDataEntryValue | null): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** La potencia en HP: un entero en la base (`aircraft.potencia_hp`, migración 020). */
+function potenciaOpcional(valor: FormDataEntryValue | null): number | null {
+  const n = numeroOpcional(valor);
+  return n === null ? null : Math.round(n);
+}
+
 /**
  * La casilla "es un simulador", leída del par hidden + checkbox de `CampoSimulador`.
  *
@@ -292,6 +325,7 @@ export async function addAircraft(formData: FormData) {
       cruise_tas_kt: numeroOpcional(formData.get("cruise_tas_kt")),
       fuel_burn_lph: numeroOpcional(formData.get("fuel_burn_lph")),
       fuel_capacity_l: numeroOpcional(formData.get("fuel_capacity_l")),
+      potencia_hp: potenciaOpcional(formData.get("potencia_hp")),
     }),
   });
 
@@ -327,6 +361,7 @@ export async function updateAircraft(formData: FormData) {
         cruise_tas_kt: numeroOpcional(formData.get("cruise_tas_kt")),
         fuel_burn_lph: numeroOpcional(formData.get("fuel_burn_lph")),
         fuel_capacity_l: numeroOpcional(formData.get("fuel_capacity_l")),
+        potencia_hp: potenciaOpcional(formData.get("potencia_hp")),
       }),
     });
 

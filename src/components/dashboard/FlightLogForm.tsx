@@ -198,6 +198,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   const [remarks, setRemarks] = useState("");
+  const [cierraHoja, setCierraHoja] = useState(false);
 
   /**
    * Una sesión de simulador se anota como una fila más del libro —fecha, horarios,
@@ -657,6 +658,28 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   className={`${ledgerInput} resize-none`}
                 />
               </LedgerField>
+
+              {/* En el libro de papel a veces se cierra la hoja antes de llenarla (para
+                  foliar, para certificar): este vuelo pasa a ser su último renglón, y en el
+                  PDF lo que queda en blanco se tacha. Ver `lib/libro-anac.ts`. */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="cierra_hoja"
+                  value="true"
+                  checked={cierraHoja}
+                  onChange={(e) => setCierraHoja(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 shrink-0 accent-zinc-900 dark:accent-white"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-zinc-900 dark:text-white">
+                    Cerrar la hoja del libro después de este vuelo
+                  </span>
+                  <span className="block text-[12px] text-zinc-500 dark:text-zinc-400">
+                    El próximo empieza hoja nueva. En el PDF, lo que quede en blanco se tacha.
+                  </span>
+                </span>
+              </label>
             </div>
           </div>
         </div>

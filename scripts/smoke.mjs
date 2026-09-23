@@ -138,6 +138,12 @@ const ROUTES = [
   // 401 es lo que comprueba que la comprobación de auth sigue ahí: es una imagen
   // con horas de vuelo de una persona, y "simplificar" ese chequeo la publicaría.
   { path: "/api/share-card", expect: (s) => s === 401 },
+  // Lo que gasta la cuota de Gemini del proyecto no se toca sin sesión. Hasta el
+  // 2026-09-23 el importador de PDF lo hacía: cualquiera podía gastarla.
+  { path: "/api/parse-logbook", method: "POST", expect: (s) => s === 401 },
+  { path: "/api/chat", method: "POST", body: JSON.stringify({ message: "hola" }), expect: (s) => s === 401 },
+  // El libro de vuelo en PDF es la bitácora entera de una persona.
+  { path: "/api/bitacora/libro-anac", expect: (s) => s === 401 },
 ];
 
 /**
@@ -173,6 +179,9 @@ const AUTH_ROUTES = [
   // 500 recién cuando alguien pide la imagen. Esto es lo único automático que lo
   // agarra antes de producción.
   "/api/share-card?tiles=pic,noche",
+  // El libro en PDF: pdf-lib y el dibujo de la hoja sólo corren al pedirlo. Sin vuelos
+  // igual contesta, con una hoja en blanco.
+  "/api/bitacora/libro-anac",
 ];
 
 const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || "https://auth.flightlog.fdiaznem.com.ar";
@@ -241,7 +250,11 @@ try {
     let status = 0;
     let detail = "";
     try {
-      const res = await fetch(BASE + route.path, { redirect: "manual" });
+      const res = await fetch(BASE + route.path, {
+        redirect: "manual",
+        method: route.method ?? "GET",
+        ...(route.body ? { body: route.body, headers: { "Content-Type": "application/json" } } : {}),
+      });
       status = res.status;
       if (route.json) {
         const body = await res.json();
@@ -253,7 +266,8 @@ try {
 
     const ok = route.expect(status) && !detail;
     if (!ok) failures++;
-    console.log(`${ok ? "✓" : "✗"} ${String(status).padEnd(3)} ${route.path}${detail}`);
+    const metodo = route.method && route.method !== "GET" ? `${route.method} ` : "";
+    console.log(`${ok ? "✓" : "✗"} ${String(status).padEnd(3)} ${metodo}${route.path}${detail}`);
   }
 
   const token = await login();

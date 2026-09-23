@@ -14,7 +14,6 @@ export const metadata: Metadata = {
  *
  * Lo que NO puede escribir un agente y hay que completar o confirmar:
  *   - La razón social y el domicilio del responsable.
- *   - El correo de contacto real (abajo figura como PLACEHOLDER).
  *   - Los plazos concretos de retención.
  *   - Cualquier afirmación sobre jurisdicción.
  *
@@ -25,10 +24,14 @@ export const metadata: Metadata = {
  * `GET /publico/pilotos/{handle}` del backend. Desde la 2.20.0 también las
  * publicaciones: el chip del vuelo (`resumen_de_vuelo`), las fotos (`services/imagenes.py`
  * y sus buckets) y quién las ve (el RLS de la migración 019). Si eso cambia, esto cambia.
+ *
+ * Desde la 2.21.0 (migraciones 020 y 021): el número de licencia y el legajo del libro
+ * en PDF, los bloqueos, los reportes y las suscripciones a los avisos push
+ * (`services/avisos.py`: qué dice cada aviso, y que nunca lleva datos de la bitácora).
  */
 export default function PrivacidadPage() {
   return (
-    <LegalShell title="Política de Privacidad" updated="22 de septiembre de 2026">
+    <LegalShell title="Política de Privacidad" updated="23 de septiembre de 2026">
       <section>
         <h2>Qué es esto</h2>
         <p>
@@ -42,15 +45,18 @@ export default function PrivacidadPage() {
         <h2>Qué datos tratamos</h2>
         <ul>
           <li>
-            <strong>Perfil:</strong> nombre, correo electrónico, tipo de licencia y, si lo
-            cargás, tu número de teléfono.
+            <strong>Perfil:</strong> nombre, correo electrónico, tipo de licencia y, si los
+            cargás, tu número de teléfono, tu número de licencia y tu legajo. Estos dos
+            últimos sólo se usan en el encabezado de tu libro de vuelo en PDF, y no se
+            publican.
           </li>
           <li>
             <strong>Vuelos:</strong> fecha, ruta, aeródromos, aeronave, horarios, duración,
             aterrizajes y el desglose de horas por categoría ANAC.
           </li>
           <li>
-            <strong>Aeronaves:</strong> matrícula, tipo y, opcionalmente, costo por hora.
+            <strong>Aeronaves:</strong> matrícula, tipo y, opcionalmente, potencia y costo
+            por hora.
           </li>
           <li>
             <strong>Documentación:</strong> tipo de documento, nombre y fecha de
@@ -119,6 +125,22 @@ export default function PrivacidadPage() {
           borrar tus comentarios, y los que otros dejen en tus publicaciones.
         </p>
         <p>
+          <strong>Podés bloquear a un piloto:</strong> deja de ver tu perfil y lo que
+          publicás, vos dejás de ver lo suyo, y se cortan los seguimientos entre los dos. No
+          se le avisa. Lo desbloqueás desde el Hangar.
+        </p>
+        <p>
+          <strong>Podés reportar</strong> un perfil, una publicación o un comentario. Se
+          guarda quién reportó, qué y el motivo, para que lo revise quien administra la red;
+          a quien reportaste no se le dice quién fue.
+        </p>
+        <p>
+          <strong>Avisos push, si los activás:</strong> se guarda la dirección de envío que
+          te da el navegador de ese dispositivo (no tu número ni tu correo). Los avisos dicen
+          quién te siguió, te aplaudió o te comentó, y nunca llevan datos de tu bitácora. Se
+          desactivan desde el Hangar, y al cerrar sesión se dan de baja en ese dispositivo.
+        </p>
+        <p>
           Podés pasar de público a privado, editar o borrar lo publicado, o borrar tu perfil
           cuando quieras desde el Hangar. Borrar el perfil elimina también tus seguidores, a
           quién seguís, tus publicaciones con sus fotos, y tus aplausos y comentarios.
@@ -145,6 +167,11 @@ export default function PrivacidadPage() {
           <li>
             <strong>Supabase</strong> — alojamiento de la base de datos, autenticación y
             las fotos de la red.
+          </li>
+          <li>
+            <strong>El servicio de avisos de tu navegador</strong> (Google, Apple o Mozilla,
+            según cuál uses) — sólo si activás los avisos push. El aviso viaja cifrado de
+            punta a punta: ese servicio lo entrega, pero no puede leerlo.
           </li>
         </ul>
         <p>
@@ -194,7 +221,7 @@ export default function PrivacidadPage() {
         <h2>Contacto</h2>
         <p>
           Por cualquier consulta sobre tus datos, escribinos a{" "}
-          <a href="mailto:PLACEHOLDER@vector.ar">PLACEHOLDER@vector.ar</a>.
+          <a href="mailto:fdiaznemeth@gmail.com">fdiaznemeth@gmail.com</a>.
         </p>
       </section>
     </LegalShell>

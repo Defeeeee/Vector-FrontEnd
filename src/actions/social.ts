@@ -32,6 +32,9 @@ import type {
 
 type Resultado<T> = ({ ok: true } & T) | { ok: false; error: string };
 
+/** Los ids de la red son UUID: cualquier otra cosa ni siquiera se le pregunta al backend. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function revalidarRed(...handles: (string | null | undefined)[]) {
   revalidatePath("/dashboard", "layout");
   for (const h of handles) if (h) revalidatePath(rutaPerfil(h));
@@ -128,6 +131,23 @@ export async function buscarPilotos(q: string): Promise<PilotoResumen[]> {
   }
 }
 
+/**
+ * Qué relación hay con un piloto, o `null` si no se pudo saber (o no existe, o te
+ * bloqueó: el backend contesta 404 igual). Sólo lee.
+ */
+export async function relacionConPiloto(handle: string): Promise<RelacionSocial | null> {
+  const h = normalizarHandle(handle);
+  if (problemaDelHandle(h)) return null;
+  try {
+    const res = await apiFetch(`/publico/pilotos/${encodeURIComponent(h)}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    return ((await res.json()) as { relacion?: RelacionSocial }).relacion ?? null;
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return null;
+  }
+}
+
 export async function seguirPiloto(handle: string): Promise<Resultado<{ relacion: RelacionSocial }>> {
   const h = normalizarHandle(handle);
   const r = await enviar<{ relacion: RelacionSocial }>(
@@ -181,6 +201,58 @@ export async function sacarSeguidor(handle: string, miHandle?: string | null): P
 }
 
 // ---------------------------------------------------------------------------
+// Cuidar la red: bloquear y reportar (migración 021 del backend)
+// ---------------------------------------------------------------------------
+
+/**
+ * Bloquear: ninguno de los dos ve lo del otro y se cortan los seguimientos en las dos
+ * direcciones. El otro no se entera: para él, tu perfil deja de existir. Revalida la red
+ * (el feed, la Actividad, el perfil) y el Hangar, donde está la lista de bloqueados.
+ */
+export async function bloquearPiloto(handle: string): Promise<Resultado<{ relacion: RelacionSocial }>> {
+  const h = normalizarHandle(handle);
+  const r = await enviar<{ relacion: RelacionSocial }>(
+    `/pilotos/${encodeURIComponent(h)}/bloqueo`,
+    "POST",
+    "No se pudo bloquear a este piloto."
+  );
+  if (!r.ok) return r;
+  revalidarRed(h);
+  revalidatePath("/dashboard/settings");
+  return { ok: true, relacion: r.datos.relacion };
+}
+
+/** Desbloquear no devuelve los seguimientos: si se quieren, se vuelven a pedir. */
+export async function desbloquearPiloto(handle: string): Promise<Resultado<{ relacion: RelacionSocial }>> {
+  const h = normalizarHandle(handle);
+  const r = await enviar<{ relacion: RelacionSocial }>(
+    `/pilotos/${encodeURIComponent(h)}/bloqueo`,
+    "DELETE",
+    "No se pudo desbloquear a este piloto."
+  );
+  if (!r.ok) return r;
+  revalidarRed(h);
+  revalidatePath("/dashboard/settings");
+  return { ok: true, relacion: r.datos.relacion };
+}
+
+export type TipoReporte = "perfil" | "publicacion" | "comentario";
+
+/**
+ * Reportar un perfil (por su @), una publicación o un comentario (por su id). Se escribe
+ * y no se lee: lo revisa quien administra la red. El backend limita a 20 por día.
+ */
+export async function reportar(tipo: TipoReporte, objetivo: string, motivo: string): Promise<Resultado<object>> {
+  const texto = motivo.trim().slice(0, 500);
+  if (!texto) return { ok: false, error: "Contanos qué pasa." };
+  const id = tipo === "perfil" ? normalizarHandle(objetivo) : objetivo;
+  if (tipo !== "perfil" && !UUID.test(id)) return { ok: false, error: "Eso ya no está." };
+  const r = await enviar("/reportes", "POST", "No se pudo enviar el reporte.", { tipo, objetivo: id, motivo: texto });
+  if (!r.ok) return r;
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
 // Publicaciones, aplausos y comentarios
 // ---------------------------------------------------------------------------
 //
@@ -189,9 +261,6 @@ export async function sacarSeguidor(handle: string, miHandle?: string | null): P
 // pantallas que muestran publicaciones las piden sin cache, así que no hay nada viejo que
 // tirar. Revalidar haría que Next volviera a dibujar la pantalla entera en la respuesta
 // de cada aplauso: el feed completo pedido de nuevo por un toque.
-
-/** Los ids de la red son UUID: cualquier otra cosa ni siquiera se le pregunta al backend. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function aplaudir(id: string, poner: boolean): Promise<Resultado<{ estado: EstadoAplauso }>> {
   if (!UUID.test(id)) return { ok: false, error: "Esa publicación ya no está." };

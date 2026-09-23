@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { UserRound } from "lucide-react";
+import { Users, UserRound } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
 import AvisoNoSePudo from "@/components/social/AvisoNoSePudo";
+import CompartirPerfil from "@/components/social/CompartirPerfil";
+import InvitacionPendiente from "@/components/social/InvitacionPendiente";
 import ComposerPublicacion from "@/components/social/ComposerPublicacion";
 import CrearHandleRapido from "@/components/social/CrearHandleRapido";
 import ListaPublicaciones from "@/components/social/ListaPublicaciones";
@@ -70,6 +72,9 @@ export default async function PaginaRed() {
         }
       />
 
+      {/* Quien llegó por el link de otro piloto: seguirlo es lo primero que se le ofrece. */}
+      <InvitacionPendiente miHandle={resumen.handle} />
+
       <ComposerPublicacion
         compacto
         alPublicar="refrescar"
@@ -86,7 +91,7 @@ export default async function PaginaRed() {
           inicial={lectura.publicaciones}
           siguiente={lectura.siguiente}
           origen={{ tipo: "red" }}
-          contexto={{ modo: "app", interaccion: "completa" }}
+          contexto={{ modo: "app", interaccion: "completa", miHandle: resumen.handle }}
           vacio={
             <div className="rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 p-8 text-center space-y-1.5">
               <p className="font-display font-bold text-lg text-zinc-900 dark:text-white">Tu Red está vacía</p>
@@ -107,11 +112,32 @@ export default async function PaginaRed() {
         <AvisoNoSePudo texto="No pudimos cargar las publicaciones." />
       )}
 
-      {/* Con poco para ver, a quién seguir. Por `Suspense`: el feed no lo espera. */}
+      {/* Con poco para ver, a quién seguir y a quién invitar. Por `Suspense`: el feed no
+          espera a los sugeridos. */}
       {lectura.disponible && lectura.publicaciones.filter((p) => !p.es_mia).length < 5 && (
-        <Suspense fallback={null}>
-          <PilotosSugeridos tieneHandle />
-        </Suspense>
+        <>
+          <Suspense fallback={null}>
+            <PilotosSugeridos tieneHandle />
+          </Suspense>
+          <section className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-5 md:p-6">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-zinc-900 dark:text-white">Invitá a tus compañeros</p>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                  Mandales tu perfil: con el link se hacen la cuenta y Vector les ofrece seguirte.
+                </p>
+              </div>
+            </div>
+            <CompartirPerfil
+              handle={resumen.handle}
+              etiqueta="Invitar"
+              texto="Llevo mi bitácora de vuelo en Vector. Sumate y seguime:"
+            />
+          </section>
+        </>
       )}
     </div>
   );

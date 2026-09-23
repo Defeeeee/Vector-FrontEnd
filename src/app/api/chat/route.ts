@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { getSessionToken } from "@/actions/auth";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile, PilotDocument } from "@/types";
 import { breakdownError, buildFlightBody, isAffirmation, proposalSummary } from "@/lib/copilot-guards";
@@ -278,6 +279,11 @@ async function getAirportInfoHelper(icao: string) {
 }
 
 export async function POST(req: NextRequest) {
+  // Primero la sesión, antes que nada: sin ella no se gasta la cuota de Gemini del
+  // proyecto, ni se contesta nada que dependa de la configuración del servidor.
+  if (!(await getSessionToken())) {
+    return NextResponse.json({ error: "Tu sesión venció. Volvé a entrar." }, { status: 401 });
+  }
   try {
     const { message, history } = await req.json();
 
@@ -306,6 +312,10 @@ export async function POST(req: NextRequest) {
 
     // Fetch pilot data in a consolidated call to dashboard
     const dashboardRes = await apiFetch("/dashboard");
+    // Sin sesión válida el backend contesta 401: se corta acá, antes de llamar a Gemini.
+    if (dashboardRes.status === 401) {
+      return NextResponse.json({ error: "Tu sesión venció. Volvé a entrar." }, { status: 401 });
+    }
     if (!dashboardRes.ok) {
       return NextResponse.json({ error: "No se pudieron obtener los datos de la bitácora" }, { status: 500 });
     }

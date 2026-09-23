@@ -61,14 +61,14 @@ const workflow = [
   { title: "Despegás", detail: "Registrás el vuelo por app, WhatsApp o nota de voz." },
   { title: "Vector decodifica", detail: "Calcula horas día, noche e IFR y actualiza tu progreso PCA." },
   { title: "Controlás el rumbo", detail: "Balances, packs de horas y vencimientos, en un solo panel." },
-  { title: "Aterrizás con datos", detail: "Exportá tu bitácora oficial en PDF cuando la necesites." },
+  { title: "Aterrizás con datos", detail: "Imprimí tu libro de vuelo en PDF, con la hoja de siempre, para que te lo firmen." },
 ];
 
 const highlights = [
   { t: "Día · Noche · IFR", d: "Cálculo automático por vuelo" },
   { t: "App · WhatsApp · Voz", d: "Tres formas de registrar" },
   { t: "Reg. 61.620", d: "Seguimiento PCA integrado" },
-  { t: "PDF oficial", d: "Exportación cuando la necesites" },
+  { t: "Libro en PDF", d: "La hoja de siempre, lista para firmar" },
 ];
 
 export default function LandingPage() {

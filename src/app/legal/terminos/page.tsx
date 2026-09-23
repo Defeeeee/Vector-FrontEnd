@@ -109,7 +109,7 @@ export default function TerminosPage() {
         <h2>Contacto</h2>
         <p>
           Por consultas sobre estos términos, escribinos a{" "}
-          <a href="mailto:PLACEHOLDER@vector.ar">PLACEHOLDER@vector.ar</a>.
+          <a href="mailto:fdiaznemeth@gmail.com">fdiaznemeth@gmail.com</a>.
         </p>
       </section>
     </LegalShell>

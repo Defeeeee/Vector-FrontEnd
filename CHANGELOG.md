@@ -6,6 +6,15 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.21.0 — Tu libro de vuelo, en PDF
+
+_23 de septiembre de 2026_
+
+- **Tu libro de vuelo en PDF, con la hoja de siempre** — En la Bitácora, Exportar arma tu libro para imprimir y que te lo firmen, con los totales de hoja en hoja. En el Hangar cargá tu Nº de licencia, tu legajo, la potencia de cada avión y cuántos renglones tiene tu libro. Si cerrás una hoja antes de tiempo, marcalo en el vuelo y sale tachada.
+- **Festejá tus horas** — Cuando un vuelo te hace pasar las 50, 100 o 150 horas, la Bitácora te lo avisa, y contarlo en la Red es un toque: el texto ya viene escrito.
+- **Avisos en tu teléfono** — Activalos en Actividad y enterate cuando te siguen, te aplauden o te comentan. En el iPhone llegan con Vector instalado en la pantalla de inicio.
+- **Invitá a tus compañeros, y cuidá tu red** — Desde la Red mandales tu perfil: cuando se hacen la cuenta, Vector les ofrece seguirte. Y con el ··· de un perfil, una publicación o un comentario podés bloquear o reportar.
+
 ## v2.20.0 — La red, con fotos y tus vuelos
 
 _22 de septiembre de 2026_

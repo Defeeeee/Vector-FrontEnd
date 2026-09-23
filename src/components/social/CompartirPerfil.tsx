@@ -8,15 +8,28 @@ import { conArroba, urlPerfil } from "@/lib/handle";
  * Compartir el perfil: el menú nativo del teléfono si existe (WhatsApp está ahí), y si
  * no, copiar el link. La vista previa que ve el que lo recibe la arma
  * `/u/[handle]/opengraph-image`, con lo que vería un anónimo.
+ *
+ * Con `texto` y `etiqueta` es "Invitar": el mismo link, con un mensaje para sumarse.
  */
-export default function CompartirPerfil({ handle, compacto = false }: { handle: string; compacto?: boolean }) {
+export default function CompartirPerfil({
+  handle,
+  compacto = false,
+  texto,
+  etiqueta = "Compartir perfil",
+}: {
+  handle: string;
+  compacto?: boolean;
+  /** El mensaje que acompaña al link en el menú de compartir. */
+  texto?: string;
+  etiqueta?: string;
+}) {
   const [copiado, setCopiado] = useState(false);
 
   const compartir = async () => {
     const url = urlPerfil(handle, window.location.origin);
     if (typeof navigator.share === "function") {
       try {
-        await navigator.share({ title: `${conArroba(handle)} en Vector`, url });
+        await navigator.share({ title: `${conArroba(handle)} en Vector`, ...(texto ? { text: texto } : {}), url });
         return;
       } catch (e) {
         // Cerrar el menú sin elegir nada tira `AbortError`: no es un error, y
@@ -42,7 +55,7 @@ export default function CompartirPerfil({ handle, compacto = false }: { handle: 
       }`}
     >
       {copiado ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-      {copiado ? "Link copiado" : "Compartir perfil"}
+      {copiado ? "Link copiado" : etiqueta}
     </button>
   );
 }

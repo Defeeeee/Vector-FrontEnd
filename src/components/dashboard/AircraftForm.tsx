@@ -6,6 +6,7 @@ import { addAircraft } from "@/actions/flight";
 import { LoadingButton } from "@/components/LoadingButton";
 import CamposPerformance from "./CamposPerformance";
 import CampoSimulador from "./CampoSimulador";
+import CampoPotencia from "./CampoPotencia";
 import { useAvisos } from "./Avisos";
 
 export default function AircraftForm() {
@@ -90,6 +91,10 @@ export default function AircraftForm() {
               <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-400 rotate-90 pointer-events-none" />
             </div>
           </div>
+          <CampoPotencia
+            claseLabel="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors"
+            claseInput="w-full bg-transparent border border-zinc-200 dark:border-white/10 rounded-2xl py-4 px-5 text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-aviation-cyan/20 focus:border-zinc-900 dark:focus:border-aviation-cyan/50 transition-all font-bold placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+          />
         </div>
 
         <div className="pt-2 border-t border-zinc-100 dark:border-white/5">

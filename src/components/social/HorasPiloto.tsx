@@ -81,11 +81,11 @@ export default function HorasPiloto({ horas }: { horas: HorasPublicas }) {
 }
 
 /** Lo que se ve en lugar de las horas —y de las publicaciones— de un perfil privado. */
-export function PerfilPrivado({ mensaje }: { mensaje: string }) {
+export function PerfilPrivado({ mensaje, titulo = "Perfil privado" }: { mensaje: string; titulo?: string }) {
   return (
     <section className="rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 bg-white dark:bg-white/[0.02] p-8 text-center space-y-2">
       <Lock className="w-6 h-6 mx-auto text-zinc-400" />
-      <p className="font-display font-bold text-lg text-zinc-900 dark:text-white">Perfil privado</p>
+      <p className="font-display font-bold text-lg text-zinc-900 dark:text-white">{titulo}</p>
       <p className="text-sm text-zinc-500 dark:text-zinc-400">{mensaje}</p>
     </section>
   );

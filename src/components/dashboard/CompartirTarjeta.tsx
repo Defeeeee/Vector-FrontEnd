@@ -204,7 +204,6 @@ function descargar(blob: Blob) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  // `ExportFlightsButton` se olvida de esto y deja el blob vivo hasta que se
-  // recarga la pestaña. No repetir la fuga.
+  // Sin esto el blob queda vivo hasta que se recarga la pestaña.
   URL.revokeObjectURL(href);
 }

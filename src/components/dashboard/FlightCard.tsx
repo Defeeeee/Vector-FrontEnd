@@ -1,8 +1,8 @@
 "use client";
 
 import { Flight, Aircraft } from "@/types";
-import { updateFlight, deleteFlight } from "@/actions/flight";
-import { ArrowRight, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor, Share2 } from "lucide-react";
+import { updateFlight, deleteFlight, marcarCierreDeHoja } from "@/actions/flight";
+import { ArrowRight, BookOpenCheck, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor, Share2 } from "lucide-react";
 import { useState, useTransition, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -60,6 +60,23 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
   // que parece un registro roto y es uno bien cargado.
   const enSimulador = Boolean(aircraft?.is_simulator);
   const horas = horasDeLaFila(flight, enSimulador);
+
+  // "Cerrar la hoja": el último renglón de su hoja en el libro de papel. Se marca al
+  // instante y se deshace si el backend no lo toma.
+  const [cierraHoja, setCierraHoja] = useState(Boolean(flight.cierra_hoja));
+  const [marcandoHoja, startMarcarHoja] = useTransition();
+  const alternarCierreDeHoja = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nuevo = !cierraHoja;
+    setCierraHoja(nuevo);
+    startMarcarHoja(async () => {
+      const result = await marcarCierreDeHoja(flight.id, nuevo);
+      if (result?.error) {
+        setCierraHoja(!nuevo);
+        alert(result.error);
+      }
+    });
+  };
 
   const [takeoffTime, setTakeoffTime] = useState(new Date(flight.takeoff).toISOString().substring(11, 16));
   const [landingTime, setLandingTime] = useState(new Date(flight.landing).toISOString().substring(11, 16));
@@ -197,6 +214,15 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
                 {flight.purpose}
               </span>
             )}
+            {cierraHoja && (
+              <span
+                title="Es el último renglón de su hoja en el libro"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-aviation-blue dark:text-aviation-cyan bg-aviation-blue/10 dark:bg-aviation-cyan/10 px-1.5 py-0.5 rounded flex-shrink-0"
+              >
+                <BookOpenCheck className="w-3 h-3" aria-hidden="true" />
+                Cierra hoja
+              </span>
+            )}
           </div>
         </div>
 
@@ -234,7 +260,7 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
                 <DetailItem label="Takeoff" value={new Date(flight.takeoff).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })} />
                 <DetailItem label="Landing" value={new Date(flight.landing).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })} />
                 <DetailItem label="Landings" value={`${flight.landings} ciclos`} />
-                <DetailItem label="Type ICAO" value={aircraft?.icao || "---"} />
+                <DetailItem label="Tipo OACI" value={aircraft?.icao || "---"} />
                 {/* Sólo si hubo cobro: en modo `packs` el vuelo consume horas y no
                     pesos, y un "$ 0" sería inventar un precio que nadie pagó. */}
                 {costo !== null && costo > 0 && (
@@ -244,6 +270,23 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
                   />
                 )}
               </div>
+
+              {/* Para el libro en PDF: cerrar la hoja en este vuelo, como a veces se hace en
+                  el de papel antes de llenarla. */}
+              <button
+                type="button"
+                onClick={alternarCierreDeHoja}
+                disabled={marcandoHoja}
+                aria-pressed={cierraHoja}
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                  cierraHoja
+                    ? "border-aviation-blue/30 dark:border-aviation-cyan/30 bg-aviation-blue/10 dark:bg-aviation-cyan/10 text-aviation-blue dark:text-aviation-cyan"
+                    : "border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.05] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/10"
+                }`}
+              >
+                {marcandoHoja ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpenCheck className="w-3.5 h-3.5" />}
+                {cierraHoja ? "Cierra la hoja del libro · deshacer" : "Cerrar la hoja del libro acá"}
+              </button>
 
               {logs.length > 0 && (
                 <div className="space-y-2.5">

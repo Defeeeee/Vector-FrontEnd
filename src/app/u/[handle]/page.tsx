@@ -5,6 +5,7 @@ import { ArrowLeft, Compass, Eye } from "lucide-react";
 import { getSessionToken } from "@/actions/auth";
 import { AvisosProvider } from "@/components/dashboard/Avisos";
 import BotonSeguir from "@/components/social/BotonSeguir";
+import RecordarInvitacion from "@/components/social/RecordarInvitacion";
 import CabeceraPiloto from "@/components/social/CabeceraPiloto";
 import HorasPiloto, { PerfilPrivado } from "@/components/social/HorasPiloto";
 import ListaPublicaciones from "@/components/social/ListaPublicaciones";
@@ -183,6 +184,7 @@ export default async function PerfilPublicoPagina({ params, searchParams }: Para
           )}
 
           {/* Para quien llegó por el link ------------------------------------------ */}
+          {!conSesion && !comoAnonimo && <RecordarInvitacion handle={piloto.handle} />}
           {!conSesion && (
             <section className="rounded-[2rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-900 dark:border-white/10 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1">

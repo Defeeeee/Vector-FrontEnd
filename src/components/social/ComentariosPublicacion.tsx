@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { Loader2, Send, Trash2 } from "lucide-react";
+import { Flag, Loader2, MoreHorizontal, Send, Trash2 } from "lucide-react";
 import AvatarPiloto from "./AvatarPiloto";
+import DialogoReportar from "./DialogoReportar";
+import MenuAcciones, { type AccionDeMenu } from "@/components/MenuAcciones";
 import { borrarComentario, comentar, listarComentarios } from "@/actions/social";
 import { conArroba, rutaPerfil, rutaPerfilApp } from "@/lib/handle";
 import type { Comentario } from "@/types";
@@ -35,6 +37,7 @@ export default function ComentariosPublicacion({
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [enviando, startEnviar] = useTransition();
   const [borrando, setBorrando] = useState<string | null>(null);
+  const [reportando, setReportando] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     setErrorCarga(null);
@@ -78,8 +81,24 @@ export default function ComentariosPublicacion({
 
   const rutaDe = contexto.modo === "app" ? rutaPerfilApp : rutaPerfil;
 
+  /** Borrar lo que se puede borrar (lo propio, o todo en lo propio) y reportar lo ajeno. */
+  const accionesDe = (c: Comentario): AccionDeMenu[] => {
+    if (contexto.interaccion !== "completa") return [];
+    const acciones: AccionDeMenu[] = [];
+    if (c.autor.handle !== contexto.miHandle) {
+      acciones.push({ etiqueta: "Reportar comentario", icono: Flag, alElegir: () => setReportando(c.id) });
+    }
+    if (c.puede_borrar) {
+      acciones.push({ etiqueta: "Borrar comentario", icono: Trash2, peligro: true, alElegir: () => void borrar(c) });
+    }
+    return acciones;
+  };
+
   return (
     <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5 space-y-3">
+      {reportando && (
+        <DialogoReportar tipo="comentario" objetivo={reportando} alCerrar={() => setReportando(null)} />
+      )}
       {comentarios === null && !errorCarga && (
         <p className="flex items-center gap-2 text-[13px] text-zinc-400">
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Cargando comentarios…
@@ -120,21 +139,18 @@ export default function ComentariosPublicacion({
                   {c.texto}
                 </p>
               </div>
-              {c.puede_borrar && contexto.interaccion === "completa" && (
-                <button
-                  type="button"
-                  onClick={() => void borrar(c)}
-                  disabled={borrando === c.id}
-                  aria-label="Borrar comentario"
-                  title="Borrar comentario"
-                  className="mt-1.5 p-1.5 rounded-full text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+              {accionesDe(c).length > 0 && (
+                <MenuAcciones
+                  acciones={accionesDe(c)}
+                  etiqueta="Opciones del comentario"
+                  claseBoton="mt-1 p-1.5 rounded-full text-zinc-300 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                 >
                   {borrando === c.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <MoreHorizontal className="w-3.5 h-3.5" />
                   )}
-                </button>
+                </MenuAcciones>
               )}
             </li>
           ))}

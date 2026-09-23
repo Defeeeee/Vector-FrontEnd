@@ -47,7 +47,10 @@ export type NombreIcono =
   | "lupa"
   | "grafico"
   | "camara"
-  | "conversacion";
+  | "conversacion"
+  | "libro"
+  | "campana"
+  | "festejo";
 
 export interface Novedad {
   icono: NombreIcono;
@@ -74,6 +77,45 @@ export interface VersionPublicada {
  * `CHANGELOG[0]` y nada más, así que una entrada fuera de orden anunciaría lo viejo.
  */
 export const CHANGELOG: VersionPublicada[] = [
+  {
+    version: "2.21.0",
+    fecha: "2026-09-23",
+    titulo: "Tu libro de vuelo, en PDF",
+    novedades: [
+      {
+        icono: "libro",
+        titulo: "Tu libro de vuelo en PDF, con la hoja de siempre",
+        texto:
+          "En la Bitácora, Exportar arma tu libro para imprimir y que te lo firmen, con los totales de hoja en hoja. En el Hangar cargá tu Nº de licencia, tu legajo, la potencia de cada avión y cuántos renglones tiene tu libro. Si cerrás una hoja antes de tiempo, marcalo en el vuelo y sale tachada.",
+        href: "/dashboard/history",
+        cta: "Ver la Bitácora",
+      },
+      {
+        icono: "festejo",
+        titulo: "Festejá tus horas",
+        texto:
+          "Cuando un vuelo te hace pasar las 50, 100 o 150 horas, la Bitácora te lo avisa, y contarlo en la Red es un toque: el texto ya viene escrito.",
+        href: "/dashboard/history",
+        cta: "Ver la Bitácora",
+      },
+      {
+        icono: "campana",
+        titulo: "Avisos en tu teléfono",
+        texto:
+          "Activalos en Actividad y enterate cuando te siguen, te aplauden o te comentan. En el iPhone llegan con Vector instalado en la pantalla de inicio.",
+        href: "/dashboard/pilotos/actividad",
+        cta: "Ir a Actividad",
+      },
+      {
+        icono: "compartir",
+        titulo: "Invitá a tus compañeros, y cuidá tu red",
+        texto:
+          "Desde la Red mandales tu perfil: cuando se hacen la cuenta, Vector les ofrece seguirte. Y con el ··· de un perfil, una publicación o un comentario podés bloquear o reportar.",
+        href: "/dashboard/pilotos",
+        cta: "Ir a la Red",
+      },
+    ],
+  },
   {
     version: "2.20.0",
     fecha: "2026-09-22",

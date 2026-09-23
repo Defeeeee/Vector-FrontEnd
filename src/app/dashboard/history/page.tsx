@@ -1,9 +1,12 @@
 import { apiFetch } from "@/lib/api";
-import { Flight, Aircraft, Profile, Transaction } from "@/types";
+import { Flight, Aircraft, Logbook, Profile, Transaction } from "@/types";
 import { costosPorVuelo } from "@/lib/costos";
+import { hitoCruzado } from "@/lib/hitos";
+import { soloVolados } from "@/lib/simulador";
+import { openingTotals } from "@/lib/summary";
 import { Plus, Clock, LandPlot, Plane } from "lucide-react";
 import Link from "next/link";
-import ExportFlightsButton from "@/components/dashboard/ExportFlightsButton";
+import ExportarBitacora from "@/components/dashboard/ExportarBitacora";
 import FlightListClient from "@/components/dashboard/FlightListClient";
 import PageHeader from "@/components/dashboard/PageHeader";
 import BannerCompartirVuelo from "@/components/social/BannerCompartirVuelo";
@@ -36,11 +39,14 @@ async function getHistoryData() {
 }
 
 export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
-  const [{ flights, aircraft, transactions }, resumen, { nuevo }] = await Promise.all([
+  const [{ flights, aircraft, transactions }, resumen, librosRes, { nuevo }] = await Promise.all([
     getHistoryData(),
     leerResumenSocial(),
+    // Para el PDF (se arma de a un libro) y para el hito: la apertura suma al total.
+    apiFetch("/logbooks"),
     searchParams,
   ]);
+  const libros: Logbook[] = librosRes.ok ? await librosRes.json() : [];
 
   const costos = costosPorVuelo(transactions);
 
@@ -57,6 +63,19 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
   const avionDelNuevo = recienCargado ? aircraft.find((a) => a.id === recienCargado.aircraft_id) : undefined;
   const ofrecerCompartir = !!resumen.handle && !!recienCargado && !avionDelNuevo?.is_simulator;
 
+  /*
+    El hito: si el vuelo recién cargado cruzó las 50, 100, 150… horas. El total es el
+    mismo del perfil público —lo volado sin simuladores, más la apertura—, así que el
+    hito que se festeja acá es el que después se ve en el perfil. Se festeja aunque no
+    tenga @: Publicar lo deja crear ahí mismo.
+  */
+  const totalVolado =
+    soloVolados(flights, aircraft).reduce((t, f) => t + (f.duration || 0), 0) + openingTotals(libros).totalHours;
+  const hito =
+    recienCargado && !avionDelNuevo?.is_simulator
+      ? hitoCruzado(totalVolado - (recienCargado.duration || 0), totalVolado)
+      : null;
+
   const totalHours = sortedFlights.reduce((acc, f) => acc + f.duration, 0);
   const totalLandings = sortedFlights.reduce((acc, f) => acc + f.landings, 0);
 
@@ -67,7 +86,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         title="Bitácora"
         action={
           <>
-            <ExportFlightsButton flights={sortedFlights} aircraft={aircraft} />
+            <ExportarBitacora flights={sortedFlights} aircraft={aircraft} libros={libros} />
             <Link href="/dashboard/log-flight" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm px-6 py-3.5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center gap-2">
               <span>Nuevo registro</span>
               <Plus className="w-4 h-4" />
@@ -82,10 +101,11 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         </div>
       </PageHeader>
 
-      {ofrecerCompartir && recienCargado && (
+      {(ofrecerCompartir || hito) && recienCargado && (
         <BannerCompartirVuelo
           vueloId={recienCargado.id}
           resumen={[rutaLegible(recienCargado.route), `${recienCargado.duration.toFixed(1)} h`].filter(Boolean).join(" · ")}
+          hito={hito}
         />
       )}
       <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} />

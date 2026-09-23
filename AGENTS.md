@@ -12,7 +12,9 @@ de cada decisión está en la bitácora (`docs/bitacora/`); acá queda lo vigent
 
 Bitácora digital para pilotos argentinos: formato ANAC, desglose de horas, vencimientos
 y "¿puedo volar hoy?" según la RAAC 61. Desde la 2.19.0, además, una red de pilotos: @ y
-perfil público, y desde la 2.20.0 publicaciones con fotos, aplausos y comentarios.
+perfil público, y desde la 2.20.0 publicaciones con fotos, aplausos y comentarios. Desde
+la 2.21.0, el libro de vuelo en PDF con la hoja de siempre, y la red con bloqueos,
+reportes, invitaciones y avisos push.
 **El público es el alumno de escuela que va de
 PPA a PCA**: no es dueño del avión, paga por hora o por pack, y abre la app para saber
 si puede volar, cuánto le falta y cuánto le queda.
@@ -35,13 +37,14 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/lib/secciones.ts` | Las **cinco secciones** de la barra y sus pestañas (ver abajo). |
 | `src/app/u/[handle]/` | El perfil público, el link que se comparte: fuera del dashboard, se abre sin cuenta. Quien lo abre con sesión va a `/dashboard/pilotos/[handle]`, el mismo perfil adentro de la app. |
 | `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
+| `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
 | `src/lib/api.ts` | `apiFetch`: único camino al backend, con el token de la cookie. Cachea los GET 20 s. |
 | `src/proxy.ts` | Protege `/dashboard` y renueva la sesión (el JWT de Supabase dura una hora). |
 | `src/data/` | Aeródromos, pistas, AIP, aerovías, fixes y radioayudas en TSV **commiteados**: la app no depende de red en build ni en runtime. Se regeneran con `npm run build:*`. |
 | `src/sw/sw.ts` | El service worker (PWA). Lo compila `scripts/build-sw.mjs` después de `next build`. |
-| `docs/normativa/` | Las secciones de la RAAC 61 que cita el código. |
+| `docs/normativa/` | Las secciones de la RAAC 61 que cita el código, y las fuentes del libro de vuelo (RAAC 61.120 y Res. ANAC 470/2025). **La VI edición de la RAAC 61 (enero 2026) renumeró**: el libro de vuelo ya no es la 61.51. |
 | `docs/brief/` | Los planes 01–11, tal como se escribieron. Son historia, no backlog: verificá contra el código antes de dar algo de ahí por pendiente. |
 
 ### La navegación
@@ -128,6 +131,9 @@ Actividad.
       texto del Hangar y de `CrearHandleRapido`, porque crear el @ es el consentimiento.
     - La vista previa (`opengraph-image`) pide **siempre como anónimo**: el link lo recibe
       cualquiera.
+    - Los avisos push dicen quién y qué (te siguió, aplaudió, comentó), **nunca datos de
+      la bitácora** (`services/avisos.py` del backend). Un bloqueo también lo impone el
+      RLS (migración 021), y quien fue bloqueado ve un 404, como si el @ no existiera.
 15. **Ninguna pantalla escribe al dibujarse.** El smoke recorre las pantallas contra la
     base de producción dando por hecho que mirar no cambia nada. Por eso la Actividad
     marca lo visto desde el navegador (`marcarActividadVista`), no en el render.
@@ -195,18 +201,24 @@ antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tam
 cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
 importa es el del backend (`request_max_body_size`, 30 MB).
 
-## Estado y pendientes (al 2026-09-22)
+## Estado y pendientes (al 2026-09-23)
 
-- **La landing promete "PDF oficial"** (`src/app/page.tsx`) y ese export no existe: se
-  borró como código muerto en el plan 09. Hoy hay CSV (Bitácora) y JSON (Hangar).
+- **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
+  se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
+  con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas
+  y minutos (el punto 5 dice "sexagesimal", el CAD muestra decimales), cambia
+  `formatoLibro`.
 - **Supabase está en `us-east-1`** y el VPS en São Paulo: ~160 ms por consulta, el piso de
   latencia de toda pantalla. Moverlo a `sa-east-1` es decisión de Federico (downtime).
 - **Propuestas de simplificación sin decidir:** congelar lo que hoy no usa nadie
   (métricas propias, calendario, la UI de múltiples libros) y poner detrás de un permiso
   por perfil lo que excede al alumno (aerovías, HVI, Jeppesen).
-- **La red social deja afuera, a propósito,** bloquear o reportar usuarios, editar una
-  publicación, avisos push, redirigir un @ viejo y páginas de escuela o aeródromo.
-  Además:
+- **La red social deja afuera, a propósito,** editar una publicación, redirigir un @ viejo
+  y páginas de escuela o aeródromo. Además:
+  - los reportes no tienen pantalla: se leen en la tabla `reportes` y llegan como aviso
+    push a los `ADMINS_RED` del backend;
+  - los avisos push necesitan las claves VAPID en el `.env` del backend; sin ellas no se
+    ofrecen;
   - el login siempre vuelve a `/dashboard`, no al perfil desde el que se fue a ingresar;
   - la búsqueda no tiene límite de pedidos, más allá de exigir sesión y un tope de 20
     resultados;

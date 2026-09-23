@@ -32,6 +32,8 @@ const RECURSOS: Array<[clave: string, ruta: string]> = [
   ["seguidores", "/social/seguidores"],
   ["publicaciones", "/red/mis-publicaciones"],
   ["comentarios", "/red/mis-comentarios"],
+  // A quiénes bloqueaste. Los reportes no: se escriben y no se leen, ni el propio.
+  ["bloqueados", "/social/bloqueados"],
 ];
 
 export async function GET() {

@@ -39,6 +39,7 @@ export async function createLogbook(input: {
   name: string;
   description?: string;
   opening?: OpeningBalanceInput;
+  renglones_por_hoja?: number;
 }) {
   const response = await apiFetch("/logbooks", {
     method: "POST",
@@ -46,6 +47,7 @@ export async function createLogbook(input: {
       name: input.name,
       description: input.description || null,
       opening: input.opening ?? null,
+      renglones_por_hoja: input.renglones_por_hoja ?? null,
     }),
   });
 
@@ -60,7 +62,7 @@ export async function createLogbook(input: {
 
 export async function updateLogbook(
   id: string,
-  input: { name?: string; description?: string; opening?: OpeningBalanceInput }
+  input: { name?: string; description?: string; opening?: OpeningBalanceInput; renglones_por_hoja?: number }
 ) {
   const response = await apiFetch(`/logbooks/${id}`, {
     method: "PATCH",

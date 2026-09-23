@@ -26,6 +26,12 @@ export interface Flight {
   sim_instructor?: number;
   sim_pil_en_inst?: number;
   
+  /**
+   * Este vuelo es el último renglón de su hoja en el libro de papel: la hoja se cerró
+   * antes de llenarse y lo que quedó en blanco se tacha. Lo usa el PDF del libro.
+   */
+  cierra_hoja?: boolean;
+
   discount_type?: 'value' | 'percent';
   discount_amount?: number;
   purpose: string;
@@ -91,6 +97,11 @@ export interface Aircraft {
   /** Utilizable, no total: el no utilizable no vuela. */
   fuel_capacity_l?: number;
   /**
+   * Caballos de fuerza; la total si es multimotor. Una columna del libro de vuelo (Res.
+   * ANAC 470/2025, Anexo I, punto 5). Sin cargar, queda en blanco en el PDF.
+   */
+  potencia_hp?: number | null;
+  /**
    * `true` = dispositivo de entrenamiento, no aeronave.
    *
    * El simulador se anota en el libro como cualquier vuelo —fecha, horarios, el
@@ -109,6 +120,10 @@ export interface Profile {
   tracking_mode?: 'packs' | 'balance';
   api_key?: string;
   whatsapp_phone?: string;
+  /** Para el encabezado de la hoja del libro de vuelo en PDF. */
+  licencia_numero?: string | null;
+  /** El legajo que asigna Licencias al Personal de ANAC. Mismo uso. */
+  legajo?: string | null;
   /**
    * Si puede ver las cartas Jeppesen del servidor. Se pone a mano por SQL —no
    * hay todavía flujo de pago— y a propósito no se puede tocar desde el propio
@@ -317,6 +332,8 @@ export interface Logbook {
   opening_imc_pil: number;
   opening_imc_cop: number;
   opening_capota: number;
+  /** Renglones por hoja del libro de papel (15 en la hoja del Adjunto A). */
+  renglones_por_hoja?: number;
 }
 
 /**
@@ -326,8 +343,11 @@ export interface Logbook {
  */
 export type Visibilidad = "publico" | "privado";
 
-/** Qué es el que mira respecto de un perfil. `anonimo` = sin sesión (el link de WhatsApp). */
-export type RelacionSocial = "anonimo" | "propio" | "siguiendo" | "pendiente" | "ninguna";
+/**
+ * Qué es el que mira respecto de un perfil. `anonimo` = sin sesión (el link de WhatsApp).
+ * `bloqueado` = lo bloqueaste vos; el bloqueado nunca lo ve (para él, el perfil no existe).
+ */
+export type RelacionSocial = "anonimo" | "propio" | "siguiendo" | "pendiente" | "ninguna" | "bloqueado";
 
 export interface PerfilPublico {
   handle: string;

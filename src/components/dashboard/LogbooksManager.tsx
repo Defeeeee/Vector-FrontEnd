@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { BookOpen, Pencil, Plus, Trash2, X, Loader2 } from "lucide-react";
 import { Logbook } from "@/types";
+import { RENGLONES_MAX, RENGLONES_MIN, RENGLONES_POR_HOJA, renglonesDeLaHoja } from "@/lib/libro-anac";
 import {
   createLogbook,
   updateLogbook,
@@ -97,6 +99,7 @@ export default function LogbooksManager({ logbooks }: { logbooks: Logbook[] }) {
                 <p className="data text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">
                   {book.flight_count ?? 0} {book.flight_count === 1 ? "vuelo" : "vuelos"}
                   {total > 0 && <> · {total.toFixed(1)} hs de saldo inicial</>}
+                  {renglonesDeLaHoja(book) !== RENGLONES_POR_HOJA && <> · {renglonesDeLaHoja(book)} renglones por hoja</>}
                 </p>
               </div>
 
@@ -162,7 +165,12 @@ function LogbookForm({
   const [opening, setOpening] = useState<OpeningBalanceInput>(
     book ? openingOf(book) : {}
   );
+  // Como texto mientras se escribe, por lo mismo que el saldo inicial.
+  const [renglones, setRenglones] = useState(String(renglonesDeLaHoja(book)));
   const [pending, startTransition] = useTransition();
+  const renglonesNum = Number(renglones);
+  const renglonesValidos =
+    Number.isInteger(renglonesNum) && renglonesNum >= RENGLONES_MIN && renglonesNum <= RENGLONES_MAX;
 
 
   const setField = (key: keyof OpeningBalanceInput, raw: string) => {
@@ -176,7 +184,7 @@ function LogbookForm({
   const submit = () => {
     onError(null);
     startTransition(async () => {
-      const payload = { name: name.trim(), description: description.trim(), opening };
+      const payload = { name: name.trim(), description: description.trim(), opening, renglones_por_hoja: renglonesNum };
       const result = book
         ? await updateLogbook(book.id, payload)
         : await createLogbook(payload);
@@ -193,7 +201,9 @@ function LogbookForm({
     });
   };
 
-  return (
+  // Por portal: la página entra con una animación (`transform`), y un `fixed` adentro
+  // queda atrapado debajo de la barra del teléfono, que tapaba el botón de guardar.
+  return createPortal(
     <div className="fixed inset-0 z-[120] flex items-end md:items-center justify-center p-0 md:p-6">
       <div className="absolute inset-0 bg-zinc-900/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
@@ -237,6 +247,29 @@ function LogbookForm({
             />
           </div>
 
+          {/* El libro en PDF corta la hoja donde la corta el de papel: no todos los libros
+              que se venden tienen los 15 renglones de la hoja de ANAC. */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="renglones-por-hoja"
+              className="block font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500"
+            >
+              Renglones por hoja
+            </label>
+            <input
+              id="renglones-por-hoja"
+              value={renglones}
+              onChange={(e) => setRenglones(e.target.value.replace(/[^0-9]/g, ""))}
+              inputMode="numeric"
+              className="w-24 bg-transparent border-b border-zinc-200 dark:border-white/10 py-2 text-base font-semibold text-zinc-900 dark:text-white outline-none focus:border-aviation-blue transition-colors data"
+            />
+            <p className={`text-[12px] ${renglonesValidos ? "text-zinc-400 dark:text-zinc-500" : "text-red-600 dark:text-red-400"}`}>
+              {renglonesValidos
+                ? "Los de una hoja de tu libro de papel. La de ANAC tiene 15. El libro en PDF corta la hoja igual."
+                : `Entre ${RENGLONES_MIN} y ${RENGLONES_MAX}.`}
+            </p>
+          </div>
+
           <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-white/10">
             <p className="eyebrow">Saldo inicial</p>
             <OpeningBalanceFields opening={opening} setField={setField} />
@@ -247,13 +280,14 @@ function LogbookForm({
           <button
             type="button"
             onClick={submit}
-            disabled={pending || !name.trim()}
+            disabled={pending || !name.trim() || !renglonesValidos}
             className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold py-3.5 rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {pending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : book ? "Guardar" : "Crear libro"}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

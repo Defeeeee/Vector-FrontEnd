@@ -7,6 +7,7 @@ import BotonSeguir from "@/components/social/BotonSeguir";
 import CabeceraPiloto from "@/components/social/CabeceraPiloto";
 import CompartirPerfil from "@/components/social/CompartirPerfil";
 import HorasPiloto, { PerfilPrivado } from "@/components/social/HorasPiloto";
+import MenuPiloto from "@/components/social/MenuPiloto";
 import ListaPublicaciones from "@/components/social/ListaPublicaciones";
 import { apiFetch } from "@/lib/api";
 import { conArroba, normalizarHandle, problemaDelHandle, rutaPerfil } from "@/lib/handle";
@@ -98,12 +99,18 @@ export default async function PerfilEnLaApp({ params }: Params) {
               </Link>
             </>
           ) : (
-            <BotonSeguir
-              handle={piloto.handle}
-              relacion={piloto.relacion}
-              visibilidad={piloto.visibilidad}
-              tieneHandle={!!resumen.handle}
-            />
+            <>
+              {/* `key`: si bloquear desde el menú cambia la relación, el botón arranca de nuevo. */}
+              <BotonSeguir
+                key={piloto.relacion}
+                handle={piloto.handle}
+                relacion={piloto.relacion}
+                visibilidad={piloto.visibilidad}
+                tieneHandle={!!resumen.handle}
+              />
+              {/* Bloquear y reportar piden tu @, como seguir: el otro tiene que poder no verte. */}
+              {resumen.handle && <MenuPiloto handle={piloto.handle} relacion={piloto.relacion} />}
+            </>
           )
         }
       />
@@ -112,10 +119,13 @@ export default async function PerfilEnLaApp({ params }: Params) {
         <HorasPiloto horas={piloto.horas} />
       ) : (
         <PerfilPrivado
+          titulo={piloto.relacion === "bloqueado" ? "Bloqueado" : undefined}
           mensaje={
-            piloto.relacion === "pendiente"
-              ? "Tu solicitud está pendiente. Cuando la acepte, vas a ver sus horas y lo que publica."
-              : `Seguí a ${conArroba(piloto.handle)} para ver sus horas y lo que publica.`
+            piloto.relacion === "bloqueado"
+              ? `Bloqueaste a ${conArroba(piloto.handle)}: no ve tu perfil ni lo que publicás, y vos no ves lo suyo.`
+              : piloto.relacion === "pendiente"
+                ? "Tu solicitud está pendiente. Cuando la acepte, vas a ver sus horas y lo que publica."
+                : `Seguí a ${conArroba(piloto.handle)} para ver sus horas y lo que publica.`
           }
         />
       )}
@@ -128,7 +138,7 @@ export default async function PerfilEnLaApp({ params }: Params) {
               inicial={lectura.publicaciones}
               siguiente={lectura.siguiente}
               origen={{ tipo: "piloto", handle: piloto.handle }}
-              contexto={{ modo: "app", interaccion: resumen.handle ? "completa" : "sin-handle" }}
+              contexto={{ modo: "app", interaccion: resumen.handle ? "completa" : "sin-handle", miHandle: resumen.handle }}
               vacio={
                 <p className="rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
                   {esPropio ? (

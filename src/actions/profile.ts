@@ -9,6 +9,8 @@ export async function updateProfile(formData: FormData) {
   const last_name = formData.get("last_name") as string;
   const license_type = formData.get("license_type") as string;
   const whatsapp_phone = formData.get("whatsapp_phone") as string;
+  // Van en el encabezado del libro en PDF (migración 020). Vacío es `null`, no "".
+  const textoOpcional = (campo: string) => String(formData.get(campo) ?? "").trim().slice(0, 30) || null;
 
   if (!id) {
     throw new Error("ID de perfil no encontrado");
@@ -24,6 +26,8 @@ export async function updateProfile(formData: FormData) {
       last_name,
       license_type,
       whatsapp_phone: whatsapp_phone || null,
+      licencia_numero: textoOpcional("licencia_numero"),
+      legajo: textoOpcional("legajo"),
     }),
   });
 

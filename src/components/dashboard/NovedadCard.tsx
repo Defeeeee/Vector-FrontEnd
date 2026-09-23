@@ -1,19 +1,22 @@
 import Link from "next/link";
 import {
-  ChevronRight,
-  Compass,
-  Plane,
-  CloudOff,
-  KeyRound,
-  Wallet,
+  Bell,
+  BookOpen,
   CalendarDays,
-  Share2,
-  Clock,
-  Search,
-  PieChart,
   Camera,
+  ChevronRight,
+  Clock,
+  CloudOff,
+  Compass,
+  KeyRound,
   MessageCircle,
+  PartyPopper,
+  PieChart,
+  Plane,
+  Search,
+  Share2,
   type LucideIcon,
+  Wallet,
 } from "lucide-react";
 import type { Novedad, NombreIcono } from "@/lib/changelog";
 
@@ -39,6 +42,9 @@ const ICONOS: Record<NombreIcono, LucideIcon> = {
   grafico: PieChart,
   camara: Camera,
   conversacion: MessageCircle,
+  libro: BookOpen,
+  campana: Bell,
+  festejo: PartyPopper,
 };
 
 export default function NovedadCard({ novedad }: { novedad: Novedad }) {
