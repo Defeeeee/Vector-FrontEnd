@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { calcularDimensiones } from "./imagen-cliente";
+import { calcularDimensiones, nombreConExtension } from "./imagen-cliente";
+
+describe("nombreConExtension", () => {
+  it("cambia la extensión por la del formato en que quedó", () => {
+    expect(nombreConExtension("IMG_2041.HEIC", "image/webp")).toBe("IMG_2041.webp");
+    // Safari: el WebP volvió como JPEG.
+    expect(nombreConExtension("foto.png", "image/jpeg")).toBe("foto.jpg");
+    expect(nombreConExtension("sin-extension", "image/png")).toBe("sin-extension.png");
+    expect(nombreConExtension(".webp", "image/webp")).toBe("foto.webp");
+  });
+});
 
 describe("calcularDimensiones", () => {
   it("no hace nada si es más chica que el máximo", () => {

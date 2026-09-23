@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { TILES_OPCIONES, TILES_URL } from "@/lib/mapa-tiles";
 
 export interface PuntoMapa {
   codigo: string;
@@ -23,7 +24,7 @@ export interface PuntoMapa {
  * Por eso los puntos van numerados y no dimensionados por cantidad de visitas: el dato
  * que el piloto necesita leer del mapa es **en qué orden**, no cuánto.
  */
-export default function PlanMapaInner({ puntos, className }: { puntos: PuntoMapa[], className?: string }) {
+export default function PlanMapaInner({ puntos }: { puntos: PuntoMapa[] }) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<L.Map | null>(null);
 
@@ -38,10 +39,9 @@ export default function PlanMapaInner({ puntos, className }: { puntos: PuntoMapa
         attributionControl: false,
       });
       L.control.zoom({ position: "bottomright" }).addTo(mapaRef.current);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-        subdomains: "abcd",
-      }).addTo(mapaRef.current);
+      // OSM exige la atribución visible (ver `lib/mapa-tiles.ts`).
+      L.control.attribution({ prefix: false, position: "bottomleft" }).addTo(mapaRef.current);
+      L.tileLayer(TILES_URL, TILES_OPCIONES).addTo(mapaRef.current);
     }
 
     const mapa = mapaRef.current;
@@ -106,7 +106,7 @@ export default function PlanMapaInner({ puntos, className }: { puntos: PuntoMapa
   return (
     <div
       ref={contenedorRef}
-      className={className || "w-full h-[300px] md:h-[420px] rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 z-0"}
+      className="w-full h-[300px] md:h-[420px] rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 z-0"
     />
   );
 }

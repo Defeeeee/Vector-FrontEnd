@@ -11,8 +11,9 @@ de cada decisión está en la bitácora (`docs/bitacora/`); acá queda lo vigent
 ## Qué es Vector
 
 Bitácora digital para pilotos argentinos: formato ANAC, desglose de horas, vencimientos
-y "¿puedo volar hoy?" según la RAAC 61. Desde la 2.19.0, además, una red de pilotos con
-@ y perfil público. **El público es el alumno de escuela que va de
+y "¿puedo volar hoy?" según la RAAC 61. Desde la 2.19.0, además, una red de pilotos: @ y
+perfil público, y desde la 2.20.0 publicaciones con fotos, aplausos y comentarios.
+**El público es el alumno de escuela que va de
 PPA a PCA**: no es dueño del avión, paga por hora o por pack, y abre la app para saber
 si puede volar, cuánto le falta y cuánto le queda.
 
@@ -32,7 +33,8 @@ si puede volar, cuánto le falta y cuánto le queda.
 |---|---|
 | `src/app/dashboard/` | Las pantallas logueadas. El layout trae la barra, las pestañas de sección, los carteles de red y el copiloto. |
 | `src/lib/secciones.ts` | Las **cinco secciones** de la barra y sus pestañas (ver abajo). |
-| `src/app/u/[handle]/` | El perfil público de la red social, fuera del dashboard: se abre sin cuenta. |
+| `src/app/u/[handle]/` | El perfil público, el link que se comparte: fuera del dashboard, se abre sin cuenta. Quien lo abre con sesión va a `/dashboard/pilotos/[handle]`, el mismo perfil adentro de la app. |
+| `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
 | `src/lib/api.ts` | `apiFetch`: único camino al backend, con el token de la cookie. Cachea los GET 20 s. |
@@ -49,19 +51,23 @@ no son sección son pestañas:
 
 - Bitácora = Vuelos · Resumen · Calendario · Auditoría.
 - Preparar vuelo = Planificador · Aeropuertos · Clima · Herramientas.
-- Pilotos = Buscar · Solicitudes.
+- Pilotos = Red · Buscar · Actividad. Publicar y el perfil de un piloto
+  (`/dashboard/pilotos/[handle]`) cuelgan de la Red.
 
 Las URLs son las de siempre. **Cinco es el techo**, porque es lo que entra en la píldora
 del teléfono sin la hoja "Más", y un test lo fija. La pestaña activa es la de `href` más
-específico (`pestanaActiva`): por prefijo, Buscar y Solicitudes se prenderían juntas.
+específico (`pestanaActiva`): por prefijo, la Red se prendería junto con Buscar o
+Actividad.
 
 - Una pantalla nueva **se agrega en `SECCIONES`** y aparece sola en la barra y en las
-  pestañas (`SeccionTabs`, en el layout). Si no va en ninguna sección, va en
-  `FUERA_DE_LA_BARRA` de `secciones.test.ts` con el motivo: el test recorre
-  `src/app/dashboard` y falla si una pantalla queda sin forma de llegar.
+  pestañas (`SeccionTabs`, en el layout). Si no es pestaña, va en `secciones.test.ts` con
+  el motivo: en `CUELGAN_DE_UNA_PESTANA` si vive adentro de una sección, o en
+  `FUERA_DE_LA_BARRA` si no. El test recorre `src/app/dashboard` y falla si una pantalla
+  queda sin forma de llegar.
 - El inicio contesta tres preguntas —¿puedo volar hoy?, ¿cuánto me falta?, ¿cuánto me
   queda?— y cierra con los últimos vuelos. **Lo que no conteste una de las tres va al
-  Resumen**, no al inicio.
+  Resumen**, no al inicio. La única excepción la decidió Federico: la tarjeta chica "Tu
+  red", al final y por `Suspense`, para que la red nunca demore lo de arriba.
 - **Registrar vuelo es una sola página** (`/dashboard/log-flight`). Hubo un modal
   interceptado (`@modal/(.)log-flight`) que se llevó cinco commits de arreglos en un
   mes; se sacó en la 2.18.0. No volver a interceptar esa ruta.
@@ -91,10 +97,14 @@ específico (`pestanaActiva`): por prefijo, Buscar y Solicitudes se prenderían 
 8. **Después de escribir, revalidar cada pantalla que muestra ese dato** (`revalidatePath`).
    `apiFetch` cachea los GET 20 s: una pantalla que falte en la lista muestra el dato
    viejo. Y los `catch` de las acciones dejan pasar el `redirect` de Next con
-   `esErrorDeRedirect`.
+   `esErrorDeRedirect`. La excepción son las publicaciones, los aplausos y los
+   comentarios: esas pantallas se piden sin cache y la tarjeta es dueña de su estado, así
+   que revalidar sólo volvería a dibujar el feed entero en cada aplauso (ver
+   `actions/social.ts`).
 9. **`API_URL` por defecto es `http://127.0.0.1:7477/api`, con `/api`**: el backend vive
-   en el mismo VPS. Por el dominio público va **sin** `/api`, porque lo agrega nginx. Esa
-   asimetría cortó producción el 2026-08-27. En CI el smoke usa el dominio público.
+   en el mismo VPS. Por el dominio público va **sin** `/api`, porque lo agrega el proxy
+   (Traefik, `addPrefix` en `flightlog.fdiaznem.com.ar.yml`; ver Deploy). Esa asimetría
+   cortó producción el 2026-08-27. En CI el smoke usa el dominio público.
 10. **La tarjeta compartible saca los números de la sesión**, nunca del query string, y no
     acepta `user_id`: una tarjeta pública necesita un token firmado y su propio modelo
     de amenaza.
@@ -104,15 +114,23 @@ específico (`pestanaActiva`): por prefijo, Buscar y Solicitudes se prenderían 
     direcciones. Un número que no aparece en la fuente no entra.
 13. **Los números de un plan salen de la base, no de la bitácora.** Una entrada dijo "2000
     vuelos" cuando había 45, y casi se diseñó paginación de servidor sobre eso.
-14. **De la red social, hacia afuera salen sólo agregados.** El perfil público
-    (`/u/[handle]`) se abre sin cuenta. El backend decide qué ve cada uno con
-    `puede_ver_horas` **antes** de leer nada, y devuelve cinco números de horas. Ninguna
-    fila de `flights` ni ningún `user_id` cruza la API. La regla se repite en el RLS de la
-    migración 018 del backend.
-    - Si agregás un dato al perfil público, va en la política de privacidad y en el texto
-      del formulario del Hangar, porque crear el @ es el consentimiento.
+14. **De la red social sale sólo lo que el piloto eligió.** Del perfil, cinco números de
+    horas agregadas; de la bitácora, **nada solo**: una publicación lleva un vuelo sólo si
+    el piloto lo adjunta, y de ese vuelo sólo los datos que prendió (ruta como origen y
+    destino, duración, tipo de avión, fecha). Es una copia (`resumen_de_vuelo` del
+    backend) y **nunca lleva la matrícula**. Ninguna fila de `flights` ni ningún
+    `user_id` cruza la API.
+    - Una publicación la ve quien puede ver el perfil de su autor, y lo impone el RLS
+      (migraciones 018 y 019 del backend), no esta app.
+    - Las fotos se re-codifican en el backend sin EXIF (sin la ubicación GPS) y las de
+      publicaciones se sirven con URLs firmadas. La foto de perfil es pública, como el @.
+    - Si agregás un dato a lo que se publica, va en la política de privacidad y en el
+      texto del Hangar y de `CrearHandleRapido`, porque crear el @ es el consentimiento.
     - La vista previa (`opengraph-image`) pide **siempre como anónimo**: el link lo recibe
       cualquiera.
+15. **Ninguna pantalla escribe al dibujarse.** El smoke recorre las pantallas contra la
+    base de producción dando por hecho que mirar no cambia nada. Por eso la Actividad
+    marca lo visto desde el navegador (`marcarActividadVista`), no en el render.
 
 ## Comandos
 
@@ -156,14 +174,26 @@ Sin credenciales, y sin tocar producción: un backend falso local y una cookie c
 
 ## Deploy
 
-**Se despliega pusheando a `main`.** `.github/workflows/deploy.yml` entra por SSH al VPS,
-hace `git reset --hard origin/main`, `npm ci`, borra `.next`, construye, reinicia con
+**Se despliega pusheando a `main`, y sólo si el CI pasa.** `ci.yml` corre `tsc`, tests,
+build y smoke con sesión; cuando termina en verde, `.github/workflows/deploy.yml`
+(`workflow_run`) entra por SSH al VPS, hace `git reset --hard` **al commit que aprobó el
+CI**, `npm ci`, borra `.next`, construye, reinicia con
 `pm2 restart vector-frontend --update-env` y **vuelve solo al commit anterior** si el
-health check falla. No copiar archivos ni reiniciar PM2 a mano.
+health check falla. No copiar archivos ni reiniciar PM2 a mano. Para desplegar sin
+esperar al CI está el botón de `workflow_dispatch`.
 
-El health check pega a `/api/airports/search`, que lee los TSV del disco y **nunca toca el
-backend**: un deploy verde no prueba que el dashboard ande. CI (`ci.yml`) corre `tsc`,
-tests, build y smoke en cada push.
+Hasta el 2026-09-22 el deploy corría en cada push sin mirar el CI, y así llegaron once
+commits en rojo a producción. El health check pega a `/api/airports/search`, que lee los
+TSV del disco y **nunca toca el backend**: un deploy verde no prueba que el dashboard
+ande; el smoke del CI, sí.
+
+**El proxy es Traefik, no nginx.** El tráfico entra por Cloudflare y lo atiende el
+contenedor `main-traefik` (red del host, puertos 80 y 443), con una ruta por dominio en
+`/home/ubuntu/traefik/dynamic/` del VPS: `vector.fdiaznem.com.ar.yml` manda a
+`127.0.0.1:3010`. **nginx está apagado**: lo que queda en `/etc/nginx/sites-*` es de
+antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tamaño del
+cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
+importa es el del backend (`request_max_body_size`, 30 MB).
 
 ## Estado y pendientes (al 2026-09-22)
 
@@ -174,12 +204,14 @@ tests, build y smoke en cada push.
 - **Propuestas de simplificación sin decidir:** congelar lo que hoy no usa nadie
   (métricas propias, calendario, la UI de múltiples libros) y poner detrás de un permiso
   por perfil lo que excede al alumno (aerovías, HVI, Jeppesen).
-- **La red social tiene deliberadamente fuera del MVP** feed, fotos, aplausos,
-  comentarios, bloquear usuarios, redirigir un @ viejo y páginas de escuela o
-  aeródromo. Además:
+- **La red social deja afuera, a propósito,** bloquear o reportar usuarios, editar una
+  publicación, avisos push, redirigir un @ viejo y páginas de escuela o aeródromo.
+  Además:
   - el login siempre vuelve a `/dashboard`, no al perfil desde el que se fue a ingresar;
   - la búsqueda no tiene límite de pedidos, más allá de exigir sesión y un tope de 20
-    resultados.
+    resultados;
+  - la exportación no incluye un comentario propio en una publicación que ya no podés
+    ver (el RLS de `comentarios` sigue al de la publicación).
 
 ## La bitácora
 

@@ -45,7 +45,9 @@ export type NombreIcono =
   | "compartir"
   | "reloj"
   | "lupa"
-  | "grafico";
+  | "grafico"
+  | "camara"
+  | "conversacion";
 
 export interface Novedad {
   icono: NombreIcono;
@@ -72,6 +74,45 @@ export interface VersionPublicada {
  * `CHANGELOG[0]` y nada más, así que una entrada fuera de orden anunciaría lo viejo.
  */
 export const CHANGELOG: VersionPublicada[] = [
+  {
+    version: "2.20.0",
+    fecha: "2026-09-22",
+    titulo: "La red, con fotos y tus vuelos",
+    novedades: [
+      {
+        icono: "camara",
+        titulo: "Publicá fotos y contá tus vuelos",
+        texto:
+          "En Pilotos, la Red muestra lo que publican los pilotos que seguís. Escribí, subí hasta cuatro fotos y, si querés, sumá un vuelo de tu bitácora. Las fotos se guardan sin la ubicación del teléfono.",
+        href: "/dashboard/pilotos",
+        cta: "Ir a la Red",
+      },
+      {
+        icono: "compartir",
+        titulo: "Compartí un vuelo en dos toques",
+        texto:
+          "Cada vuelo de la Bitácora tiene Compartir, y al registrar uno te preguntamos si lo querés mostrar. Vos elegís si se ve la ruta, la duración, el avión o la fecha; la matrícula, nunca.",
+        href: "/dashboard/history",
+        cta: "Ver la Bitácora",
+      },
+      {
+        icono: "conversacion",
+        titulo: "Aplausos, comentarios y tu Actividad",
+        texto:
+          "Aplaudí y comentá lo que publican otros pilotos. En Actividad ves quién te sigue, te aplaude o te comenta, y aceptás las solicitudes si tu perfil es privado.",
+        href: "/dashboard/pilotos/actividad",
+        cta: "Ver mi actividad",
+      },
+      {
+        icono: "brujula",
+        titulo: "Los perfiles se abren adentro de Vector",
+        texto:
+          "Tocando un piloto ves su perfil sin salir de la app, con sus horas y lo que publicó. Sumá tu foto en el Hangar: se ve en tu perfil, en tus publicaciones y en la vista previa de WhatsApp.",
+        href: "/dashboard/settings",
+        cta: "Subir mi foto",
+      },
+    ],
+  },
   {
     version: "2.19.0",
     fecha: "2026-09-22",

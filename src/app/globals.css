@@ -320,3 +320,33 @@
     margin: 12mm;
   }
 }
+
+/*
+  Mapas (Leaflet). La atribución de OpenStreetMap es obligatoria (`lib/mapa-tiles.ts`):
+  se muestra, pero chica y sin tapar el mapa.
+
+  Los selectores llevan una clase de más a propósito: `leaflet.css` lo importa cada
+  mapa, carga después que este archivo y con la misma especificidad le ganaría.
+*/
+.leaflet-container .leaflet-control-attribution.leaflet-control {
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+/*
+  El mapa de una publicación en modo oscuro: OSM no tiene tiles oscuros, así que se
+  invierten. Sólo la capa de tiles —la línea y los puntos de la ruta quedan en su
+  color— y sólo en ese mapa: el Planificador y el Resumen siguen como estaban.
+*/
+.leaflet-container.mapa-oscuro .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+.leaflet-container.mapa-oscuro .leaflet-control-attribution.leaflet-control {
+  background: rgba(0, 0, 0, 0.55);
+  color: #a1a1aa;
+}
+.leaflet-container.mapa-oscuro .leaflet-control-attribution.leaflet-control a {
+  color: #d4d4d8;
+}

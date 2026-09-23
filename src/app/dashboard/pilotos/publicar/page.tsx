@@ -1,74 +1,60 @@
 import PageHeader from "@/components/dashboard/PageHeader";
+import AvisoNoSePudo from "@/components/social/AvisoNoSePudo";
 import ComposerPublicacion from "@/components/social/ComposerPublicacion";
-import { apiFetch } from "@/lib/api";
-import { ResumenSocial } from "@/types";
-import Link from "next/link";
-import { AtSign } from "lucide-react";
+import CrearHandleRapido from "@/components/social/CrearHandleRapido";
+import { leerMiPerfilPublico, leerVuelosParaCompartir } from "@/lib/publicaciones-servidor";
+import { leerDatosParaElHandle, leerResumenSocial } from "@/lib/resumen-social";
 
 export const metadata = { title: "Publicar | Vector" };
 
-export default async function PublicarPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ vuelo?: string }>;
-}) {
-  const sp = await searchParams;
-  const resumenRes = await apiFetch("/social/resumen", { cache: "no-store" });
-  const resumen: ResumenSocial = resumenRes.ok
-    ? await resumenRes.json()
-    : { handle: null, solicitudes_pendientes: 0, actividad_nueva: 0 };
-  const handle = resumen.handle;
+/**
+ * Publicar, con la pantalla entera. Se llega desde el botón **Compartir** de un vuelo
+ * (`?vuelo=<id>`, que llega elegido), desde el aviso después de registrarlo, y desde el
+ * perfil propio.
+ *
+ * Sin @, se crea acá mismo: al crearlo la pantalla se vuelve a dibujar con el composer,
+ * y el vuelo que venía en la URL sigue elegido.
+ */
+export default async function PublicarPage({ searchParams }: { searchParams: Promise<{ vuelo?: string }> }) {
+  const { vuelo } = await searchParams;
+  const resumen = await leerResumenSocial();
 
-  if (!handle) {
+  if (!resumen.disponible) {
     return (
-      <div className="space-y-8 w-full animate-in fade-in duration-700">
+      <div className="space-y-8 w-full max-w-2xl mx-auto animate-in fade-in duration-700">
         <PageHeader eyebrow="Compartí con tu red" title="Publicar" />
-        <Link
-          href="/dashboard/settings#perfil-publico"
-          className="group flex items-center gap-4 rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 bg-white dark:bg-white/[0.02] p-5 hover:bg-zinc-50 dark:hover:bg-white/[0.04]"
-        >
-          <div className="w-11 h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center shrink-0">
-            <AtSign className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-zinc-900 dark:text-white">Elegí tu @</p>
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-400">Para publicar en la red, tenés que crear tu perfil primero.</p>
-          </div>
-        </Link>
+        <AvisoNoSePudo texto="No pudimos preparar la publicación." />
       </div>
     );
   }
 
-  const perfilRes = await apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}`, { cache: "no-store" }, { anonimo: true });
-  const perfilInfo = perfilRes.ok ? await perfilRes.json() : null;
-
-  let vueloInicial = undefined;
-  
-  if (sp.vuelo) {
-    const dashboardRes = await apiFetch("/dashboard", { cache: "no-store" });
-    if (dashboardRes.ok) {
-      const data = await dashboardRes.json();
-      const flight = data.flights?.find((f: any) => f.id === sp.vuelo);
-      if (flight) {
-        const acft = data.aircraft?.find((a: any) => a.id === flight.aircraft_id);
-        vueloInicial = {
-          id: flight.id,
-          ruta: flight.route,
-          duracion: flight.duration,
-          aeronave: acft?.registration,
-          fecha: flight.date
-        };
-      }
-    }
+  if (!resumen.handle) {
+    const datos = await leerDatosParaElHandle();
+    return (
+      <div className="space-y-8 w-full max-w-2xl mx-auto animate-in fade-in duration-700">
+        <PageHeader eyebrow="Compartí con tu red" title="Publicar" />
+        <CrearHandleRapido
+          nombreSugerido={datos.nombre}
+          licenciaSugerida={datos.licencia}
+          titulo="Para publicar, elegí tu @"
+        />
+      </div>
+    );
   }
 
+  const [vuelos, perfil] = await Promise.all([leerVuelosParaCompartir(vuelo), leerMiPerfilPublico()]);
+
   return (
-    <div className="space-y-8 w-full max-w-2xl mx-auto animate-in fade-in duration-700">
-      <PageHeader eyebrow="Nueva publicación" title="Publicar" />
+    <div className="space-y-8 w-full max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <PageHeader eyebrow="Compartí con tu red" title="Publicar" />
       <ComposerPublicacion
-        avatarUrl={resumen.avatar_url}
-        nombre={perfilInfo?.nombre_visible || "Piloto"}
-        vueloInicial={vueloInicial}
+        autor={{
+          handle: resumen.handle,
+          nombre: perfil?.nombre_visible ?? resumen.handle,
+          avatarUrl: resumen.avatar_url,
+        }}
+        vuelos={vuelos}
+        vueloInicialId={vuelo ?? null}
       />
     </div>
   );

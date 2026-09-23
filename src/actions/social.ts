@@ -3,19 +3,31 @@
 import { revalidatePath } from "next/cache";
 import { apiFetch } from "@/lib/api";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
-import { normalizarHandle, rutaPerfil } from "@/lib/handle";
+import { normalizarHandle, problemaDelHandle, rutaPerfil } from "@/lib/handle";
 import { mensajeDeErrorApi } from "@/lib/social";
-import type { PerfilPublico, PilotoResumen, RelacionSocial, Visibilidad } from "@/types";
+import { leerPublicaciones, prepararComentarios, type OrigenPublicaciones } from "@/lib/publicaciones-servidor";
+import type {
+  Comentario,
+  EstadoAplauso,
+  PerfilPublico,
+  PilotoResumen,
+  Publicacion,
+  RelacionSocial,
+  Visibilidad,
+} from "@/types";
 
 /**
- * La red social, del lado de la app. Cada acción revalida lo que cambia:
+ * La red social, del lado de la app. Las acciones del @ y de seguir revalidan lo que
+ * cambia:
  *
- * - el layout del dashboard, porque el punto rojo de las solicitudes vive ahí y
+ * - el layout del dashboard, porque el punto rojo y la foto del encabezado viven ahí y
  *   `revalidatePath("/dashboard", "layout")` alcanza a todas sus pantallas;
  * - el perfil público de los pilotos involucrados, `/u/<handle>`.
  *
  * `apiFetch` cachea los GET 20 s: una pantalla que falte acá mostraría el estado viejo
  * de un seguimiento que el piloto acaba de cambiar.
+ *
+ * Las de publicaciones, aplausos y comentarios **no** revalidan: ver su sección, abajo.
  */
 
 type Resultado<T> = ({ ok: true } & T) | { ok: false; error: string };
@@ -169,20 +181,101 @@ export async function sacarSeguidor(handle: string, miHandle?: string | null): P
 }
 
 // ---------------------------------------------------------------------------
-// Interacciones de la red
+// Publicaciones, aplausos y comentarios
 // ---------------------------------------------------------------------------
+//
+// **Éstas no revalidan, a propósito** (la excepción al invariante 8). La tarjeta es dueña
+// de su estado —el aplauso se marca al instante y se deshace si falla—, y todas las
+// pantallas que muestran publicaciones las piden sin cache, así que no hay nada viejo que
+// tirar. Revalidar haría que Next volviera a dibujar la pantalla entera en la respuesta
+// de cada aplauso: el feed completo pedido de nuevo por un toque.
 
-export async function toggleAplauso(id: string, activo: boolean, handleAutor?: string): Promise<Resultado<object>> {
-  const method = activo ? "POST" : "DELETE";
-  const r = await enviar(`/publicaciones/${encodeURIComponent(id)}/aplauso`, method, "No se pudo aplaudir.");
+/** Los ids de la red son UUID: cualquier otra cosa ni siquiera se le pregunta al backend. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function aplaudir(id: string, poner: boolean): Promise<Resultado<{ estado: EstadoAplauso }>> {
+  if (!UUID.test(id)) return { ok: false, error: "Esa publicación ya no está." };
+  const r = await enviar<EstadoAplauso>(
+    `/publicaciones/${id}/aplauso`,
+    poner ? "POST" : "DELETE",
+    poner ? "No se pudo aplaudir." : "No se pudo sacar el aplauso."
+  );
   if (!r.ok) return r;
-  revalidarRed(handleAutor);
+  return { ok: true, estado: r.datos };
+}
+
+export async function borrarPublicacion(id: string): Promise<Resultado<object>> {
+  if (!UUID.test(id)) return { ok: false, error: "Esa publicación ya no está." };
+  const r = await enviar(`/publicaciones/${id}`, "DELETE", "No se pudo borrar la publicación.");
+  if (!r.ok) return r;
   return { ok: true };
 }
 
-export async function borrarPublicacion(id: string, miHandle?: string | null): Promise<Resultado<object>> {
-  const r = await enviar(`/publicaciones/${encodeURIComponent(id)}`, "DELETE", "No se pudo borrar la publicación.");
+/**
+ * Los comentarios de una publicación, con la sesión de quien mira: el backend calcula
+ * con ella cuáles puede borrar. `comoAnonimo` es la vista "así te ven".
+ */
+export async function listarComentarios(
+  id: string,
+  comoAnonimo = false
+): Promise<Resultado<{ comentarios: Comentario[] }>> {
+  const porDefecto = "No se pudieron cargar los comentarios.";
+  if (!UUID.test(id)) return { ok: false, error: porDefecto };
+  try {
+    const res = await apiFetch(`/publico/publicaciones/${id}/comentarios`, { cache: "no-store" }, { anonimo: comoAnonimo });
+    const datos = await cuerpo(res);
+    if (!res.ok || !Array.isArray(datos)) return { ok: false, error: mensajeDeErrorApi(datos, porDefecto) };
+    return { ok: true, comentarios: prepararComentarios(datos as Comentario[]) };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { ok: false, error: porDefecto };
+  }
+}
+
+export async function comentar(id: string, texto: string): Promise<Resultado<{ comentario: Comentario }>> {
+  if (!UUID.test(id)) return { ok: false, error: "Esa publicación ya no está." };
+  const r = await enviar<Comentario>(`/publicaciones/${id}/comentarios`, "POST", "No se pudo comentar.", { texto });
   if (!r.ok) return r;
-  revalidarRed(miHandle);
+  return { ok: true, comentario: prepararComentarios([r.datos])[0] };
+}
+
+export async function borrarComentario(id: string): Promise<Resultado<object>> {
+  if (!UUID.test(id)) return { ok: false, error: "Ese comentario ya no está." };
+  const r = await enviar(`/publicaciones/comentarios/${id}`, "DELETE", "No se pudo borrar el comentario.");
+  if (!r.ok) return r;
   return { ok: true };
+}
+
+/** La página siguiente de una lista de publicaciones, ya preparada para dibujar. */
+export async function cargarMasPublicaciones(
+  origen: OrigenPublicaciones,
+  antes: string
+): Promise<Resultado<{ publicaciones: Publicacion[]; siguiente: string | null }>> {
+  const porDefecto = "No se pudieron cargar más publicaciones.";
+  if (origen.tipo === "piloto" && problemaDelHandle(origen.handle)) return { ok: false, error: porDefecto };
+  try {
+    const r = await leerPublicaciones(origen, antes);
+    if (!r.disponible) return { ok: false, error: porDefecto };
+    return { ok: true, publicaciones: r.publicaciones, siguiente: r.siguiente };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { ok: false, error: porDefecto };
+  }
+}
+
+/**
+ * Abrir la Actividad apaga el punto rojo. **Va por acción y no en el render de la
+ * página**: un GET no escribe —el smoke recorre las pantallas contra producción dando
+ * por hecho que mirar no cambia nada—, y así la marca se pone recién cuando el piloto
+ * la tiene delante, no cuando Next la dibuja.
+ *
+ * Ésta sí revalida el layout: el punto rojo vive ahí.
+ */
+export async function marcarActividadVista(): Promise<void> {
+  try {
+    const res = await apiFetch("/red/actividad/vista", { method: "POST" });
+    if (res.ok) revalidatePath("/dashboard", "layout");
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+  }
 }

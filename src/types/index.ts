@@ -335,6 +335,8 @@ export interface PerfilPublico {
   licencia?: string | null;
   bio?: string | null;
   visibilidad: Visibilidad;
+  /** La foto de perfil, en el bucket público `avatares`. */
+  avatar_url?: string | null;
   created_at?: string | null;
 }
 
@@ -379,17 +381,27 @@ export interface AutorPublicacion {
 }
 
 export interface FotoPublicacion {
+  /** Firmada y con vencimiento: no se guarda, se pide de nuevo. */
   url: string;
   ancho: number;
   alto: number;
 }
 
+/**
+ * El chip del vuelo de una publicación: **una copia** de los campos que el autor prendió
+ * al publicar. Nunca trae la matrícula.
+ */
 export interface VueloChip {
   ruta?: string | null;
   duracion?: number | null;
+  /** El tipo ("Cessna 152"), nunca la matrícula. */
   aeronave?: string | null;
+  /** `YYYY-MM-DD`, como lo manda el backend. */
   fecha?: string | null;
-  puntos_mapa?: { codigo: string; label: string; lat: number; lon: number; }[];
+  /** Lo arma el server de Vector: la fecha para leer ("12 sep 2026"). */
+  fecha_texto?: string | null;
+  /** Lo arma el server de Vector con el catálogo de aeródromos, para el mapa. */
+  puntos_mapa?: { codigo: string; label: string; lat: number; lon: number }[];
 }
 
 export interface Publicacion {
@@ -402,12 +414,18 @@ export interface Publicacion {
   aplaudida: boolean;
   comentarios: number;
   es_mia: boolean;
+  /** Sólo para el autor. */
   vuelo_id?: string | null;
   created_at: string;
+  /** Lo arma el server de Vector ("hace 5 min"): ver `fechaRelativa`. */
+  fecha_texto?: string;
+  /** "22 sep 2026, 14:05", para el `title`. */
+  fecha_titulo?: string;
 }
 
 export interface PaginaPublicaciones {
   publicaciones: Publicacion[];
+  /** El cursor de la página siguiente, o `null` si no hay más. */
   siguiente?: string | null;
 }
 
@@ -416,7 +434,10 @@ export interface Comentario {
   autor: AutorPublicacion;
   texto: string;
   created_at: string;
+  /** Su autor, o el de la publicación. */
   puede_borrar: boolean;
+  fecha_texto?: string;
+  fecha_titulo?: string;
 }
 
 export interface EstadoAplauso {
@@ -430,10 +451,31 @@ export interface EventoActividad {
   tipo: TipoEventoActividad;
   piloto: AutorPublicacion;
   created_at: string;
+  /** Posterior a la última vez que el piloto abrió la Actividad. */
   nuevo: boolean;
+  /** Para un comentario, su texto; para un aplauso, el comienzo de la publicación. */
   texto?: string | null;
+  fecha_texto?: string;
+  fecha_titulo?: string;
 }
 
 export interface Actividad {
   eventos: EventoActividad[];
+}
+
+/**
+ * Un vuelo propio que se puede adjuntar a una publicación, con cada dato ya armado
+ * como se publicaría. El composer sólo elige cuáles mostrar.
+ */
+export interface VueloParaCompartir {
+  id: string;
+  /** Para el selector: "12 sep · SADF → SAAR · 1.2 h". */
+  etiqueta: string;
+  ruta: string | null;
+  duracion: number | null;
+  aeronave: string | null;
+  /** Ya escrita: "12 sep 2026". */
+  fecha: string | null;
+  /** Para que la vista previa muestre el mismo mapa que va a salir. */
+  puntos_mapa?: VueloChip["puntos_mapa"];
 }

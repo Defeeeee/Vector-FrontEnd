@@ -364,11 +364,10 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
       });
       if (onSuccess) onSuccess();
       else if (redirectTo) {
-        if (resultado.id) {
-          router.replace(`${redirectTo}${redirectTo.includes('?') ? '&' : '?'}nuevo=${resultado.id}`);
-        } else {
-          router.replace(redirectTo);
-        }
+        // Con el id, la Bitácora ofrece compartir el vuelo recién cargado
+        // (`BannerCompartirVuelo`).
+        const separador = redirectTo.includes("?") ? "&" : "?";
+        router.replace(resultado.id ? `${redirectTo}${separador}nuevo=${encodeURIComponent(resultado.id)}` : redirectTo);
       }
     } catch (e: any) {
       /*

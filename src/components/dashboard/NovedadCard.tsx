@@ -11,6 +11,8 @@ import {
   Clock,
   Search,
   PieChart,
+  Camera,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { Novedad, NombreIcono } from "@/lib/changelog";
@@ -35,6 +37,8 @@ const ICONOS: Record<NombreIcono, LucideIcon> = {
   reloj: Clock,
   lupa: Search,
   grafico: PieChart,
+  camara: Camera,
+  conversacion: MessageCircle,
 };
 
 export default function NovedadCard({ novedad }: { novedad: Novedad }) {

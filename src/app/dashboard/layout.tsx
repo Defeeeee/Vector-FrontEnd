@@ -7,7 +7,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
-import { AuditSummary, Profile, ResumenSocial } from "@/types";
+import { leerResumenSocial } from "@/lib/resumen-social";
+import { AuditSummary, Profile } from "@/types";
 import { AUDITORIA_HREF, ACTIVIDAD_HREF } from "@/lib/secciones";
 import ChatWidget from "@/components/dashboard/ChatWidget";
 import SinConexionBanner from "@/components/dashboard/SinConexionBanner";
@@ -64,32 +65,17 @@ async function getAuditCount(): Promise<number> {
   }
 }
 
-/**
- * Si el piloto tiene @ y cuántas solicitudes para seguirlo esperan respuesta.
- *
- * Mismo criterio que `getAuditCount`: un punto rojo no vale tirar abajo el dashboard,
- * así que cualquier falla —incluido un backend sin la migración 018— cuenta como
- * "nada pendiente".
- */
-async function getResumenSocial(): Promise<ResumenSocial> {
-  try {
-    const res = await apiFetch("/social/resumen");
-    if (!res.ok) return { handle: null, solicitudes_pendientes: 0, actividad_nueva: 0 };
-    return (await res.json()) as ResumenSocial;
-  } catch {
-    return { handle: null, solicitudes_pendientes: 0, actividad_nueva: 0 };
-  }
-}
-
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [{ profile, disponible }, auditCount, social] = await Promise.all([
     getProfile(),
     getAuditCount(),
-    getResumenSocial(),
+    // Si tiene @, su foto y el punto rojo de Pilotos. Lo comparten las pantallas de la
+    // red (`cache` de React): es un solo pedido por render. Nunca tira.
+    leerResumenSocial(),
   ]);
-  const solicitudes = social.solicitudes_pendientes;
-  const actividad = social.actividad_nueva || 0;
-  const totalPilotos = solicitudes + actividad;
+  // Solicitudes sin responder más lo nuevo desde que abrió la Actividad. No se pisan:
+  // `actividad_nueva` no cuenta las solicitudes pendientes.
+  const totalPilotos = social.solicitudes_pendientes + social.actividad_nueva;
   const alertas: AlertasDeSeccion = {
     bitacora: { cantidad: auditCount, texto: `${auditCount} en auditoría` },
     pilotos: {
@@ -97,8 +83,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       texto: `${totalPilotos} ${totalPilotos === 1 ? "novedad" : "novedades"}`,
     },
   };
-  const contadores = { [AUDITORIA_HREF]: auditCount, [ACTIVIDAD_HREF]: actividad || solicitudes };
+  const contadores = { [AUDITORIA_HREF]: auditCount, [ACTIVIDAD_HREF]: totalPilotos };
   const initials = `${profile?.first_name?.charAt(0) || ""}${profile?.last_name?.charAt(0) || ""}`;
+  // La foto del @, si subió una; si no, las iniciales de siempre.
+  const avatar = social.avatar_url ? (
+    <img src={social.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+  ) : (
+    initials
+  );
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
@@ -142,7 +134,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             title="Hangar"
             className="group relative w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[10px] font-bold text-zinc-300 mt-2 transition-colors"
           >
-            {initials}
+            {avatar}
             <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-lg bg-zinc-900 text-white text-xs font-semibold px-3 py-1.5 opacity-0 scale-95 origin-left group-hover:opacity-100 group-hover:scale-100 transition-all z-50 shadow-xl border border-white/10">
               Hangar
             </span>
@@ -166,9 +158,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link
               href="/dashboard/settings"
               aria-label="Hangar"
-              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-[11px] font-bold text-zinc-600 dark:text-zinc-300"
+              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-[11px] font-bold text-zinc-600 dark:text-zinc-300 overflow-hidden"
             >
-              {initials}
+              {avatar}
             </Link>
             <LogoutButton isMobile={true} />
         </div>
@@ -184,8 +176,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             title="Hangar"
             className="flex items-center gap-2.5 rounded-full pr-2 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300">
-              {initials}
+            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300 overflow-hidden">
+              {avatar}
             </div>
             <span className="text-sm font-semibold text-zinc-900 dark:text-white">{profile?.first_name}</span>
           </Link>

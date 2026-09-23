@@ -1,6 +1,7 @@
 import { Activity, ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, FlightPack, PilotDocument, Logbook, PlannedFlight, Transaction, Profile } from "@/types";
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
@@ -12,6 +13,7 @@ import PCATracker from "@/components/dashboard/PCATracker";
 import SaldoCard from "@/components/dashboard/SaldoCard";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import RecentFlights from "@/components/dashboard/RecentFlights";
+import TuRedInicio from "@/components/social/TuRedInicio";
 import { listPlannedFlights } from "@/actions/planned-flight";
 import { estadoOnboarding } from "@/lib/onboarding";
 import { soloVolados } from "@/lib/simulador";
@@ -252,6 +254,13 @@ export default async function Dashboard() {
           que pasó. Una sesión de simulador es un renglón como cualquier otro y
           esconderla acá sería esconder algo que el piloto acaba de cargar. */}
       <RecentFlights flights={bitacora as Flight[]} aircraft={aircraft as Aircraft[]} costos={costos} limit={3} />
+
+      {/* "Tu red": la única tarjeta que no contesta una de las tres preguntas, por
+          decisión de Federico. Chica, al final, y por `Suspense`: el feed es un viaje
+          más al backend y nunca puede demorar el "¿puedo volar hoy?". */}
+      <Suspense fallback={null}>
+        <TuRedInicio />
+      </Suspense>
     </div>
   );
 }

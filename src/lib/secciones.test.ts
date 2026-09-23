@@ -23,7 +23,16 @@ const FUERA_DE_LA_BARRA: Record<string, string> = {
   "/dashboard/novedades": "se abre desde la tarjeta de novedades del inicio",
   "/dashboard/log-flight": "es una acción: el botón + del rail y de la píldora del teléfono",
   "/dashboard/log-flight/import": "se abre desde Registrar vuelo",
-  "/dashboard/pilotos/publicar": "es una acción social o link directo de bitácora",
+};
+
+/**
+ * Las pantallas que no son una pestaña pero **cuelgan de una**: la sección se ilumina y
+ * las pestañas se ven, aunque ninguna quede marcada como propia. Van acá con cómo se
+ * llega a cada una, y el test comprueba que de verdad caigan en una sección.
+ */
+const CUELGAN_DE_UNA_PESTANA: Record<string, string> = {
+  "/dashboard/pilotos/publicar": "Compartir en cada vuelo, el aviso después de registrar uno, y el perfil propio",
+  "/dashboard/pilotos/[handle]": "tocar un piloto en cualquier lista, publicación o actividad",
 };
 
 /** Las rutas con `page.tsx` bajo `src/app/dashboard`, sin grupos ni slots. */
@@ -72,15 +81,23 @@ describe("las secciones", () => {
   it("no dejan ninguna pantalla del dashboard sin forma de llegar", () => {
     const enSecciones = new Set(SECCIONES.flatMap((s) => s.pestanas.map((p) => p.href)));
     const huerfanas = pantallasDelDashboard().filter(
-      (r) => !enSecciones.has(r) && !(r in FUERA_DE_LA_BARRA)
+      (r) => !enSecciones.has(r) && !(r in FUERA_DE_LA_BARRA) && !(r in CUELGAN_DE_UNA_PESTANA)
     );
     expect(huerfanas).toEqual([]);
   });
 
-  it("la lista de excepciones no nombra pantallas que ya no existen", () => {
+  it("las listas de excepciones no nombran pantallas que ya no existen", () => {
     const existentes = new Set(pantallasDelDashboard());
-    for (const ruta of Object.keys(FUERA_DE_LA_BARRA)) {
+    for (const ruta of [...Object.keys(FUERA_DE_LA_BARRA), ...Object.keys(CUELGAN_DE_UNA_PESTANA)]) {
       expect(existentes.has(ruta), `${ruta} ya no existe`).toBe(true);
+    }
+  });
+
+  it("lo que dice colgar de una pestaña, cuelga de verdad", () => {
+    for (const ruta of Object.keys(CUELGAN_DE_UNA_PESTANA)) {
+      // `[handle]` es un segmento dinámico: se prueba con un valor cualquiera.
+      const concreta = ruta.replace(/\[[^\]]+\]/g, "cualquiera");
+      expect(seccionDe(concreta), `${ruta} no cae en ninguna sección`).not.toBeNull();
     }
   });
 
@@ -114,26 +131,28 @@ describe("seccionDe", () => {
     expect(seccionDe("/dashboard/tools")?.clave).toBe("preparar");
   });
 
-  it("no le asigna sección a las pantallas sueltas que están fuera de la barra", () => {
-    const excepcionesConSeccion = new Set(["/dashboard/pilotos/publicar"]);
-    for (const ruta of Object.keys(FUERA_DE_LA_BARRA)) {
-      if (!excepcionesConSeccion.has(ruta)) {
-        expect(seccionDe(ruta)).toBeNull();
-      }
-    }
+  it("no le asigna sección a las pantallas que están fuera de la barra", () => {
+    for (const ruta of Object.keys(FUERA_DE_LA_BARRA)) expect(seccionDe(ruta)).toBeNull();
   });
 
   it("toma como propia una pantalla que cuelga de una pestaña", () => {
     expect(seccionDe("/dashboard/airports/SADF")?.clave).toBe("preparar");
   });
 
-  it("distingue Red de Actividad aunque una cuelgue de la otra", () => {
+  it("distingue Red de Buscar y de Actividad aunque cuelguen de ella", () => {
     // `/dashboard/pilotos/actividad` empieza con `/dashboard/pilotos/`: por prefijo
-    // las dos pestañas de Pilotos se iluminarían a la vez.
+    // se iluminarían dos pestañas de Pilotos a la vez.
     const pilotos = SECCIONES.find((s) => s.clave === "pilotos")!;
     expect(seccionDe("/dashboard/pilotos/actividad")?.clave).toBe("pilotos");
     expect(pestanaActiva(pilotos, "/dashboard/pilotos/actividad")?.label).toBe("Actividad");
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos/buscar")?.label).toBe("Buscar");
     expect(pestanaActiva(pilotos, "/dashboard/pilotos")?.label).toBe("Red");
+  });
+
+  it("el perfil de un piloto y Publicar quedan bajo la Red", () => {
+    const pilotos = SECCIONES.find((s) => s.clave === "pilotos")!;
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos/fede.dn")?.label).toBe("Red");
+    expect(pestanaActiva(pilotos, "/dashboard/pilotos/publicar")?.label).toBe("Red");
   });
 
   it("en cada sección se ilumina a lo sumo una pestaña por pantalla", () => {

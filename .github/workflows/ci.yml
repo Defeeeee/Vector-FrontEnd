@@ -49,7 +49,7 @@ jobs:
           # vive al lado— así que el caso especial es CI y se arregla acá.
           #
           # **Sin `/api` al final**, al revés que el default local: por el dominio
-          # público ese prefijo lo pone nginx. Poner los dos da 404 en todo; no
+          # público ese prefijo lo pone el proxy (Traefik). Poner los dos da 404 en todo; no
           # poner ninguno también. Esa asimetría ya causó un corte en producción.
           #
           # Alcanza con esta variable en este paso y no hace falta tocar `Build`:

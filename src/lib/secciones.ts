@@ -110,9 +110,10 @@ export function esPestanaActiva(pestana: Pestana, pathname: string): boolean {
 /**
  * La pestaña que se ilumina: de las que coinciden, la más específica.
  *
- * Con sólo `esPestanaActiva`, en `/dashboard/pilotos/solicitudes` se prendían las dos
- * pestañas de Pilotos, porque esa ruta también cuelga de `/dashboard/pilotos`. Gana la
- * de `href` más largo, que es la que describe la pantalla de verdad.
+ * Con sólo `esPestanaActiva`, en `/dashboard/pilotos/actividad` se prendían dos
+ * pestañas de Pilotos, porque esa ruta también cuelga de `/dashboard/pilotos` (la Red).
+ * Gana la de `href` más largo, que es la que describe la pantalla de verdad. Lo que no
+ * es pestaña —un perfil, Publicar— queda bajo la Red.
  */
 export function pestanaActiva(seccion: Seccion, pathname: string): Pestana | null {
   return (

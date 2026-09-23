@@ -1,35 +1,42 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Compass, Lock, Pencil, Trophy } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, Compass, Eye } from "lucide-react";
 import { getSessionToken } from "@/actions/auth";
-import { conArroba, normalizarHandle, problemaDelHandle } from "@/lib/handle";
-import { estadoHitos } from "@/lib/hitos";
-import AvatarPiloto from "@/components/social/AvatarPiloto";
+import { AvisosProvider } from "@/components/dashboard/Avisos";
 import BotonSeguir from "@/components/social/BotonSeguir";
-import CompartirPerfil from "@/components/social/CompartirPerfil";
-import PublicacionCard from "@/components/social/PublicacionCard";
-import type { HorasPublicas, PilotoPublico, ResumenSocial, PaginaPublicaciones } from "@/types";
+import CabeceraPiloto from "@/components/social/CabeceraPiloto";
+import HorasPiloto, { PerfilPrivado } from "@/components/social/HorasPiloto";
+import ListaPublicaciones from "@/components/social/ListaPublicaciones";
+import AvisoNoSePudo from "@/components/social/AvisoNoSePudo";
+import { apiFetch } from "@/lib/api";
+import { conArroba, normalizarHandle, problemaDelHandle, rutaPerfilApp } from "@/lib/handle";
+import { leerPublicaciones } from "@/lib/publicaciones-servidor";
+import type { PilotoPublico } from "@/types";
 
 /**
- * El perfil público de un piloto: `/u/<handle>`.
+ * El perfil público de un piloto: `/u/<handle>`, el link que se comparte.
  *
  * **Se abre sin cuenta**, por decisión de Federico: es el link que un piloto manda por
  * WhatsApp, y el que lo recibe puede no usar Vector. Por eso vive fuera de
  * `/dashboard` —el proxy no lo protege, sólo le renueva la sesión a quien la tenga— y
  * no lleva la barra de la app.
  *
- * **Lo que se ve lo decide el backend** (`GET /publico/pilotos/{handle}`), que sólo
- * devuelve agregados: el @, el nombre, la licencia, la bio, los contadores y cinco
- * números de horas, o `null` si el que mira no puede verlas. Esta página no tiene cómo
- * mostrar un vuelo, una ruta o una fecha: no los recibe.
- *
- * Se pide sin cache: la respuesta depende de quién mira, y el botón de seguir que
- * mostrara el estado de hace veinte segundos sería peor que un pedido de más.
+ * - **Quien lo abre con sesión va al perfil adentro de la app**
+ *   (`/dashboard/pilotos/<handle>`), con la barra: desde la app no se sale de la app.
+ *   Lo decide la `relacion` que devuelve el backend, que es quien valida la sesión: una
+ *   cookie vencida no manda a nadie a un dashboard que lo rebotaría al login.
+ * - **`?vista=publica`** es "así te ven": se pide como anónimo aunque haya sesión, y no
+ *   redirige.
+ * - **Lo que se ve lo decide el backend**: horas agregadas (o `null`) y publicaciones,
+ *   con la misma regla en el RLS. Esta página no tiene cómo mostrar un vuelo que el
+ *   piloto no haya elegido publicar.
+ * - **Un backend caído no es un piloto que no existe.** Sólo un 404 es "no existe"; lo
+ *   demás tira y lo agarra `src/app/error.tsx`, con código 500: un link compartido no
+ *   puede quedar diciendo "no existe" durante un corte.
  */
 
-type Params = { params: Promise<{ handle: string }> };
+type Params = { params: Promise<{ handle: string }>; searchParams: Promise<{ vista?: string }> };
 
 function handleDe(crudo: string): string {
   try {
@@ -39,12 +46,6 @@ function handleDe(crudo: string): string {
   }
 }
 
-async function perfilAnonimo(handle: string): Promise<PilotoPublico | null> {
-  if (problemaDelHandle(handle)) return null;
-  const res = await apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}`, { cache: "no-store" }, { anonimo: true });
-  return res.ok ? ((await res.json()) as PilotoPublico) : null;
-}
-
 /**
  * Título y descripción de la vista previa. **Como anónimo**, igual que la imagen: es
  * lo que ve quien recibe el link, no quien lo abrió. Sin indexar: el perfil es para
@@ -52,8 +53,17 @@ async function perfilAnonimo(handle: string): Promise<PilotoPublico | null> {
  */
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const handle = handleDe((await params).handle);
-  const piloto = await perfilAnonimo(handle);
-  if (!piloto) return { title: "Piloto no encontrado | Vector", robots: { index: false, follow: false } };
+  const sinIndexar = { robots: { index: false, follow: false } };
+  if (problemaDelHandle(handle)) return { title: "Piloto no encontrado | Vector", ...sinIndexar };
+
+  const res = await apiFetch(
+    `/publico/pilotos/${encodeURIComponent(handle)}`,
+    { cache: "no-store" },
+    { anonimo: true },
+  );
+  if (res.status === 404) return { title: "Piloto no encontrado | Vector", ...sinIndexar };
+  const piloto = res.ok ? ((await res.json().catch(() => null)) as PilotoPublico | null) : null;
+  if (!piloto) return { title: `${conArroba(handle)} | Vector`, ...sinIndexar };
 
   const titulo = `${piloto.nombre_visible} (${conArroba(piloto.handle)}) | Vector`;
   const descripcion = piloto.horas
@@ -62,232 +72,135 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: titulo,
     description: descripcion,
-    robots: { index: false, follow: false },
+    ...sinIndexar,
     openGraph: { title: titulo, description: descripcion, type: "profile" },
   };
 }
 
-import { enriquecerPublicacionesConMapa } from "@/lib/enriquecer-publicaciones";
-
-export default async function PerfilPiloto({ params }: Params) {
+export default async function PerfilPublicoPagina({ params, searchParams }: Params) {
   const handle = handleDe((await params).handle);
   // Un @ con formato imposible no existe: no hace falta preguntarle al backend.
   if (problemaDelHandle(handle)) notFound();
-  const conSesion = !!(await getSessionToken());
+  const comoAnonimo = (await searchParams).vista === "publica";
 
-  const [res, pubRes, resumenRes] = await Promise.all([
-    apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}`, { cache: "no-store" }),
-    apiFetch(`/publico/pilotos/${encodeURIComponent(handle)}/publicaciones`, { cache: "no-store" }),
-    conSesion ? apiFetch("/social/resumen", { cache: "no-store" }) : Promise.resolve(null),
-  ]);
-
-  
-  if (!res.ok) notFound();
-
+  const res = await apiFetch(
+    `/publico/pilotos/${encodeURIComponent(handle)}`,
+    { cache: "no-store" },
+    { anonimo: comoAnonimo },
+  );
+  if (res.status === 404) notFound();
+  if (!res.ok) throw new Error(`No se pudo cargar el perfil de ${conArroba(handle)} (HTTP ${res.status}).`);
   const piloto = (await res.json()) as PilotoPublico;
-  const publicacionesPage = pubRes.ok ? ((await pubRes.json()) as PaginaPublicaciones) : { publicaciones: [] };
-  const resumen: ResumenSocial | null = resumenRes?.ok ? await resumenRes.json() : null;
-  const esPropio = piloto.relacion === "propio";
-  const anonimo = piloto.relacion === "anonimo";
-  
-  const publicaciones = enriquecerPublicacionesConMapa(publicacionesPage.publicaciones || []);
+
+  if (!comoAnonimo && piloto.relacion !== "anonimo") redirect(rutaPerfilApp(piloto.handle));
+  // Sin la vista pública, llegar hasta acá es no tener una sesión válida: con una, ya se
+  // redirigió. En la vista pública la sesión no se le mostró al backend, así que vale la
+  // cookie.
+  const conSesion = comoAnonimo && !!(await getSessionToken());
+
+  const lectura =
+    piloto.horas != null ? await leerPublicaciones({ tipo: "piloto", handle: piloto.handle, comoAnonimo: true }) : null;
 
   return (
-    <div className="min-h-screen w-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white">
-      <header className="w-full border-b border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <Link href={anonimo ? "/" : "/dashboard"} className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center">
-              <Compass className="w-4 h-4" strokeWidth={2} />
-            </span>
-            <span className="text-lg font-bold font-display tracking-tight">Vector</span>
-          </Link>
-          <Link
-            href={anonimo ? "/login" : "/dashboard/pilotos"}
-            className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-          >
-            {anonimo ? "Ingresar" : "Volver a Vector"}
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-14 space-y-6">
-        {/* Quién es ------------------------------------------------------------ */}
-        <section className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-            <AvatarPiloto nombre={piloto.nombre_visible} tamano="lg" />
-            <div className="flex-1 min-w-0 space-y-2">
-              <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight leading-tight break-words">
-                {piloto.nombre_visible}
-              </h1>
-              <p className="flex flex-wrap items-center gap-2 font-mono text-sm text-zinc-500 dark:text-zinc-400">
-                <span>{conArroba(piloto.handle)}</span>
-                {piloto.licencia && (
-                  <span className="rounded-full border border-zinc-200 dark:border-white/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider">
-                    {piloto.licencia}
-                  </span>
-                )}
-                {piloto.visibilidad === "privado" && (
-                  <span className="inline-flex items-center gap-1 text-[12px]">
-                    <Lock className="w-3 h-3" /> Privado
-                  </span>
-                )}
-              </p>
-              {piloto.bio && <p className="text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">{piloto.bio}</p>}
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                <span className="data font-bold text-zinc-900 dark:text-white">{piloto.seguidores}</span>{" "}
-                {piloto.seguidores === 1 ? "seguidor" : "seguidores"}
-                <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
-                <span className="data font-bold text-zinc-900 dark:text-white">{piloto.siguiendo}</span> siguiendo
-              </p>
-            </div>
+    <AvisosProvider>
+      <div className="min-h-screen w-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white">
+        <header className="w-full border-b border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl">
+          <div className="max-w-2xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+            <Link href={conSesion ? "/dashboard" : "/"} className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center">
+                <Compass className="w-4 h-4" strokeWidth={2} />
+              </span>
+              <span className="text-lg font-bold font-display tracking-tight">Vector</span>
+            </Link>
+            <Link
+              href={conSesion ? rutaPerfilApp(piloto.handle) : "/login"}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            >
+              {conSesion ? (
+                <>
+                  <ArrowLeft className="w-4 h-4" /> Volver a Vector
+                </>
+              ) : (
+                "Ingresar"
+              )}
+            </Link>
           </div>
+        </header>
 
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            {esPropio ? (
-              <>
-                <Link
-                  href="/dashboard/settings#perfil-publico"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-5 py-3 text-sm font-semibold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
-                >
-                  <Pencil className="w-4 h-4" />
-                  Editar perfil
-                </Link>
-                <CompartirPerfil handle={piloto.handle} />
-              </>
-            ) : (
-              <BotonSeguir
-                handle={piloto.handle}
-                relacion={piloto.relacion}
-                visibilidad={piloto.visibilidad}
-                tieneHandle={!!resumen?.handle}
-              />
-            )}
-          </div>
-          {esPropio && (
-            <p className="mt-4 text-[13px] text-zinc-500 dark:text-zinc-400">
-              Así ve tu perfil {piloto.visibilidad === "publico" ? "cualquiera con el link" : "quien te sigue"}.
+        <main className="max-w-2xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-6">
+          {comoAnonimo && conSesion && (
+            <p className="flex items-start gap-2.5 rounded-2xl border border-aviation-blue/20 dark:border-aviation-cyan/20 bg-aviation-blue/[0.06] dark:bg-aviation-cyan/[0.06] px-4 py-3 text-[13px] text-zinc-600 dark:text-zinc-300">
+              <Eye className="w-4 h-4 shrink-0 mt-0.5 text-aviation-blue dark:text-aviation-cyan" aria-hidden="true" />
+              Así ve este perfil alguien sin cuenta o que no lo sigue: lo mismo que muestra el link que compartís.
             </p>
           )}
-        </section>
 
-        {/* Sus horas ----------------------------------------------------------- */}
-        {piloto.horas ? (
-          <Horas horas={piloto.horas} />
-        ) : (
-          <section className="rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 bg-white dark:bg-white/[0.02] p-8 text-center space-y-2">
-            <Lock className="w-6 h-6 mx-auto text-zinc-400" />
-            <p className="font-display font-bold text-lg">Perfil privado</p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              {piloto.relacion === "pendiente"
-                ? "Tu solicitud está pendiente. Cuando la acepte, vas a ver sus horas."
-                : anonimo
-                  ? `Creá tu cuenta en Vector para pedirle a ${conArroba(piloto.handle)} que te deje seguirlo.`
-                  : `Seguí a ${conArroba(piloto.handle)} para ver sus horas.`}
-            </p>
-          </section>
-        )}
+          <CabeceraPiloto
+            piloto={piloto}
+            acciones={
+              comoAnonimo ? undefined : (
+                <BotonSeguir
+                  handle={piloto.handle}
+                  relacion={piloto.relacion}
+                  visibilidad={piloto.visibilidad}
+                  tieneHandle={false}
+                />
+              )
+            }
+          />
 
-        {/* Publicaciones ----------------------------------------------------------- */}
-        {piloto.horas && publicacionesPage.publicaciones.length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-xl font-display font-bold text-zinc-900 dark:text-white mb-4">Publicaciones</h2>
-            <div className="space-y-4">
-              {publicaciones.map(pub => (
-                <PublicacionCard key={pub.id} publicacion={pub} />
-              ))}
-            </div>
-          </section>
-        )}
+          {piloto.horas ? (
+            <HorasPiloto horas={piloto.horas} />
+          ) : (
+            <PerfilPrivado
+              mensaje={`Con una cuenta en Vector le pedís a ${conArroba(piloto.handle)} que te acepte, y ves sus horas y lo que publica.`}
+            />
+          )}
 
-        {/* Para quien llegó por el link ------------------------------------------ */}
-        {anonimo && (
-          <section className="rounded-[2rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-900 dark:border-white/10 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-4 mt-8">
-            <div className="flex-1">
-              <p className="font-display font-bold text-xl text-white">¿Sos piloto?</p>
-              <p className="text-sm text-white/60 mt-1">
-                Llevá tu bitácora en Vector: horas en formato ANAC, vencimientos y si podés volar hoy.
-              </p>
-            </div>
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-2xl bg-white text-zinc-900 px-5 py-3 text-sm font-semibold hover:bg-zinc-200 transition-colors"
-            >
-              Crear mi bitácora
-            </Link>
-          </section>
-        )}
-      </main>
-    </div>
-  );
-}
+          {lectura && (
+            <section className="space-y-4">
+              <h2 className="text-xl font-display font-bold tracking-tight">Publicaciones</h2>
+              {lectura.disponible ? (
+                <ListaPublicaciones
+                  inicial={lectura.publicaciones}
+                  siguiente={lectura.siguiente}
+                  origen={{ tipo: "piloto", handle: piloto.handle, comoAnonimo: true }}
+                  contexto={{
+                    modo: "publico",
+                    interaccion: conSesion ? "solo-lectura" : "sin-sesion",
+                    comoAnonimo: true,
+                  }}
+                  vacio={
+                    <p className="rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      Todavía no publicó nada.
+                    </p>
+                  }
+                />
+              ) : (
+                <AvisoNoSePudo texto="No pudimos cargar sus publicaciones." />
+              )}
+            </section>
+          )}
 
-function Horas({ horas }: { horas: HorasPublicas }) {
-  const hitos = estadoHitos(horas.total);
-  const [entero, decimal] = horas.total.toFixed(1).split(".");
-  const detalle = [
-    { label: "PIC", valor: horas.pic },
-    { label: "Travesía", valor: horas.travesia },
-    { label: "Noche", valor: horas.noche },
-    { label: "Instrumentos", valor: horas.instrumentos },
-  ];
-
-  return (
-    <section className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-6 md:p-8 space-y-6">
-      <div>
-        <p className="eyebrow">Horas de vuelo</p>
-        <p className="flex items-end gap-1 mt-2">
-          <span className="data text-6xl md:text-7xl font-bold leading-none">{entero}</span>
-          <span className="data text-6xl md:text-7xl font-bold leading-none text-zinc-300 dark:text-zinc-700">.{decimal}</span>
-          <span className="data text-lg font-medium text-zinc-400 ml-2 mb-1">hs</span>
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {detalle.map((d) => (
-          <div key={d.label} className="rounded-2xl border border-zinc-200 dark:border-white/10 p-4">
-            <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{d.label}</p>
-            <p className="data text-2xl font-bold mt-1">{d.valor.toFixed(1)}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        {hitos.proximo !== null ? (
-          <>
-            <div className="flex items-baseline justify-between text-sm">
-              <span className="font-semibold">Próximo hito: {hitos.proximo} hs</span>
-              <span className="data text-zinc-500 dark:text-zinc-400">faltan {hitos.faltan?.toFixed(1)}</span>
-            </div>
-            <div className="h-2 rounded-full bg-zinc-100 dark:bg-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-aviation-blue dark:bg-aviation-cyan"
-                style={{ width: `${Math.round(hitos.avance * 100)}%` }}
-              />
-            </div>
-          </>
-        ) : (
-          <p className="text-sm font-semibold">Pasó las 1000 horas.</p>
-        )}
-        {hitos.alcanzados.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {hitos.alcanzados.map((h) => (
-              <span
-                key={h}
-                className="inline-flex items-center gap-1 rounded-full bg-zinc-100 dark:bg-white/10 px-2.5 py-1 text-[12px] font-semibold"
+          {/* Para quien llegó por el link ------------------------------------------ */}
+          {!conSesion && (
+            <section className="rounded-[2rem] bg-zinc-900 dark:bg-[#111111] border border-zinc-900 dark:border-white/10 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="font-display font-bold text-xl text-white">¿Sos piloto?</p>
+                <p className="text-sm text-white/60 mt-1">
+                  Llevá tu bitácora en Vector: horas en formato ANAC, vencimientos y si podés volar hoy.
+                </p>
+              </div>
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center rounded-2xl bg-white text-zinc-900 px-5 py-3 text-sm font-semibold hover:bg-zinc-200 transition-colors"
               >
-                <Trophy className="w-3 h-3" />
-                {h} hs
-              </span>
-            ))}
-          </div>
-        )}
+                Crear mi bitácora
+              </Link>
+            </section>
+          )}
+        </main>
       </div>
-
-      <p className="text-[12px] text-zinc-400 dark:text-zinc-500">
-        Horas que el piloto cargó en su bitácora de Vector, sin simuladores y con las que trajo de su libro de papel. No
-        es una certificación de ANAC.
-      </p>
-    </section>
+    </AvisosProvider>
   );
 }

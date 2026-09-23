@@ -7,6 +7,8 @@ import ExportFlightsButton from "@/components/dashboard/ExportFlightsButton";
 import FlightListClient from "@/components/dashboard/FlightListClient";
 import PageHeader from "@/components/dashboard/PageHeader";
 import BannerCompartirVuelo from "@/components/social/BannerCompartirVuelo";
+import { leerResumenSocial } from "@/lib/resumen-social";
+import { rutaLegible } from "@/lib/social";
 
 import { redirect } from "next/navigation";
 
@@ -33,19 +35,27 @@ async function getHistoryData() {
   };
 }
 
-export default async function HistoryPage() {
-  const [{ flights, aircraft, profile, transactions }, resumenRes] = await Promise.all([
+export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
+  const [{ flights, aircraft, transactions }, resumen, { nuevo }] = await Promise.all([
     getHistoryData(),
-    apiFetch("/social/resumen", { cache: "no-store" })
+    leerResumenSocial(),
+    searchParams,
   ]);
-  const resumen = resumenRes.ok ? await resumenRes.json() : null;
-  const tieneHandle = !!resumen?.handle;
 
   const costos = costosPorVuelo(transactions);
 
   const sortedFlights = [...flights].sort(
     (a, b) => new Date(b.takeoff).getTime() - new Date(a.takeoff).getTime()
   );
+
+  /*
+    "¿Lo compartís con tu red?", recién registrado un vuelo: `FlightLogForm` vuelve acá
+    con `?nuevo=<id>`. Sólo si el vuelo existe, no es de simulador —una sesión es un
+    renglón del libro, no un vuelo (invariante 4)— y el piloto tiene @.
+  */
+  const recienCargado = nuevo ? sortedFlights.find((f) => f.id === nuevo) : undefined;
+  const avionDelNuevo = recienCargado ? aircraft.find((a) => a.id === recienCargado.aircraft_id) : undefined;
+  const ofrecerCompartir = !!resumen.handle && !!recienCargado && !avionDelNuevo?.is_simulator;
 
   const totalHours = sortedFlights.reduce((acc, f) => acc + f.duration, 0);
   const totalLandings = sortedFlights.reduce((acc, f) => acc + f.landings, 0);
@@ -72,7 +82,12 @@ export default async function HistoryPage() {
         </div>
       </PageHeader>
 
-      {tieneHandle && <BannerCompartirVuelo />}
+      {ofrecerCompartir && recienCargado && (
+        <BannerCompartirVuelo
+          vueloId={recienCargado.id}
+          resumen={[rutaLegible(recienCargado.route), `${recienCargado.duration.toFixed(1)} h`].filter(Boolean).join(" · ")}
+        />
+      )}
       <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} />
     </div>
   );

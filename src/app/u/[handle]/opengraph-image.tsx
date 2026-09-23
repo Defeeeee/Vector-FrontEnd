@@ -19,6 +19,30 @@ import type { PilotoPublico } from "@/types";
  */
 
 export const runtime = "nodejs";
+
+/**
+ * La foto de perfil, lista para la tarjeta, o `null` para seguir sin ella.
+ *
+ * **satori no lee WebP** —acepta PNG, JPEG, GIF y SVG—, y el backend guarda las fotos de
+ * perfil en WebP. Se convierte con `sharp`, que ya está en el server porque Next lo usa
+ * para las imágenes. Cualquier falla deja la tarjeta sin foto: una vista previa sin foto
+ * es mucho mejor que ninguna.
+ */
+async function fotoParaTarjeta(url: string | null | undefined): Promise<string | null> {
+  // En producción la URL es la del storage de Supabase, siempre https; `http` sólo
+  // sirve para el backend falso de desarrollo.
+  const esquemaValido = url?.startsWith("https://") || (process.env.NODE_ENV !== "production" && url?.startsWith("http://"));
+  if (!url || !esquemaValido) return null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const { default: sharp } = await import("sharp");
+    const png = await sharp(Buffer.from(await res.arrayBuffer())).resize(300, 300, { fit: "cover" }).png().toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
 export const alt = "Perfil de piloto en Vector";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -41,7 +65,7 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
     );
     piloto = res.ok ? await res.json() : null;
   }
-  const fonts = await cargarFuentes();
+  const [fonts, foto] = await Promise.all([cargarFuentes(), fotoParaTarjeta(piloto?.avatar_url)]);
 
   const horas = piloto?.horas ?? null;
   const [entero, decimal = "0"] = (horas?.total ?? 0).toFixed(1).split(".");
@@ -65,15 +89,26 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           {/* Quién es */}
-          <div style={{ display: "flex", flexDirection: "column", maxWidth: 560 }}>
-            <span style={{ fontSize: 56, fontWeight: 800, color: COLOR.texto, lineHeight: 1.1 }}>
-              {piloto?.nombre_visible ?? "Piloto en Vector"}
-            </span>
-            {/* Un solo string y no dos expresiones: para satori, dos hijos de texto
-                son dos hijos, y un contenedor con más de uno exige `display: flex`. */}
-            <span style={{ fontFamily: "PlexMono", fontSize: 30, color: COLOR.tenue, marginTop: 14 }}>
-              {`${conArroba(piloto?.handle ?? handle)}${piloto?.licencia ? ` · ${piloto.licencia}` : ""}`}
-            </span>
+          <div style={{ display: "flex", alignItems: "center", maxWidth: horas ? 640 : 860 }}>
+            {foto && (
+              <img
+                src={foto}
+                width={150}
+                height={150}
+                alt=""
+                style={{ width: 150, height: 150, borderRadius: 75, marginRight: 32, border: `3px solid ${COLOR.borde}` }}
+              />
+            )}
+            <div style={{ display: "flex", flexDirection: "column", maxWidth: 560 }}>
+              <span style={{ fontSize: 56, fontWeight: 800, color: COLOR.texto, lineHeight: 1.1 }}>
+                {piloto?.nombre_visible ?? "Piloto en Vector"}
+              </span>
+              {/* Un solo string y no dos expresiones: para satori, dos hijos de texto
+                  son dos hijos, y un contenedor con más de uno exige `display: flex`. */}
+              <span style={{ fontFamily: "PlexMono", fontSize: 30, color: COLOR.tenue, marginTop: 14 }}>
+                {`${conArroba(piloto?.handle ?? handle)}${piloto?.licencia ? ` · ${piloto.licencia}` : ""}`}
+              </span>
+            </div>
           </div>
 
           {/* Sus horas, o que no se ven */}

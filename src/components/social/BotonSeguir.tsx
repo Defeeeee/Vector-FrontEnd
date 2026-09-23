@@ -52,9 +52,10 @@ export default function BotonSeguir({
   }
 
   if (!tieneHandle) {
+    // A la Red, que lo crea en el lugar (`CrearHandleRapido`), y no al Hangar.
     return (
       <Link
-        href="/dashboard/settings#perfil-publico"
+        href="/dashboard/pilotos#crear-handle"
         className={`${base} border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-white/5`}
       >
         Creá tu @ para seguir

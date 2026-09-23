@@ -126,6 +126,8 @@ const ROUTES = [
   { path: "/dashboard/planificador", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/clima", expect: (s) => s === 307 || s === 302 },
   { path: "/dashboard/pilotos", expect: (s) => s === 307 || s === 302 },
+  { path: "/dashboard/pilotos/actividad", expect: (s) => s === 307 || s === 302 },
+  { path: "/dashboard/pilotos/fede.dn", expect: (s) => s === 307 || s === 302 },
   // El perfil público se abre sin cuenta. Un @ que no existe tiene que dar 404 y no
   // 500: el que recibe un link roto por WhatsApp tiene que ver "no existe", no un
   // error de servidor. Un @ con formato inválido, lo mismo.
@@ -140,7 +142,10 @@ const ROUTES = [
 
 /**
  * Con sesión, estas tienen que **renderizar**, no redirigir. Todas son GET y
- * ninguna escribe: el backend es el de producción.
+ * ninguna escribe: el backend es el de producción. Por eso ninguna pantalla puede
+ * escribir al dibujarse (la Actividad marca lo visto desde el navegador, no acá).
+ *
+ * Un string espera 200; un objeto, el código que dice.
  */
 const AUTH_ROUTES = [
   "/dashboard",
@@ -156,8 +161,13 @@ const AUTH_ROUTES = [
   "/dashboard/calendario",
   "/dashboard/planificador",
   "/dashboard/clima",
+  // La red: la Red, sus pestañas, Publicar (que lee los vuelos) y un perfil que no
+  // existe, que adentro de la app también tiene que ser 404 y no 500.
   "/dashboard/pilotos",
-  "/dashboard/pilotos/solicitudes",
+  "/dashboard/pilotos/buscar",
+  "/dashboard/pilotos/actividad",
+  "/dashboard/pilotos/publicar",
+  { path: "/dashboard/pilotos/no.existe.smoke", status: 404 },
   "/dashboard/novedades",
   // Un `.ttf` faltante o mal nombrado pasa `tsc` y pasa `next build`: la ruta tira
   // 500 recién cuando alguien pide la imagen. Esto es lo único automático que lo
@@ -255,7 +265,9 @@ try {
     );
   } else {
     console.log("\n--- con sesión ---");
-    for (const path of AUTH_ROUTES) {
+    for (const ruta of AUTH_ROUTES) {
+      const path = typeof ruta === "string" ? ruta : ruta.path;
+      const esperado = typeof ruta === "string" ? 200 : ruta.status;
       let status = 0;
       let detail = "";
       try {
@@ -273,7 +285,7 @@ try {
         detail = ` — ${err.message}`;
       }
 
-      const ok = status === 200 && !detail;
+      const ok = status === esperado && !detail;
       if (!ok) failures++;
       console.log(`${ok ? "✓" : "✗"} ${String(status).padEnd(3)} ${path}${detail}`);
     }

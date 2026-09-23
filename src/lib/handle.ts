@@ -20,6 +20,9 @@ export const RESERVADOS = new Set([
   "help", "staff", "equipo", "oficial", "anac", "api", "app", "u", "dashboard",
   "login", "register", "registro", "pilotos", "piloto", "perfil", "settings",
   "hangar", "null", "undefined", "www", "mail", "legal",
+  // Las pantallas que cuelgan de `/dashboard/pilotos/`: un @ con ese nombre quedaría
+  // tapado por la ruta fija, y su perfil adentro de la app no se podría abrir.
+  "buscar", "actividad", "publicar", "red", "solicitudes",
 ]);
 
 const FORMATO = /^[a-z0-9][a-z0-9._]{1,18}[a-z0-9]$/;
@@ -49,9 +52,36 @@ export function conArroba(handle: string): string {
   return `@${normalizarHandle(handle)}`;
 }
 
-/** La ruta del perfil público. Sin arroba en la URL, por decisión de Federico. */
+/**
+ * La ruta del perfil público, la que se comparte. Sin arroba en la URL, por decisión
+ * de Federico. Quien la abre con sesión va a parar a `rutaPerfilApp`.
+ */
 export function rutaPerfil(handle: string): string {
   return `/u/${encodeURIComponent(normalizarHandle(handle))}`;
+}
+
+/**
+ * El perfil adentro de la app, con la barra. Es a donde lleva tocar un piloto desde
+ * cualquier pantalla del dashboard: abrir `/u/...` ahí era salirse de Vector.
+ */
+export function rutaPerfilApp(handle: string): string {
+  return `/dashboard/pilotos/${encodeURIComponent(normalizarHandle(handle))}`;
+}
+
+/**
+ * Un @ para proponer a partir del nombre: "Lucía Prueba" → `lucia.prueba`. Sin tildes
+ * ni eñes, con punto donde había espacios, y cortado a 20. Si lo que queda no es un @
+ * válido —muy corto, reservado—, devuelve `""` y el piloto escribe el suyo.
+ */
+export function sugerirHandle(nombre: string | null | undefined): string {
+  const base = (nombre ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+  const cortado = base.slice(0, HANDLE_MAX).replace(/[._]+$/, "");
+  return problemaDelHandle(cortado) ? "" : cortado;
 }
 
 /** La URL completa, para copiar o compartir. */

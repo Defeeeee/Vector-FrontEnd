@@ -20,6 +20,6 @@ const PlanMapaInner = dynamic(() => import("./PlanMapaInner"), {
   ),
 });
 
-export default function PlanMapa({ puntos, className }: { puntos: PuntoMapa[], className?: string }) {
-  return <PlanMapaInner puntos={puntos} className={className} />;
+export default function PlanMapa({ puntos }: { puntos: PuntoMapa[] }) {
+  return <PlanMapaInner puntos={puntos} />;
 }

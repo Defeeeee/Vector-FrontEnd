@@ -52,16 +52,17 @@ export async function apiFetch(
 ) {
   const token = anonimo ? undefined : await getSessionToken();
 
-  const baseHeaders: Record<string, string> = {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
-  if (!(options.body instanceof FormData || (options.body && options.body.constructor && options.body.constructor.name === "FormData"))) {
-    baseHeaders["Content-Type"] = "application/json";
-  }
-
+  /*
+    Con un `FormData` no va `Content-Type`: `fetch` lo arma solo, con el `boundary` del
+    multipart, y forzar `application/json` hacía que el backend rechazara toda subida de
+    fotos. Se reconoce también por el nombre del constructor porque el `FormData` que
+    devuelve `req.formData()` en una ruta de Next puede ser de otra copia de undici que la
+    del global, y ahí `instanceof` da falso.
+  */
+  const esMultipart = options.body instanceof FormData || options.body?.constructor?.name === "FormData";
   const headers = {
-    ...baseHeaders,
+    ...(esMultipart ? {} : { "Content-Type": "application/json" }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 

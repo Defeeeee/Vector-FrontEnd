@@ -6,6 +6,15 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.20.0 — La red, con fotos y tus vuelos
+
+_22 de septiembre de 2026_
+
+- **Publicá fotos y contá tus vuelos** — En Pilotos, la Red muestra lo que publican los pilotos que seguís. Escribí, subí hasta cuatro fotos y, si querés, sumá un vuelo de tu bitácora. Las fotos se guardan sin la ubicación del teléfono.
+- **Compartí un vuelo en dos toques** — Cada vuelo de la Bitácora tiene Compartir, y al registrar uno te preguntamos si lo querés mostrar. Vos elegís si se ve la ruta, la duración, el avión o la fecha; la matrícula, nunca.
+- **Aplausos, comentarios y tu Actividad** — Aplaudí y comentá lo que publican otros pilotos. En Actividad ves quién te sigue, te aplaude o te comenta, y aceptás las solicitudes si tu perfil es privado.
+- **Los perfiles se abren adentro de Vector** — Tocando un piloto ves su perfil sin salir de la app, con sus horas y lo que publicó. Sumá tu foto en el Hangar: se ve en tu perfil, en tus publicaciones y en la vista previa de WhatsApp.
+
 ## v2.19.0 — Tu @, y la red de pilotos
 
 _22 de septiembre de 2026_

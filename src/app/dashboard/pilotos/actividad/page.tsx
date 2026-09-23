@@ -1,96 +1,110 @@
-import { AtSign, Check, X } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
-import { apiFetch } from "@/lib/api";
-import FilaPiloto from "@/components/social/FilaPiloto";
 import AccionSocial from "@/components/social/AccionSocial";
-import Link from "next/link";
-import { Actividad, ResumenSocial, PilotoResumen } from "@/types";
+import AvisoNoSePudo from "@/components/social/AvisoNoSePudo";
+import CrearHandleRapido from "@/components/social/CrearHandleRapido";
+import FilaPiloto from "@/components/social/FilaPiloto";
+import ListaActividad from "@/components/social/ListaActividad";
+import { apiFetch } from "@/lib/api";
+import { prepararEventos } from "@/lib/publicaciones-servidor";
+import { leerDatosParaElHandle, leerResumenSocial } from "@/lib/resumen-social";
+import type { Actividad, EventoActividad, PilotoResumen } from "@/types";
 
 export const metadata = { title: "Actividad | Vector" };
 
+/**
+ * La Actividad: las solicitudes para seguirte, con sus botones, y lo que pasó con lo
+ * tuyo (`GET /red/actividad`: seguidores, solicitudes, aplausos y comentarios de los
+ * últimos 60 días).
+ *
+ * Las solicitudes viven acá desde que Pilotos pasó a Red · Buscar · Actividad: la
+ * pestaña Solicitudes de la 2.19.0 se sumó a esta. **Sin esta lista un perfil privado no
+ * tiene dónde aceptar a nadie.**
+ *
+ * La pantalla no escribe nada al dibujarse: marcar la actividad como vista lo hace
+ * `ListaActividad` desde el navegador (ver `marcarActividadVista`).
+ */
 export default async function ActividadPage() {
-  const resumenRes = await apiFetch("/social/resumen", { cache: "no-store" });
-  const resumen: ResumenSocial = resumenRes.ok
-    ? await resumenRes.json()
-    : { handle: null, solicitudes_pendientes: 0, actividad_nueva: 0 };
-  const handle = resumen.handle;
+  const resumen = await leerResumenSocial();
 
-  if (!handle) {
+  if (!resumen.disponible) {
     return (
-      <div className="space-y-8 w-full animate-in fade-in duration-700">
-        <PageHeader eyebrow="Actividad y notificaciones" title="Actividad" />
-        <Link
-          href="/dashboard/settings#perfil-publico"
-          className="group flex items-center gap-4 rounded-[2rem] border border-dashed border-zinc-300 dark:border-white/15 bg-white dark:bg-white/[0.02] p-5 hover:bg-zinc-50 dark:hover:bg-white/[0.04]"
-        >
-          <div className="w-11 h-11 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center shrink-0">
-            <AtSign className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-zinc-900 dark:text-white">Elegí tu @</p>
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-400">Para ver tu actividad, tenés que crear tu perfil primero.</p>
-          </div>
-        </Link>
+      <div className="space-y-8 w-full max-w-2xl animate-in fade-in duration-700">
+        <PageHeader eyebrow="Lo que pasa con lo tuyo" title="Actividad" />
+        <AvisoNoSePudo texto="No pudimos cargar tu actividad." />
       </div>
     );
   }
 
-  const [actividadRes, pendientesRes] = await Promise.all([
-    apiFetch("/social/actividad", { cache: "no-store" }),
-    apiFetch("/social/pendientes", { cache: "no-store" }),
-    apiFetch("/social/actividad/vista", { method: "POST", cache: "no-store" }), // Limpiar punto rojo
-  ]);
+  if (!resumen.handle) {
+    const datos = await leerDatosParaElHandle();
+    return (
+      <div className="space-y-8 w-full max-w-2xl animate-in fade-in duration-700">
+        <PageHeader eyebrow="Lo que pasa con lo tuyo" title="Actividad" />
+        <CrearHandleRapido
+          nombreSugerido={datos.nombre}
+          licenciaSugerida={datos.licencia}
+          titulo="Para tener actividad, elegí tu @"
+        />
+      </div>
+    );
+  }
 
-  const actividad: Actividad = actividadRes.ok ? await actividadRes.json() : { eventos: [] };
-  const pendientes: PilotoResumen[] = pendientesRes.ok ? await pendientesRes.json() : [];
+  const [actividadRes, solicitudesRes] = await Promise.all([
+    apiFetch("/red/actividad", { cache: "no-store" }),
+    apiFetch("/social/solicitudes", { cache: "no-store" }),
+  ]);
+  const eventos: EventoActividad[] | null = actividadRes.ok
+    ? prepararEventos(((await actividadRes.json().catch(() => null)) as Actividad | null)?.eventos ?? [])
+    : null;
+  const solicitudes: PilotoResumen[] | null = solicitudesRes.ok
+    ? ((await solicitudesRes.json().catch(() => null)) as PilotoResumen[] | null)
+    : null;
 
   return (
-    <div className="space-y-8 w-full max-w-2xl animate-in fade-in duration-700">
-      <PageHeader eyebrow="Solicitudes y notificaciones" title="Actividad" />
+    <div className="space-y-6 md:space-y-8 w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <PageHeader eyebrow="Lo que pasa con lo tuyo" title="Actividad" />
 
-      {pendientes.length > 0 && (
-        <section className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-5">
-          <div className="flex items-baseline justify-between mb-4">
-            <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white">Solicitudes pendientes</h3>
-            <span className="data text-sm font-bold text-orange-500">{pendientes.length}</span>
-          </div>
-          <div className="divide-y divide-zinc-100 dark:divide-white/10">
-            {pendientes.map((p) => (
-              <FilaPiloto key={p.handle} piloto={p} accion={<AccionSocial tipo="solicitud" handle={p.handle} miHandle={handle} />} />
-            ))}
-          </div>
-        </section>
+      {solicitudes === null ? (
+        <AvisoNoSePudo texto="No pudimos cargar tus solicitudes." />
+      ) : (
+        solicitudes.length > 0 && (
+          <section className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-5 md:p-6">
+            <div className="flex items-baseline justify-between mb-1">
+              <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white tracking-tight">
+                Quieren seguirte
+              </h3>
+              <span className="data text-sm font-bold text-red-500">{solicitudes.length}</span>
+            </div>
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mb-2">
+              Tu perfil es privado: hasta que los aceptes no ven tus horas ni lo que publicás.
+            </p>
+            <div className="divide-y divide-zinc-100 dark:divide-white/10">
+              {solicitudes.map((p) => (
+                <FilaPiloto
+                  key={p.handle}
+                  piloto={p}
+                  accion={<AccionSocial tipo="solicitud" handle={p.handle} miHandle={resumen.handle} />}
+                />
+              ))}
+            </div>
+          </section>
+        )
       )}
 
-      <section className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-5">
-        <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white mb-4">Última actividad</h3>
-        
-        {actividad.eventos.length === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 py-3">No hay actividad reciente en tu perfil.</p>
-        ) : (
-          <div className="divide-y divide-zinc-100 dark:divide-white/10">
-            {actividad.eventos.map((e, idx) => (
-              <div key={idx} className={`py-3 flex items-start gap-3 ${e.nuevo ? 'bg-zinc-50 dark:bg-white/5 -mx-5 px-5' : ''}`}>
-                <div className="w-8 h-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-sm font-bold">
-                  {e.piloto.handle.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm text-zinc-800 dark:text-zinc-200">
-                    <span className="font-semibold text-zinc-900 dark:text-white">{e.piloto.nombre_visible}</span>
-                    {e.tipo === "seguidor" && " empezó a seguirte."}
-                    {e.tipo === "solicitud" && " solicitó seguirte."}
-                    {e.tipo === "aplauso" && " aplaudió tu publicación."}
-                    {e.tipo === "comentario" && " comentó: " + e.texto}
-                  </p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    {new Date(e.created_at).toLocaleDateString("es-AR", { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {eventos === null ? (
+        <AvisoNoSePudo texto="No pudimos cargar tu actividad." />
+      ) : (
+        <section className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-5 md:p-6">
+          <h3 className="text-lg font-display font-bold text-zinc-900 dark:text-white tracking-tight mb-1">
+            Lo último
+          </h3>
+          <ListaActividad
+            eventos={eventos}
+            marcarVista={resumen.actividad_nueva > 0 || eventos.some((e) => e.nuevo)}
+            miHandle={resumen.handle}
+          />
+        </section>
+      )}
     </div>
   );
 }

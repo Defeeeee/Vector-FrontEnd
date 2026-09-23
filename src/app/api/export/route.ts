@@ -24,10 +24,14 @@ const RECURSOS: Array<[clave: string, ruta: string]> = [
   ["documentos", "/documents"],
   ["paquetes", "/flight-packs"],
   ["transacciones", "/transactions"],
-  // La red social: el @ con lo que publicaste, a quién seguís y quién te sigue.
+  // La red social: el @, a quién seguís, quién te sigue, lo que publicaste y lo que
+  // comentaste. Las URLs de las fotos son firmadas y vencen a las pocas horas: bajalas
+  // si las querés guardar.
   ["perfil_publico", "/perfil-publico"],
   ["siguiendo", "/social/siguiendo"],
   ["seguidores", "/social/seguidores"],
+  ["publicaciones", "/red/mis-publicaciones"],
+  ["comentarios", "/red/mis-comentarios"],
 ];
 
 export async function GET() {

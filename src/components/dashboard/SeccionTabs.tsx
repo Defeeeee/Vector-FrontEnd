@@ -10,7 +10,7 @@ import { pestanaActiva, seccionDe } from "@/lib/secciones";
  *
  * Es lo que hace posible que la barra tenga pocos íconos: Resumen, Calendario y
  * Auditoría siguen a un toque, pero desde adentro de la Bitácora; Aeropuertos, Clima y
- * Herramientas desde "Preparar vuelo"; Solicitudes desde Pilotos.
+ * Herramientas desde "Preparar vuelo"; Buscar y Actividad desde Pilotos.
  *
  * Vive en el layout y no en cada página: así una pantalla que se agrega a una sección
  * en `lib/secciones.ts` aparece sola en sus pestañas, sin acordarse de tocar cuatro
@@ -22,7 +22,7 @@ export default function SeccionTabs({
 }: {
   /**
    * Un número en rojo al lado de la pestaña, por `href`: los hallazgos abiertos en
-   * Auditoría, las solicitudes en Solicitudes. Cero o ausente no dibuja nada.
+   * Auditoría; las solicitudes y lo nuevo en Actividad. Cero o ausente no dibuja nada.
    */
   contadores?: Record<string, number>;
 }) {

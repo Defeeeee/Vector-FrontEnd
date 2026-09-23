@@ -5,14 +5,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { ArrowRight, Check, Globe, Loader2, Lock, X } from "lucide-react";
 import { guardarPerfilPublico, handleDisponible, salirDeLaRed } from "@/actions/social";
-import { conArroba, normalizarHandle, problemaDelHandle, rutaPerfil } from "@/lib/handle";
+import { conArroba, normalizarHandle, problemaDelHandle, rutaPerfilApp } from "@/lib/handle";
 import CompartirPerfil from "./CompartirPerfil";
+import FotoDePerfil from "./FotoDePerfil";
 import type { PerfilPublico, Visibilidad } from "@/types";
 
 const BIO_MAX = 160;
 
 /**
- * Crear o editar el @: sumarse a la red de pilotos.
+ * Crear o editar el @ y la foto de perfil: sumarse a la red de pilotos.
+ *
+ * El @ también se crea sin salir de la red (`CrearHandleRapido`); acá está todo lo
+ * demás: la bio, la licencia, la foto, pasar a privado y salir de la red.
  *
  * **Crear el @ es el consentimiento** para publicar lo que el formulario dice, y por
  * eso el texto de qué se ve con cada opción está arriba del botón y no en otra
@@ -84,7 +88,12 @@ export default function PerfilPublicoForm({
 
   const salir = () => {
     if (!perfil) return;
-    if (!window.confirm(`¿Borrar ${conArroba(perfil.handle)}? Perdés tus seguidores y a quién seguís.`)) return;
+    if (
+      !window.confirm(
+        `¿Borrar ${conArroba(perfil.handle)}? Perdés tus seguidores, a quién seguís, y todo lo que publicaste con sus fotos y comentarios.`
+      )
+    )
+      return;
     setError(null);
     startTransition(async () => {
       const r = await salirDeLaRed(perfil.handle);
@@ -111,7 +120,7 @@ export default function PerfilPublicoForm({
       {perfil ? (
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={rutaPerfil(perfil.handle)}
+            href={rutaPerfilApp(perfil.handle)}
             className="inline-flex items-center gap-1.5 font-mono text-base font-semibold text-zinc-900 dark:text-white hover:underline underline-offset-2"
           >
             {conArroba(perfil.handle)}
@@ -122,10 +131,12 @@ export default function PerfilPublicoForm({
         </div>
       ) : (
         <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-          Elegí tu @ para sumarte a la red de pilotos: te pueden buscar, seguir, y ver tus horas con un link que
-          mandás por WhatsApp.
+          Elegí tu @ para sumarte a la red de pilotos: te pueden buscar, seguir, y ver tus horas y lo que publiques con
+          un link que mandás por WhatsApp.
         </p>
       )}
+
+      {perfil && <FotoDePerfil nombre={perfil.nombre_visible} avatarUrl={perfil.avatar_url ?? null} />}
 
       <div className="grid gap-5 md:grid-cols-2">
         <label className="block space-y-2">
@@ -193,7 +204,7 @@ export default function PerfilPublicoForm({
 
       {/* Qué se publica: arriba del botón, porque apretarlo es aceptarlo. */}
       <div className="space-y-3">
-        <span className={etiqueta}>Quién ve tus horas</span>
+        <span className={etiqueta}>Quién ve tus horas y lo que publicás</span>
         <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10">
           {(
             [
@@ -219,10 +230,11 @@ export default function PerfilPublicoForm({
         </div>
         <p className="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400">
           {visibilidad === "publico"
-            ? "Cualquiera con el link ve tu nombre, tu @, tu licencia, tu bio y tus horas totales, PIC, de travesía, de noche y de instrumentos. Te siguen sin pedirte permiso."
-            : "Te encuentran por @ o por nombre, pero tus horas las ven sólo los pilotos que aceptes."}{" "}
+            ? "Cualquiera con el link ve tu nombre, tu @, tu licencia, tu bio, tus horas totales, PIC, de travesía, de noche y de instrumentos, y lo que publiques. Te siguen sin pedirte permiso."
+            : "Te encuentran por @ o por nombre, pero tus horas y lo que publiques lo ven sólo los pilotos que aceptes."}{" "}
           <strong className="text-zinc-700 dark:text-zinc-200">
-            Nunca se publican tus vuelos, rutas, fechas, aeronaves ni documentos.
+            Nada de tu bitácora se publica solo: sólo lo que compartas, y de cada vuelo sólo los datos que elijas. La
+            matrícula y tus documentos, nunca.
           </strong>{" "}
           Podés cambiarlo o borrar tu perfil cuando quieras.
         </p>

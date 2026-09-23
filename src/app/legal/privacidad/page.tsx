@@ -22,7 +22,9 @@ export const metadata: Metadata = {
  *
  * La sección "Perfil público y red de pilotos" (2026-09-22) describe lo que hace el
  * código: qué campos publica `perfiles_publicos` y qué devuelve
- * `GET /publico/pilotos/{handle}` del backend. Si eso cambia, esto cambia.
+ * `GET /publico/pilotos/{handle}` del backend. Desde la 2.20.0 también las
+ * publicaciones: el chip del vuelo (`resumen_de_vuelo`), las fotos (`services/imagenes.py`
+ * y sus buckets) y quién las ve (el RLS de la migración 019). Si eso cambia, esto cambia.
  */
 export default function PrivacidadPage() {
   return (
@@ -72,36 +74,54 @@ export default function PrivacidadPage() {
           En una base de datos gestionada por <strong>Supabase</strong>. Cada usuario sólo
           puede leer y escribir sus propios registros: la base aplica reglas de acceso por
           fila, no depende de que la aplicación se acuerde de filtrar. La única excepción es
-          el perfil público, si decidís crearlo (ver abajo).
+          el perfil público y lo que publiques en la red, si decidís crearlo (ver abajo).
+          Las fotos de la red se guardan en el almacenamiento de archivos del mismo
+          proveedor.
         </p>
       </section>
 
       <section>
         <h2>Perfil público y red de pilotos</h2>
         <p>
-          Es opcional. Sólo existe si elegís un @ en el Hangar, y crearlo es aceptar que se
-          publique lo siguiente:
+          Es opcional. Sólo existe si elegís un @, y crearlo es aceptar que se publique lo
+          siguiente:
         </p>
         <ul>
           <li>
             <strong>Siempre visibles para cualquiera</strong>, con o sin cuenta en Vector: tu
-            @, el nombre que elijas mostrar, tu licencia y tu bio, y cuántos seguidores tenés
-            y a cuántos pilotos seguís.
+            @, el nombre que elijas mostrar, tu licencia, tu bio, tu foto de perfil si subís
+            una, y cuántos seguidores tenés y a cuántos pilotos seguís.
           </li>
           <li>
             <strong>Tus horas agregadas</strong> —totales, PIC, de travesía, de noche y de
-            instrumentos—: visibles para cualquiera si tu perfil es público, o sólo para los
-            pilotos que aceptes si es privado.
+            instrumentos— <strong>y lo que publiques</strong>: visibles para cualquiera si tu
+            perfil es público, o sólo para los pilotos que aceptes si es privado.
           </li>
         </ul>
         <p>
-          <strong>Nunca se publican</strong> tus vuelos, rutas, fechas, horarios, aeronaves,
-          documentos ni ningún otro dato de tu cuenta. Las horas son las que cargaste vos; no
-          son una certificación de ANAC.
+          <strong>Nada de tu bitácora se publica solo.</strong> Sólo sale lo que vos
+          compartís en una publicación: un texto, fotos, y de un vuelo, únicamente los datos
+          que elijas —la ruta como origen y destino, la duración, el tipo de avión y la
+          fecha—. <strong>La matrícula nunca se publica</strong>, ni tus documentos, horarios
+          o cualquier otro dato de tu cuenta. Lo que se publica de un vuelo es una copia:
+          editar o borrar el vuelo después no lo cambia. Las horas son las que cargaste vos;
+          no son una certificación de ANAC.
         </p>
         <p>
-          Podés pasar de público a privado, editar lo publicado o borrar tu perfil cuando
-          quieras desde el Hangar. Borrarlo elimina también tus seguidores y a quién seguís.
+          <strong>Las fotos se procesan antes de guardarse:</strong> se achican y se les
+          borran los metadatos (EXIF), incluida la ubicación GPS que guardan los teléfonos.
+          Las de tus publicaciones se sirven con enlaces que vencen a las pocas horas y
+          sólo se entregan a quien puede ver tu perfil; la foto de perfil es pública, como
+          tu @.
+        </p>
+        <p>
+          Los aplausos y comentarios que dejes los ve quien puede ver la publicación. Podés
+          borrar tus comentarios, y los que otros dejen en tus publicaciones.
+        </p>
+        <p>
+          Podés pasar de público a privado, editar o borrar lo publicado, o borrar tu perfil
+          cuando quieras desde el Hangar. Borrar el perfil elimina también tus seguidores, a
+          quién seguís, tus publicaciones con sus fotos, y tus aplausos y comentarios.
         </p>
       </section>
 
@@ -123,7 +143,8 @@ export default function PrivacidadPage() {
             contenido del mensaje.
           </li>
           <li>
-            <strong>Supabase</strong> — alojamiento de la base de datos y autenticación.
+            <strong>Supabase</strong> — alojamiento de la base de datos, autenticación y
+            las fotos de la red.
           </li>
         </ul>
         <p>

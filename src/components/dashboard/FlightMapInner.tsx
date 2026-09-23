@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { TILES_OPCIONES, TILES_URL } from "@/lib/mapa-tiles";
 
 export interface AirportLocation {
   icao: string;
@@ -38,11 +39,10 @@ export default function FlightMapInner({ airports, routes, airportDetails }: Fli
       });
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
+      // OSM exige la atribución visible (ver `lib/mapa-tiles.ts`).
+      L.control.attribution({ prefix: false, position: "bottomleft" }).addTo(map);
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        maxZoom: 19,
-        subdomains: "abcd",
-      }).addTo(map);
+      L.tileLayer(TILES_URL, TILES_OPCIONES).addTo(map);
 
       mapRef.current = map;
     }

@@ -1,166 +1,193 @@
 "use client";
 
-import { useState } from "react";
-import { Publicacion, Comentario } from "@/types";
-import { Flame, MessageCircle, Trash2, X, Plane } from "lucide-react";
-import AvatarPiloto from "./AvatarPiloto";
-import { useAvisos } from "@/components/dashboard/Avisos";
-import { toggleAplauso as toggleAplausoServer, borrarPublicacion } from "@/actions/social";
 import Link from "next/link";
-import PlanMapa from "@/components/dashboard/PlanMapa";
+import { useState, useTransition } from "react";
+import { Loader2, MessageCircle, PartyPopper, Trash2 } from "lucide-react";
+import AvatarPiloto from "./AvatarPiloto";
+import ChipVuelo from "./ChipVuelo";
+import ComentariosPublicacion from "./ComentariosPublicacion";
+import GaleriaFotos from "./GaleriaFotos";
+import { useAvisos } from "@/components/dashboard/Avisos";
+import { aplaudir, borrarPublicacion } from "@/actions/social";
+import { conArroba, rutaPerfil, rutaPerfilApp } from "@/lib/handle";
+import type { Publicacion } from "@/types";
 
-export default function PublicacionCard({ publicacion, onDeleted }: { publicacion: Publicacion; onDeleted?: () => void }) {
-  const [aplaudida, setAplaudida] = useState(publicacion.aplaudida);
-  const [aplausos, setAplausos] = useState(publicacion.aplausos);
-  const [loadingAplauso, setLoadingAplauso] = useState(false);
-  const [showVisor, setShowVisor] = useState<string | null>(null);
+/**
+ * Dónde se dibuja una publicación y qué puede hacer quien la mira.
+ *
+ * - `modo`: `app` adentro del dashboard, `publico` en `/u/...`. Decide a dónde lleva
+ *   tocar un piloto: adentro de la app no se sale de la app.
+ * - `interaccion`: `completa` con sesión y @; `sin-handle` con sesión y sin @ (para
+ *   aplaudir o comentar hace falta que el otro sepa quién sos); `sin-sesion` desde un
+ *   link; `solo-lectura` en la vista "así te ven", donde no se toca nada.
+ * - `comoAnonimo`: todo lo que se pida, pedirlo sin sesión (la misma vista).
+ */
+export interface ContextoPublicacion {
+  modo: "app" | "publico";
+  interaccion: "completa" | "sin-handle" | "sin-sesion" | "solo-lectura";
+  comoAnonimo?: boolean;
+}
+
+export default function PublicacionCard({
+  publicacion: p,
+  contexto,
+}: {
+  publicacion: Publicacion;
+  contexto: ContextoPublicacion;
+}) {
+  const [aplaudida, setAplaudida] = useState(p.aplaudida);
+  const [aplausos, setAplausos] = useState(p.aplausos);
+  const [aplaudiendo, setAplaudiendo] = useState(false);
+  const [nComentarios, setNComentarios] = useState(p.comentarios);
+  const [verComentarios, setVerComentarios] = useState(false);
+  const [borrada, setBorrada] = useState(false);
+  const [borrando, startBorrar] = useTransition();
   const { notificar } = useAvisos();
 
-  const toggleAplauso = async () => {
-    if (loadingAplauso) return;
-    setLoadingAplauso(true);
-    
-    // Optimistic UI
-    const estabaAplaudida = aplaudida;
-    setAplaudida(!estabaAplaudida);
-    setAplausos(a => estabaAplaudida ? a - 1 : a + 1);
-    
-    const res = await toggleAplausoServer(publicacion.id, !estabaAplaudida, publicacion.autor.handle);
-    
-    if (!res.ok) {
-      // Revert Optimistic UI
-      setAplaudida(estabaAplaudida);
-      setAplausos(a => estabaAplaudida ? a + 1 : a - 1);
-      notificar({ tipo: "error", titulo: "Error al aplaudir" });
-    }
-    setLoadingAplauso(false);
-  };
+  if (borrada) return null;
 
-  const handleDelete = async () => {
-    if (!confirm("¿Borrar esta publicación?")) return;
-    const res = await borrarPublicacion(publicacion.id);
-    if (res.ok) {
-      onDeleted?.();
-      notificar({ tipo: "exito", titulo: "Publicación eliminada" });
+  const rutaAutor = (contexto.modo === "app" ? rutaPerfilApp : rutaPerfil)(p.autor.handle);
+  const puedeInteractuar = contexto.interaccion === "completa";
+
+  const alAplaudir = async () => {
+    if (aplaudiendo) return;
+    // Se marca al instante y se deshace si el backend no lo toma.
+    const antes = { aplaudida, aplausos };
+    setAplaudiendo(true);
+    setAplaudida(!antes.aplaudida);
+    setAplausos(antes.aplausos + (antes.aplaudida ? -1 : 1));
+    const r = await aplaudir(p.id, !antes.aplaudida);
+    if (r.ok) {
+      setAplaudida(r.estado.aplaudida);
+      setAplausos(r.estado.aplausos);
     } else {
-      notificar({ tipo: "error", titulo: res.error || "Error al borrar" });
+      setAplaudida(antes.aplaudida);
+      setAplausos(antes.aplausos);
+      notificar({ tipo: "error", titulo: r.error });
     }
+    setAplaudiendo(false);
   };
 
-  const formattedDate = new Date(publicacion.created_at).toLocaleDateString("es-AR", {
-    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
-  });
+  const alBorrar = () => {
+    if (!window.confirm("¿Borrar esta publicación? Se borran también sus fotos y comentarios.")) return;
+    startBorrar(async () => {
+      const r = await borrarPublicacion(p.id);
+      if (!r.ok) {
+        notificar({ tipo: "error", titulo: r.error });
+        return;
+      }
+      setBorrada(true);
+      notificar({ tipo: "exito", titulo: "Publicación borrada" });
+    });
+  };
+
+  const accion =
+    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-semibold transition-colors";
+  const accionNeutra =
+    "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5";
+
+  /** Aplaudir sin poder: lleva a donde se resuelve (entrar, o crear el @). */
+  const aplausoSinPoder =
+    contexto.interaccion === "sin-sesion"
+      ? "/login"
+      : contexto.interaccion === "sin-handle"
+        ? "/dashboard/pilotos"
+        : null;
 
   return (
-    <div className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-sm p-5 md:p-6 mb-4">
-      <div className="flex items-start justify-between mb-3">
-        <Link href={`/u/${publicacion.autor.handle}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <AvatarPiloto nombre={publicacion.autor.nombre_visible} avatarUrl={publicacion.autor.avatar_url} tamano="md" />
-          <div>
-            <div className="font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
-              {publicacion.autor.nombre_visible}
-              <span className="text-zinc-400 dark:text-zinc-500 font-normal">@{publicacion.autor.handle}</span>
-            </div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400">{formattedDate}</div>
-          </div>
+    <article className="rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] shadow-cal dark:shadow-none p-4 md:p-6">
+      <header className="flex items-start gap-3">
+        <Link href={rutaAutor} className="shrink-0">
+          <AvatarPiloto nombre={p.autor.nombre_visible} avatarUrl={p.autor.avatar_url} />
         </Link>
-        {publicacion.es_mia && (
-          <button onClick={handleDelete} className="p-2 text-zinc-400 hover:text-red-500 transition-colors">
-            <Trash2 className="w-4 h-4" />
+        <div className="min-w-0 flex-1">
+          <Link
+            href={rutaAutor}
+            className="block truncate text-sm font-semibold text-zinc-900 dark:text-white hover:underline underline-offset-2"
+          >
+            {p.autor.nombre_visible}
+          </Link>
+          <p className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-zinc-500 dark:text-zinc-400">
+            <span className="font-mono truncate">{conArroba(p.autor.handle)}</span>
+            {p.autor.licencia && <span>· {p.autor.licencia}</span>}
+            {p.fecha_texto && (
+              <span>
+                ·{" "}
+                <time dateTime={p.created_at} title={p.fecha_titulo}>
+                  {p.fecha_texto}
+                </time>
+              </span>
+            )}
+          </p>
+        </div>
+        {p.es_mia && puedeInteractuar && (
+          <button
+            type="button"
+            onClick={alBorrar}
+            disabled={borrando}
+            aria-label="Borrar publicación"
+            title="Borrar publicación"
+            className="-mr-1 p-2 rounded-full text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50"
+          >
+            {borrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
           </button>
         )}
+      </header>
+
+      <div className="mt-3 space-y-3">
+        {p.texto && (
+          <p className="text-[15px] leading-relaxed text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap break-words">
+            {p.texto}
+          </p>
+        )}
+        {p.fotos.length > 0 && <GaleriaFotos fotos={p.fotos} autor={conArroba(p.autor.handle)} />}
+        {p.vuelo && <ChipVuelo vuelo={p.vuelo} />}
       </div>
 
-      {publicacion.texto && (
-        <p className="text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap mb-4 text-sm md:text-base">
-          {publicacion.texto}
-        </p>
-      )}
-
-      {publicacion.vuelo && (
-        <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.02]">
-          {publicacion.vuelo.puntos_mapa && publicacion.vuelo.puntos_mapa.length > 0 && (
-            <div className="w-full h-32 md:h-48 border-b border-zinc-200 dark:border-white/10 relative">
-              <PlanMapa puntos={publicacion.vuelo.puntos_mapa} className="w-full h-full z-0" />
-            </div>
-          )}
-          
-          <div className="p-4 md:p-5">
-            <div className="flex items-center gap-2 mb-3 text-aviation-blue font-bold text-sm uppercase tracking-wider">
-              <Plane className="w-4 h-4" />
-              <span>Vuelo Registrado</span>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {publicacion.vuelo.ruta && (
-                <div>
-                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Ruta</div>
-                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{publicacion.vuelo.ruta}</div>
-                </div>
-              )}
-              {publicacion.vuelo.duracion !== undefined && publicacion.vuelo.duracion !== null && (
-                <div>
-                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Tiempo</div>
-                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{(publicacion.vuelo.duracion).toFixed(1)}h</div>
-                </div>
-              )}
-              {publicacion.vuelo.aeronave && (
-                <div>
-                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Aeronave</div>
-                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{publicacion.vuelo.aeronave}</div>
-                </div>
-              )}
-              {publicacion.vuelo.fecha && (
-                <div>
-                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium uppercase mb-1">Fecha</div>
-                  <div className="font-semibold text-zinc-900 dark:text-white text-sm">{publicacion.vuelo.fecha}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {publicacion.fotos.length > 0 && (
-        <div className={`grid gap-2 mb-4 ${publicacion.fotos.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          {publicacion.fotos.map((foto, idx) => (
-            <div 
-              key={idx} 
-              className={`relative cursor-pointer overflow-hidden rounded-xl border border-zinc-100 dark:border-white/5 bg-zinc-100 dark:bg-zinc-900 ${publicacion.fotos.length === 3 && idx === 0 ? 'col-span-2' : ''}`}
-              onClick={() => setShowVisor(foto.url)}
-              style={{ aspectRatio: publicacion.fotos.length === 1 ? `${foto.ancho}/${foto.alto}` : '4/3' }}
-            >
-              <img src={foto.url} className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300" alt="Foto de publicación" loading="lazy" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center gap-6 mt-4 pt-4 border-t border-zinc-100 dark:border-white/5">
-        <button 
-          onClick={toggleAplauso}
-          className={`flex items-center gap-2 text-sm font-semibold transition-colors ${aplaudida ? 'text-orange-500' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
-        >
-          <Flame className={`w-5 h-5 ${aplaudida ? 'fill-current' : ''}`} />
-          {aplausos > 0 && aplausos}
-        </button>
-        <Link 
-          href={`/dashboard/pilotos/publicar?reply=${publicacion.id}`}
-          className="flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
-        >
-          <MessageCircle className="w-5 h-5" />
-          {publicacion.comentarios > 0 && publicacion.comentarios}
-        </Link>
-      </div>
-
-      {showVisor && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowVisor(null)}>
-          <button className="absolute top-6 right-6 p-2 text-white/70 hover:text-white bg-black/50 rounded-full" onClick={() => setShowVisor(null)}>
-            <X className="w-6 h-6" />
+      <footer className="mt-3 -ml-2.5 flex items-center gap-2">
+        {aplausoSinPoder ? (
+          <Link href={aplausoSinPoder} className={`${accion} ${accionNeutra}`} title="Aplaudir">
+            <PartyPopper className="w-[18px] h-[18px]" aria-hidden="true" />
+            <span className="data">{aplausos > 0 ? aplausos : ""}</span>
+            <span className="sr-only">Aplaudir ({aplausos})</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void alAplaudir()}
+            disabled={contexto.interaccion === "solo-lectura"}
+            aria-pressed={aplaudida}
+            title={aplaudida ? "Sacar el aplauso" : "Aplaudir"}
+            className={`${accion} ${
+              aplaudida
+                ? "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-400/10"
+                : accionNeutra
+            } disabled:pointer-events-none`}
+          >
+            <PartyPopper className="w-[18px] h-[18px]" aria-hidden="true" />
+            <span className="data">{aplausos > 0 ? aplausos : ""}</span>
+            <span className="sr-only">{aplaudida ? "Aplaudiste" : "Aplaudir"}</span>
           </button>
-          <img src={showVisor} className="max-w-full max-h-full object-contain rounded-lg" alt="Visor" />
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setVerComentarios((v) => !v)}
+          aria-expanded={verComentarios}
+          className={`${accion} ${accionNeutra}`}
+        >
+          <MessageCircle className="w-[18px] h-[18px]" aria-hidden="true" />
+          <span className="data">{nComentarios > 0 ? nComentarios : ""}</span>
+          <span className="sr-only">{verComentarios ? "Ocultar comentarios" : "Ver comentarios"}</span>
+        </button>
+      </footer>
+
+      {verComentarios && (
+        <ComentariosPublicacion
+          publicacionId={p.id}
+          contexto={contexto}
+          alCambiarCantidad={(delta) => setNComentarios((n) => Math.max(0, n + delta))}
+        />
       )}
-    </div>
+    </article>
   );
 }
