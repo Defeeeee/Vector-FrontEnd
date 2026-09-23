@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, type ModelParams } from "@google/generative-ai";
+import { chatConRespaldo } from "@/lib/gemini";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { timingSafeEqual } from "crypto";
@@ -824,8 +825,8 @@ Informa al usuario usando siempre esta tabla para ser consistente con la web.
 ## Datos de la bitácora del piloto:
 ${flightContext}`;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite",
+    // El modelo y su respaldo viven en lib/gemini.ts.
+    const parametrosModelo: Omit<ModelParams, "model"> = {
       systemInstruction: systemPrompt,
       tools: [
         {
@@ -946,7 +947,7 @@ ${flightContext}`;
           ]
         }
       ]
-    });
+    };
 
     // Las entradas que sólo llevan una propuesta pendiente no tienen texto y no
     // van al modelo: son estado nuestro, no parte de la conversación.
@@ -961,9 +962,7 @@ ${flightContext}`;
     const firstUserIndex = formattedHistory.findIndex((h: any) => h.role === "user");
     const cleanHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
 
-    const chat = model.startChat({
-      history: cleanHistory,
-    });
+    const chat = chatConRespaldo(genAI, parametrosModelo, { history: cleanHistory });
 
     const chatParts: any[] = [];
     if (audioBuffer) {

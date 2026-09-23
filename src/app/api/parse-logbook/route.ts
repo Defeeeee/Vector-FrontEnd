@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, type ModelParams } from "@google/generative-ai";
+import { generarConRespaldo } from "@/lib/gemini";
 import { getSessionToken } from "@/actions/auth";
 import { apiFetch } from "@/lib/api";
 
@@ -53,8 +54,8 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     const base64Data = buffer.toString("base64");
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite",
+    // El modelo y su respaldo viven en lib/gemini.ts.
+    const parametrosModelo: Omit<ModelParams, "model"> = {
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-    });
+    };
 
     const prompt = `Analiza detalladamente este libro de vuelo (PDF de logbook de piloto).
 Extrae todos los vuelos que encuentres. Para cada vuelo, identifica y extrae:
@@ -104,7 +105,7 @@ Extrae todos los vuelos que encuentres. Para cada vuelo, identifica y extrae:
 
 Asegúrate de procesar todas las páginas del PDF.`;
 
-    const result = await model.generateContent([
+    const result = await generarConRespaldo(genAI, parametrosModelo, [
       {
         inlineData: {
           data: base64Data,

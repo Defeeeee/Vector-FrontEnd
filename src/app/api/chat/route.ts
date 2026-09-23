@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, type ModelParams } from "@google/generative-ai";
+import { chatConRespaldo } from "@/lib/gemini";
 import { getSessionToken } from "@/actions/auth";
 import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, Profile, PilotDocument } from "@/types";
@@ -400,8 +401,8 @@ Informa al usuario usando siempre esta tabla para ser consistente con la web.
 ## Datos de la bitácora del piloto:
 ${flightContext}`;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite",
+    // El modelo y su respaldo viven en lib/gemini.ts.
+    const parametrosModelo: Omit<ModelParams, "model"> = {
       systemInstruction: systemPrompt,
       tools: [
         {
@@ -498,7 +499,7 @@ ${flightContext}`;
           ]
         }
       ]
-    });
+    };
 
     const formattedHistory = (history || []).map((m: { role: string; content: string }) => ({
       role: m.role === "assistant" ? "model" : "user",
@@ -509,9 +510,7 @@ ${flightContext}`;
     const firstUserIndex = formattedHistory.findIndex((h: any) => h.role === "user");
     const cleanHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
 
-    const chat = model.startChat({
-      history: cleanHistory,
-    });
+    const chat = chatConRespaldo(genAI, parametrosModelo, { history: cleanHistory });
 
     let result = await chat.sendMessage(message);
     let functionCalls = result.response.functionCalls();
