@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
 import ServiceWorkerVector from "@/components/ServiceWorkerVector";
+import { SITIO_URL } from "@/lib/sitio";
 
 // Single unified typeface across the app — Nunito for both body text and
 // display/headline roles.
@@ -36,12 +37,21 @@ const monoFace = IBM_Plex_Mono({
   variable: "--font-mono-face",
 });
 
+/**
+ * Lo de todas las páginas. `metadataBase` hace absolutas las URLs de las vistas previas
+ * y de lo canónico; sin él, WhatsApp y los buscadores reciben rutas sueltas. Las
+ * páginas públicas ponen su título y su descripción; las del dashboard, el suyo.
+ */
 export const metadata: Metadata = {
-  title: "Vector — Libro de vuelo",
+  metadataBase: new URL(SITIO_URL),
+  title: "Vector — Bitácora de vuelo digital para pilotos",
   description:
-    "El libro de vuelo y el planificador de navegación para pilotos, con lo esencial disponible sin señal.",
+    "La bitácora de vuelo digital para pilotos argentinos: el desglose de la hoja, tus vencimientos, tu camino a la PCA y el libro en PDF para firmar.",
+  applicationName: "Vector",
   // Los dos los toma iOS, que no lee el manifest para esto.
   appleWebApp: { capable: true, title: "Vector", statusBarStyle: "default" },
+  openGraph: { siteName: "Vector", locale: "es_AR", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 /**
@@ -76,7 +86,7 @@ export default function RootLayout({
        and `font-mono` utilities app-wide (only the custom `font-display`
        worked, because it reads the variable at the element that uses it). */
     <html
-      lang="es"
+      lang="es-AR"
       suppressHydrationWarning
       className={cn(bodyFace.variable, displayFace.variable, monoFace.variable)}
     >

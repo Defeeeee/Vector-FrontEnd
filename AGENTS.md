@@ -37,6 +37,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/lib/secciones.ts` | Las **cinco secciones** de la barra y sus pestañas (ver abajo). |
 | `src/app/u/[handle]/` | El perfil público, el link que se comparte: fuera del dashboard, se abre sin cuenta. Quien lo abre con sesión va a `/dashboard/pilotos/[handle]`, el mismo perfil adentro de la app. |
 | `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
+| `src/app/page.tsx`, `src/app/guias/`, `src/components/publico/`, `src/lib/sitio.ts` | Lo público: la landing (Server Component, estática), las guías con sus fuentes, `robots.ts`, `sitemap.ts` y las imágenes para compartir. Una guía nueva se agrega en `GUIAS` y aparece en el sitemap, el índice y el pie. **Todo lo que promete la landing se verifica contra el código**; lo regulatorio de las guías, contra la norma (invariante 6). |
 | `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
@@ -203,6 +204,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
 
 ## Estado y pendientes (al 2026-09-23)
 
+- **SEO:** hay guías, sitemap y datos estructurados, pero falta que Federico verifique el
+  dominio en Google Search Console y envíe el sitemap. El sitio vive en un subdominio
+  personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice
+  "gratis": el precio es decisión de Federico.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

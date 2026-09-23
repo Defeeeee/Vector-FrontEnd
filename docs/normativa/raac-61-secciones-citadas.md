@@ -8,8 +8,8 @@
 > de una persona. Si alguien duda de una ventana de 180 días o de por qué la
 > recencia nocturna no se calcula, la respuesta tiene que estar en el repo.
 >
-> **No es la norma completa** — son las tres secciones que el código toca. Para
-> cualquier otra cosa, ir al PDF original.
+> **No es la norma completa** — son las secciones que citan el código y las guías
+> públicas. Para cualquier otra cosa, ir al PDF original.
 
 
 ---
@@ -268,4 +268,135 @@ De lo anterior, el piloto o instructor de vuelo dejarán el registro en el libro
 Experiencia reciente específica: 
 
 Algunas  habilitaciones  requieren,  ap
+```
+
+
+---
+
+## Agregadas el 2026-09-23
+
+La 61.120 (el libro de vuelo) la citan `src/lib/libro-anac.ts` y las guías de
+`src/app/guias/`; la 61.620(a) (la experiencia para la PCA de avión), el tracker de
+`src/lib/pca-progress.ts` y la guía de la PCA. Mismo PDF, misma edición. Los saltos de
+línea son los del PDF.
+
+```
+61.120  Libro de vuelo personal del piloto 
+(a)  Tiempo de instrucción y expe riencia en vuelo  
+ La instrucción en vuelo, la experiencia requerida para cumplir con los requisitos para una li-
+cencia o habilitación y los requisitos de experiencia de vuelo reciente son demostrados por me-
+dio de las anotaciones pract icadas en el libro de vuelo personal del piloto. No se requiere la 
+anotación de otro tiempo de vuelo.  
+(b)  Anotaciones en el libro de vuelo personal  
+ Cada piloto debe anotar  la siguiente información de cada vuelo o cada sesión de instrucción:  
+(1) Generalidades:  
+(i) Fecha. 
+(ii) Tiempo total de vuelo.  
+(iii) Lugar o puntos de salida y llegada  
+(iv) Tipo e identificación de la aeronave.  
+(2) Tipo de la instrucción recibida y/o de la experiencia del piloto:  
+(i) Como piloto al mando o vuelo solo  
+(ii)  Como piloto al mando bajo supervisión  
+(iii)  Como copiloto.  
+(iv)  Como piloto a distancia  
+(v) Como copiloto a distancia  
+(vi) Instrucción de vuelo recibida de un instructor de vuelo auto rizado 
+(vii)  Instrucción de vuelo por instrumentos recibida de un instructor de vuelo autori-
+zado 
+(viii) Instrucción en un dispositivo de instrucción para simulación de vuelo.  
+(ix) Participación como tripulación (globo libre)  
+(x) Otras horas como piloto.  
+(3) Condiciones de vuelo  
+(i) Día o noche  
+(ii) Tiempo real de vuelo por instrumentos  
+(iii) Condiciones simuladas de vuelo por instrumentos.  
+(c) Anotación del tiempo de vuelo como piloto  
+(1) Tiempo de vuelo solo   
+Un piloto puede anotar como tiempo de vuelo so lo, exclusivamente aquel en el que es el único 
+ocupante de la aeronave  
+ (2) Tiempo de vuelo como piloto al mando  
+(i)  El piloto privado o comercial puede anotar como tiempo de piloto al mando, so-
+lamente el tiempo de vuelo en el cual es el único manipulador  de los controles 
+de una aeronave para la cual está habilitado, o cuando es el únic o ocupante de 
+la aeronave  
+(ii)  El piloto TLA puede anotar todas las horas como piloto al mando cuando se en-
+cuentre actuando como piloto al mando de la aeronave  
+(iii)  El instructor de vuelo puede anotar como horas de piloto al mando el tiempo en 
+que está actuando como instructor de vuelo  
+(3) Tiempo de vuelo como copiloto  
+ Un piloto puede anotar en su libro de vuelo personal todas las horas como copiloto, mientras 
+está desemp eñándose como tal en una aeronave que, de acuerdo a su certificado tipo o requi-
+sitos operacionales, requiera más de un piloto  
+ (4)  Tiempo de vuelo por instrumentos  
+(i)  Un piloto puede anotar como tiempo de vuelo por instrumentos aquel tiempo du-
+rante el c ual opera la aeronave por referencia exclusiva a los instrumentos del 
+avión, en condiciones de vuelo reales o simuladas. Las anotaciones deben in-
+cluir el lugar y el tipo de cada aproximación instrumental realizada y, si procede, 
+el nombre del piloto de seg uridad para cada vuelo por instrumentos simulados.  
+(ii)  Un instructor de vuelo por  instrumentos puede anotar como horas de vuelo por 
+instrumentos, el tiempo en que actúa realizando instrucción de vuelo en condi-
+ciones meteorológicas por instrumentos (IMC) reales o simuladas  
+(5) Tiempo de instrucción  
+Todas las horas de instrucción de vuelo anotadas como horas de instrucción, ya sea de vuelo 
+visual, de vuelo por instrumentos o en dispositivos de instrucción para simulación de vuelo, de-
+ben ser certificadas por  el instructor de vuelo que ha proporcionado dicha instrucción.  
+ (6) Reconocimiento  de tiempo de vuelo para una licencia de grado superior.  
+(i) Cuando el titular de una licencia de piloto actúe en el puesto de piloto como co-
+piloto de una aeronave certifica da para volar con un solo piloto, pero que requie-
+ra copiloto por disposición de la ANAC o del operador, tendrá derecho a que se 
+le acredite, a cuenta del tiempo total de vuelo exigido para una licencia de piloto 
+de grado superior, el 50% del tiempo que hay a volado como copiloto.  
+(ii)  En el caso del párrafo (i), la ANAC podrá autorizar q ue el tiempo de vuelo se 
+acredite por completo, a cuenta del tiempo total de vuelo exigido, si la aeronave 
+está equipada para volar con un copiloto y vuela con tripulación m últiple. 
+(iii) Cuando el titular de una licencia de piloto actúe en el puesto de piloto como co-
+piloto de una aeronave certificada para volar con un copiloto, tendrá derecho a 
+que se le acredite por completo dicho tiempo de vuelo, a cuenta del tiempo total 
+de vuelo exigido para una licencia de grado superior.  
+(iv)  Cuando el titular de un a licencia de piloto actúe de piloto al mando bajo super-
+visión, tendrá derecho a acreditar por completo dicho tiempo de vuelo, a cuenta 
+del tiempo total de vuelo exigido par a una licencia de piloto de grado superior.  
+(d) Presentación del libro de vuelo personal  
+(1)  El piloto debe presentar su libro de vuelo personal siempre que un representante de la 
+ANAC competente se lo solicite.  
+(2)  El alumno piloto debe portar su libro  de vuelo personal en todos los vuelos de travesía 
+“solo”, como evidencia de la aut orización de su instructor.  
+(e)  El alumno piloto o titular de una licencia de piloto tendrá derecho a que se le acredite por com-
+pleto, a cuenta del tiempo total de vuelo ex igido para expedir inicialmente una licencia de piloto 
+o para expedir una licencia de piloto de grado superior, todo tiempo de vuelo que haya efectua-
+do solo, en instrucción con doble mando y como piloto al mando.  
+```
+
+```
+61.620  Experiencia de vuelo 
+El solicitante de una li cencia de piloto comercial debe tener como mínimo la siguiente experiencia aeronáu-
+tica en la categoría de aeronave solicitada: 
+(a) Para Piloto Avión: 
+(1)  Un total de por lo menos doscientas (200) horas de vuelo como piloto en avión. En el caso de 
+que el aspirante haya acumulado dichas horas en un curso de instrucción aprobada/reconocida 
+el total requerido es de ciento cincuenta (150) horas de vuelo. El total de tiempo de vuelo como 
+piloto debe incluir como mínimo: 
+(i)  Cien (100) horas de tiempo como pilot o al mando o setenta (70) en el caso de que se 
+haya seguido un curso de instrucción aprobada/reconocida; 
+(ii)  veinte (20) horas de vuelo de travesía como piloto al mando, incluyendo un vuelo de tra-
+vesía de un mínimo de quinientos cuarenta (540) kms [tresc ientas (300) millas náuticas], 
+durante el cual habrá efectuado aterrizajes completos en dos (2) aeródromos diferentes;  
+(iii)  diez (10) horas de instrucción de vuelo por instrumentos, de las cuales un máximo de 
+cinco (5) horas pueden ser de tiempo en un di spositivo de instrucción para simulación de 
+vuelo; y 
+(iv)  para que las atribuciones de la licencia puedan ejercerse de noche, cinco (5) horas de 
+vuelo nocturno que comprendan cinco (5) despegues y cinco (5) aterrizajes como piloto 
+al mando. 
+(2)  Cuando el solicitante registre experiencia de vuelo en otras categorías de aeronaves, la ANAC 
+aplicará la siguiente escala de créditos para completar exclusivamente el total general de horas 
+de vuelo requeridas: 
+(i)  Veinte (20) horas si el piloto tiene al menos tr escientas (300) horas de vuelo como piloto 
+al mando de helicóptero; 
+(ii)  Diez (10) horas si el piloto tiene al menos doscientas (200) horas de vuelo como piloto al 
+mando  de planeadores; 
+(iii)  La disminución máxima por acumulación de créditos aplicables,  en ningún caso puede 
+exceder de veinticinco (25) horas. 
+(3)  La ANAC determinará si la instrucción recibida en un dispositivo de instrucción para simulación 
+de vuelo es aceptable como parte del tiempo total de vuelo. El crédito por esta experiencia se 
+limita a un máximo de veinte (20) horas. 
 ```

@@ -39,6 +39,20 @@ const BASE = `http://127.0.0.1:${PORT}`;
 /** `expect` es lo que se considera aceptable. Un 5xx nunca lo es. */
 const ROUTES = [
   { path: "/", expect: (s) => s === 200 },
+  // Lo público que tiene que encontrar un buscador: las guías, el sitemap y el robots,
+  // y las vistas previas que se ven al compartir un link (satori con las fuentes del
+  // disco: si falta un .ttf, recién falla acá).
+  { path: "/guias", expect: (s) => s === 200 },
+  { path: "/guias/horas-centesimales", expect: (s) => s === 200 },
+  { path: "/guias/libro-de-vuelo", expect: (s) => s === 200 },
+  { path: "/guias/cad-anac-registro-de-horas", expect: (s) => s === 200 },
+  { path: "/guias/requisitos-pca", expect: (s) => s === 200 },
+  { path: "/guias/experiencia-reciente", expect: (s) => s === 200 },
+  { path: "/guias/no-existe", expect: (s) => s === 404 },
+  { path: "/robots.txt", expect: (s) => s === 200 },
+  { path: "/sitemap.xml", expect: (s) => s === 200 },
+  { path: "/opengraph-image", expect: (s) => s === 200 },
+  { path: "/guias/requisitos-pca/opengraph-image", expect: (s) => s === 200 },
   { path: "/login", expect: (s) => s === 200 },
   { path: "/register", expect: (s) => s === 200 },
   { path: "/recover", expect: (s) => s === 200 },
