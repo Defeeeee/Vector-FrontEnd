@@ -236,8 +236,13 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas
   y minutos (el punto 5 dice "sexagesimal", el CAD muestra decimales), cambia
   `formatoLibro`.
-- **Supabase está en `us-east-1`** y el VPS en São Paulo: ~160 ms por consulta, el piso de
-  latencia de toda pantalla. Moverlo a `sa-east-1` es decisión de Federico (downtime).
+- **Supabase está en `sa-east-1` (São Paulo)** desde el 2026-09-24, en el mismo lugar que
+  el VPS: proyecto `jkmcdbihjqkgizekzlun` ("Vector SA"). Hasta ese día era
+  `ssvzjrafixbycydhigwv` en `us-east-1` y quedó **pausado como respaldo**. El plan gratis
+  admite dos proyectos activos, así que para restaurarlo hay que pausar otro. El viaje de
+  red bajó de ~150 ms a ~1 ms, y una consulta REST de ~160 ms a ~75 ms; lo que queda es
+  el procesamiento de Supabase, no la distancia. Sólo el backend habla con Supabase (su
+  `.env`).
 - **Propuestas de simplificación sin decidir:** congelar lo que hoy no usa nadie
   (métricas propias, calendario, la UI de múltiples libros) y poner detrás de un permiso
   por perfil lo que excede al alumno (aerovías, HVI, Jeppesen).
