@@ -4,6 +4,12 @@ import { generarConRespaldo } from "@/lib/gemini";
 import { getSessionToken } from "@/actions/auth";
 import { apiFetch } from "@/lib/api";
 
+/**
+ * Un libro de muchas hojas tarda en leerse bastante más que una respuesta del copiloto:
+ * el tope por modelo de `lib/gemini.ts` lo cortaría a mitad de camino.
+ */
+const ESPERA_PDF_MS = 120_000;
+
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 /** Un libro escaneado entero entra holgado; más que esto no es un libro de vuelo. */
@@ -111,7 +117,7 @@ Asegúrate de procesar todas las páginas del PDF.`;
         }
       },
       prompt
-    ]);
+    ], ESPERA_PDF_MS);
 
     const text = (result.text ?? "");
     const parsedFlights = JSON.parse(text);
