@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Archive } from "lucide-react";
 import { CACHE_PAGINAS, HEADER_CAPTURA, claveDeLoServido } from "@/lib/pwa";
 
@@ -57,8 +58,43 @@ import { CACHE_PAGINAS, HEADER_CAPTURA, claveDeLoServido } from "@/lib/pwa";
 /** Por debajo de esto la página es de recién y no hay nada que avisar. */
 const UMBRAL_S = 20;
 
+/** Un intento de refrescar por pantalla y por minuto: ver "Si hay red" más abajo. */
+const REINTENTO_MS = 60_000;
+
+/**
+ * ## Si hay red, se refresca solo (2026-09-24)
+ *
+ * El cartel aparecía con internet y en la computadora: el service worker espera a la red
+ * **3 s** (`ESPERA_MS`), y un server lento —Supabase está en us-east-1— pierde esa
+ * carrera sin que falte conexión. Además quedaba puesto toda la sesión: este componente
+ * vive en el layout, leía el cache una sola vez, y las pantallas siguientes llegan por
+ * RSC, que va directo a la red (`estrategiaPara` las ignora), o sea frescas.
+ *
+ * Ahora:
+ * - Con `navigator.onLine`, se pide la versión nueva con `router.refresh()` (RSC, red) y
+ *   al terminar el cartel se va, porque lo que hay en pantalla ya no es la copia.
+ * - Al cambiar de pantalla el cartel se va, por lo mismo.
+ * - Un intento por pantalla y por minuto (`sessionStorage`): si el server está caído de
+ *   verdad, Next puede caer a una navegación dura, el worker vuelve a servir la copia y
+ *   sin el tope sería un bucle de recargas. Sin red, el cartel se queda: es para eso.
+ */
 export default function VistoPorUltimaVez() {
   const [capturada, setCapturada] = useState<Date | null>(null);
+  const [refrescando, startTransition] = useTransition();
+  const refrescoPedido = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const primerPath = useRef(pathname);
+
+  // Otra pantalla llegó por la red (RSC): lo que hay en pantalla ya no es la copia.
+  useEffect(() => {
+    if (pathname !== primerPath.current) setCapturada(null);
+  }, [pathname]);
+
+  // El refresco terminó: la pantalla tiene los datos de ahora.
+  useEffect(() => {
+    if (refrescoPedido.current && !refrescando) setCapturada(null);
+  }, [refrescando]);
 
   useEffect(() => {
     let vivo = true;
@@ -79,6 +115,21 @@ export default function VistoPorUltimaVez() {
         if (Number.isNaN(cuando.getTime())) return;
         if (Date.now() - cuando.getTime() < UMBRAL_S * 1000) return;
         setCapturada(cuando);
+
+        if (typeof navigator !== "undefined" && navigator.onLine) {
+          const clave = `vector:refresco:${window.location.pathname}`;
+          let ultimo = 0;
+          try {
+            ultimo = Number(sessionStorage.getItem(clave)) || 0;
+            sessionStorage.setItem(clave, String(Date.now()));
+          } catch {
+            // Sin sessionStorage no hay tope: no se intenta, y el cartel se queda.
+            return;
+          }
+          if (Date.now() - ultimo < REINTENTO_MS) return;
+          refrescoPedido.current = true;
+          startTransition(() => router.refresh());
+        }
       } catch {
         // Safari en modo privado tira al tocar storage. Sin el cartel la pantalla
         // funciona igual; con una excepción no cargaría.
@@ -101,8 +152,8 @@ export default function VistoPorUltimaVez() {
         </p>
         <p className="text-[13px] text-zinc-600 dark:text-zinc-300 leading-relaxed mt-0.5">
           Última vez que pudimos actualizar:{" "}
-          <span className="data font-semibold">{fechaLarga(capturada)}</span>. Puede haber
-          vuelos cargados después.
+          <span className="data font-semibold">{fechaLarga(capturada)}</span>.{" "}
+          {refrescando ? "Actualizando…" : "Puede haber vuelos cargados después."}
         </p>
       </div>
     </div>

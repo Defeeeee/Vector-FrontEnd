@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.22.0 — Vector, también para quien recién empieza
+
+_24 de septiembre de 2026_
+
+- **Si sos alumno piloto, Vector también es para vos** — Elegí Alumno piloto como licencia en el Hangar: vas a ver tu camino a la PPA, un "¿Puedo volar hoy?" pensado para alumnos y una carga de vuelos más simple. Cuando rindas la PPA, cambiá la licencia y poné la fecha.
+- **Tu WhatsApp, bien cargado** — Escribí tu celular como quieras —con 0, con 15 o con +54— y Vector lo guarda en la forma que reconoce el copiloto. Para cargarle vuelos con un audio, escribile al +1 (201) 586-7983.
+- **Tu @ en la red, desde el primer día** — Elegir tu @ ahora es parte del alta, y arranca privado: tus horas sólo las ven los pilotos que aceptes, hasta que decidas otra cosa.
+
 ## v2.21.0 — Tu libro de vuelo, en PDF
 
 _23 de septiembre de 2026_

@@ -78,6 +78,37 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.22.0",
+    fecha: "2026-09-24",
+    titulo: "Vector, también para quien recién empieza",
+    novedades: [
+      {
+        icono: "avion",
+        titulo: "Si sos alumno piloto, Vector también es para vos",
+        texto:
+          "Elegí Alumno piloto como licencia en el Hangar: vas a ver tu camino a la PPA, un \"¿Puedo volar hoy?\" pensado para alumnos y una carga de vuelos más simple. Cuando rindas la PPA, cambiá la licencia y poné la fecha.",
+        href: "/dashboard/settings",
+        cta: "Ir al Hangar",
+      },
+      {
+        icono: "conversacion",
+        titulo: "Tu WhatsApp, bien cargado",
+        texto:
+          "Escribí tu celular como quieras —con 0, con 15 o con +54— y Vector lo guarda en la forma que reconoce el copiloto. Para cargarle vuelos con un audio, escribile al +1 (201) 586-7983.",
+        href: "/dashboard/settings",
+        cta: "Ir al Hangar",
+      },
+      {
+        icono: "brujula",
+        titulo: "Tu @ en la red, desde el primer día",
+        texto:
+          "Elegir tu @ ahora es parte del alta, y arranca privado: tus horas sólo las ven los pilotos que aceptes, hasta que decidas otra cosa.",
+        href: "/dashboard/pilotos",
+        cta: "Ir a la Red",
+      },
+    ],
+  },
+  {
     version: "2.21.0",
     fecha: "2026-09-23",
     titulo: "Tu libro de vuelo, en PDF",
