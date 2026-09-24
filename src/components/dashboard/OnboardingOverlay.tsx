@@ -1,11 +1,14 @@
 "use client";
 
 import { Profile } from "@/types";
-import { updateProfile } from "@/actions/profile";
+import { conectarWhatsapp, updateProfile } from "@/actions/profile";
 import { upsertCmaDocument } from "@/actions/document";
 import { addAircraft } from "@/actions/flight";
 import { createLogbook, OpeningBalanceInput } from "@/actions/logbook";
-import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen } from "lucide-react";
+import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check } from "lucide-react";
+import Link from "next/link";
+import { linkCopiloto } from "@/lib/copiloto";
+import { mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import OpeningBalanceFields, { openingTotal } from "./OpeningBalanceFields";
@@ -37,18 +40,23 @@ const INPUT =
 
 export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
   const [isPending, startTransition] = useTransition();
-  const [isOpen, setIsOpen] = useState(true);
+  // Se decide **una sola vez, al montar**. Antes se recalculaba en cada render con
+  // `profile.license_type === "-"`, y el paso 1 guarda justamente la licencia: la server
+  // action revalida `/dashboard`, el layout vuelve con el perfil nuevo, la condición da
+  // falso y el overlay se cerraba solo. Los pasos 2 y 3 no los vio nadie (el 2026-09-23,
+  // cuatro altas y ningún libro creado, que es lo que hace el paso 3).
+  const [isOpen, setIsOpen] = useState(() => profile?.license_type === "-");
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState<OpeningBalanceInput>({});
   const [mostrarSaldo, setMostrarSaldo] = useState(false);
+  const [whatsapp, setWhatsapp] = useState("");
+  const [whatsappGuardado, setWhatsappGuardado] = useState<string | null>(profile?.whatsapp_phone || null);
 
   // El gate sigue siendo la licencia: es el único dato que el paso 1 exige, así
   // que es el único que garantiza que el piloto pasó por acá. Lo que falte
   // después lo nombra el checklist del dashboard, que no bloquea.
-  const needsOnboarding = profile?.license_type === "-";
-
-  if (!needsOnboarding || !isOpen) return null;
+  if (!isOpen) return null;
 
   const setField = (key: keyof OpeningBalanceInput, raw: string) =>
     setOpening((prev) => ({ ...prev, [key]: raw === "" ? undefined : Number(raw) }));
@@ -57,7 +65,11 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
     setError(null);
     startTransition(async () => {
       try {
-        await updateProfile(formData);
+        const perfil = await updateProfile(formData);
+        if (perfil?.error) {
+          setError(perfil.error);
+          return;
+        }
 
         // El CMA es opcional a propósito. Si no vino, no se escribe nada y el
         // semáforo lo va a mostrar como dato faltante en vez de suponer una fecha.
@@ -88,6 +100,18 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
     });
   }
 
+  function conectar() {
+    setError(null);
+    startTransition(async () => {
+      const r = await conectarWhatsapp(whatsapp);
+      if (r.error) {
+        setError(r.error);
+        return;
+      }
+      setWhatsappGuardado(r.numero ?? null);
+    });
+  }
+
   function paso3() {
     setError(null);
     startTransition(async () => {
@@ -105,7 +129,7 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
   const titulos = {
     1: { icono: Compass, titulo: "Bienvenido a Vector", bajada: "Empecemos por tu licencia. El certificado médico podés cargarlo ahora o después." },
     2: { icono: Plane, titulo: "Tu primera aeronave", bajada: "Un vuelo se anota contra una aeronave. Cargá la que usás y ya podés registrar vuelos." },
-    3: { icono: BookOpen, titulo: "¿Traés horas de antes?", bajada: "Si ya volabas, cargá el saldo y no tenés que registrar vuelo por vuelo hasta hoy." },
+    3: { icono: BookOpen, titulo: "Tus vuelos", bajada: "Tres formas de traer lo que volás. Elegí la que te quede más cómoda: podés usar todas." },
   } as const;
 
   const { icono: Icono, titulo, bajada } = titulos[paso];
@@ -219,9 +243,90 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
           {paso === 3 && (
             <div className="space-y-6">
               {/*
-                Arranca colapsado a propósito: son 12 campos numéricos en el primer
-                minuto de uso, y este overlay ya perdía gente con dos. El que no
-                trae horas de antes ve un botón, no una grilla.
+                Antes este paso era sólo "¿Traés horas de antes?", con 12 campos detrás de
+                un botón, y nadie lo usaba: el 2026-09-23 entraron cuatro pilotos y ninguno
+                cargó un vuelo ni volvió. Ahora ofrece las tres formas de tener vuelos en
+                Vector, empezando por la más barata: dejar el número y escribirle al
+                copiloto. Ninguna es obligatoria (ver el encabezado del archivo).
+              */}
+              <div className="rounded-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
+                <div className="flex gap-4">
+                  <span className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-zinc-900 dark:text-white">Cargá vuelos con un audio</p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Al bajar del avión le mandás un audio al copiloto por WhatsApp y queda cargado.</p>
+                  </div>
+                </div>
+                {whatsappGuardado ? (
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                      <Check className="w-4 h-4" strokeWidth={3} /> Conectado: {mostrarWhatsapp(whatsappGuardado)}
+                    </p>
+                    {linkCopiloto() ? (
+                      <a
+                        href={linkCopiloto()!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 text-white font-semibold text-sm py-4"
+                      >
+                        <MessageCircle className="w-4 h-4" /> Escribirle al copiloto
+                      </a>
+                    ) : (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Listo: el copiloto de Vector va a reconocer los mensajes que le mandes desde ese número.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        inputMode="tel"
+                        autoComplete="tel"
+                        placeholder="Tu celular, ej. 11 2345 6789"
+                        className="flex-1 min-w-0 bg-transparent border border-zinc-200 dark:border-white/10 rounded-2xl py-3 px-4 outline-none focus:border-zinc-900 dark:focus:border-white/50 text-zinc-900 dark:text-white font-semibold placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={conectar}
+                        disabled={isPending || !whatsapp.trim() || !normalizarWhatsapp(whatsapp).ok}
+                        className="shrink-0 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm px-5 disabled:opacity-40"
+                      >
+                        Conectar
+                      </button>
+                    </div>
+                    {whatsapp.trim() && (() => {
+                      const n = normalizarWhatsapp(whatsapp);
+                      return (
+                        <p className={`text-xs font-semibold ${n.ok ? "text-zinc-500 dark:text-zinc-400" : "text-amber-600 dark:text-amber-400"}`}>
+                          {n.ok ? `Se guarda como ${mostrarWhatsapp(n.numero)}` : n.error}
+                        </p>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/dashboard/log-flight/import"
+                onClick={() => setIsOpen(false)}
+                className="flex gap-4 rounded-2xl border border-zinc-200 dark:border-white/10 p-5 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
+              >
+                <span className="w-10 h-10 rounded-xl bg-aviation-blue/10 text-aviation-blue dark:text-aviation-cyan flex items-center justify-center shrink-0">
+                  <FileUp className="w-5 h-5" />
+                </span>
+                <span className="flex-1">
+                  <span className="block font-semibold text-zinc-900 dark:text-white">Importá tu libro en PDF</span>
+                  <span className="block text-sm text-zinc-500 dark:text-zinc-400">Subí las hojas escaneadas de tu libro de papel y Vector carga los vuelos.</span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-zinc-400 self-center" />
+              </Link>
+
+              {/*
+                El saldo inicial sigue acá, colapsado a propósito: son 12 campos numéricos
+                en el primer minuto de uso. El que no trae horas de antes ve un botón.
               */}
               {mostrarSaldo ? (
                 <OpeningBalanceFields
@@ -235,7 +340,7 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
                   onClick={() => setMostrarSaldo(true)}
                   className="w-full border border-dashed border-zinc-200 dark:border-white/10 rounded-2xl py-5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
                 >
-                  Cargar saldo inicial
+                  Traigo horas de antes: cargar el saldo inicial
                 </button>
               )}
 

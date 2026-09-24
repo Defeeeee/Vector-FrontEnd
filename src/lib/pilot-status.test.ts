@@ -63,11 +63,17 @@ describe("pilotStatus", () => {
     expect(r.seccion).toBe("61.135");
   });
 
-  /** No tenerlo cargado no es lo mismo que tenerlo vencido, y el texto lo dice. */
-  it("distingue no tener repaso de tenerlo vencido", () => {
+  /**
+   * No tenerlo cargado no es tenerlo vencido: "no sé" no es "no hay". Es lo primero
+   * que ve un piloto recién registrado, porque el alta no pide el repaso.
+   */
+  it("sin el repaso cargado no afirma que no pueda ser PIC", () => {
     const r = pilotStatus([doc("cma", "2027-06-30")], [vigente()], [vuelo("2026-08-01")], HOY);
-    expect(r.estado).toBe("repaso_vencido");
+    expect(r.estado).toBe("documento_faltante");
+    expect(r.puede).toBe("No podemos confirmar que puedas volar como piloto al mando.");
+    expect(r.puede).not.toContain("No podés");
     expect(r.detalle).toContain("No tenés un repaso");
+    expect(r.seccion).toBe("61.135");
   });
 
   it("el CMA vencido bloquea todo", () => {
@@ -237,7 +243,9 @@ describe("pilotStatus", () => {
 
     it("con el CMA cargado sigue evaluando el resto", () => {
       const r = pilotStatus([doc("cma", "2027-06-30")], [vigente()], [vuelo("2026-08-01")], HOY);
-      expect(r.estado).toBe("repaso_vencido");
+      // Pasó el CMA y frenó en el paso siguiente, el repaso (que no está cargado).
+      expect(r.seccion).toBe("61.135");
+      expect(r.detalle).toContain("repaso");
     });
   });
 

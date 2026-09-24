@@ -2,8 +2,14 @@
 
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
+import { normalizarWhatsapp } from "@/lib/whatsapp-numero";
 
-export async function updateProfile(formData: FormData) {
+/**
+ * Devuelve `{ error }` en vez de tirar: el mensaje de un `throw` en una server action no
+ * llega al navegador en producción (Next lo reemplaza por uno genérico), y el del número
+ * de WhatsApp es justamente el que el piloto tiene que leer.
+ */
+export async function updateProfile(formData: FormData): Promise<{ error?: string }> {
   const id = formData.get("id") as string;
   const first_name = formData.get("first_name") as string;
   const last_name = formData.get("last_name") as string;
@@ -13,7 +19,16 @@ export async function updateProfile(formData: FormData) {
   const textoOpcional = (campo: string) => String(formData.get(campo) ?? "").trim().slice(0, 30) || null;
 
   if (!id) {
-    throw new Error("ID de perfil no encontrado");
+    return { error: "No se encontró tu perfil. Recargá la página." };
+  }
+
+  // Sólo si el formulario trae el campo: el paso 1 del alta no lo tiene, y no por eso
+  // tiene que borrar un número que el piloto ya cargó.
+  let whatsappNormalizado: string | null | undefined;
+  if (formData.has("whatsapp_phone")) {
+    const r = normalizarWhatsapp(whatsapp_phone);
+    if (!r.ok) return { error: r.error };
+    whatsappNormalizado = r.numero || null;
   }
 
   // The medical lives in the `documents` table (see src/actions/document.ts).
@@ -25,19 +40,45 @@ export async function updateProfile(formData: FormData) {
       first_name,
       last_name,
       license_type,
-      whatsapp_phone: whatsapp_phone || null,
+      ...(whatsappNormalizado !== undefined ? { whatsapp_phone: whatsappNormalizado } : {}),
       licencia_numero: textoOpcional("licencia_numero"),
       legajo: textoOpcional("legajo"),
     }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || "Error al actualizar el perfil");
+    const error = await response.json().catch(() => ({}));
+    return { error: error.detail || "No se pudo guardar el perfil." };
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/settings");
+  return {};
+}
+
+/**
+ * Guarda sólo el número de WhatsApp, normalizado. Lo usa el paso "Tus vuelos" del alta,
+ * que no tiene el resto del perfil a mano (y un PATCH con campos vacíos los borraría).
+ */
+export async function conectarWhatsapp(entrada: string): Promise<{ error?: string; numero?: string }> {
+  const r = normalizarWhatsapp(entrada);
+  if (!r.ok) return { error: r.error };
+  if (!r.numero) return { error: "Escribí tu número de celular." };
+
+  const perfil = await apiFetch("/profiles");
+  if (!perfil.ok) return { error: "No se pudo leer tu perfil. Probá de nuevo." };
+  const [yo] = await perfil.json();
+  if (!yo?.id) return { error: "No se encontró tu perfil." };
+
+  const response = await apiFetch(`/profiles/${yo.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ whatsapp_phone: r.numero }),
+  });
+  if (!response.ok) return { error: "No se pudo guardar el número. Probá de nuevo." };
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+  return { numero: r.numero };
 }
 
 export async function regenerateApiKey() {

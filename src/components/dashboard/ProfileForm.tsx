@@ -5,6 +5,7 @@ import { updateProfile, regenerateApiKey } from "@/actions/profile";
 import { User, Shield, Calendar, CreditCard, Save, Loader2, Compass } from "lucide-react";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
+import { AYUDA_NUMERO, mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
 
 interface ProfileFormProps {
   profile: Profile | null;
@@ -24,6 +25,9 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
   const [success, setSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [whatsapp, setWhatsapp] = useState(profile?.whatsapp_phone ? mostrarWhatsapp(profile.whatsapp_phone) : "");
+  const numero = normalizarWhatsapp(whatsapp);
 
   async function handleRegenerateKey() {
     if (!confirm("¿Estás seguro de que querés regenerar tu token de acceso? El token anterior dejará de funcionar inmediatamente.")) {
@@ -41,13 +45,19 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
 
   async function handleSubmit(formData: FormData) {
     setSuccess(false);
+    setError(null);
     startTransition(async () => {
       try {
-        await updateProfile(formData);
+        const r = await updateProfile(formData);
+        if (r?.error) {
+          setError(r.error);
+          return;
+        }
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } catch (e) {
         console.error(e);
+        setError("No se pudo guardar el perfil. Probá de nuevo.");
       }
     });
   }
@@ -116,10 +126,18 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
             the document expiry alerts. Naming both uses is the cheapest half of
             fixing that. */}
         <EditField label="WhatsApp">
-          <input name="whatsapp_phone" defaultValue={profile?.whatsapp_phone || ""} placeholder="Ej: 5491123456789" className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <input name="whatsapp_phone" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="Ej: 11 2345 6789" className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          {/* Cómo va a quedar guardado, mientras se escribe: el copiloto sólo reconoce
+              la forma 549 + área + número, y el 2026-09-24 un piloto la escribió sin el
+              549 y no entendía por qué no le contestaba. */}
+          {whatsapp.trim() && (
+            <p className={`text-[11px] mt-2 font-semibold ${numero.ok ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+              {numero.ok ? `Se guarda como ${mostrarWhatsapp(numero.numero)}` : numero.error}
+            </p>
+          )}
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
             Se usa para el copiloto por WhatsApp y para avisarte de los
-            vencimientos. <strong className="text-zinc-700 dark:text-zinc-300">Sin número no hay avisos.</strong>
+            vencimientos. {AYUDA_NUMERO} <strong className="text-zinc-700 dark:text-zinc-300">Sin número no hay avisos.</strong>
           </p>
         </EditField>
 
@@ -173,6 +191,7 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
               <span className="text-sm font-semibold dark:text-green-500">Sincronizado</span>
             </motion.div>
           )}
+          {error && <p role="alert" className="text-sm font-semibold text-red-600 dark:text-red-400">{error}</p>}
         </div>
         
         <button 

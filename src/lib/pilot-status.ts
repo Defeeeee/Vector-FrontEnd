@@ -187,8 +187,24 @@ export function pilotStatus(
   }
 
   // 61.135 — el repaso. Sin él no se puede actuar como piloto al mando.
+  //
+  // No tenerlo **cargado** no es tenerlo vencido: es "no sé", igual que el CMA de más
+  // arriba. Hasta el 2026-09-24 las dos cosas decían "No podés actuar como piloto al
+  // mando", y el alta nunca pide el repaso: era la primera respuesta que veía un
+  // piloto nuevo en el inicio, afirmada sobre un dato que nadie le había pedido.
   const repaso = documentos.find((d) => d.kind === "repaso_vuelo");
-  if (!repaso || documentStatus(repaso.expiry_date, hoy).tone === "expired") {
+  if (!repaso) {
+    return {
+      estado: "documento_faltante",
+      puede: "No podemos confirmar que puedas volar como piloto al mando.",
+      paraVolver: "Cargá tu repaso de vuelo en el Hangar.",
+      seccion: "61.135",
+      detalle:
+        "No tenés un repaso de vuelo cargado, así que no podemos saber si está vigente. " +
+        "Esto no dice que no puedas volar: dice que Vector no lo sabe.",
+    };
+  }
+  if (documentStatus(repaso.expiry_date, hoy).tone === "expired") {
     return {
       estado: "repaso_vencido",
       puede: "No podés actuar como piloto al mando.",
@@ -196,9 +212,7 @@ export function pilotStatus(
         "Hacé un repaso de vuelo con un instructor: mínimo 1 hora de instrucción " +
         "en tierra y 1 hora en vuelo, firmado en tu libro.",
       seccion: "61.135",
-      detalle: repaso
-        ? `Tu repaso ${documentStatus(repaso.expiry_date, hoy).label.toLowerCase()}.`
-        : "No tenés un repaso de vuelo cargado. Si lo hiciste, cargalo en el Hangar.",
+      detalle: `Tu repaso ${documentStatus(repaso.expiry_date, hoy).label.toLowerCase()}.`,
     };
   }
 

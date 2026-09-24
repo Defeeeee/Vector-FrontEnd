@@ -169,6 +169,10 @@ export default function PrivacidadPage() {
             las fotos de la red.
           </li>
           <li>
+            <strong>Resend</strong> — el envío de los mails (el briefing del vuelo y el de
+            bienvenida). Implica compartir tu correo y el contenido del mensaje.
+          </li>
+          <li>
             <strong>El servicio de avisos de tu navegador</strong> (Google, Apple o Mozilla,
             según cuál uses) — sólo si activás los avisos push. El aviso viaja cifrado de
             punta a punta: ese servicio lo entrega, pero no puede leerlo.
@@ -186,6 +190,10 @@ export default function PrivacidadPage() {
         <ul>
           <li>Llevar tu bitácora y calcular tus horas por categoría.</li>
           <li>Avisarte cuando un documento está por vencer.</li>
+          <li>
+            Mandarte por mail el briefing del vuelo que programaste y, una sola vez, al día
+            siguiente de crear tu cuenta, cómo cargar tu primer vuelo si todavía no lo hiciste.
+          </li>
           <li>Responder tus consultas cuando usás el copiloto.</li>
           <li>Detectar inconsistencias en tu libro (superposiciones, duplicados).</li>
         </ul>
