@@ -223,8 +223,8 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   evita preguntar en cada pantalla. El recordatorio del día siguiente
   (`/api/cron/primer-vuelo`) corre desde el crontab del VPS a las 10:00 ART. Mandar el PDF
   del libro por WhatsApp es una idea de Federico para después.
-- **SEO:** hay guías, sitemap y datos estructurados, pero falta que Federico verifique el
-  dominio en Google Search Console y envíe el sitemap. El sitio vive en un subdominio
+- **SEO:** hay guías, sitemap y datos estructurados, y el dominio está verificado en
+  Google Search Console (Federico, 2026-09-24). El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice
   "gratis": el precio es decisión de Federico.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo

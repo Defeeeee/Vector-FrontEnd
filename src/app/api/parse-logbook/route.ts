@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type ModelParams } from "@google/generative-ai";
+import { GoogleGenAI, Type, type GenerateContentConfig } from "@google/genai";
 import { generarConRespaldo } from "@/lib/gemini";
 import { getSessionToken } from "@/actions/auth";
 import { apiFetch } from "@/lib/api";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 /** Un libro escaneado entero entra holgado; más que esto no es un libro de vuelo. */
 const PDF_MAX_BYTES = 15 * 1024 * 1024;
@@ -55,39 +55,37 @@ export async function POST(req: NextRequest) {
     const base64Data = buffer.toString("base64");
 
     // El modelo y su respaldo viven en lib/gemini.ts.
-    const parametrosModelo: Omit<ModelParams, "model"> = {
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: SchemaType.ARRAY,
-          description: "Lista de vuelos extraídos del libro de vuelo PDF",
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              date: { type: SchemaType.STRING, description: "Fecha del vuelo en formato YYYY-MM-DD (ej: 2026-06-30)" },
-              aircraft_registration: { type: SchemaType.STRING, description: "Matrícula de la aeronave (ej. LV-S153, N12345)" },
-              route: { type: SchemaType.STRING, description: "Ruta del vuelo (ej. SADF - SAAK o SADF/SAAK)" },
-              duration: { type: SchemaType.NUMBER, description: "Duración en horas decimales (ej. 1.2, 0.8, 1.5)" },
-              takeoff: { type: SchemaType.STRING, description: "Hora de despegue local en formato HH:MM (ej. 14:30)" },
-              landing: { type: SchemaType.STRING, description: "Hora de aterrizaje local en formato HH:MM (ej. 15:50)" },
-              landings: { type: SchemaType.INTEGER, description: "Cantidad de aterrizajes. Por defecto poner 1 si no se especifica" },
-              purpose: { type: SchemaType.STRING, description: "Código de finalidad (ej. VP, ENT, INST, EXA). Por defecto 'VP'" },
-              pic_day_loc: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
-              pic_day_tra: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
-              pic_night_loc: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
-              pic_night_tra: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" },
-              sic_day_loc: { type: SchemaType.NUMBER, description: "Horas SIC Diurno Local (opcional)" },
-              sic_day_tra: { type: SchemaType.NUMBER, description: "Horas SIC Diurno Traslado (opcional)" },
-              sic_night_loc: { type: SchemaType.NUMBER, description: "Horas SIC Nocturno Local (opcional)" },
-              sic_night_tra: { type: SchemaType.NUMBER, description: "Horas SIC Nocturno Traslado (opcional)" },
-              imc_pil: { type: SchemaType.NUMBER, description: "Horas de vuelo en IMC Real Piloto (opcional)" },
-              imc_cop: { type: SchemaType.NUMBER, description: "Horas de vuelo en IMC Real Copiloto (opcional)" },
-              capota: { type: SchemaType.NUMBER, description: "Horas de vuelo bajo Capota/Instrumental Simulado (opcional)" },
-              sim_instructor: { type: SchemaType.NUMBER, description: "Horas en Simulador como Instructor (opcional)" },
-              sim_pil_en_inst: { type: SchemaType.NUMBER, description: "Horas en Simulador como Piloto en Instrucción (opcional)" }
-            },
-            required: ["date", "aircraft_registration", "route", "duration", "takeoff", "landing", "landings", "purpose"]
-          }
+    const parametrosModelo: GenerateContentConfig = {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        description: "Lista de vuelos extraídos del libro de vuelo PDF",
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            date: { type: Type.STRING, description: "Fecha del vuelo en formato YYYY-MM-DD (ej: 2026-06-30)" },
+            aircraft_registration: { type: Type.STRING, description: "Matrícula de la aeronave (ej. LV-S153, N12345)" },
+            route: { type: Type.STRING, description: "Ruta del vuelo (ej. SADF - SAAK o SADF/SAAK)" },
+            duration: { type: Type.NUMBER, description: "Duración en horas decimales (ej. 1.2, 0.8, 1.5)" },
+            takeoff: { type: Type.STRING, description: "Hora de despegue local en formato HH:MM (ej. 14:30)" },
+            landing: { type: Type.STRING, description: "Hora de aterrizaje local en formato HH:MM (ej. 15:50)" },
+            landings: { type: Type.INTEGER, description: "Cantidad de aterrizajes. Por defecto poner 1 si no se especifica" },
+            purpose: { type: Type.STRING, description: "Código de finalidad (ej. VP, ENT, INST, EXA). Por defecto 'VP'" },
+            pic_day_loc: { type: Type.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
+            pic_day_tra: { type: Type.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
+            pic_night_loc: { type: Type.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
+            pic_night_tra: { type: Type.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" },
+            sic_day_loc: { type: Type.NUMBER, description: "Horas SIC Diurno Local (opcional)" },
+            sic_day_tra: { type: Type.NUMBER, description: "Horas SIC Diurno Traslado (opcional)" },
+            sic_night_loc: { type: Type.NUMBER, description: "Horas SIC Nocturno Local (opcional)" },
+            sic_night_tra: { type: Type.NUMBER, description: "Horas SIC Nocturno Traslado (opcional)" },
+            imc_pil: { type: Type.NUMBER, description: "Horas de vuelo en IMC Real Piloto (opcional)" },
+            imc_cop: { type: Type.NUMBER, description: "Horas de vuelo en IMC Real Copiloto (opcional)" },
+            capota: { type: Type.NUMBER, description: "Horas de vuelo bajo Capota/Instrumental Simulado (opcional)" },
+            sim_instructor: { type: Type.NUMBER, description: "Horas en Simulador como Instructor (opcional)" },
+            sim_pil_en_inst: { type: Type.NUMBER, description: "Horas en Simulador como Piloto en Instrucción (opcional)" }
+          },
+          required: ["date", "aircraft_registration", "route", "duration", "takeoff", "landing", "landings", "purpose"]
         }
       }
     };
@@ -115,7 +113,7 @@ Asegúrate de procesar todas las páginas del PDF.`;
       prompt
     ]);
 
-    const text = result.response.text();
+    const text = (result.text ?? "");
     const parsedFlights = JSON.parse(text);
 
     return NextResponse.json({ flights: parsedFlights });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type ModelParams } from "@google/generative-ai";
+import { GoogleGenAI, Type, type GenerateContentConfig } from "@google/genai";
 import { chatConRespaldo } from "@/lib/gemini";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
@@ -27,7 +27,7 @@ function secretsMatch(provided: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 /**
  * Fast path for retries that arrive while this process is still alive.
@@ -826,7 +826,7 @@ Informa al usuario usando siempre esta tabla para ser consistente con la web.
 ${flightContext}`;
 
     // El modelo y su respaldo viven en lib/gemini.ts.
-    const parametrosModelo: Omit<ModelParams, "model"> = {
+    const parametrosModelo: GenerateContentConfig = {
       systemInstruction: systemPrompt,
       tools: [
         {
@@ -835,32 +835,32 @@ ${flightContext}`;
               name: "log_flight",
               description: "Registra un nuevo vuelo en la bitácora del piloto. Todos los campos requeridos son estrictamente obligatorios.",
               parameters: {
-                type: SchemaType.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                  aircraft_registration: { type: SchemaType.STRING, description: "Matrícula de la aeronave (ej. LV-S153)" },
-                  date: { type: SchemaType.STRING, description: "Fecha del vuelo en formato YYYY-MM-DD" },
-                  route: { type: SchemaType.STRING, description: "Ruta del vuelo (ej. SADF - SADR)" },
-                  duration: { type: SchemaType.NUMBER, description: "Duración total del vuelo en horas decimales (ej. 1.2)" },
-                  takeoff: { type: SchemaType.STRING, description: "Hora de salida (motor encendido) en formato de 24 hs (HH:MM)" },
-                  landing: { type: SchemaType.STRING, description: "Hora de llegada (motor apagado) en formato de 24 hs (HH:MM)" },
-                  landings: { type: SchemaType.INTEGER, description: "Cantidad de aterrizajes realizados" },
-                  purpose: { type: SchemaType.STRING, description: "Código de finalidad del vuelo (ej. VP, ENT, EXA, INST, ACR, etc.)" },
-                  logbook_name: { type: SchemaType.STRING, description: "Nombre del libro de vuelo donde registrarlo. Omitir si el piloto no lo menciona: se usa el libro por defecto." },
-                  pic_day_loc: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
-                  pic_day_tra: { type: SchemaType.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
-                  pic_night_loc: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
-                  pic_night_tra: { type: SchemaType.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" },
-                  sic_day_loc: { type: SchemaType.NUMBER, description: "Horas SIC Diurno Local (opcional)" },
-                  sic_day_tra: { type: SchemaType.NUMBER, description: "Horas SIC Diurno Traslado (opcional)" },
-                  sic_night_loc: { type: SchemaType.NUMBER, description: "Horas SIC Nocturno Local (opcional)" },
-                  sic_night_tra: { type: SchemaType.NUMBER, description: "Horas SIC Nocturno Traslado (opcional)" },
-                  imc_pil: { type: SchemaType.NUMBER, description: "Horas de vuelo en IMC Real Piloto (opcional)" },
-                  imc_cop: { type: SchemaType.NUMBER, description: "Horas de vuelo en IMC Real Copiloto (opcional)" },
-                  capota: { type: SchemaType.NUMBER, description: "Horas de vuelo bajo Capota/Instrumental Simulado (opcional)" },
-                  sim_instructor: { type: SchemaType.NUMBER, description: "Horas en Simulador como Instructor (opcional)" },
-                  sim_pil_en_inst: { type: SchemaType.NUMBER, description: "Horas en Simulador como Piloto en Instrucción (opcional)" },
-                  discount_type: { type: SchemaType.STRING, description: "Tipo de descuento aplicado (opcional)" },
-                  discount_amount: { type: SchemaType.NUMBER, description: "Monto del descuento (opcional)" }
+                  aircraft_registration: { type: Type.STRING, description: "Matrícula de la aeronave (ej. LV-S153)" },
+                  date: { type: Type.STRING, description: "Fecha del vuelo en formato YYYY-MM-DD" },
+                  route: { type: Type.STRING, description: "Ruta del vuelo (ej. SADF - SADR)" },
+                  duration: { type: Type.NUMBER, description: "Duración total del vuelo en horas decimales (ej. 1.2)" },
+                  takeoff: { type: Type.STRING, description: "Hora de salida (motor encendido) en formato de 24 hs (HH:MM)" },
+                  landing: { type: Type.STRING, description: "Hora de llegada (motor apagado) en formato de 24 hs (HH:MM)" },
+                  landings: { type: Type.INTEGER, description: "Cantidad de aterrizajes realizados" },
+                  purpose: { type: Type.STRING, description: "Código de finalidad del vuelo (ej. VP, ENT, EXA, INST, ACR, etc.)" },
+                  logbook_name: { type: Type.STRING, description: "Nombre del libro de vuelo donde registrarlo. Omitir si el piloto no lo menciona: se usa el libro por defecto." },
+                  pic_day_loc: { type: Type.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
+                  pic_day_tra: { type: Type.NUMBER, description: "Horas PIC Diurno Traslado (opcional)" },
+                  pic_night_loc: { type: Type.NUMBER, description: "Horas PIC Nocturno Local (opcional)" },
+                  pic_night_tra: { type: Type.NUMBER, description: "Horas PIC Nocturno Traslado (opcional)" },
+                  sic_day_loc: { type: Type.NUMBER, description: "Horas SIC Diurno Local (opcional)" },
+                  sic_day_tra: { type: Type.NUMBER, description: "Horas SIC Diurno Traslado (opcional)" },
+                  sic_night_loc: { type: Type.NUMBER, description: "Horas SIC Nocturno Local (opcional)" },
+                  sic_night_tra: { type: Type.NUMBER, description: "Horas SIC Nocturno Traslado (opcional)" },
+                  imc_pil: { type: Type.NUMBER, description: "Horas de vuelo en IMC Real Piloto (opcional)" },
+                  imc_cop: { type: Type.NUMBER, description: "Horas de vuelo en IMC Real Copiloto (opcional)" },
+                  capota: { type: Type.NUMBER, description: "Horas de vuelo bajo Capota/Instrumental Simulado (opcional)" },
+                  sim_instructor: { type: Type.NUMBER, description: "Horas en Simulador como Instructor (opcional)" },
+                  sim_pil_en_inst: { type: Type.NUMBER, description: "Horas en Simulador como Piloto en Instrucción (opcional)" },
+                  discount_type: { type: Type.STRING, description: "Tipo de descuento aplicado (opcional)" },
+                  discount_amount: { type: Type.NUMBER, description: "Monto del descuento (opcional)" }
                 },
                 required: ["aircraft_registration", "date", "route", "duration", "takeoff", "landing", "landings", "purpose"]
               }
@@ -869,32 +869,32 @@ ${flightContext}`;
               name: "update_flight",
               description: "Actualiza los datos de un vuelo existente.",
               parameters: {
-                type: SchemaType.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                  flight_id: { type: SchemaType.STRING, description: "El UUID del vuelo a actualizar" },
-                  aircraft_registration: { type: SchemaType.STRING, description: "Nueva matrícula de aeronave (opcional)" },
-                  date: { type: SchemaType.STRING, description: "Nueva fecha en formato YYYY-MM-DD (opcional)" },
-                  route: { type: SchemaType.STRING, description: "Nueva ruta (opcional)" },
-                  duration: { type: SchemaType.NUMBER, description: "Nueva duración en horas (opcional)" },
-                  takeoff: { type: SchemaType.STRING, description: "Nueva hora de despegue (HH:MM) (opcional)" },
-                  landing: { type: SchemaType.STRING, description: "Nueva hora de aterrizaje (HH:MM) (opcional)" },
-                  landings: { type: SchemaType.INTEGER, description: "Nueva cantidad de aterrizajes (opcional)" },
-                  purpose: { type: SchemaType.STRING, description: "Nueva finalidad (opcional)" },
-                  pic_day_loc: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Diurno Local (opcional)" },
-                  pic_day_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Diurno Traslado (opcional)" },
-                  pic_night_loc: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Local (opcional)" },
-                  pic_night_tra: { type: SchemaType.NUMBER, description: "Nuevas horas PIC Nocturno Traslado (opcional)" },
-                  sic_day_loc: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Diurno Local (opcional)" },
-                  sic_day_tra: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Diurno Traslado (opcional)" },
-                  sic_night_loc: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Nocturno Local (opcional)" },
-                  sic_night_tra: { type: SchemaType.NUMBER, description: "Nuevas horas SIC Nocturno Traslado (opcional)" },
-                  imc_pil: { type: SchemaType.NUMBER, description: "Nuevas horas IMC Real Piloto (opcional)" },
-                  imc_cop: { type: SchemaType.NUMBER, description: "Nuevas horas IMC Real Copiloto (opcional)" },
-                  capota: { type: SchemaType.NUMBER, description: "Nuevas horas bajo Capota (opcional)" },
-                  sim_instructor: { type: SchemaType.NUMBER, description: "Nuevas horas Simulador como Instructor (opcional)" },
-                  sim_pil_en_inst: { type: SchemaType.NUMBER, description: "Nuevas horas Simulador como Piloto en Instrucción (opcional)" },
-                  discount_type: { type: SchemaType.STRING, description: "Nuevo tipo de descuento (opcional)" },
-                  discount_amount: { type: SchemaType.NUMBER, description: "Nuevo monto de descuento (opcional)" }
+                  flight_id: { type: Type.STRING, description: "El UUID del vuelo a actualizar" },
+                  aircraft_registration: { type: Type.STRING, description: "Nueva matrícula de aeronave (opcional)" },
+                  date: { type: Type.STRING, description: "Nueva fecha en formato YYYY-MM-DD (opcional)" },
+                  route: { type: Type.STRING, description: "Nueva ruta (opcional)" },
+                  duration: { type: Type.NUMBER, description: "Nueva duración en horas (opcional)" },
+                  takeoff: { type: Type.STRING, description: "Nueva hora de despegue (HH:MM) (opcional)" },
+                  landing: { type: Type.STRING, description: "Nueva hora de aterrizaje (HH:MM) (opcional)" },
+                  landings: { type: Type.INTEGER, description: "Nueva cantidad de aterrizajes (opcional)" },
+                  purpose: { type: Type.STRING, description: "Nueva finalidad (opcional)" },
+                  pic_day_loc: { type: Type.NUMBER, description: "Nuevas horas PIC Diurno Local (opcional)" },
+                  pic_day_tra: { type: Type.NUMBER, description: "Nuevas horas PIC Diurno Traslado (opcional)" },
+                  pic_night_loc: { type: Type.NUMBER, description: "Nuevas horas PIC Nocturno Local (opcional)" },
+                  pic_night_tra: { type: Type.NUMBER, description: "Nuevas horas PIC Nocturno Traslado (opcional)" },
+                  sic_day_loc: { type: Type.NUMBER, description: "Nuevas horas SIC Diurno Local (opcional)" },
+                  sic_day_tra: { type: Type.NUMBER, description: "Nuevas horas SIC Diurno Traslado (opcional)" },
+                  sic_night_loc: { type: Type.NUMBER, description: "Nuevas horas SIC Nocturno Local (opcional)" },
+                  sic_night_tra: { type: Type.NUMBER, description: "Nuevas horas SIC Nocturno Traslado (opcional)" },
+                  imc_pil: { type: Type.NUMBER, description: "Nuevas horas IMC Real Piloto (opcional)" },
+                  imc_cop: { type: Type.NUMBER, description: "Nuevas horas IMC Real Copiloto (opcional)" },
+                  capota: { type: Type.NUMBER, description: "Nuevas horas bajo Capota (opcional)" },
+                  sim_instructor: { type: Type.NUMBER, description: "Nuevas horas Simulador como Instructor (opcional)" },
+                  sim_pil_en_inst: { type: Type.NUMBER, description: "Nuevas horas Simulador como Piloto en Instrucción (opcional)" },
+                  discount_type: { type: Type.STRING, description: "Nuevo tipo de descuento (opcional)" },
+                  discount_amount: { type: Type.NUMBER, description: "Nuevo monto de descuento (opcional)" }
                 },
                 required: ["flight_id"]
               }
@@ -903,10 +903,10 @@ ${flightContext}`;
               name: "start_flight_session",
               description: "Inicia el cronómetro de un vuelo en curso (check-in) en una aeronave. Úsala cuando el piloto avise que está por despegar o iniciar un vuelo (ej. 'arranco vuelo en LV-S153', 'despego ahora'). Si el piloto no menciona una hora explícita, NO incluyas el parámetro 'time' y se usará la hora actual del mensaje.",
               parameters: {
-                type: SchemaType.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                  aircraft_registration: { type: SchemaType.STRING, description: "Matrícula de la aeronave (ej. LV-S153)" },
-                  time: { type: SchemaType.STRING, description: "Hora de despegue en formato 24hs HH:MM, SOLO si el piloto la menciona explícitamente (opcional)" }
+                  aircraft_registration: { type: Type.STRING, description: "Matrícula de la aeronave (ej. LV-S153)" },
+                  time: { type: Type.STRING, description: "Hora de despegue en formato 24hs HH:MM, SOLO si el piloto la menciona explícitamente (opcional)" }
                 },
                 required: ["aircraft_registration"]
               }
@@ -915,9 +915,9 @@ ${flightContext}`;
               name: "end_flight_session",
               description: "Finaliza el vuelo en curso (check-out) y calcula la duración automáticamente. Úsala cuando el piloto avise que aterrizó o terminó el vuelo (ej. 'aterricé', 'terminé el vuelo'). Si el piloto no menciona una hora explícita, NO incluyas el parámetro 'time' y se usará la hora actual del mensaje.",
               parameters: {
-                type: SchemaType.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                  time: { type: SchemaType.STRING, description: "Hora de aterrizaje en formato 24hs HH:MM, SOLO si el piloto la menciona explícitamente (opcional)" }
+                  time: { type: Type.STRING, description: "Hora de aterrizaje en formato 24hs HH:MM, SOLO si el piloto la menciona explícitamente (opcional)" }
                 },
                 required: []
               }
@@ -926,9 +926,9 @@ ${flightContext}`;
               name: "get_airport_weather",
               description: "Obtiene la información meteorológica en tiempo real (METAR y TAF) para un aeropuerto/aeródromo específico mediante su código OACI (ICAO).",
               parameters: {
-                type: SchemaType.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                  icao_code: { type: SchemaType.STRING, description: "El código OACI de 4 letras del aeropuerto (ej. SADF, SADR, SAEZ)" }
+                  icao_code: { type: Type.STRING, description: "El código OACI de 4 letras del aeropuerto (ej. SADF, SADR, SAEZ)" }
                 },
                 required: ["icao_code"]
               }
@@ -937,9 +937,9 @@ ${flightContext}`;
               name: "get_airport_info",
               description: "Obtiene la ficha técnica completa de un aeródromo desde el registro oficial MADHEL de la ANAC Argentina: pistas y sus características, frecuencias de radio, ubicación respecto a la ciudad, combustible disponible, teléfonos de contacto, normas particulares y NOTAMs activos. Úsala cuando el usuario pregunte por datos técnicos de un aeródromo, NOTAMs, pistas, frecuencias, información del aeropuerto o si está CERRADO.",
               parameters: {
-                type: SchemaType.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                  icao_code: { type: SchemaType.STRING, description: "El código del aeródromo. Acepta TANTO códigos OACI de 4 letras (SADF, SAAK, SAEZ) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE). NUNCA modifiques ni le agregues letras al código que te pasa el usuario: si dice MGI usa MGI, si dice SAAK usa SAAK." }
+                  icao_code: { type: Type.STRING, description: "El código del aeródromo. Acepta TANTO códigos OACI de 4 letras (SADF, SAAK, SAEZ) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE). NUNCA modifiques ni le agregues letras al código que te pasa el usuario: si dice MGI usa MGI, si dice SAAK usa SAAK." }
                 },
                 required: ["icao_code"]
               }
@@ -962,7 +962,7 @@ ${flightContext}`;
     const firstUserIndex = formattedHistory.findIndex((h: any) => h.role === "user");
     const cleanHistory = firstUserIndex !== -1 ? formattedHistory.slice(firstUserIndex) : [];
 
-    const chat = chatConRespaldo(genAI, parametrosModelo, { history: cleanHistory });
+    const chat = chatConRespaldo(genAI, parametrosModelo, cleanHistory);
 
     const chatParts: any[] = [];
     if (audioBuffer) {
@@ -980,7 +980,7 @@ ${flightContext}`;
     }
 
     let result = await chat.sendMessage(chatParts);
-    let functionCalls = result.response.functionCalls();
+    let functionCalls = result.functionCalls;
 
     // La propuesta de vuelo que quedó lista en este turno, si el modelo pidió
     // registrar uno. Vive fuera del bucle porque se resuelve al terminarlo.
@@ -1283,7 +1283,7 @@ ${flightContext}`;
       }));
 
       result = await chat.sendMessage(toolParts);
-      functionCalls = result.response.functionCalls();
+      functionCalls = result.functionCalls;
     }
 
     // Una propuesta pendiente corta el turno acá: el resumen lo arma el código,
@@ -1310,7 +1310,7 @@ ${flightContext}`;
       return NextResponse.json({ success: true });
     }
 
-    const replyText = result.response.text();
+    const replyText = (result.text ?? "");
 
     const userMessageContent = messageText.trim() || "[Nota de voz]";
     // El id va guardado con el mensaje: es lo que hace que `alreadyHandled`

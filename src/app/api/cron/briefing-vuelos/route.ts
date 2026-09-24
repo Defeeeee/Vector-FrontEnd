@@ -187,8 +187,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (exitosos.length > 0) {
+    /*
+      Sin esta marca, la próxima corrida los vuelve a mandar. `fetch` no tira por un 4xx
+      o 5xx, así que la respuesta se mira: un backend que rechaza la marca tiene que
+      aparecer en `problemas`, no pasar como marcado.
+    */
     try {
-      await fetch(`${API_URL}/flight-briefings/mark-sent`, {
+      const res = await fetch(`${API_URL}/flight-briefings/mark-sent`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -196,6 +201,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify(exitosos),
       });
+      if (!res.ok) problemas.push(`No se pudieron marcar como notificados: el backend contestó ${res.status}`);
     } catch (err) {
       problemas.push(`No se pudo marcar como notificados en el backend: ${err}`);
     }

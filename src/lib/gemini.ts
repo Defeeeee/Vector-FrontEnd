@@ -13,15 +13,13 @@
  * es lo que usan las tres rutas.
  */
 import type {
-  ChatSession,
   Content,
-  GenerateContentRequest,
-  GenerateContentResult,
-  GoogleGenerativeAI,
-  ModelParams,
-  Part,
-  StartChatParams,
-} from "@google/generative-ai";
+  ContentListUnion,
+  GenerateContentConfig,
+  GenerateContentResponse,
+  GoogleGenAI,
+  PartListUnion,
+} from "@google/genai";
 
 export const MODELO_GEMINI = "gemini-3.5-flash-lite";
 export const MODELO_GEMINI_RESPALDO = "gemini-3.8-flash";
@@ -40,7 +38,11 @@ export function esSaturacion(err: unknown): boolean {
   return /\[(429|500|503)\b|overloaded|high demand|UNAVAILABLE|RESOURCE_EXHAUSTED/i.test(mensaje);
 }
 
-type Pedido = string | Array<string | Part>;
+/**
+ * Lo que las rutas le pasan al cliente: sólo `models` y `chats`, para que el test
+ * pueda poner un Gemini de mentira sin red.
+ */
+type ClienteGemini = { models: Pick<GoogleGenAI["models"], "generateContent">; chats: Pick<GoogleGenAI["chats"], "create"> };
 
 /**
  * Un chat que, si un mensaje falla por saturación, lo reenvía al modelo de respaldo
@@ -52,26 +54,26 @@ type Pedido = string | Array<string | Part>;
  * salieron bien, así que la historia que se copia es exactamente la de antes del fallo.
  */
 export function chatConRespaldo(
-  genAI: Pick<GoogleGenerativeAI, "getGenerativeModel">,
-  params: Omit<ModelParams, "model">,
-  inicio: StartChatParams = {},
+  ai: ClienteGemini,
+  config: GenerateContentConfig,
+  history: Content[] = [],
 ) {
-  let chat: ChatSession = genAI.getGenerativeModel({ ...params, model: MODELO_GEMINI }).startChat(inicio);
+  let chat = ai.chats.create({ model: MODELO_GEMINI, config, history });
   let enRespaldo = false;
   return {
     get modelo() {
       return enRespaldo ? MODELO_GEMINI_RESPALDO : MODELO_GEMINI;
     },
-    async sendMessage(pedido: Pedido): Promise<GenerateContentResult> {
+    async sendMessage(message: PartListUnion): Promise<GenerateContentResponse> {
       try {
-        return await chat.sendMessage(pedido);
+        return await chat.sendMessage({ message });
       } catch (err) {
         if (enRespaldo || !esSaturacion(err)) throw err;
-        const history: Content[] = await chat.getHistory();
+        const anterior = chat.getHistory();
         console.warn(`Gemini: ${MODELO_GEMINI} no respondió (${(err as Error).message}); sigo con ${MODELO_GEMINI_RESPALDO}.`);
-        chat = genAI.getGenerativeModel({ ...params, model: MODELO_GEMINI_RESPALDO }).startChat({ ...inicio, history });
+        chat = ai.chats.create({ model: MODELO_GEMINI_RESPALDO, config, history: anterior });
         enRespaldo = true;
-        return await chat.sendMessage(pedido);
+        return await chat.sendMessage({ message });
       }
     },
   };
@@ -79,15 +81,15 @@ export function chatConRespaldo(
 
 /** Un pedido suelto (sin chat), con el mismo respaldo. */
 export async function generarConRespaldo(
-  genAI: Pick<GoogleGenerativeAI, "getGenerativeModel">,
-  params: Omit<ModelParams, "model">,
-  pedido: GenerateContentRequest | Pedido,
-): Promise<GenerateContentResult> {
+  ai: ClienteGemini,
+  config: GenerateContentConfig,
+  contents: ContentListUnion,
+): Promise<GenerateContentResponse> {
   try {
-    return await genAI.getGenerativeModel({ ...params, model: MODELO_GEMINI }).generateContent(pedido);
+    return await ai.models.generateContent({ model: MODELO_GEMINI, config, contents });
   } catch (err) {
     if (!esSaturacion(err)) throw err;
     console.warn(`Gemini: ${MODELO_GEMINI} no respondió (${(err as Error).message}); sigo con ${MODELO_GEMINI_RESPALDO}.`);
-    return await genAI.getGenerativeModel({ ...params, model: MODELO_GEMINI_RESPALDO }).generateContent(pedido);
+    return await ai.models.generateContent({ model: MODELO_GEMINI_RESPALDO, config, contents });
   }
 }
