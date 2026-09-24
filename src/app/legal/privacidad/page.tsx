@@ -172,8 +172,9 @@ export default function PrivacidadPage() {
             las fotos de la red.
           </li>
           <li>
-            <strong>Resend</strong> — el envío de los mails (el briefing del vuelo y el de
-            bienvenida). Implica compartir tu correo y el contenido del mensaje.
+            <strong>Resend</strong> — el envío de los mails (el briefing del vuelo, el de
+            bienvenida y el resumen del mes). Implica compartir tu correo y el contenido del
+            mensaje.
           </li>
           <li>
             <strong>El servicio de avisos de tu navegador</strong> (Google, Apple o Mozilla,
@@ -196,6 +197,12 @@ export default function PrivacidadPage() {
           <li>
             Mandarte por mail el briefing del vuelo que programaste y, una sola vez, al día
             siguiente de crear tu cuenta, cómo cargar tu primer vuelo si todavía no lo hiciste.
+          </li>
+          <li>
+            Mandarte por mail, el primer día de cada mes, un resumen del mes anterior: horas,
+            aterrizajes, lo que te falta para la próxima licencia, tu saldo y si tu CMA está
+            por vencer. Te llega si cargaste al menos un vuelo, y te das de baja con el link
+            que trae cada mail.
           </li>
           <li>Responder tus consultas cuando usás el copiloto.</li>
           <li>Detectar inconsistencias en tu libro (superposiciones, duplicados).</li>

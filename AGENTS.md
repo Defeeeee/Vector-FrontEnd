@@ -223,6 +223,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   evita preguntar en cada pantalla. El recordatorio del día siguiente
   (`/api/cron/primer-vuelo`) corre desde el crontab del VPS a las 10:00 ART. Mandar el PDF
   del libro por WhatsApp es una idea de Federico para después.
+- **El resumen del mes por mail** (2026-09-24): sale el día 1 con el mes anterior, a
+  quien tenga al menos un vuelo (`/api/cron/resumen-mensual`, `lib/resumen-mensual.ts`).
+  Usa los mismos cálculos del inicio, y la baja se hace con el link firmado del mail
+  (`lib/baja-mail.ts`), sólo por POST.
 - **SEO:** hay guías, sitemap y datos estructurados, y el dominio está verificado en
   Google Search Console (Federico, 2026-09-24). El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice

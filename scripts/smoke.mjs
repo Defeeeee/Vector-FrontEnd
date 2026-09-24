@@ -58,6 +58,10 @@ const ROUTES = [
   { path: "/recover", expect: (s) => s === 200 },
   { path: "/legal/privacidad", expect: (s) => s === 200 },
   { path: "/legal/terminos", expect: (s) => s === 200 },
+  // La baja del resumen del mes: sin link firmado dice que no es válido, y sin POST no
+  // da de baja a nadie: los filtros de correo abren los links de los mails con GET.
+  { path: "/mail/baja", expect: (s) => s === 200 },
+  { path: "/api/mail/baja", expect: (s) => s === 405 },
   { path: "/no-existe-esta-ruta", expect: (s) => s === 404 },
   /*
     La PWA. El manifest se genera desde `src/app/manifest.ts`, así que un campo mal
@@ -156,6 +160,8 @@ const ROUTES = [
   // Lo que gasta la cuota de Gemini del proyecto no se toca sin sesión. Hasta el
   // 2026-09-23 el importador de PDF lo hacía: cualquiera podía gastarla.
   { path: "/api/parse-logbook", method: "POST", expect: (s) => s === 401 },
+  // Un POST sin la firma del mail no da de baja a nadie.
+  { path: "/api/mail/baja?u=x&t=y", method: "POST", expect: (s) => s === 400 },
   { path: "/api/chat", method: "POST", body: JSON.stringify({ message: "hola" }), expect: (s) => s === 401 },
   // El libro de vuelo en PDF es la bitácora entera de una persona.
   { path: "/api/bitacora/libro-anac", expect: (s) => s === 401 },

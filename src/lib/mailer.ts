@@ -66,6 +66,8 @@ export interface Mail {
   asunto: string;
   texto: string;
   html: string;
+  /** Cabeceras extra, como `List-Unsubscribe` en el resumen del mes. */
+  cabeceras?: Record<string, string>;
 }
 
 export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
@@ -97,6 +99,7 @@ export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
         subject: mail.asunto,
         text: mail.texto,
         html: mail.html,
+        ...(mail.cabeceras ? { headers: mail.cabeceras } : {}),
       }),
     });
 
