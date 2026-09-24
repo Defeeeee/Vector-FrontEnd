@@ -318,3 +318,36 @@ describe("pilotStatus", () => {
     });
   });
 });
+
+describe("pilotStatus de un alumno piloto (RAAC 61, Capítulo C)", () => {
+  const HOY_A = new Date("2026-09-24T12:00:00Z");
+  const docA = (kind: string, expiry: string) => ({ id: kind, user_id: "u", kind, name: kind === "cma" ? "CMA" : kind, expiry_date: expiry }) as never;
+
+  it("con el CMA vigente vuela con su instructor, sin que le pidan repaso", () => {
+    const r = pilotStatus([docA("cma", "2027-06-30")], [], [], HOY_A, true, { alumno: true });
+    expect(r.estado).toBe("vigente");
+    expect(r.puede).toBe("Podés volar con tu instructor.");
+    expect(r.detalle).toContain("5 km");
+  });
+
+  it("sin el CMA cargado, no sé", () => {
+    const r = pilotStatus([], [], [], HOY_A, true, { alumno: true });
+    expect(r.estado).toBe("documento_faltante");
+    expect(r.puede).toContain("No podemos confirmar");
+  });
+
+  it("con el CMA vencido no vuela solo (61.060(b), 61.405(f))", () => {
+    const r = pilotStatus([docA("cma", "2026-01-01")], [], [], HOY_A, true, { alumno: true });
+    expect(r.estado).toBe("documento_vencido");
+    expect(r.puede).toBe("No podés volar solo.");
+  });
+
+  it("la inactividad de 24 meses de 61.060(a)(2) no le aplica", () => {
+    const viejo = [{ date: "2023-01-01" }] as never;
+    expect(pilotStatus([docA("cma", "2027-06-30")], [], viejo, HOY_A, true, { alumno: true }).estado).toBe("vigente");
+  });
+
+  it("si no se pudieron leer los documentos, no afirma", () => {
+    expect(pilotStatus([], [], [], HOY_A, false, { alumno: true }).estado).toBe("datos_no_disponibles");
+  });
+});

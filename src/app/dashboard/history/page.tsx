@@ -7,6 +7,7 @@ import { openingTotals } from "@/lib/summary";
 import { Plus, Clock, LandPlot, Plane } from "lucide-react";
 import Link from "next/link";
 import ExportarBitacora from "@/components/dashboard/ExportarBitacora";
+import { esAlumno } from "@/lib/licencias";
 import FlightListClient from "@/components/dashboard/FlightListClient";
 import PageHeader from "@/components/dashboard/PageHeader";
 import BannerCompartirVuelo from "@/components/social/BannerCompartirVuelo";
@@ -39,7 +40,7 @@ async function getHistoryData() {
 }
 
 export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
-  const [{ flights, aircraft, transactions }, resumen, librosRes, { nuevo }] = await Promise.all([
+  const [{ flights, aircraft, transactions, profile }, resumen, librosRes, { nuevo }] = await Promise.all([
     getHistoryData(),
     leerResumenSocial(),
     // Para el PDF (se arma de a un libro) y para el hito: la apertura suma al total.
@@ -86,7 +87,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         title="Bitácora"
         action={
           <>
-            <ExportarBitacora flights={sortedFlights} aircraft={aircraft} libros={libros} />
+            <ExportarBitacora flights={sortedFlights} aircraft={aircraft} libros={libros} alumno={esAlumno(profile?.license_type)} />
             <Link href="/dashboard/log-flight" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm px-6 py-3.5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center gap-2">
               <span>Nuevo registro</span>
               <Plus className="w-4 h-4" />
@@ -108,7 +109,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
           hito={hito}
         />
       )}
-      <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} />
+      <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} alumno={esAlumno(profile?.license_type)} fechaPpa={profile?.fecha_ppa ?? null} />
     </div>
   );
 }

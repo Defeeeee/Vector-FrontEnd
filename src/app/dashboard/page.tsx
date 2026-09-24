@@ -10,6 +10,10 @@ import PrimerosPasos from "@/components/dashboard/PrimerosPasos";
 import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
 import ProximoVencimiento from "@/components/dashboard/ProximoVencimiento";
 import PCATracker from "@/components/dashboard/PCATracker";
+import PPATracker from "@/components/dashboard/PPATracker";
+import { esAlumno, vuelosDesdeLaPpa } from "@/lib/licencias";
+import { requisitosPPA } from "@/lib/ppa-progress";
+import { esTravesiaLarga } from "@/lib/travesia-larga";
 import SaldoCard from "@/components/dashboard/SaldoCard";
 import FlightPackWidget from "@/components/dashboard/FlightPackWidget";
 import RecentFlights from "@/components/dashboard/RecentFlights";
@@ -139,6 +143,10 @@ export default async function Dashboard() {
 
   const licencia = profile?.license_type?.toUpperCase() ?? "";
   const vaALaComercial = (licencia.includes("PPA") || licencia.includes("PRIVADO")) && !licencia.includes("PCA");
+  // El alumno va a la PPA. Y quien ya la rindió cuenta desde esa fecha: las horas de
+  // alumno no suman para la PCA (ver `lib/licencias.ts`). Sin fecha, cuentan todas.
+  const alumno = esAlumno(profile?.license_type);
+  const desdeLaPpa = vuelosDesdeLaPpa(bitacora as Flight[], profile?.fecha_ppa);
 
   return (
     <div className="space-y-8 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full">
@@ -226,20 +234,29 @@ export default async function Dashboard() {
         })}
       />
 
-      <ChangelogNotice />
+      {/* Las novedades hablan del libro, la PCA y demás: al alumno no le aplican. */}
+      {!alumno && <ChangelogNotice />}
 
       {/* 2. ¿Cuánto me falta? — Recibe el libro entero, no `flights`: las horas de
           instrumento en simulador cuentan para el requisito, y el tracker hace su
           propio corte con `separarSimuladores` para que no cuenten para nada más. */}
-      {vaALaComercial ? (
+      {alumno ? (
+        <PPATracker
+          requisitos={requisitosPPA(bitacora as Flight[], {
+            aircraft: aircraft as Aircraft[],
+            logbooks: logbooks as Logbook[],
+            travesiaLarga: esTravesiaLarga,
+          })}
+        />
+      ) : vaALaComercial ? (
         <PCATracker
-          flights={bitacora}
+          flights={desdeLaPpa}
           logbooks={logbooks as Logbook[]}
           aircraft={aircraft as Aircraft[]}
           todayIso={todayIso}
         />
       ) : (
-        <HorasTotales flights={flights as Flight[]} logbooks={logbooks as Logbook[]} todayIso={todayIso} />
+        <HorasTotales flights={vuelosDesdeLaPpa(flights as Flight[], profile?.fecha_ppa)} logbooks={logbooks as Logbook[]} todayIso={todayIso} />
       )}
 
       {/* 3. ¿Cuánto me queda? — pesos para quien lleva saldo, horas para quien lleva

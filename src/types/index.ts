@@ -124,6 +124,8 @@ export interface Profile {
   licencia_numero?: string | null;
   /** El legajo que asigna Licencias al Personal de ANAC. Mismo uso. */
   legajo?: string | null;
+  /** Cuándo rindió la PPA (migración 022). Antes, sus vuelos son de alumno y no cuentan para la PCA ni el libro. */
+  fecha_ppa?: string | null;
   /**
    * Si puede ver las cartas Jeppesen del servidor. Se pone a mano por SQL —no
    * hay todavía flujo de pago— y a propósito no se puede tocar desde el propio

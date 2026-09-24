@@ -91,8 +91,12 @@ export function pilotStatus(
    * tenés un certificado médico cargado" cada tanto al entrar, hasta que pasaba
    * por el Hangar —otra pantalla, otra consulta— y ahí sí aparecía.
    */
-  documentosDisponibles = true
+  documentosDisponibles = true,
+  /** Un alumno piloto se evalúa con su propio capítulo de la RAAC: ver `estadoAlumno`. */
+  { alumno = false }: { alumno?: boolean } = {}
 ): PilotStatus {
+  if (alumno) return estadoAlumno(documentos, hoy, documentosDisponibles);
+
   // 61.060(a)(2) — el peor estado, y el más fácil de detectar.
   const ultimo = flights.reduce<string | null>(
     (acc, f) => (!acc || f.date > acc ? f.date : acc), null
@@ -272,5 +276,75 @@ export function pilotStatus(
     detalle: proxima?.expiresOn
       ? `Tu experiencia reciente en ${proxima.clase} vence el ${proxima.expiresOn}.`
       : undefined,
+  };
+}
+
+/**
+ * "¿Puedo volar hoy?" para un alumno piloto: RAAC 61, Capítulo C (Ed. VI, enero 2026).
+ *
+ * El alumno no tiene licencia, así que no le aplican el repaso (61.135) ni la experiencia
+ * reciente (61.140), que son de quien ejerce una licencia, ni la inactividad de 24 meses
+ * de 61.060(a)(2). Lo que sí le aplica:
+ *
+ * - 61.060(b): la autorización de alumno piloto vale 24 meses "contándose con la
+ *   certificación médica aeronáutica adecuada", y 61.405(f) exige el CMA para el vuelo
+ *   solo. Sin el CMA cargado, "no sé"; vencido, no vuela solo.
+ * - 61.410: el vuelo solo lo autoriza el instructor. Vector no tiene ese dato, así que
+ *   no lo afirma: dice que vuela con su instructor, y que solo, con su autorización.
+ * - 61.415: sin pasajeros, con visibilidad de 5 km o más y en vuelo visual.
+ *
+ * Hasta el 2026-09-24 un alumno veía el estado de un piloto con licencia: "No podemos
+ * confirmar que puedas volar como piloto al mando. Cargá tu repaso", que nunca iba a
+ * poder cargar.
+ */
+function estadoAlumno(documentos: PilotDocument[], hoy: Date, documentosDisponibles: boolean): PilotStatus {
+  if (!documentosDisponibles) {
+    return {
+      estado: "datos_no_disponibles",
+      puede: "No podemos confirmar que puedas volar.",
+      paraVolver: "Probá recargar la página en un momento.",
+      seccion: "61.060(b)",
+      detalle: "No pudimos leer tus documentos. Es una falla nuestra, no algo que te falte.",
+    };
+  }
+  const bloqueaVuelo = documentos.find(
+    (d) => d.blocking === "vuelo" && documentStatus(d.expiry_date, hoy).tone === "expired"
+  );
+  if (bloqueaVuelo) {
+    return {
+      estado: "documento_vencido",
+      puede: "No podés volar.",
+      paraVolver: `Renová ${bloqueaVuelo.name} antes de volar.`,
+      seccion: "requisito propio",
+      detalle: `${bloqueaVuelo.name} — ${documentStatus(bloqueaVuelo.expiry_date, hoy).label.toLowerCase()}. Lo marcaste como bloqueante.`,
+    };
+  }
+  const cma = documentos.find((d) => d.kind === "cma");
+  if (!cma) {
+    return {
+      estado: "documento_faltante",
+      puede: "No podemos confirmar que puedas volar solo.",
+      paraVolver: "Cargá tu certificado médico aeronáutico en el Hangar.",
+      seccion: "61.405(f)",
+      detalle:
+        "No tenés un certificado médico cargado, así que no podemos saber si está vigente. " +
+        "Esto no dice que no puedas volar: dice que Vector no lo sabe.",
+    };
+  }
+  if (documentStatus(cma.expiry_date, hoy).tone === "expired") {
+    return {
+      estado: "documento_vencido",
+      puede: "No podés volar solo.",
+      paraVolver: "Renová tu certificado médico: la autorización de alumno piloto lo exige.",
+      seccion: "61.060(b) · 61.405(f)",
+      detalle: `${cma.name} — ${documentStatus(cma.expiry_date, hoy).label.toLowerCase()}.`,
+    };
+  }
+  return {
+    estado: "vigente",
+    puede: "Podés volar con tu instructor.",
+    seccion: "61.410 · 61.415",
+    detalle:
+      "Solo, con su autorización. Sin pasajeros, con visibilidad de 5 km o más y en vuelo visual.",
   };
 }

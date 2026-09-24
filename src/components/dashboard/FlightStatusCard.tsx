@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, HelpCircle, ShieldAlert, TriangleAlert } from
 import { Flight, PilotDocument, Profile } from "@/types";
 import { recencyByClass, recencyWindowDays } from "@/lib/recency";
 import { pilotStatus } from "@/lib/pilot-status";
+import { esAlumno } from "@/lib/licencias";
 import type { Aircraft } from "@/types";
 
 /**
@@ -35,7 +36,9 @@ export default function FlightStatusCard({
 }) {
   const ventana = recencyWindowDays(profile?.license_type);
   const recencias = recencyByClass(flights, aircraft, ventana);
-  const estado = pilotStatus(documents, recencias, flights, new Date(), documentosDisponibles);
+  const estado = pilotStatus(documents, recencias, flights, new Date(), documentosDisponibles, {
+    alumno: esAlumno(profile?.license_type),
+  });
 
   const ok = estado.estado === "vigente";
   const grave = estado.estado === "inactividad_prolongada" || estado.estado === "documento_vencido";

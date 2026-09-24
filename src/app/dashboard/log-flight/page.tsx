@@ -1,5 +1,7 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft } from "@/types";
+import { Aircraft, Profile } from "@/types";
+import { esAlumno } from "@/lib/licencias";
+import VueloAlumnoForm from "@/components/dashboard/VueloAlumnoForm";
 import Link from "next/link";
 import FlightLogForm from "@/components/dashboard/FlightLogForm";
 import LiveSessionController from "@/components/dashboard/LiveSessionController";
@@ -13,10 +15,12 @@ async function getData() {
   // Order matters and has already bitten once: `/logbooks` was added in the
   // middle of this array without moving the names, so `logbooks` got the session
   // object and the page died on `logbooks.find is not a function`.
-  const [acRes, lbRes, sessionRes] = await Promise.all([
+  const [acRes, lbRes, sessionRes, perfilRes] = await Promise.all([
     apiFetch("/aircraft"),
     apiFetch("/logbooks"),
-    apiFetch("/flight-helper/session")
+    apiFetch("/flight-helper/session"),
+    // Al final, por lo de arriba: el alumno piloto ve un formulario más simple.
+    apiFetch("/profiles"),
   ]);
 
   if (acRes.status === 401 || sessionRes.status === 401) {
@@ -27,8 +31,9 @@ async function getData() {
   const aircraft: Aircraft[] = acRes.ok ? await acRes.json() : [];
   const logbooks = lbRes.ok ? await lbRes.json() : [];
   const session = sessionRes.ok ? await sessionRes.json() : { active: false };
-  
-  return { aircraft, session, logbooks };
+  const perfiles: Profile[] = perfilRes.ok ? await perfilRes.json() : [];
+
+  return { aircraft, session, logbooks, alumno: esAlumno(perfiles[0]?.license_type) };
 }
 
 interface PageProps {
@@ -41,7 +46,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
   // de iOS. Ver `src/lib/prefill.ts`.
   const { initialData: prefillData, plannedId } = parsePrefill(resolvedParams);
 
-  const { aircraft, session, logbooks } = await getData();
+  const { aircraft, session, logbooks, alumno } = await getData();
 
   return (
     <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full pb-20">
@@ -56,12 +61,12 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
           <p className="eyebrow ml-14 md:ml-16">Operaciones de vuelo</p>
         </div>
 
-        <Link 
+        {!alumno && <Link 
           href="/dashboard/log-flight/import" 
           className="border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm px-5 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] self-start md:self-auto flex items-center space-x-2"
         >
           <span>Importar desde PDF (Beta)</span>
-        </Link>
+        </Link>}
       </div>
 
       {/*
@@ -69,7 +74,11 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
         `required` bloquea el submit sin salida. La cabecera se mantiene arriba
         para no dejar al piloto sin el botón de volver.
       */}
-      {aircraft.length === 0 ? (
+      {/* El alumno no tiene libro de vuelo: fecha, horarios, aterrizajes y avión, sin
+          desglose ANAC ni finalidad (ver `VueloAlumnoForm`). Puede agregar el avión ahí. */}
+      {alumno ? (
+        <VueloAlumnoForm aircraft={aircraft} todayIso={new Date().toISOString().slice(0, 10)} />
+      ) : aircraft.length === 0 ? (
         <SinAeronaves />
       ) : (
       /*

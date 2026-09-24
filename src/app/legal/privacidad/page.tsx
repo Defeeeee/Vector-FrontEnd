@@ -31,7 +31,7 @@ export const metadata: Metadata = {
  */
 export default function PrivacidadPage() {
   return (
-    <LegalShell title="Política de Privacidad" updated="23 de septiembre de 2026">
+    <LegalShell title="Política de Privacidad" updated="24 de septiembre de 2026">
       <section>
         <h2>Qué es esto</h2>
         <p>
@@ -80,7 +80,7 @@ export default function PrivacidadPage() {
           En una base de datos gestionada por <strong>Supabase</strong>. Cada usuario sólo
           puede leer y escribir sus propios registros: la base aplica reglas de acceso por
           fila, no depende de que la aplicación se acuerde de filtrar. La única excepción es
-          el perfil público y lo que publiques en la red, si decidís crearlo (ver abajo).
+          tu perfil en la red y lo que publiques en ella (ver abajo).
           Las fotos de la red se guardan en el almacenamiento de archivos del mismo
           proveedor.
         </p>
@@ -89,14 +89,17 @@ export default function PrivacidadPage() {
       <section>
         <h2>Perfil público y red de pilotos</h2>
         <p>
-          Es opcional. Sólo existe si elegís un @, y crearlo es aceptar que se publique lo
-          siguiente:
+          Elegir tu @ es parte del alta: sin él no se termina de crear la cuenta. Al elegirlo
+          decidís si tu perfil es <strong>público o privado</strong> —en el alta arranca
+          privado— y lo podés cambiar cuando quieras desde el Hangar. Esto es lo que se
+          publica:
         </p>
         <ul>
           <li>
-            <strong>Siempre visibles para cualquiera</strong>, con o sin cuenta en Vector: tu
-            @, el nombre que elijas mostrar, tu licencia, tu bio, tu foto de perfil si subís
-            una, y cuántos seguidores tenés y a cuántos pilotos seguís.
+            <strong>Siempre visibles para cualquiera</strong>, con o sin cuenta en Vector y
+            aunque tu perfil sea privado: tu @, el nombre que elijas mostrar (no tiene que ser
+            el tuyo), tu licencia, tu bio y tu foto de perfil si las cargás, y cuántos
+            seguidores tenés y a cuántos pilotos seguís.
           </li>
           <li>
             <strong>Tus horas agregadas</strong> —totales, PIC, de travesía, de noche y de

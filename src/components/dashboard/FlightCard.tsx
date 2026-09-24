@@ -1,5 +1,6 @@
 "use client";
 
+import { esVueloDeAlumno } from "@/lib/licencias";
 import { Flight, Aircraft } from "@/types";
 import { updateFlight, deleteFlight, marcarCierreDeHoja } from "@/actions/flight";
 import { ArrowRight, BookOpenCheck, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor, Share2 } from "lucide-react";
@@ -48,9 +49,13 @@ interface FlightCardProps {
    * un vuelo de hace seis meses. Ver `src/lib/costos.ts`.
    */
   costo?: number | null;
+  /** Alumno piloto: no lleva libro de vuelo, así que no se le ofrece "cerrar la hoja". */
+  alumno?: boolean;
+  /** Cuándo rindió la PPA: los vuelos anteriores se marcan "de alumno". Ver `lib/licencias.ts`. */
+  fechaPpa?: string | null;
 }
 
-export default function FlightCard({ flight, aircraft, allAircraft, costo = null }: FlightCardProps) {
+export default function FlightCard({ flight, aircraft, allAircraft, costo = null, alumno = false, fechaPpa = null }: FlightCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -59,6 +64,7 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
   // total es cero a propósito. Por el camino del vuelo se leería "LOCAL → ??? · 0.0 h",
   // que parece un registro roto y es uno bien cargado.
   const enSimulador = Boolean(aircraft?.is_simulator);
+  const deAlumno = esVueloDeAlumno(flight.date, fechaPpa);
   const horas = horasDeLaFila(flight, enSimulador);
 
   // "Cerrar la hoja": el último renglón de su hoja en el libro de papel. Se marca al
@@ -273,7 +279,12 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
 
               {/* Para el libro en PDF: cerrar la hoja en este vuelo, como a veces se hace en
                   el de papel antes de llenarla. */}
-              <button
+              {deAlumno && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Vuelo de alumno: no cuenta para la PCA ni va al libro de vuelo.
+                </p>
+              )}
+              {!alumno && !deAlumno && <button
                 type="button"
                 onClick={alternarCierreDeHoja}
                 disabled={marcandoHoja}
@@ -286,7 +297,7 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
               >
                 {marcandoHoja ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpenCheck className="w-3.5 h-3.5" />}
                 {cierraHoja ? "Cierra la hoja del libro · deshacer" : "Cerrar la hoja del libro acá"}
-              </button>
+              </button>}
 
               {logs.length > 0 && (
                 <div className="space-y-2.5">
@@ -345,6 +356,8 @@ function MiniEdit({ name, label, val }: { name: string, label: string, val: any 
  * condición son dos lugares donde arreglar el próximo caso.
  */
 function Ruta({ origin, dest, enSimulador }: { origin: string; dest: string; enSimulador: boolean }) {
+  // Un vuelo local cargado sin aeródromo (el de un alumno) es la palabra "LOCAL".
+  if (!enSimulador && origin.toUpperCase() === "LOCAL") return <span>Local</span>;
   if (enSimulador) {
     return (
       <>

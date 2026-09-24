@@ -23,16 +23,26 @@ export default function CrearHandleRapido({
   nombreSugerido,
   licenciaSugerida,
   titulo = "Elegí tu @ para sumarte a la red",
+  visibilidadInicial = "publico",
+  onCreado,
 }: {
   nombreSugerido: string;
   licenciaSugerida: string | null;
   titulo?: string;
+  /**
+   * En el alta arranca en Privado: ahí el @ es obligatorio (Federico, 2026-09-24), y
+   * quien pasa rápido no tiene que quedar con sus horas a la vista de cualquiera. En el
+   * resto de la app sigue arrancando en Público, como decidió Federico.
+   */
+  visibilidadInicial?: Visibilidad;
+  /** Para el alta, que tiene que pasar al paso siguiente. */
+  onCreado?: (handle: string) => void;
 }) {
   const router = useRouter();
   const { notificar } = useAvisos();
   const [handle, setHandle] = useState(() => sugerirHandle(nombreSugerido));
   const [nombre, setNombre] = useState(nombreSugerido);
-  const [visibilidad, setVisibilidad] = useState<Visibilidad>("publico");
+  const [visibilidad, setVisibilidad] = useState<Visibilidad>(visibilidadInicial);
   const [disponible, setDisponible] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, startTransition] = useTransition();
@@ -71,6 +81,7 @@ export default function CrearHandleRapido({
         return;
       }
       notificar({ tipo: "exito", titulo: `Listo: sos ${conArroba(r.perfil.handle)}` });
+      onCreado?.(r.perfil.handle);
       router.refresh();
     });
   };

@@ -23,10 +23,13 @@ export default function ExportarBitacora({
   flights,
   aircraft,
   libros,
+  alumno = false,
 }: {
   flights: Flight[];
   aircraft: Aircraft[];
   libros: Logbook[];
+  /** El alumno piloto no lleva libro de vuelo: sólo la planilla. */
+  alumno?: boolean;
 }) {
   const [armando, setArmando] = useState(false);
   const { notificar } = useAvisos();
@@ -83,7 +86,7 @@ export default function ExportarBitacora({
 
   const detalleLibro = "La hoja del libro de vuelo, para imprimir y firmar";
   const acciones: AccionDeMenu[] = [
-    ...(libros.length > 1
+    ...(alumno ? [] : libros.length > 1
       ? libros.map((l) => ({
           etiqueta: `Libro «${l.name}» · PDF`,
           detalle: detalleLibro,

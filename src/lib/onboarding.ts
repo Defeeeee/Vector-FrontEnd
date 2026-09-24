@@ -88,7 +88,9 @@ export function tieneLicencia(profile: Profile | null): boolean {
  *
  * - Paso 1, **licencia y CMA**: el CMA pasó a ser obligatorio con el resto.
  * - Paso 2, **una aeronave** que no sea simulador.
- * - Paso 3, **"Tus vuelos"**: termina cuando hay un libro (lo crea "Empezar") o vuelos
+ * - Paso 3, **tu @** en la red (obligatorio desde el 2026-09-24; arranca en Privado, ver
+ *   `OnboardingOverlay`).
+ * - Paso 4, **"Tus vuelos"**: termina cuando hay un libro (lo crea "Empezar") o vuelos
  *   (los trae el PDF importado, o los carga el copiloto). Conectar WhatsApp es una
  *   opción adentro del paso, no el paso.
  *
@@ -102,13 +104,16 @@ export interface EstadoAlta {
   libro: boolean;
   vuelos: boolean;
   whatsapp: boolean;
+  /** Tiene su @. Un backend anterior a este campo no lo manda: se toma como hecho. */
+  arroba?: boolean;
 }
 
 /** El primer paso sin hacer, o `null` si el alta está completa. */
-export function pasoDelAlta(e: EstadoAlta): 1 | 2 | 3 | null {
+export function pasoDelAlta(e: EstadoAlta): 1 | 2 | 3 | 4 | null {
   if (!e.licencia || !e.cma) return 1;
   if (!e.aeronave) return 2;
-  if (!e.libro && !e.vuelos) return 3;
+  if (e.arroba === false) return 3;
+  if (!e.libro && !e.vuelos) return 4;
   return null;
 }
 
@@ -117,4 +122,6 @@ export function pasoDelAlta(e: EstadoAlta): 1 | 2 | 3 | null {
  * preguntarle al backend en cada pantalla. Guarda el id de la cuenta y no un "sí": si
  * en el mismo navegador entra otra persona, no hereda el alta de la anterior.
  */
-export const COOKIE_ALTA = "vector_alta";
+// "2": el alta sumó el paso del @, y quien la había terminado sin @ tiene que volver a
+// pasar. Con el nombre nuevo, la cookie vieja no alcanza para saltearla.
+export const COOKIE_ALTA = "vector_alta2";

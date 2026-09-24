@@ -160,3 +160,20 @@ export function normalizarHoraTipeada(texto: string): string {
 export function filtrarHoraTipeada(texto: string): string {
   return texto.replace(/[^\d:]/g, "").slice(0, 5);
 }
+
+/**
+ * Los dos instantes de un vuelo, en UTC, a partir de la fecha y los horarios HH:MM (UTC).
+ *
+ * **Si la llegada queda antes que la salida, el vuelo cruzó la medianoche UTC** y la
+ * llegada es del día siguiente. Pasa con cualquier vuelo nocturno cargado en hora local
+ * (20:00 a 21:32 en Argentina son 23:00Z a 00:32Z) y con uno cargado en UTC que cruce las
+ * 00Z. Hasta el 2026-09-24 se guardaba la llegada el mismo día, antes que la salida, y la
+ * auditoría de superposiciones leía un vuelo de duración negativa.
+ */
+export function horariosDelVuelo(fecha: string, salida: string, llegada: string): { takeoff_dt: string; landing_dt: string } {
+  const aIso = (d: Date) => d.toISOString().split(".")[0] + "Z";
+  const despegue = new Date(`${fecha}T${salida}:00Z`);
+  let aterrizaje = new Date(`${fecha}T${llegada}:00Z`);
+  if (aterrizaje.getTime() <= despegue.getTime()) aterrizaje = new Date(aterrizaje.getTime() + 86_400_000);
+  return { takeoff_dt: aIso(despegue), landing_dt: aIso(aterrizaje) };
+}

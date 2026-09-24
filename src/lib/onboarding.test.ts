@@ -129,7 +129,7 @@ describe("estadoOnboarding", () => {
 
 
 describe("pasoDelAlta: dónde retoma quien no terminó el alta", () => {
-  const completo: EstadoAlta = { licencia: true, cma: true, aeronave: true, libro: true, vuelos: true, whatsapp: false };
+  const completo: EstadoAlta = { licencia: true, cma: true, aeronave: true, libro: true, vuelos: true, whatsapp: false, arroba: true };
 
   it("completa: no hay paso", () => {
     expect(pasoDelAlta(completo)).toBeNull();
@@ -144,17 +144,26 @@ describe("pasoDelAlta: dónde retoma quien no terminó el alta", () => {
     expect(pasoDelAlta({ ...completo, aeronave: false })).toBe(2);
   });
 
-  it("sin libro ni vuelos, paso 3; cualquiera de los dos lo cierra", () => {
-    expect(pasoDelAlta({ ...completo, libro: false, vuelos: false })).toBe(3);
+  it("sin @, paso 3 (obligatorio desde el 2026-09-24)", () => {
+    expect(pasoDelAlta({ ...completo, arroba: false })).toBe(3);
+  });
+
+  it("un backend que todavía no manda `arroba` no bloquea por el @", () => {
+    const { arroba: _, ...sinCampo } = completo;
+    expect(pasoDelAlta(sinCampo)).toBeNull();
+  });
+
+  it("sin libro ni vuelos, paso 4; cualquiera de los dos lo cierra", () => {
+    expect(pasoDelAlta({ ...completo, libro: false, vuelos: false })).toBe(4);
     expect(pasoDelAlta({ ...completo, libro: false, vuelos: true })).toBeNull();
     expect(pasoDelAlta({ ...completo, libro: true, vuelos: false })).toBeNull();
   });
 
   it("WhatsApp no es un paso: conectarlo solo no cierra el alta", () => {
-    expect(pasoDelAlta({ ...completo, libro: false, vuelos: false, whatsapp: true })).toBe(3);
+    expect(pasoDelAlta({ ...completo, libro: false, vuelos: false, whatsapp: true })).toBe(4);
   });
 
   it("retoma en el primero que falta, aunque falten varios", () => {
-    expect(pasoDelAlta({ licencia: true, cma: true, aeronave: false, libro: false, vuelos: false, whatsapp: false })).toBe(2);
+    expect(pasoDelAlta({ licencia: true, cma: true, aeronave: false, libro: false, vuelos: false, whatsapp: false, arroba: false })).toBe(2);
   });
 });

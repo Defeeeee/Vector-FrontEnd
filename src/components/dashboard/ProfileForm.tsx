@@ -6,6 +6,7 @@ import { User, Shield, Calendar, CreditCard, Save, Loader2, Compass } from "luci
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { AYUDA_NUMERO, mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
+import { OPCIONES_LICENCIA, esAlumno } from "@/lib/licencias";
 
 interface ProfileFormProps {
   profile: Profile | null;
@@ -28,6 +29,13 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [whatsapp, setWhatsapp] = useState(profile?.whatsapp_phone ? mostrarWhatsapp(profile.whatsapp_phone) : "");
   const numero = normalizarWhatsapp(whatsapp);
+  const [licencia, setLicencia] = useState(profile?.license_type && profile.license_type !== "-" ? profile.license_type : "");
+  const eraAlumno = esAlumno(profile?.license_type);
+  const alumno = esAlumno(licencia);
+  // La fecha de la PPA se pide sólo a quien deja de ser alumno, o a quien ya la tiene
+  // cargada (para corregirla). Al resto no le aparece: para quien nunca fue alumno en
+  // Vector no hay fecha, y cuentan todos sus vuelos.
+  const pideFechaPpa = (eraAlumno && !alumno) || (!!profile?.fecha_ppa && !alumno);
 
   async function handleRegenerateKey() {
     if (!confirm("¿Estás seguro de que querés regenerar tu token de acceso? El token anterior dejará de funcionar inmediatamente.")) {
@@ -103,12 +111,33 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
         </EditField>
 
         <EditField label="Licencia (ANAC)">
-          <input name="license_type" defaultValue={profile?.license_type || ""} placeholder="PPA, PCA, TLA..." className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <input name="license_type" list="opciones-licencia" value={licencia} onChange={(e) => setLicencia(e.target.value.toUpperCase())} placeholder="ALUMNO, PPA, PCA, TLA..." className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all uppercase placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+          <datalist id="opciones-licencia">
+            {OPCIONES_LICENCIA.map((o) => (
+              <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
+            ))}
+          </datalist>
         </EditField>
+
+        {pideFechaPpa && (
+          <EditField label="¿Cuándo rendiste la PPA?">
+            <input
+              name="fecha_ppa"
+              type="date"
+              required
+              defaultValue={profile?.fecha_ppa?.slice(0, 10) || ""}
+              className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all [color-scheme:light] dark:[color-scheme:dark]"
+            />
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
+              Los vuelos de antes quedan como de alumno: no cuentan para la PCA ni van al libro de vuelo.
+            </p>
+          </EditField>
+        )}
 
         {/* El número de licencia y el legajo van en el encabezado de cada hoja del libro
             en PDF, como en el libro de papel. Opcionales: sin ellos, el casillero
             queda en blanco para completar a mano. */}
+        {!alumno && <>
         <EditField label="Nº de licencia">
           <input name="licencia_numero" defaultValue={profile?.licencia_numero || ""} placeholder="Opcional" maxLength={30} className="w-full bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-sm font-semibold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-900 dark:focus:border-white/50 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
         </EditField>
@@ -119,6 +148,7 @@ export default function ProfileForm({ profile, cmaExpiry }: ProfileFormProps) {
             Los dos van en el encabezado del libro de vuelo en PDF.
           </p>
         </EditField>
+        </>}
 
         {/* The label used to read "WhatsApp (para Copiloto IA)", which is very
             likely why 9 of 10 profiles have it empty: a pilot who does not use

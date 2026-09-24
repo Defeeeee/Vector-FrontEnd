@@ -41,8 +41,12 @@ export async function updateProfile(formData: FormData): Promise<{ error?: strin
       last_name,
       license_type,
       ...(whatsappNormalizado !== undefined ? { whatsapp_phone: whatsappNormalizado } : {}),
-      licencia_numero: textoOpcional("licencia_numero"),
-      legajo: textoOpcional("legajo"),
+      // Sólo lo que el formulario trae: al alumno no se le muestran (no lleva libro), y
+      // mandarlos vacíos borraría lo que tuviera cargado de antes.
+      ...(formData.has("licencia_numero") ? { licencia_numero: textoOpcional("licencia_numero") } : {}),
+      ...(formData.has("legajo") ? { legajo: textoOpcional("legajo") } : {}),
+      // Aparece sólo al pasar de alumno a PPA, o si ya estaba cargada (migración 022).
+      ...(formData.has("fecha_ppa") ? { fecha_ppa: String(formData.get("fecha_ppa") || "") || null } : {}),
     }),
   });
 

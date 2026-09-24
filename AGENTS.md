@@ -130,7 +130,9 @@ Actividad.
     - Las fotos se re-codifican en el backend sin EXIF (sin la ubicación GPS) y las de
       publicaciones se sirven con URLs firmadas. La foto de perfil es pública, como el @.
     - Si agregás un dato a lo que se publica, va en la política de privacidad y en el
-      texto del Hangar y de `CrearHandleRapido`, porque crear el @ es el consentimiento.
+      texto del Hangar y de `CrearHandleRapido`. Desde el 2026-09-24 **el @ es un paso
+      obligatorio del alta** (Federico) y ahí arranca en **Privado**: el @, el nombre
+      elegido y la licencia se ven siempre; las horas y lo publicado, según la visibilidad.
     - La vista previa (`opengraph-image`) pide **siempre como anónimo**: el link lo recibe
       cualquiera.
     - Los avisos push dicen quién y qué (te siguió, aplaudió, comentó), **nunca datos de
@@ -205,8 +207,18 @@ importa es el del backend (`request_max_body_size`, 30 MB).
 
 ## Estado y pendientes (al 2026-09-24)
 
+- **Alumno piloto** (Federico, 2026-09-24; `lib/licencias.ts`):
+  - no lleva libro de vuelo, así que no ve el PDF, el importador, "cerrar hoja", los
+    libros en el Hangar, el número de licencia ni el legajo;
+  - registra vuelos con un formulario simple (`VueloAlumnoForm`);
+  - "¿Puedo volar hoy?" sale de su capítulo de la RAAC (61.060(b), 61.405, 61.410,
+    61.415) y el tracker es el camino a la PPA (61.520(a), `lib/ppa-progress.ts`);
+  - sus horas no cuentan una vez rendida la PPA: `profiles.fecha_ppa` (migración 022)
+    se pide al pasar de Alumno a PPA. Sin fecha, cuentan todos los vuelos. Es una
+    decisión de Federico sobre la práctica; la RAAC no la dice así (ver `licencias.ts`).
 - **El alta es obligatoria y retomable** (Federico, 2026-09-24): tapa el dashboard hasta
-  terminarla y vuelve al primer paso sin hacer (`GET /onboarding/estado`, `pasoDelAlta`).
+  terminarla y vuelve al primer paso sin hacer (`GET /onboarding/estado`, `pasoDelAlta`):
+  licencia y CMA, avión, @, tus vuelos.
   Sólo el importador del PDF queda sin tapar. La cookie `vector_alta` con el id de la cuenta
   evita preguntar en cada pantalla. El recordatorio del día siguiente
   (`/api/cron/primer-vuelo`) corre desde el crontab del VPS a las 10:00 ART. Mandar el PDF

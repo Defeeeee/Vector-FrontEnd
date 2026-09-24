@@ -1,5 +1,6 @@
 "use server";
 
+import { horariosDelVuelo } from "@/lib/horarios";
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
@@ -53,8 +54,7 @@ export async function logFlight(
     route = route.replace(/\s+/g, '');
   }
 
-  const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
-  const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
+  const { takeoff_dt, landing_dt } = horariosDelVuelo(date, takeoff_time, landing_time);
 
   // Server-side validation
   const total = Number(duration);
@@ -201,8 +201,7 @@ export async function updateFlight(formData: FormData) {
     route = route.replace(/\s+/g, '');
   }
 
-  const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
-  const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
+  const { takeoff_dt, landing_dt } = horariosDelVuelo(date, takeoff_time, landing_time);
 
   // Server-side validation
   const total = Number(duration);
@@ -440,8 +439,7 @@ export async function bulkLogFlights(flights: any[]) {
         route = route.replace(/\s+/g, '');
       }
 
-      const takeoff_dt = new Date(`${date}T${takeoff_time}:00Z`).toISOString().split('.')[0] + 'Z';
-      const landing_dt = new Date(`${date}T${landing_time}:00Z`).toISOString().split('.')[0] + 'Z';
+      const { takeoff_dt, landing_dt } = horariosDelVuelo(date, takeoff_time, landing_time);
 
       const payload = {
         aircraft_id,

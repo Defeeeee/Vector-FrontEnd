@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionToken } from "@/actions/auth";
 import { apiFetch } from "@/lib/api";
+import { esAlumno, vuelosDesdeLaPpa } from "@/lib/licencias";
 import { apellidoYNombre, armarLibro, fechaDeGeneracion, renglonesDeLaHoja, valoresDeApertura } from "@/lib/libro-anac";
 import { pdfDelLibro } from "@/lib/libro-anac-pdf";
 import type { Aircraft, Flight, Logbook, Profile } from "@/types";
@@ -44,7 +45,13 @@ export async function GET(req: NextRequest) {
   }
 
   const perfil = ((await perfilesRes.json()) as Profile[])[0] ?? null;
-  const vuelos = (await vuelosRes.json()) as Flight[];
+  // El alumno piloto no tiene libro de vuelo (Federico, 2026-09-24): ver `lib/licencias.ts`.
+  if (esAlumno(perfil?.license_type)) {
+    return NextResponse.json({ error: "Como alumno piloto no llevás libro de vuelo." }, { status: 404 });
+  }
+  // Las horas de alumno no van al libro: arranca el día que rindió la PPA. Sin fecha
+  // —quien nunca fue alumno en Vector—, van todos los vuelos, como siempre.
+  const vuelos = vuelosDesdeLaPpa((await vuelosRes.json()) as Flight[], perfil?.fecha_ppa);
   const aeronaves = (await avionesRes.json()) as Aircraft[];
   const libros = (await librosRes.json()) as Logbook[];
 

@@ -5,13 +5,15 @@ import { conectarWhatsapp, updateProfile } from "@/actions/profile";
 import { upsertCmaDocument } from "@/actions/document";
 import { addAircraft } from "@/actions/flight";
 import { createLogbook, OpeningBalanceInput } from "@/actions/logbook";
-import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check } from "lucide-react";
+import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check, AtSign } from "lucide-react";
 import Link from "next/link";
 import { linkCopiloto } from "@/lib/copiloto";
 import { mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
 import { useEffect, useState, useTransition } from "react";
 import { usePathname } from "next/navigation";
 import { COOKIE_ALTA, pasoDelAlta, type EstadoAlta } from "@/lib/onboarding";
+import { OPCIONES_LICENCIA, esAlumno } from "@/lib/licencias";
+import CrearHandleRapido from "@/components/social/CrearHandleRapido";
 import { motion, AnimatePresence } from "framer-motion";
 import OpeningBalanceFields, { openingTotal } from "./OpeningBalanceFields";
 
@@ -68,7 +70,12 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
   // perfil recién creado, con la licencia en "-".
   const pasoInicial = estado ? pasoDelAlta(estado) : profile?.license_type === "-" ? 1 : null;
   const [isOpen, setIsOpen] = useState(() => pasoInicial !== null);
-  const [paso, setPaso] = useState<1 | 2 | 3>(pasoInicial ?? 1);
+  const [paso, setPaso] = useState<1 | 2 | 3 | 4>(pasoInicial ?? 1);
+  const [licencia, setLicencia] = useState(
+    profile?.license_type && profile.license_type !== "-" ? profile.license_type.toUpperCase() : ""
+  );
+  // El alumno piloto no lleva libro de vuelo: en "Tus vuelos" no ve ni el PDF ni el saldo.
+  const alumno = esAlumno(licencia);
   const pathname = usePathname();
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState<OpeningBalanceInput>({});
@@ -129,7 +136,8 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
     startTransition(async () => {
       try {
         await addAircraft(formData);
-        setPaso(3);
+        // El @ va después del avión; si ya lo tenía, directo a "Tus vuelos".
+        setPaso(estado?.arroba === false ? 3 : 4);
       } catch (e) {
         setError(e instanceof Error ? e.message : "No se pudo registrar la aeronave.");
       }
@@ -166,7 +174,10 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
   const titulos = {
     1: { icono: Compass, titulo: "Bienvenido a Vector", bajada: "Empecemos por tu licencia y el vencimiento de tu certificado médico." },
     2: { icono: Plane, titulo: "Tu primera aeronave", bajada: "Un vuelo se anota contra una aeronave. Cargá la que usás y ya podés registrar vuelos." },
-    3: { icono: BookOpen, titulo: "Tus vuelos", bajada: "Tres formas de traer lo que volás. Elegí la que te quede más cómoda: podés usar todas." },
+    3: { icono: AtSign, titulo: "Tu @ en la red", bajada: "Con tu @ tus compañeros de la escuela te encuentran. Arranca privado: vos decidís quién ve tus horas." },
+    4: alumno
+      ? { icono: BookOpen, titulo: "Tus vuelos", bajada: "Cargalos acá o mandale un audio al copiloto por WhatsApp al bajar del avión." }
+      : { icono: BookOpen, titulo: "Tus vuelos", bajada: "Tres formas de traer lo que volás. Elegí la que te quede más cómoda: podés usar todas." },
   } as const;
 
   const { icono: Icono, titulo, bajada } = titulos[paso];
@@ -192,8 +203,8 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
             <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-zinc-900 dark:text-white">{titulo}</h2>
             <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm leading-relaxed max-w-sm">{bajada}</p>
 
-            <div className="flex items-center gap-2 pt-1" aria-label={`Paso ${paso} de 3`}>
-              {[1, 2, 3].map((n) => (
+            <div className="flex items-center gap-2 pt-1" aria-label={`Paso ${paso} de 4`}>
+              {[1, 2, 3, 4].map((n) => (
                 <span
                   key={n}
                   className={`h-1.5 rounded-full transition-all ${
@@ -221,7 +232,21 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                   <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1">Licencia inicial</label>
                   <div className="relative group">
                     <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                    <input name="license_type" required defaultValue={profile?.license_type && profile.license_type !== "-" ? profile.license_type : "PPA"} placeholder="PPA, PCA, TLA..." className={`${INPUT} uppercase`} />
+                    {/* Una lista, para que "Alumno piloto" exista (ver `lib/licencias.ts`).
+                        Si ya tenía otra escrita a mano, aparece como una opción más. */}
+                    <select
+                      name="license_type"
+                      required
+                      value={licencia}
+                      onChange={(e) => setLicencia(e.target.value)}
+                      className={`${INPUT} appearance-none`}
+                    >
+                      <option value="" disabled>Elegí tu licencia</option>
+                      {OPCIONES_LICENCIA.map((o) => (
+                        <option key={o.valor} value={o.valor}>{o.etiqueta}</option>
+                      ))}
+                      {licencia && !OPCIONES_LICENCIA.some((o) => o.valor === licencia) && <option value={licencia}>{licencia}</option>}
+                    </select>
                   </div>
                 </div>
 
@@ -277,6 +302,24 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
           )}
 
           {paso === 3 && (
+            <div className="space-y-4">
+              {/*
+                El @ es obligatorio desde el 2026-09-24 (Federico). Crearlo publica el @, el
+                nombre que elija y la licencia, así que arranca en **Privado**: quien pasa
+                rápido no queda con sus horas a la vista de cualquiera. La política de
+                privacidad lo dice.
+              */}
+              <CrearHandleRapido
+                nombreSugerido={[profile?.first_name, profile?.last_name].filter(Boolean).join(" ")}
+                licenciaSugerida={alumno ? "Alumno piloto" : licencia || null}
+                titulo="Elegí tu @"
+                visibilidadInicial="privado"
+                onCreado={() => setPaso(4)}
+              />
+            </div>
+          )}
+
+          {paso === 4 && (
             <div className="space-y-6">
               {/*
                 Antes este paso era sólo "¿Traés horas de antes?", con 12 campos detrás de
@@ -345,7 +388,7 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                 )}
               </div>
 
-              <Link
+              {!alumno && <Link
                 href="/dashboard/log-flight/import"
                 className="flex gap-4 rounded-2xl border border-zinc-200 dark:border-white/10 p-5 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
               >
@@ -357,13 +400,13 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                   <span className="block text-sm text-zinc-500 dark:text-zinc-400">Subí las hojas escaneadas de tu libro de papel y Vector carga los vuelos.</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-400 self-center" />
-              </Link>
+              </Link>}
 
               {/*
                 El saldo inicial sigue acá, colapsado a propósito: son 12 campos numéricos
                 en el primer minuto de uso. El que no trae horas de antes ve un botón.
               */}
-              {mostrarSaldo ? (
+              {alumno ? null : mostrarSaldo ? (
                 <OpeningBalanceFields
                   opening={opening}
                   setField={setField}

@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft } from "@/types";
+import { Aircraft, Profile } from "@/types";
+import { esAlumno } from "@/lib/licencias";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -15,6 +16,12 @@ async function getAircraftList() {
 }
 
 export default async function ImportLogbookPage() {
+  // Importar es traer un libro de papel, y el alumno piloto no lleva libro de vuelo
+  // (ver `lib/licencias.ts`): se le ofrece el formulario simple.
+  const perfilRes = await apiFetch("/profiles");
+  const perfiles: Profile[] = perfilRes.ok ? await perfilRes.json() : [];
+  if (esAlumno(perfiles[0]?.license_type)) redirect("/dashboard/log-flight");
+
   const aircraft = await getAircraftList();
 
   return (

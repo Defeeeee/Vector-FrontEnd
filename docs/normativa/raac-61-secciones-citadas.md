@@ -400,3 +400,105 @@ exceder de veinticinco (25) horas.
 de vuelo es aceptable como parte del tiempo total de vuelo. El crédito por esta experiencia se 
 limita a un máximo de veinte (20) horas. 
 ```
+
+
+## Agregadas el 2026-09-24
+
+Para el alumno piloto: su "¿Puedo volar hoy?" (`estadoAlumno` en `src/lib/pilot-status.ts`)
+y el camino a la PPA (`src/lib/ppa-progress.ts`). Mismo PDF, Edición VI (enero 2026),
+extraído con `pypdf`; los cortes de palabra raros ("l os", "ater rizajes") son del PDF.
+
+```
+61.060  (b)
+(b) Autorización de alumno piloto
+La autorización de alumno piloto tiene una vigencia de veinticuatro (24) meses, contándose con
+la certificación médica aeronáutica adecuada.
+
+61.400  Aplicación
+Este capítulo establece los requisitos para el otorgamiento de la autorización de alumno piloto, las respecti-
+vas habilitaciones, las condiciones bajo las cuales son necesarias, las normas generales de operación  y sus
+limitaciones.
+61.405  Requisitos para el otorgamiento
+Para obtener una autorización para vuelo solo de alumno piloto, toda persona deberá:
+(a) Tener 16 años de edad para la obtención de la autorización para vuelo solo de alumno piloto privado
+de avión, helicóptero, y aeronave de despegue vertical.
+(b)  Tener 15 años de edad para la obtención de la autorización para para operar planeador, globo libre
+y ULM.
+(c) Haber aprobado los estudios primarios completos o equivalentes reconocida por autoridad com pe-
+tente.
+(d) contar con una autorización de los padres o tutor, si el postulante es menor de edad;
+(e) Leer, hablar, y comprender correctamente el idioma español.
+(f) Poseer una Certificación Médica Aeronáutica conforme a la RAAC 67.
+(g) demostrar haber ap robado la instrucción teórica recibida de un instructor de vuelo calificado, como
+mínimo en las siguientes áreas de conocimiento aeronáutico:
+(1) Reglamento del aire;
+(2) métodos y procedimientos apropiados de los servicios de tránsito aéreo;
+(3) conocimiento general de la categoría de aeronaves; y
+(4) aerodinámica básica y los principios de vuelo.
+61.410  Requerimientos para el vuelo solo de alumno piloto
+(a) Generalidades
+(1) El alumno piloto no puede operar una aeronave en vuelo solo, a menos que reúna l os requi-
+sitos de esta sección y los correspondientes a la licencia a la que aspira.
+(2) El término” vuelo solo” significa aquel tiempo de vuelo durante el cual un alumno piloto es el
+único ocupante de la aeronave, y/o el tiempo de vuelo en que actúa como p iloto al mando
+de un dirigible que requiere más de un miembro de la tripulación de vuelo.
+[…]
+
+61.415  Limitaciones Generales
+(a) Un alumno piloto no puede actuar como piloto al mando de una aeronave:
+(1) Que transporte pasajeros;
+(2) que transporte carga por compensación o arrendamiento;
+(3) en vuelos por compensación o arrendamiento;
+(4) en promociones comerciales;
+(5) en vuelos internacionales;
+(6) con una visibilidad en vuelo y terrestre menor de cinco (5) Km.;
+(7) cuando el vuelo no pueda realizarse por medio de referencias visuales en la superficie; o
+(8) en contra de cualquier limitación anotada en el libro de vuelo personal (bitácora) del alumno
+piloto por el instructor.
+(b)  Un alumno piloto no puede actuar como piloto, o miembro de la tripula ción, en ninguna aeronave en
+el cual sea obligatorio más de un piloto según el certificado tipo de la aeronave, o en la reglamenta-
+ción bajo la cual se opere dicha aeronave, excepto cuando recibe instrucción de vuelo de un instruc-
+tor de vuelo autorizado.
+61.420  Limitaciones de la aeronave: Piloto al mando
+Un alumno piloto no puede desempeñarse como piloto al mando de ningún dirigible que requiera más de un
+miembro de la tripulación de vuelo a menos que reúna los requisitos pertinentes establecidos en los pá rra-
+fos 61.405 (b), (c), (d) y (e).
+
+61.520  Experiencia de vuelo
+El solicitante de una licencia de piloto privado debe tener como mínimo la siguiente experienci a aero-
+náutica en la categoría de aeronave solicitada:
+(a) Para piloto de avión:
+(1) Un total de cuarenta (40) horas de instrucción y de vuelo solo si completó el curso en un
+CIAC Tipo II o III, o treinta y cinco (35) horas de instrucción y de vuelo solo si completó un
+curso de instrucción integrado aprobado por ANAC en un CIAC Tipo III, que deben incluir
+por lo menos:
+  (i) Veinte (20) horas de instrucción en doble mando;
+(ii) diez (10) horas de vuelo solo diurno en el avión apropiado para la habilitaci ón de
+clase que se  desea obtener, incluyendo cinco (5) horas de vuelo de travesía;
+(iii) un (1) vuelo de travesía de un mínimo de ciento cincuenta (150) millas náuticas
+[doscientos setenta  (270) km] durante el cual se habrán realizado dos (2) ater rizajes
+completos en dos (2) aeródromos diferentes;
+(iv) la instrucción de vuelo recibida en un dispositivo de instrucción para simulación de
+vuelo, aprobado por la ANAC, es aceptable hasta un máximo de cinco (5) horas.
+  (v) Tres (3) horas de instrucción en v uelo nocturno, que incluya:
+   (A) Reservado
+(B) diez (10) despegues y diez (10) aterrizajes, cada aterrizaje involucrará un
+vuelo de patrón de tráfico en un aeródromo.
+(2) Cuando el solicitante registre experiencia de vuelo en otras categorías de aerona ves, la
+ANAC aplicará la siguiente  escala de créditos para completar exclusivamente el total gene-
+ral de horas de vuelo requeridas:
+(i) Cinco (5) horas si el piloto tiene al menos cien (100) horas de vuelo o más en heli-
+cóptero;
+(ii) Diez (10) horas si el piloto tiene al menos quinientas (500) horas de vuelo o más en
+helicóptero;
+(iii) Diez (10) horas si el piloto tiene al menos cien (100) horas de vuelo o más en pla-
+neador;
+(iv) La disminución máxima por acumulación de créditos aplicables en ningún c aso
+puede exceder  de diez (10) horas.
+(b) Para piloto de helicóptero:
+(1) Un total de cuarenta (40) horas de instrucción y de vuelo solo si realizo el curso en un CIAC,
+o treinta y cinco (35) horas de instrucción y de vuelo solo si completó íntegramente u n cur-
+so de instrucción reconocida un CIAC Tipo III, que deben incluir por lo menos:
+  (i) Veinte (20) horas de instrucción en doble mando;
+[…]
+```

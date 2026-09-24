@@ -19,6 +19,7 @@ import {
   problemaDeHoras,
   normalizarHoraTipeada,
   filtrarHoraTipeada,
+  horariosDelVuelo,
 } from "./horarios";
 
 describe("esHora", () => {
@@ -192,5 +193,15 @@ describe("filtrarHoraTipeada", () => {
   it("corta en cinco: `HH:MM` es todo lo que entra", () => {
     expect(filtrarHoraTipeada("153045")).toBe("15304");
     expect(filtrarHoraTipeada("15:30:45")).toBe("15:30");
+  });
+});
+
+
+describe("horariosDelVuelo", () => {
+  it("un vuelo que no cruza la medianoche queda en el mismo día", () => {
+    expect(horariosDelVuelo("2026-09-24", "13:10", "14:22")).toEqual({ takeoff_dt: "2026-09-24T13:10:00Z", landing_dt: "2026-09-24T14:22:00Z" });
+  });
+  it("si la llegada es antes que la salida, es del día siguiente", () => {
+    expect(horariosDelVuelo("2026-09-24", "23:00", "00:32")).toEqual({ takeoff_dt: "2026-09-24T23:00:00Z", landing_dt: "2026-09-25T00:32:00Z" });
   });
 });

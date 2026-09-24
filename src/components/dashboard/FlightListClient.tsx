@@ -14,6 +14,8 @@ interface FlightListClientProps {
   aircraft: Aircraft[];
   /** Lo cobrado por vuelo, por `flight_id`. Vacío en modo `packs`. Ver `lib/costos.ts`. */
   costos?: Map<string, number>;
+  alumno?: boolean;
+  fechaPpa?: string | null;
 }
 
 const MONTH_NAMES = [
@@ -21,7 +23,7 @@ const MONTH_NAMES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
-export default function FlightListClient({ flights, aircraft, costos = new Map() }: FlightListClientProps) {
+export default function FlightListClient({ flights, aircraft, costos = new Map(), alumno = false, fechaPpa = null }: FlightListClientProps) {
   const [filtros, setFiltros] = useState<FiltrosVuelo>({});
   const [abierto, setAbierto] = useState(false);
 
@@ -190,6 +192,8 @@ export default function FlightListClient({ flights, aircraft, costos = new Map()
                         aircraft={flight.aircraft_id ? aircraftMap.get(flight.aircraft_id) : undefined}
                         allAircraft={aircraft}
                         costo={costos.get(flight.id) ?? null}
+                        alumno={alumno}
+                        fechaPpa={fechaPpa}
                       />
                     ))}
                   </div>
