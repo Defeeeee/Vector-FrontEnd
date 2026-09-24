@@ -205,11 +205,12 @@ importa es el del backend (`request_max_body_size`, 30 MB).
 
 ## Estado y pendientes (al 2026-09-24)
 
-- **El alta** termina en "Tus vuelos": WhatsApp, PDF o saldo inicial. El recordatorio del
-  día siguiente (`/api/cron/primer-vuelo`) necesita su línea en el crontab del VPS (10:00
-  ART), como el briefing. El número del copiloto va en `src/lib/copiloto.ts`: sin él, el
-  alta no muestra el botón para escribirle. Mandar el PDF del libro por WhatsApp es una
-  idea de Federico para después.
+- **El alta es obligatoria y retomable** (Federico, 2026-09-24): tapa el dashboard hasta
+  terminarla y vuelve al primer paso sin hacer (`GET /onboarding/estado`, `pasoDelAlta`).
+  Sólo el importador del PDF queda sin tapar. La cookie `vector_alta` con el id de la cuenta
+  evita preguntar en cada pantalla. El recordatorio del día siguiente
+  (`/api/cron/primer-vuelo`) corre desde el crontab del VPS a las 10:00 ART. Mandar el PDF
+  del libro por WhatsApp es una idea de Federico para después.
 - **SEO:** hay guías, sitemap y datos estructurados, pero falta que Federico verifique el
   dominio en Google Search Console y envíe el sitemap. El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice

@@ -16,6 +16,8 @@ import VistoPorUltimaVez from "@/components/dashboard/VistoPorUltimaVez";
 import { AvisosProvider } from "@/components/dashboard/Avisos";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { COOKIE_ALTA, type EstadoAlta } from "@/lib/onboarding";
 
 /**
  * El perfil, y si se pudo preguntar por él.
@@ -65,14 +67,37 @@ async function getAuditCount(): Promise<number> {
   }
 }
 
+/**
+ * Qué pasos del alta tiene hechos el piloto. **Sin cache**: el paso que se acaba de
+ * completar tiene que dejar de pedirse en la pantalla siguiente, y los GET de `apiFetch`
+ * se guardan 20 s. `null` si no se pudo leer: "no sé" no bloquea a nadie.
+ */
+async function leerEstadoAlta(): Promise<EstadoAlta | null> {
+  const res = await apiFetch("/onboarding/estado", { next: { revalidate: 0 } });
+  if (!res.ok) return null;
+  try {
+    return (await res.json()) as EstadoAlta;
+  } catch {
+    return null;
+  }
+}
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [{ profile, disponible }, auditCount, social] = await Promise.all([
+  // Quien ya terminó el alta en este navegador tiene la cookie con su id: no se le
+  // pregunta al backend en cada pantalla. El resto, sí (el alta es obligatoria).
+  const altaHecha = (await cookies()).get(COOKIE_ALTA)?.value ?? null;
+  const [{ profile, disponible }, auditCount, social, estadoPrevio] = await Promise.all([
     getProfile(),
     getAuditCount(),
     // Si tiene @, su foto y el punto rojo de Pilotos. Lo comparten las pantallas de la
     // red (`cache` de React): es un solo pedido por render. Nunca tira.
     leerResumenSocial(),
+    altaHecha ? Promise.resolve(null) : leerEstadoAlta(),
   ]);
+  // La cookie es de otra cuenta (entró otra persona en el mismo navegador): se pregunta.
+  const estadoAlta =
+    altaHecha && profile && altaHecha !== profile.id ? await leerEstadoAlta() : estadoPrevio;
+  const saltearAlta = !!altaHecha && altaHecha === profile?.id;
   // Solicitudes sin responder más lo nuevo desde que abrió la Actividad. No se pisan:
   // `actividad_nueva` no cuenta las solicitudes pendientes.
   const totalPilotos = social.solicitudes_pendientes + social.actividad_nueva;
@@ -214,7 +239,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
 
       {/* Onboarding Logic */}
-      <OnboardingOverlay profile={profile} />
+      {!saltearAlta && <OnboardingOverlay profile={profile} estado={estadoAlta} />}
 
       {/* AI Chat Widget */}
       <ChatWidget />

@@ -9,12 +9,24 @@ import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, Me
 import Link from "next/link";
 import { linkCopiloto } from "@/lib/copiloto";
 import { mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
+import { COOKIE_ALTA, pasoDelAlta, type EstadoAlta } from "@/lib/onboarding";
 import { motion, AnimatePresence } from "framer-motion";
 import OpeningBalanceFields, { openingTotal } from "./OpeningBalanceFields";
 
 /**
- * El arranque, en tres pasos.
+ * El arranque, en tres pasos, **obligatorio** y **retomable**.
+ *
+ * **Desde el 2026-09-24, nada se saltea** (decisión de Federico). El overlay no se
+ * cierra, no tiene "Omitir", tapa todas las pantallas del dashboard y, a quien no
+ * terminó, lo devuelve al primer paso sin hacer cada vez que entra. El paso sale de
+ * los datos (`GET /onboarding/estado`, `pasoDelAlta`), no de una marca: si alguien
+ * cargó el avión desde el Hangar, el paso 2 ya está. La única pantalla que no tapa es
+ * la de importar el libro en PDF, que es una de las formas de cerrar el paso 3.
+ *
+ * Lo que sigue es la historia de cuando todo era salteable, que se deja porque explica
+ * por qué el paso 3 ofrece tres salidas:
  *
  * **Por qué tres y no dos campos.** El embudo medido decía: de 15 registrados, 8
  * completaban este overlay, 4 cargaban una aeronave y **1 llegaba a cargar un
@@ -33,30 +45,54 @@ import OpeningBalanceFields, { openingTotal } from "./OpeningBalanceFields";
 
 interface OnboardingOverlayProps {
   profile: Profile | null;
+  /** Lo que ya hizo. `null` si no se pudo leer: "no sé" no bloquea a nadie. */
+  estado: EstadoAlta | null;
+}
+
+/** Terminó: esta cuenta no vuelve a preguntar en este navegador. Ver `COOKIE_ALTA`. */
+function recordarAltaHecha(id: string | undefined) {
+  if (id) document.cookie = `${COOKIE_ALTA}=${id}; path=/; max-age=31536000; samesite=lax`;
 }
 
 const INPUT =
   "w-full bg-transparent border border-zinc-200 dark:border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-zinc-900 dark:focus:border-white/50 transition-all text-zinc-900 dark:text-white font-semibold placeholder:text-zinc-400 dark:placeholder:text-zinc-600";
 
-export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
+export default function OnboardingOverlay({ profile, estado }: OnboardingOverlayProps) {
   const [isPending, startTransition] = useTransition();
   // Se decide **una sola vez, al montar**. Antes se recalculaba en cada render con
   // `profile.license_type === "-"`, y el paso 1 guarda justamente la licencia: la server
   // action revalida `/dashboard`, el layout vuelve con el perfil nuevo, la condición da
   // falso y el overlay se cerraba solo. Los pasos 2 y 3 no los vio nadie (el 2026-09-23,
   // cuatro altas y ningún libro creado, que es lo que hace el paso 3).
-  const [isOpen, setIsOpen] = useState(() => profile?.license_type === "-");
-  const [paso, setPaso] = useState<1 | 2 | 3>(1);
+  // Sin el estado (no se pudo leer), sólo se muestra a quien seguro no hizo nada: el
+  // perfil recién creado, con la licencia en "-".
+  const pasoInicial = estado ? pasoDelAlta(estado) : profile?.license_type === "-" ? 1 : null;
+  const [isOpen, setIsOpen] = useState(() => pasoInicial !== null);
+  const [paso, setPaso] = useState<1 | 2 | 3>(pasoInicial ?? 1);
+  const pathname = usePathname();
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState<OpeningBalanceInput>({});
   const [mostrarSaldo, setMostrarSaldo] = useState(false);
   const [whatsapp, setWhatsapp] = useState("");
   const [whatsappGuardado, setWhatsappGuardado] = useState<string | null>(profile?.whatsapp_phone || null);
 
-  // El gate sigue siendo la licencia: es el único dato que el paso 1 exige, así
-  // que es el único que garantiza que el piloto pasó por acá. Lo que falte
-  // después lo nombra el checklist del dashboard, que no bloquea.
+  // El estado vuelve del server después de cada paso (las acciones revalidan) o al volver
+  // del importador. Si ya está completa, se cierra y se anota en la cookie; si avanzó por
+  // otro lado (el avión cargado desde el Hangar), se salta al paso que corresponde. El
+  // paso nunca retrocede: eso lo decide el piloto con lo que carga, no un render.
+  const pasoDelServer = estado ? pasoDelAlta(estado) : undefined;
+  useEffect(() => {
+    if (pasoDelServer === null) {
+      recordarAltaHecha(profile?.id);
+      setIsOpen(false);
+    } else if (pasoDelServer !== undefined) {
+      setPaso((actual) => (pasoDelServer > actual ? pasoDelServer : actual));
+    }
+  }, [pasoDelServer, profile?.id]);
+
   if (!isOpen) return null;
+  // El importador del PDF es una de las salidas del paso 3: ahí no se tapa.
+  if (pathname?.startsWith("/dashboard/log-flight/import")) return null;
 
   const setField = (key: keyof OpeningBalanceInput, raw: string) =>
     setOpening((prev) => ({ ...prev, [key]: raw === "" ? undefined : Number(raw) }));
@@ -71,8 +107,8 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
           return;
         }
 
-        // El CMA es opcional a propósito. Si no vino, no se escribe nada y el
-        // semáforo lo va a mostrar como dato faltante en vez de suponer una fecha.
+        // Obligatorio desde el 2026-09-24, salvo que ya esté cargado (se retomó el paso
+        // porque faltaba la licencia): en ese caso el campo no se pide.
         const cma = (formData.get("cma_document_expiry") as string) || "";
         if (cma) {
           const r = await upsertCmaDocument(cma);
@@ -122,12 +158,13 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
         setError(r.error);
         return;
       }
+      recordarAltaHecha(profile?.id);
       setIsOpen(false);
     });
   }
 
   const titulos = {
-    1: { icono: Compass, titulo: "Bienvenido a Vector", bajada: "Empecemos por tu licencia. El certificado médico podés cargarlo ahora o después." },
+    1: { icono: Compass, titulo: "Bienvenido a Vector", bajada: "Empecemos por tu licencia y el vencimiento de tu certificado médico." },
     2: { icono: Plane, titulo: "Tu primera aeronave", bajada: "Un vuelo se anota contra una aeronave. Cargá la que usás y ya podés registrar vuelos." },
     3: { icono: BookOpen, titulo: "Tus vuelos", bajada: "Tres formas de traer lo que volás. Elegí la que te quede más cómoda: podés usar todas." },
   } as const;
@@ -184,13 +221,13 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
                   <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1">Licencia inicial</label>
                   <div className="relative group">
                     <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                    <input name="license_type" required defaultValue="PPA" placeholder="PPA, PCA, TLA..." className={`${INPUT} uppercase`} />
+                    <input name="license_type" required defaultValue={profile?.license_type && profile.license_type !== "-" ? profile.license_type : "PPA"} placeholder="PPA, PCA, TLA..." className={`${INPUT} uppercase`} />
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 ml-1">
-                    Vencimiento CMA <span className="text-zinc-400 dark:text-zinc-600">(opcional)</span>
+                    Vencimiento CMA {estado?.cma && <span className="text-zinc-400 dark:text-zinc-600">(ya cargado)</span>}
                   </label>
                   <div className="relative group">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
@@ -203,6 +240,7 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
                     <input
                       name="cma_document_expiry"
                       type="date"
+                      required={!estado?.cma}
                       className={`${INPUT} [color-scheme:light] dark:[color-scheme:dark]`}
                     />
                   </div>
@@ -210,8 +248,7 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
               </div>
 
               <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Si lo dejás vacío, Vector no va a poder confirmar si estás en condiciones de volar
-                —lo va a decir así, no va a suponer que sí— y te lo va a recordar en el tablero.
+                Con el vencimiento, Vector te dice si podés volar y te avisa antes de que venza.
               </p>
 
               <Continuar isPending={isPending} texto="Continuar" />
@@ -236,7 +273,6 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
               </div>
 
               <Continuar isPending={isPending} texto="Agregar aeronave" />
-              <Omitir onClick={() => { setError(null); setPaso(3); }} disabled={isPending} />
             </form>
           )}
 
@@ -311,7 +347,6 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
 
               <Link
                 href="/dashboard/log-flight/import"
-                onClick={() => setIsOpen(false)}
                 className="flex gap-4 rounded-2xl border border-zinc-200 dark:border-white/10 p-5 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
               >
                 <span className="w-10 h-10 rounded-xl bg-aviation-blue/10 text-aviation-blue dark:text-aviation-cyan flex items-center justify-center shrink-0">
@@ -357,7 +392,6 @@ export default function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
                   </>
                 )}
               </button>
-              <Omitir onClick={() => setIsOpen(false)} disabled={isPending} texto="Lo cargo después" />
             </div>
           )}
         </motion.div>
@@ -391,18 +425,5 @@ function Continuar({ isPending, texto }: { isPending: boolean; texto: string }) 
     >
       {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (<><span>{texto}</span><ArrowRight className="w-4 h-4" /></>)}
     </motion.button>
-  );
-}
-
-function Omitir({ onClick, disabled, texto = "Omitir por ahora" }: { onClick: () => void; disabled: boolean; texto?: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-50"
-    >
-      {texto}
-    </button>
   );
 }

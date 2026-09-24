@@ -81,3 +81,40 @@ export function tieneLicencia(profile: Profile | null): boolean {
   const tipo = profile?.license_type?.trim();
   return !!tipo && tipo !== LICENCIA_SIN_CARGAR;
 }
+
+/**
+ * El alta obligatoria (decisión de Federico, 2026-09-24): lo que devuelve
+ * `GET /onboarding/estado` y en qué paso retoma quien no la terminó.
+ *
+ * - Paso 1, **licencia y CMA**: el CMA pasó a ser obligatorio con el resto.
+ * - Paso 2, **una aeronave** que no sea simulador.
+ * - Paso 3, **"Tus vuelos"**: termina cuando hay un libro (lo crea "Empezar") o vuelos
+ *   (los trae el PDF importado, o los carga el copiloto). Conectar WhatsApp es una
+ *   opción adentro del paso, no el paso.
+ *
+ * Se calcula con los datos y no con una marca: si alguien cargó el avión desde el Hangar,
+ * el paso 2 ya está, en cualquier dispositivo.
+ */
+export interface EstadoAlta {
+  licencia: boolean;
+  cma: boolean;
+  aeronave: boolean;
+  libro: boolean;
+  vuelos: boolean;
+  whatsapp: boolean;
+}
+
+/** El primer paso sin hacer, o `null` si el alta está completa. */
+export function pasoDelAlta(e: EstadoAlta): 1 | 2 | 3 | null {
+  if (!e.licencia || !e.cma) return 1;
+  if (!e.aeronave) return 2;
+  if (!e.libro && !e.vuelos) return 3;
+  return null;
+}
+
+/**
+ * La cookie que dice "esta cuenta ya terminó el alta en este dispositivo", para no
+ * preguntarle al backend en cada pantalla. Guarda el id de la cuenta y no un "sí": si
+ * en el mismo navegador entra otra persona, no hereda el alta de la anterior.
+ */
+export const COOKIE_ALTA = "vector_alta";
