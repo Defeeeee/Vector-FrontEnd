@@ -148,6 +148,7 @@ const ROUTES = [
   { path: "/u/no.existe.smoke", expect: (s) => s === 404 },
   { path: "/u/%40%40", expect: (s) => s === 404 },
   { path: "/dashboard/novedades", expect: (s) => s === 307 || s === 302 },
+  { path: "/dashboard/admin", expect: (s) => s === 307 || s === 302 },
   // La tarjeta compartible sale de la sesión del piloto. Que sin sesión conteste
   // 401 es lo que comprueba que la comprobación de auth sigue ahí: es una imagen
   // con horas de vuelo de una persona, y "simplificar" ese chequeo la publicaría.
@@ -189,6 +190,9 @@ const AUTH_ROUTES = [
   "/dashboard/pilotos/publicar",
   { path: "/dashboard/pilotos/no.existe.smoke", status: 404 },
   "/dashboard/novedades",
+  // El panel de administración: la cuenta del smoke no es admin, así que tiene que ser
+  // 404 y no 500 ni, sobre todo, 200.
+  { path: "/dashboard/admin", status: 404 },
   // Un `.ttf` faltante o mal nombrado pasa `tsc` y pasa `next build`: la ruta tira
   // 500 recién cuando alguien pide la imagen. Esto es lo único automático que lo
   // agarra antes de producción.

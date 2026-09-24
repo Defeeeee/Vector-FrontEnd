@@ -36,6 +36,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/app/dashboard/` | Las pantallas logueadas. El layout trae la barra, las pestañas de sección, los carteles de red y el copiloto. |
 | `src/lib/secciones.ts` | Las **cinco secciones** de la barra y sus pestañas (ver abajo). |
 | `src/app/u/[handle]/` | El perfil público, el link que se comparte: fuera del dashboard, se abre sin cuenta. Quien lo abre con sesión va a `/dashboard/pilotos/[handle]`, el mismo perfil adentro de la app. |
+| `src/app/dashboard/admin/`, `src/lib/admin.ts` | El panel de administración: sólo para los ids de `ADMINS_RED` del backend y 404 para el resto. **Sin link ni novedad a propósito:** se llega por URL. |
 | `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
 | `src/app/page.tsx`, `src/app/guias/`, `src/components/publico/`, `src/lib/sitio.ts` | Lo público: la landing (Server Component, estática), las guías con sus fuentes, `robots.ts`, `sitemap.ts` y las imágenes para compartir. Una guía nueva se agrega en `GUIAS` y aparece en el sitemap, el índice y el pie. **Todo lo que promete la landing se verifica contra el código**; lo regulatorio de las guías, contra la norma (invariante 6). |
 | `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |

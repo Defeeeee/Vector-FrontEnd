@@ -23,6 +23,7 @@ const FUERA_DE_LA_BARRA: Record<string, string> = {
   "/dashboard/novedades": "se abre desde la tarjeta de novedades del inicio",
   "/dashboard/log-flight": "es una acción: el botón + del rail y de la píldora del teléfono",
   "/dashboard/log-flight/import": "se abre desde Registrar vuelo",
+  "/dashboard/admin": "el panel de administración: sin link a propósito, se llega por URL y es 404 para quien no es admin",
 };
 
 /**
