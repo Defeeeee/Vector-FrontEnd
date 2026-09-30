@@ -36,7 +36,7 @@ function linkDeRespaldo(): string {
 
 export function mailConfirmarCuenta(appUrl: string): MailAuth {
   return {
-    asunto: "Confirmá tu mail para entrar a Vector",
+    asunto: "Confirmá tu mail para Vector",
     html: plantillaMail({
       appUrl,
       preencabezado: "Un toque y armás tu bitácora: licencia, CMA, avión y tu @.",
@@ -58,7 +58,7 @@ export function mailConfirmarCuenta(appUrl: string): MailAuth {
 
 export function mailRecuperarContrasena(appUrl: string): MailAuth {
   return {
-    asunto: "Elegí una contraseña nueva para Vector",
+    asunto: "Cambiá tu contraseña",
     html: plantillaMail({
       appUrl,
       preencabezado: "Tocá el botón y elegí una contraseña nueva. Si no lo pediste, ignorá este mail.",
