@@ -175,6 +175,7 @@ export async function POST(req: NextRequest) {
       puntos,
       urlPlanificador: `${APP_URL}/dashboard/planificador?ruta=${encodeURIComponent(rutaAUrl(codigos))}`,
       armadoA,
+      appUrl: APP_URL,
     });
 
     const r = await enviarMail({ para: p.email, ...mensaje });

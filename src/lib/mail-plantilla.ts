@@ -22,13 +22,13 @@
 export const escapar = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-const FUENTE = "'Nunito',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-const MONO = "'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace";
+export const FUENTE = "'Nunito',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+export const MONO = "'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace";
 export const AZUL = "#2563eb";
-const NEGRO = "#18181b";
-const GRIS = "#52525b";
-const GRIS_CLARO = "#a1a1aa";
-const BORDE = "#e4e4e7";
+export const NEGRO = "#18181b";
+export const GRIS = "#52525b";
+export const GRIS_CLARO = "#a1a1aa";
+export const BORDE = "#e4e4e7";
 
 /** La imagen de `public/correo/` por URL absoluta. */
 const imagen = (appUrl: string, nombre: string) => `${appUrl}/correo/${nombre}.png`;
@@ -75,6 +75,33 @@ export function bloque(
   <td valign="top" style="padding:20px 20px 20px 16px">
     <p style="margin:0 0 6px;font-family:${FUENTE};font-size:17px;font-weight:800;letter-spacing:-.01em;color:${d.alerta ? "#b91c1c" : NEGRO}">${escapar(d.titulo)}</p>
     ${filas}${link}
+  </td>
+</tr></table>`;
+}
+
+export type Tono = "bien" | "atencion" | "peligro" | "sinDatos";
+
+const TONOS: Record<Tono, { fondo: string; borde: string; marca: string; simbolo: string }> = {
+  bien: { fondo: "#ecfdf5", borde: "#a7f3d0", marca: "#10b981", simbolo: "✓" },
+  atencion: { fondo: "#fffbeb", borde: "#fde68a", marca: "#d97706", simbolo: "!" },
+  peligro: { fondo: "#fef2f2", borde: "#fecaca", marca: "#dc2626", simbolo: "✕" },
+  sinDatos: { fondo: "#fafafa", borde: BORDE, marca: "#71717a", simbolo: "?" },
+};
+
+/**
+ * La tarjeta de estado, como la verde "Podés volar hoy" de la landing, con el color del
+ * tono: verde, ámbar, rojo o gris cuando no hay datos. El símbolo acompaña al color para
+ * quien no distingue verdes de rojos.
+ */
+export function estado(d: { tono: Tono; titulo: string; detalle: string }): string {
+  const t = TONOS[d.tono];
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;background:${t.fondo};border:1px solid ${t.borde};border-radius:18px"><tr>
+  <td width="34" valign="top" style="padding:16px 0 16px 16px">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="32" height="32" align="center" valign="middle" style="background:${t.marca};border-radius:9px;font-family:${FUENTE};font-size:17px;font-weight:800;color:#ffffff">${t.simbolo}</td></tr></table>
+  </td>
+  <td valign="top" style="padding:16px 18px 16px 14px">
+    <p style="margin:0 0 4px;font-family:${FUENTE};font-size:16px;font-weight:800;color:${NEGRO}">${escapar(d.titulo)}</p>
+    <p style="margin:0;font-family:${FUENTE};font-size:13px;line-height:1.55;color:${GRIS}">${escapar(d.detalle)}</p>
   </td>
 </tr></table>`;
 }

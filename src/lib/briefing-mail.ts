@@ -1,4 +1,5 @@
 import { severidadDe, veredictoDeRuta, type CategoriaVuelo, type EstacionRuta, type Veredicto } from "./briefing";
+import { BORDE, GRIS, MONO, FUENTE, NEGRO, bloque, boton, escapar, estado, etiqueta, parrafo, plantillaMail } from "./mail-plantilla";
 
 /**
  * El briefing del vuelo de mañana, armado para mandar.
@@ -55,6 +56,8 @@ export interface DatosBriefing {
   urlPlanificador: string;
   /** Cuándo se armó esto, ya formateado en hora local. */
   armadoA: string;
+  /** El sitio, para el logo y los íconos. Si falta, se toma del link al planificador. */
+  appUrl?: string;
 }
 
 export interface Mensaje {
@@ -138,9 +141,6 @@ export function fechaLarga(iso: string): string {
   return `${dias[fecha.getUTCDay()]} ${d} de ${meses[m - 1]}`;
 }
 
-const escapar = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
 /**
  * El mensaje completo, en texto y en HTML.
  *
@@ -193,57 +193,44 @@ export function armarMensaje(datos: DatosBriefing): Mensaje {
     "Vector"
   );
 
-  const tono: Record<Veredicto["tono"], string> = {
-    bien: "#16a34a",
-    atencion: "#d97706",
-    peligro: "#dc2626",
-    sinDatos: "#71717a",
-  };
+  const appUrl = datos.appUrl ?? new URL(datos.urlPlanificador).origin;
 
-  const html = `<!-- Vector -->
-<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#18181b">
-  <p style="margin:0 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa">Vuelo del ${escapar(cuando)}</p>
-  <h1 style="margin:0 0 20px;font-size:24px;letter-spacing:.05em">${escapar(datos.ruta)}${
-    datos.matricula ? ` <span style="font-size:15px;color:#71717a">· ${escapar(datos.matricula)}</span>` : ""
-  }</h1>
+  /** Un aeródromo de la ruta: el código, el nombre, la categoría y el METAR y el TAF. */
+  const estacion = (p: PuntoBriefing) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px;border:1px solid ${BORDE};border-radius:16px"><tr><td style="padding:14px 16px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td valign="middle">
+        <span style="font-family:${MONO};font-size:15px;font-weight:700;letter-spacing:.06em;color:${NEGRO}">${escapar(p.icao)}</span>
+        <span style="font-family:${FUENTE};font-size:13px;color:#71717a">&nbsp;&nbsp;${escapar(p.label || "")}</span>
+      </td>
+      <td align="right" valign="middle" style="font-family:${MONO};font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:${GRIS};white-space:nowrap">${escapar(p.respondio ? CATEGORIA[p.categoria] : "sin datos")}</td>
+    </tr></table>
+    ${p.metar ? `<p style="margin:10px 0 0;font-family:${MONO};font-size:11px;line-height:1.5;color:${GRIS};word-break:break-all">${escapar(p.metar)}</p>` : ""}
+    ${p.taf ? `<p style="margin:6px 0 0;font-family:${MONO};font-size:11px;line-height:1.5;color:#71717a;word-break:break-all">${escapar(p.taf)}</p>` : ""}
+  </td></tr></table>`;
 
-  <div style="border-left:3px solid ${tono[veredicto.tono]};padding:2px 0 2px 14px;margin-bottom:20px">
-    <p style="margin:0 0 4px;font-weight:700">${escapar(veredicto.titulo)}</p>
-    <p style="margin:0;font-size:13px;line-height:1.6;color:#3f3f46">${escapar(veredicto.detalle)}</p>
-  </div>
-
-  ${
-    lista.length
-      ? `<p style="margin:0 0 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa">Para mirar antes de salir</p>
-  <ul style="margin:0 0 20px;padding-left:18px;font-size:13px;line-height:1.7;color:#3f3f46">${lista
-    .map((a) => `<li>${escapar(a)}</li>`)
-    .join("")}</ul>`
-      : `<p style="margin:0 0 20px;font-size:13px;color:#3f3f46">No hay nada que marcar en los puntos de la ruta.</p>`
-  }
-
-  ${datos.puntos
-    .map(
-      (p) => `<div style="border-top:1px solid #e4e4e7;padding:12px 0">
-    <p style="margin:0 0 2px"><strong style="letter-spacing:.06em">${escapar(p.icao)}</strong>
-      <span style="color:#71717a;font-size:13px">${escapar(p.label || "")}</span>
-      <span style="float:right;font-size:12px;color:#71717a">${escapar(p.respondio ? CATEGORIA[p.categoria] : "sin datos")}</span></p>
-    ${p.metar ? `<p style="margin:6px 0 0;font-family:ui-monospace,monospace;font-size:11px;color:#52525b;word-break:break-all">${escapar(p.metar)}</p>` : ""}
-    ${p.taf ? `<p style="margin:4px 0 0;font-family:ui-monospace,monospace;font-size:11px;color:#71717a;word-break:break-all">${escapar(p.taf)}</p>` : ""}
-  </div>`
-    )
-    .join("")}
-
-  <div style="margin:24px 0 0;border-top:1px solid #e4e4e7;padding-top:20px">
-    <a href="${escapar(datos.urlPlanificador)}"
-       style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;font-size:14px">
-      Ver el briefing completo
-    </a>
-    <p style="margin:12px 0 0;font-size:12px;line-height:1.6;color:#71717a">
-      Ahí están el METAR y el TAF actualizados, los NOTAM, el viento cruzado sobre la pista, la planilla de
-      navegación y los aeródromos cerca. <strong>Esto se armó el ${escapar(datos.armadoA)} y el clima cambia.</strong>
-    </p>
-  </div>
-</div>`;
+  const html = plantillaMail({
+    appUrl,
+    preencabezado: `${veredicto.titulo}. ${datos.ruta}, ${cuando}.`,
+    pildora: `Vuelo del ${cuando}`,
+    titulo: [datos.matricula ? `${datos.ruta} · ${datos.matricula}` : datos.ruta, "El briefing de tu vuelo."],
+    cuerpo: [
+      estado({ tono: veredicto.tono, titulo: veredicto.titulo, detalle: veredicto.detalle }),
+      lista.length
+        ? bloque(appUrl, { icono: "triangle-alert", titulo: "Para mirar antes de salir", filas: lista })
+        : parrafo("No hay nada que marcar en los puntos de la ruta."),
+      `<div style="height:6px;line-height:6px">&nbsp;</div>`,
+      etiqueta("Los aeródromos de la ruta"),
+      ...datos.puntos.map(estacion),
+      `<div style="height:10px;line-height:10px">&nbsp;</div>`,
+      boton("Ver el briefing completo", datos.urlPlanificador),
+      /*
+        **El párrafo que evita que este mail haga daño**, igual que en el texto: armado a la
+        tarde y leído a la mañana, el METAR y el TAF ya cambiaron.
+      */
+      `<p style="margin:12px 0 0;font-family:${FUENTE};font-size:13px;line-height:1.6;color:${GRIS}">Ahí están el METAR y el TAF actualizados, los NOTAM, el viento cruzado sobre la pista, la planilla de navegación y los aeródromos cerca. <strong style="color:${NEGRO}">Esto se armó el ${escapar(datos.armadoA)} y el clima cambia.</strong></p>`,
+    ].join("\n"),
+    pie: "Te llega la tarde antes de cada vuelo que programás en Vector.",
+  });
 
   return { asunto, texto: lineas.join("\n"), html };
 }
