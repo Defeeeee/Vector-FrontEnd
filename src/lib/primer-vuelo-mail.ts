@@ -5,7 +5,12 @@
  * dice cómo empezar, en el orden de lo que menos cuesta: un audio al copiloto, el libro
  * en PDF, y a mano. Nombra lo que le falta a esa persona —el número de WhatsApp, un
  * avión— en vez de un texto igual para todos.
+ *
+ * El HTML usa la plantilla de todos los mails (`lib/mail-plantilla.ts`), con la estética
+ * de la landing. El texto plano es el mismo mensaje, para los clientes que no muestran
+ * HTML.
  */
+import { bloque, boton, ejemploDelInicio, etiqueta, parrafo, plantillaMail, type Icono } from "@/lib/mail-plantilla";
 
 export interface DatosPrimerVuelo {
   nombre: string | null;
@@ -35,9 +40,6 @@ export interface MensajePrimerVuelo {
   html: string;
 }
 
-const escapar = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
 export function armarMensajePrimerVuelo(d: DatosPrimerVuelo): MensajePrimerVuelo {
   const nombre = d.nombre?.trim() || null;
   const asunto = nombre ? `${nombre}, ¿cargamos tu primer vuelo?` : "¿Cargamos tu primer vuelo?";
@@ -52,10 +54,10 @@ export function armarMensajePrimerVuelo(d: DatosPrimerVuelo): MensajePrimerVuelo
     ? "Registralo a mano: salida, llegada y horarios. Vector calcula el tiempo y el desglose."
     : "Registralo a mano: primero cargá el avión en el Hangar, y después salida, llegada y horarios.";
 
-  const opciones: { titulo: string; texto: string; link: string; boton: string }[] = [
-    { titulo: "Con un audio", texto: whatsapp, link: d.tieneWhatsapp && d.linkCopiloto ? d.linkCopiloto : hangar, boton: d.tieneWhatsapp && d.linkCopiloto ? "Abrir WhatsApp" : "Ir al Hangar" },
-    { titulo: "Con tu libro en PDF", texto: "Subí las hojas escaneadas de tu libro de papel y Vector carga los vuelos.", link: importar, boton: "Importar el PDF" },
-    { titulo: "A mano", texto: aMano, link: d.tieneAvion ? registrar : hangar, boton: d.tieneAvion ? "Registrar un vuelo" : "Cargar el avión" },
+  const opciones: { titulo: string; texto: string; link: string; boton: string; icono: Icono }[] = [
+    { icono: "mic", titulo: "Con un audio", texto: whatsapp, link: d.tieneWhatsapp && d.linkCopiloto ? d.linkCopiloto : hangar, boton: d.tieneWhatsapp && d.linkCopiloto ? "Abrir WhatsApp" : "Ir al Hangar" },
+    { icono: "file-text", titulo: "Con tu libro en PDF", texto: "Subí las hojas escaneadas de tu libro de papel y Vector carga los vuelos.", link: importar, boton: "Importar el PDF" },
+    { icono: "pencil-line", titulo: "A mano", texto: aMano, link: d.tieneAvion ? registrar : hangar, boton: d.tieneAvion ? "Registrar un vuelo" : "Cargar el avión" },
   ];
 
   const saludo = nombre ? `Hola ${nombre}:` : "Hola:";
@@ -78,23 +80,22 @@ export function armarMensajePrimerVuelo(d: DatosPrimerVuelo): MensajePrimerVuelo
     "Vector · Tu bitácora de vuelo, siempre al día.",
   ].join("\n");
 
-  const html = `<!doctype html><html lang="es-AR"><body style="margin:0;background:#fafafa">
-<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#18181b">
-  <p style="font-size:16px;margin:0 0 12px">${escapar(saludo)}</p>
-  <p style="font-size:15px;line-height:1.55;color:#3f3f46;margin:0 0 20px">${escapar(intro)}</p>
-  <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#2563eb;margin:0 0 10px">Tres formas de empezar</p>
-  ${opciones
-    .map(
-      (o) => `<div style="background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:16px 18px;margin:0 0 10px">
-    <p style="font-size:15px;font-weight:700;margin:0 0 4px">${escapar(o.titulo)}</p>
-    <p style="font-size:14px;line-height:1.5;color:#52525b;margin:0 0 12px">${escapar(o.texto)}</p>
-    <a href="${escapar(o.link)}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:999px;font-weight:700;font-size:13px">${escapar(o.boton)}</a>
-  </div>`
-    )
-    .join("\n  ")}
-  <p style="font-size:12px;line-height:1.5;color:#a1a1aa;margin:20px 0 0">${escapar(pie)}</p>
-  <p style="font-size:12px;color:#a1a1aa;margin:6px 0 0">Vector · <a href="${escapar(d.appUrl)}" style="color:#a1a1aa">${escapar(d.appUrl.replace(/^https?:\/\//, ""))}</a></p>
-</div></body></html>`;
+  const html = plantillaMail({
+    appUrl: d.appUrl,
+    preencabezado: "Tres formas de cargar tu primer vuelo: un audio, tu libro en PDF o a mano.",
+    pildora: "Tu cuenta en Vector",
+    titulo: [nombre ? `${nombre}, tu bitácora está lista.` : "Tu bitácora está lista.", "Le falta tu primer vuelo."],
+    cuerpo: [
+      parrafo(intro),
+      ejemploDelInicio(),
+      `<div style="height:14px;line-height:14px">&nbsp;</div>`,
+      etiqueta("Tres formas de empezar"),
+      ...opciones.map((o) => bloque(d.appUrl, { icono: o.icono, titulo: o.titulo, filas: [o.texto], link: { texto: o.boton, url: o.link } })),
+      `<div style="height:8px;line-height:8px">&nbsp;</div>`,
+      boton("Abrir mi bitácora", `${d.appUrl}/dashboard`),
+    ].join("\n"),
+    pie,
+  });
 
   return { asunto, texto, html };
 }

@@ -26,6 +26,7 @@ import { nightLandingsOf } from "@/lib/landings";
 import { idsDeSimuladores, separarSimuladores } from "@/lib/simulador";
 import { allAirports, openingTotals } from "@/lib/summary";
 import { rutaLegible } from "@/lib/social";
+import { bloque, boton as botonMail, numeroGrande, parrafo, plantillaMail, type Icono } from "@/lib/mail-plantilla";
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -185,9 +186,6 @@ export interface MensajeResumen {
   html: string;
 }
 
-const escapar = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 /** Las líneas del mail, en el orden de las tres preguntas. Las comparten texto y HTML. */
@@ -282,31 +280,34 @@ export function armarMensajeResumen(r: Resumen, d: { appUrl: string; linkBaja: s
     "Vector · Tu bitácora de vuelo, siempre al día.",
   ].join("\n");
 
-  const html = `<!doctype html><html lang="es-AR"><body style="margin:0;background:#fafafa">
-<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#18181b">
-  <p style="font-size:16px;margin:0 0 6px">${escapar(saludo)}</p>
-  <p style="font-size:15px;line-height:1.55;color:#3f3f46;margin:0 0 20px">${escapar(intro)}</p>
-  ${
-    r.vuelos > 0
-      ? `<div style="background:#18181b;color:#fff;border-radius:20px;padding:20px 22px;margin:0 0 12px">
-    <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#a1a1aa;margin:0 0 6px">${escapar(r.nombreMes)}</p>
-    <p style="font-size:34px;font-weight:800;margin:0;line-height:1">${horas(r.horas)} <span style="font-size:15px;font-weight:600;color:#a1a1aa">h</span></p>
-    <p style="font-size:13px;color:#d4d4d8;margin:8px 0 0">${escapar(`${plural(r.vuelos, "vuelo", "vuelos")} · ${plural(r.aterrizajes, "aterrizaje", "aterrizajes")}`)}</p>
-  </div>`
-      : ""
-  }
-  ${partes
-    .map(
-      (s) => `<div style="background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:16px 18px;margin:0 0 10px">
-    <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${s.titulo === "Atención" ? "#dc2626" : "#2563eb"};margin:0 0 8px">${escapar(s.titulo)}</p>
-    ${s.filas.map((f) => `<p style="font-size:14px;line-height:1.5;color:#3f3f46;margin:0 0 4px">${escapar(f)}</p>`).join("\n    ")}
-  </div>`
-    )
-    .join("\n  ")}
-  <p style="margin:18px 0 0"><a href="${escapar(boton.link)}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:700;font-size:13px">${escapar(boton.texto)}</a></p>
-  <p style="font-size:12px;line-height:1.5;color:#a1a1aa;margin:22px 0 0">${escapar(pie)} <a href="${escapar(d.linkBaja)}" style="color:#a1a1aa">No recibirlo más</a>.</p>
-  <p style="font-size:12px;color:#a1a1aa;margin:6px 0 0">Vector · <a href="${escapar(d.appUrl)}" style="color:#a1a1aa">${escapar(d.appUrl.replace(/^https?:\/\//, ""))}</a></p>
-</div></body></html>`;
+  const icono = (titulo: string): Icono =>
+    titulo === "Lo que volaste" ? "plane" : titulo === "Lo que te queda" ? "wallet" : titulo === "Atención" ? "triangle-alert" : "target";
+  const html = plantillaMail({
+    appUrl: d.appUrl,
+    preencabezado:
+      r.vuelos > 0
+        ? `${horas(r.horas)} h en ${plural(r.vuelos, "vuelo", "vuelos")}, y lo que te falta para la próxima licencia.`
+        : "¿Volaste y no lo cargaste? Tu resumen del mes.",
+    pildora: `Resumen de ${r.nombreMes}`,
+    // Los números van en la tarjeta negra; el título no los repite.
+    titulo: r.vuelos > 0 ? [`Tu ${mes}`, "en Vector."] : [`Tu ${mes} en Vector.`, "¿Volaste y no lo cargaste?"],
+    cuerpo: [
+      parrafo(r.nombre ? `Hola ${r.nombre}, este es tu resumen de ${r.nombreMes}.` : `Este es tu resumen de ${r.nombreMes}.`),
+      r.vuelos > 0
+        ? numeroGrande({
+            etiqueta: r.nombreMes,
+            numero: horas(r.horas),
+            unidad: "h",
+            detalle: `${plural(r.vuelos, "vuelo", "vuelos")} · ${plural(r.aterrizajes, "aterrizaje", "aterrizajes")}`,
+          })
+        : "",
+      ...partes.map((s) => bloque(d.appUrl, { icono: icono(s.titulo), titulo: s.titulo, filas: s.filas, alerta: s.titulo === "Atención" })),
+      `<div style="height:8px;line-height:8px">&nbsp;</div>`,
+      botonMail(boton.texto, boton.link),
+    ].join("\n"),
+    pie,
+    pieLink: { texto: "No recibirlo más", url: d.linkBaja },
+  });
 
   return { asunto, texto, html };
 }

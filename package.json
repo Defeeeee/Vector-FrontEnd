@@ -21,7 +21,8 @@
     "smoke": "node scripts/smoke.mjs",
     "build:iconos": "node scripts/build-iconos.mjs",
     "build:sw": "node scripts/build-sw.mjs",
-    "build:catalogo": "node scripts/build-catalogo.mjs"
+    "build:catalogo": "node scripts/build-catalogo.mjs",
+    "build:correo": "node scripts/build-mail-assets.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",
