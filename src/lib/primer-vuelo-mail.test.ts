@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarMensajePrimerVuelo, type DatosPrimerVuelo } from "./primer-vuelo-mail";
+import { armarMensajePrimerVuelo, cuandoFueElAlta, type DatosPrimerVuelo } from "./primer-vuelo-mail";
 
 const base: DatosPrimerVuelo = {
   nombre: "Lucía",
@@ -13,6 +13,15 @@ describe("el mail del día siguiente al alta", () => {
   it("saluda por el nombre, y sin nombre no queda un hueco", () => {
     expect(armarMensajePrimerVuelo(base).asunto).toBe("Lucía, ¿cargamos tu primer vuelo?");
     expect(armarMensajePrimerVuelo({ ...base, nombre: "  " }).asunto).toBe("¿Cargamos tu primer vuelo?");
+  });
+
+  it("no le dice 'ayer' a quien se registró hace más días", () => {
+    expect(cuandoFueElAlta(undefined)).toBe("Ayer");
+    expect(cuandoFueElAlta(1)).toBe("Ayer");
+    expect(cuandoFueElAlta(2)).toBe("Anteayer");
+    expect(cuandoFueElAlta(3)).toBe("Hace 3 días");
+    expect(armarMensajePrimerVuelo({ ...base, diasDesdeElAlta: 3 }).texto).toContain("Hace 3 días te hiciste la cuenta");
+    expect(armarMensajePrimerVuelo(base).texto).toContain("Ayer te hiciste la cuenta");
   });
 
   it("ofrece las tres formas, con sus links", () => {

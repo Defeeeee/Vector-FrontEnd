@@ -22,6 +22,13 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://vector.fdiaznem.com.
  * veces no manda dos mails:** el segundo pedido ya no los devuelve.
  *
  * Sin proveedor de correo no falla: no hace nada y lo dice, y no marca a nadie.
+ *
+ * - `?dia=YYYY-MM-DD&ventana=N` pasan al backend: el último día de alta y cuántos días
+ *   hacia atrás (por defecto, ayer y tres días). Sirven para alcanzar a mano a quien una
+ *   corrida fallida dejó afuera.
+ * - `?prueba=<mail>` manda **una copia de muestra** a ese mail —como si fuera un alta de
+ *   ayer, sin avión ni WhatsApp— y no toca a nadie más ni marca nada. Para ver el mail
+ *   como lo recibe un piloto.
  */
 function secretosCoinciden(recibido: string, esperado: string): boolean {
   const a = Buffer.from(recibido);
@@ -36,6 +43,7 @@ interface Pendiente {
   first_name: string | null;
   tiene_avion: boolean;
   tiene_whatsapp: boolean;
+  dias_desde_el_alta?: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -49,9 +57,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ enviados: 0, motivo: prueba.motivo });
   }
 
+  const params = new URL(req.url).searchParams;
+  const prueba = params.get("prueba");
+  if (prueba) {
+    const mensaje = armarMensajePrimerVuelo({
+      nombre: null,
+      tieneAvion: false,
+      tieneWhatsapp: false,
+      appUrl: APP_URL,
+      linkCopiloto: linkCopiloto(),
+      diasDesdeElAlta: 1,
+    });
+    const r = await enviarMail({ para: prueba, ...mensaje });
+    return NextResponse.json({ prueba: true, enviado: r.enviado, motivo: r.motivo ?? null });
+  }
+
+  const q = new URLSearchParams();
+  for (const k of ["dia", "ventana"]) {
+    const v = params.get(k);
+    if (v) q.set(k, v);
+  }
+
   let pendientes: Pendiente[];
   try {
-    const res = await fetch(`${API_URL}/onboarding/recordatorios`, { headers: { "X-Cron-Secret": esperado }, cache: "no-store" });
+    const res = await fetch(`${API_URL}/onboarding/recordatorios${q.size ? `?${q}` : ""}`, { headers: { "X-Cron-Secret": esperado }, cache: "no-store" });
     if (!res.ok) return NextResponse.json({ error: `El backend contestó ${res.status}` }, { status: 502 });
     pendientes = await res.json();
   } catch (err) {
@@ -67,6 +96,7 @@ export async function POST(req: NextRequest) {
       tieneWhatsapp: p.tiene_whatsapp,
       appUrl: APP_URL,
       linkCopiloto: linkCopiloto(),
+      diasDesdeElAlta: p.dias_desde_el_alta,
     });
     const r = await enviarMail({ para: p.email, ...mensaje });
     if (r.enviado) exitosos.push(p.user_id);

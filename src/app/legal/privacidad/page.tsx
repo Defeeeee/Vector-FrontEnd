@@ -195,8 +195,8 @@ export default function PrivacidadPage() {
           <li>Llevar tu bitácora y calcular tus horas por categoría.</li>
           <li>Avisarte cuando un documento está por vencer.</li>
           <li>
-            Mandarte por mail el briefing del vuelo que programaste y, una sola vez, al día
-            siguiente de crear tu cuenta, cómo cargar tu primer vuelo si todavía no lo hiciste.
+            Mandarte por mail el briefing del vuelo que programaste y, una sola vez en los días
+            siguientes a crear tu cuenta, cómo cargar tu primer vuelo si todavía no lo hiciste.
           </li>
           <li>
             Mandarte por mail, el primer día de cada mes, un resumen del mes anterior: horas,

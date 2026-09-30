@@ -15,6 +15,18 @@ export interface DatosPrimerVuelo {
   appUrl: string;
   /** El link al chat con el copiloto, si está configurado (`lib/copiloto.ts`). */
   linkCopiloto: string | null;
+  /**
+   * Hace cuántos días fue el alta (1 = ayer). El barrido mira una ventana de tres días
+   * para alcanzar a quien una corrida fallida dejó afuera, y a ese no se le dice "ayer".
+   */
+  diasDesdeElAlta?: number;
+}
+
+/** "Ayer", "Anteayer" o "Hace N días", para abrir la frase del alta. */
+export function cuandoFueElAlta(dias: number | undefined): string {
+  if (!dias || dias <= 1) return "Ayer";
+  if (dias === 2) return "Anteayer";
+  return `Hace ${dias} días`;
 }
 
 export interface MensajePrimerVuelo {
@@ -48,10 +60,10 @@ export function armarMensajePrimerVuelo(d: DatosPrimerVuelo): MensajePrimerVuelo
 
   const saludo = nombre ? `Hola ${nombre}:` : "Hola:";
   const intro =
-    "Ayer te hiciste la cuenta en Vector. Para decirte si podés volar hoy, cuánto te falta " +
+    `${cuandoFueElAlta(d.diasDesdeElAlta)} te hiciste la cuenta en Vector. Para decirte si podés volar hoy, cuánto te falta ` +
     "para la PCA y cuánto te queda del pack, le falta lo principal: tus vuelos.";
   const pie =
-    "Te escribimos una sola vez, al día siguiente del alta. Si no te interesa, no hace falta que hagas nada.";
+    "Te escribimos una sola vez, después del alta. Si no te interesa, no hace falta que hagas nada.";
 
   const texto = [
     saludo,
