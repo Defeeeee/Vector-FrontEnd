@@ -4,8 +4,11 @@ import { notFound, redirect } from "next/navigation";
 import { Check, Minus } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import PageHeader from "@/components/dashboard/PageHeader";
-import { GraficoAltas, GraficoBarras, GraficoLicencias, GraficoVuelosPorMes } from "@/components/admin/GraficosLazy";
-import { haceCuanto, momento, numero, porcentaje, seriesDelPanel, type EstadisticasAdmin } from "@/lib/admin";
+import { GraficoAltas, GraficoBarras, GraficoHoras, GraficoLicencias, GraficoMailsPorDia, GraficoVuelosPorMes } from "@/components/admin/GraficosLazy";
+import {
+  duracion, haceCuanto, momento, nombreDeMail, numero, pct, porcentaje, seriesDeMails, seriesDelPanel,
+  type EstadisticasAdmin, type MailsAdmin,
+} from "@/lib/admin";
 
 /**
  * El panel de administración. **No es una pantalla de la app**: no está en la barra,
@@ -25,6 +28,7 @@ const NOMBRES_TABLAS: Record<string, string> = {
   publicaciones: "publicaciones", seguimientos: "seguimientos", aplausos: "aplausos", comentarios: "comentarios",
   push: "avisos push", transacciones: "saldo", packs: "packs", programados: "vuelos programados",
   metricas: "métricas propias", auditoria: "auditoría", reportes: "reportes", chats_whatsapp: "chats de WhatsApp",
+  mail_envios: "mails enviados", mail_eventos: "aperturas y clics de mails",
 };
 
 function Dato({ titulo, valor, nota }: { titulo: string; valor: string; nota?: string }) {
@@ -68,6 +72,124 @@ function Ranking({ filas, vacio }: { filas: { nombre: string; valor: number }[];
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Los mails: cuántos salieron, cuántos se abrieron y qué links se tocaron
+ * (`lib/mail-seguimiento.ts`). Todo se cuenta por mail enviado, no por evento, y la nota
+ * de arriba dice qué tan en serio tomar cada número.
+ */
+function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
+  const t = m.totales;
+  const series = seriesDeMails(m);
+  return (
+    <>
+      <div className="pt-6">
+        <h2 className="text-2xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">Mails</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-3xl">
+          Medido por Vector, por mail enviado. Una apertura es que el correo pidió la imagen del mail: Gmail la pide al abrirlo y Apple Mail la baja
+          solo, así que sirve para comparar un mail con otro más que como cuenta exacta. Un clic a los pocos segundos del envío suele ser el filtro de
+          un correo corporativo.
+        </p>
+      </div>
+
+      {t.enviados === 0 ? (
+        <p className={`${tarjeta} text-sm text-zinc-600 dark:text-zinc-300`}>Todavía no salió ningún mail con seguimiento.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Dato titulo="Enviados" valor={numero(t.enviados)} nota={`a ${m.pilotos.con_mails} ${m.pilotos.con_mails === 1 ? "piloto" : "pilotos"}`} />
+            <Dato titulo="Abiertos" valor={pct(t.tasa_apertura)} nota={`${t.abiertos} de ${t.enviados} mails`} />
+            <Dato titulo="Con clic" valor={pct(t.tasa_clic)} nota={`${t.con_clic} mails · ${pct(t.clic_sobre_abiertos)} de los abiertos`} />
+            <Dato titulo="Hasta abrirlo" valor={duracion(t.minutos_hasta_abrir)} nota="la mediana, desde el envío" />
+            <Dato titulo="Abrieron alguno" valor={numero(m.pilotos.abrieron_alguno)} nota={`${porcentaje(m.pilotos.abrieron_alguno, m.pilotos.con_mails)} de los pilotos con mails`} />
+            <Dato titulo="Hicieron clic" valor={numero(m.pilotos.hicieron_clic)} nota={`${porcentaje(m.pilotos.hicieron_clic, m.pilotos.con_mails)} de los pilotos con mails`} />
+            <Dato titulo="Nunca abrieron" valor={numero(m.pilotos.nunca_abrieron)} nota="ningún mail: puede ser spam, o imágenes bloqueadas" />
+            <Dato titulo="Tipos de mail" valor={numero(m.campanas.length)} nota="con al menos un envío" />
+          </div>
+
+          <Bloque titulo="Por mail" nota="Cada tanda por separado, de la más nueva a la más vieja.">
+            <div className="overflow-x-auto -mx-2">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead>
+                  <tr className="text-left text-zinc-500 dark:text-zinc-400">
+                    <th className="font-medium pb-2 px-2">Mail</th>
+                    <th className="font-medium pb-2 px-2 text-right">Enviados</th>
+                    <th className="font-medium pb-2 px-2 text-right">Abiertos</th>
+                    <th className="font-medium pb-2 px-2 text-right">Con clic</th>
+                    <th className="font-medium pb-2 px-2 text-right">Hasta abrirlo</th>
+                    <th className="font-medium pb-2 px-2">Link más tocado</th>
+                    <th className="font-medium pb-2 px-2 text-right">Último envío</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {m.campanas.map((c) => (
+                    <tr key={`${c.tipo}|${c.clave ?? ""}`} className="border-t border-zinc-100 dark:border-white/5">
+                      <td className="py-2.5 px-2 font-semibold text-zinc-900 dark:text-white whitespace-nowrap">{nombreDeMail(c.tipo, c.clave)}</td>
+                      <td className="py-2.5 px-2 data text-right font-bold text-zinc-900 dark:text-white">{c.enviados}</td>
+                      <td className="py-2.5 px-2 data text-right text-zinc-700 dark:text-zinc-300">{c.abiertos} · {pct(c.tasa_apertura)}</td>
+                      <td className="py-2.5 px-2 data text-right text-zinc-700 dark:text-zinc-300">{c.con_clic} · {pct(c.tasa_clic)}</td>
+                      <td className="py-2.5 px-2 data text-right text-zinc-600 dark:text-zinc-400">{duracion(c.minutos_hasta_abrir)}</td>
+                      <td className="py-2.5 px-2 data text-zinc-600 dark:text-zinc-400">{c.destinos[0] ? `${c.destinos[0].destino} (${c.destinos[0].clics})` : "—"}</td>
+                      <td className="py-2.5 px-2 text-right text-zinc-500 whitespace-nowrap">{haceCuanto(c.ultimo_envio, generado)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Bloque>
+
+          <Bloque titulo="Mails por día" nota="Últimos 30 días, en hora argentina. Cada mail abierto o con clic se cuenta el día de la primera vez.">
+            <GraficoMailsPorDia datos={series.porDia} />
+          </Bloque>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            <Bloque titulo="A qué hora los abren" nota="La primera apertura de cada mail, en hora argentina." className="lg:col-span-2">
+              <GraficoHoras datos={series.porHora} />
+            </Bloque>
+            <Bloque titulo="Cuánto tardan en abrirlo" nota="Desde el envío.">
+              <Ranking filas={m.hasta_abrir.map((h) => ({ nombre: h.tramo, valor: h.mails }))} vacio="Todavía no se abrió ninguno." />
+            </Bloque>
+          </div>
+
+          <Bloque titulo="Qué links tocan" nota="A dónde iba cada link, sin datos de la dirección: la pantalla de Vector o el sitio de afuera. Cada link cuenta una vez por mail.">
+            <Ranking filas={m.destinos.map((d) => ({ nombre: d.destino, valor: d.clics }))} vacio="Todavía nadie tocó un link." />
+          </Bloque>
+
+          <Bloque titulo="Últimos mails" nota="Sin direcciones de mail: cada cuenta se muestra por su @, si lo creó.">
+            <div className="overflow-x-auto -mx-2">
+              <table className="w-full text-sm min-w-[680px]">
+                <thead>
+                  <tr className="text-left text-zinc-500 dark:text-zinc-400">
+                    <th className="font-medium pb-2 px-2">Enviado</th>
+                    <th className="font-medium pb-2 px-2">Mail</th>
+                    <th className="font-medium pb-2 px-2">Cuenta</th>
+                    <th className="font-medium pb-2 px-2">Abierto</th>
+                    <th className="font-medium pb-2 px-2 text-right">Clics</th>
+                    <th className="font-medium pb-2 px-2">Links</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {m.ultimos.map((u, i) => (
+                    <tr key={i} className="border-t border-zinc-100 dark:border-white/5">
+                      <td className="py-2.5 px-2 data text-zinc-700 dark:text-zinc-300 whitespace-nowrap">{momento(u.enviado) ?? "—"}</td>
+                      <td className="py-2.5 px-2 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">{nombreDeMail(u.tipo, u.clave)}</td>
+                      <td className="py-2.5 px-2">{u.arroba ? <span className="font-semibold text-zinc-900 dark:text-white">@{u.arroba}</span> : <span className="text-zinc-400">sin @</span>}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap">
+                        {u.abierto ? <span className="text-emerald-600 dark:text-emerald-400">{momento(u.abierto)}</span> : <span className="text-zinc-400">no</span>}
+                      </td>
+                      <td className="py-2.5 px-2 data text-right font-bold text-zinc-900 dark:text-white">{u.clics}</td>
+                      <td className="py-2.5 px-2 data text-zinc-500">{u.destinos.length ? u.destinos.join(", ") : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Bloque>
+        </>
+      )}
+    </>
   );
 }
 
@@ -229,6 +351,8 @@ export default async function PanelAdmin({ searchParams }: { searchParams: Promi
           </table>
         </div>
       </Bloque>
+
+      {e.mails && <Mails m={e.mails} generado={e.generado} />}
     </div>
   );
 }

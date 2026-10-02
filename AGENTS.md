@@ -40,6 +40,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
 | `src/app/page.tsx`, `src/app/guias/`, `src/components/publico/`, `src/lib/sitio.ts` | Lo público: la landing (Server Component, estática), las guías con sus fuentes, `robots.ts`, `sitemap.ts` y las imágenes para compartir. Una guía nueva se agrega en `GUIAS` y aparece en el sitemap, el índice y el pie. **Todo lo que promete la landing se verifica contra el código**; lo regulatorio de las guías, contra la norma (invariante 6). |
 | `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |
+| `src/lib/mail-plantilla.ts`, `src/lib/mail-envio.ts`, `src/lib/mail-seguimiento.ts`, `src/app/api/mail/`, `src/app/api/cron/` | Los mails: la plantilla con la estética de la landing, el envío **con seguimiento propio** (aperturas y clics, firmados) y los barridos que los mandan. Las imágenes viven en `public/hotlink-ok/correo/` (Cloudflare bloquea el hotlinking fuera de esa carpeta). Todo mail sale por `enviarConSeguimiento`; las métricas se ven en el panel de administración. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
 | `src/lib/api.ts` | `apiFetch`: único camino al backend, con el token de la cookie. Cachea los GET 20 s. |
@@ -205,7 +206,7 @@ antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tam
 cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
 importa es el del backend (`request_max_body_size`, 30 MB).
 
-## Estado y pendientes (al 2026-09-24)
+## Estado y pendientes (al 2026-10-02)
 
 - **Alumno piloto** (Federico, 2026-09-24; `lib/licencias.ts`):
   - no lleva libro de vuelo, así que no ve el PDF, el importador, "cerrar hoja", los
@@ -227,6 +228,11 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   quien tenga al menos un vuelo (`/api/cron/resumen-mensual`, `lib/resumen-mensual.ts`).
   Usa los mismos cálculos del inicio, y la baja se hace con el link firmado del mail
   (`lib/baja-mail.ts`), sólo por POST.
+- **Los mails se miden** (2026-10-02, migración 023 del backend): aperturas con una
+  imagen de 1×1 y clics con una redirección firmada, en `/api/mail/a` y `/api/mail/c`.
+  Son indicios, no certezas, y el panel lo dice. Está en la política de privacidad, y la
+  baja es por tipo de mail (resumen del mes, novedades). El mail de novedades
+  (`/api/cron/novedades?clave=…`) se manda a mano, no está en el crontab.
 - **SEO:** hay guías, sitemap y datos estructurados, y el dominio está verificado en
   Google Search Console (Federico, 2026-09-24). El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice

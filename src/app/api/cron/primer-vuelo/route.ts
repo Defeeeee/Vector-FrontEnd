@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { enviarMail, mailConfigurado } from "@/lib/mailer";
+import { enviarConSeguimiento } from "@/lib/mail-envio";
 import { armarMensajePrimerVuelo } from "@/lib/primer-vuelo-mail";
 import { linkCopiloto } from "@/lib/copiloto";
 
@@ -68,8 +69,10 @@ export async function POST(req: NextRequest) {
       linkCopiloto: linkCopiloto(),
       diasDesdeElAlta: 1,
     });
-    const r = await enviarMail({ para: prueba, ...mensaje });
-    return NextResponse.json({ prueba: true, enviado: r.enviado, motivo: r.motivo ?? null });
+    // Sin cuenta: se mide (para probar que los links y la apertura andan), pero no entra
+    // en las métricas del panel.
+    const r = await enviarConSeguimiento({ para: prueba, userId: null, tipo: "primer-vuelo", mensaje });
+    return NextResponse.json({ prueba: true, enviado: r.enviado, motivo: r.motivo ?? r.aviso ?? null });
   }
 
   const q = new URLSearchParams();
@@ -98,7 +101,8 @@ export async function POST(req: NextRequest) {
       linkCopiloto: linkCopiloto(),
       diasDesdeElAlta: p.dias_desde_el_alta,
     });
-    const r = await enviarMail({ para: p.email, ...mensaje });
+    const r = await enviarConSeguimiento({ para: p.email, userId: p.user_id, tipo: "primer-vuelo", mensaje });
+    if (r.aviso) problemas.push(`${p.user_id}: ${r.aviso}`);
     if (r.enviado) exitosos.push(p.user_id);
     // Sin el mail en el log: el id alcanza para buscarlo.
     else problemas.push(`${p.user_id}: ${r.motivo ?? "no se pudo enviar"}`);

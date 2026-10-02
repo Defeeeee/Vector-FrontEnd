@@ -166,6 +166,18 @@ const ROUTES = [
   // Lo que gasta la cuota de Gemini del proyecto no se toca sin sesión. Hasta el
   // 2026-09-23 el importador de PDF lo hacía: cualquiera podía gastarla.
   { path: "/api/parse-logbook", method: "POST", expect: (s) => s === 401 },
+  /*
+    El seguimiento de los mails (`lib/mail-seguimiento.ts`). La imagen de apertura
+    contesta siempre, con firma o sin ella. Y la redirección de los clics **no puede ser
+    una redirección abierta**: sin una firma válida no va al sitio que le pasan.
+  */
+  { path: "/api/mail/a", expect: (s) => s === 200 },
+  {
+    path: "/api/mail/c?e=0b7f6a3e-2c1d-4e5f-8a9b-1c2d3e4f5a6b&u=https%3A%2F%2Fmalo.example%2Fphishing&f=inventada",
+    expect: (s) => s === 302,
+    location: (l) => !l.includes("malo.example"),
+  },
+  { path: "/api/cron/novedades?clave=smoke", method: "POST", expect: (s) => s === 401 || s === 503 },
   // Un POST sin la firma del mail no da de baja a nadie.
   { path: "/api/mail/baja?u=x&t=y", method: "POST", expect: (s) => s === 400 },
   { path: "/api/chat", method: "POST", body: JSON.stringify({ message: "hola" }), expect: (s) => s === 401 },
@@ -286,6 +298,9 @@ try {
         ...(route.body ? { body: route.body, headers: { "Content-Type": "application/json" } } : {}),
       });
       status = res.status;
+      if (route.location && !route.location(res.headers.get("location") ?? "")) {
+        detail = ` — redirige a donde no debe (${res.headers.get("location")})`;
+      }
       if (route.json) {
         const body = await res.json();
         if (!route.json(body)) detail = ` — el cuerpo no tiene la forma esperada`;

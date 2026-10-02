@@ -46,7 +46,9 @@ export const CARPETA_IMAGENES = "/hotlink-ok/correo";
 /** La imagen por URL absoluta. */
 const imagen = (appUrl: string, nombre: string) => `${appUrl}${CARPETA_IMAGENES}/${nombre}.png`;
 
-export type Icono = "mic" | "file-text" | "pencil-line" | "plane" | "target" | "wallet" | "triangle-alert";
+export type Icono =
+  | "mic" | "file-text" | "pencil-line" | "plane" | "target" | "wallet" | "triangle-alert"
+  | "zap" | "smartphone" | "mail";
 
 /** La etiqueta en mayúsculas espaciadas, como "LO QUE ABRÍS ANTES DE VOLAR". */
 export function etiqueta(texto: string, color = "#71717a"): string {

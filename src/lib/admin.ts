@@ -52,6 +52,40 @@ export interface EstadisticasAdmin {
     whatsapp: boolean;
     vuelos: number;
   }[];
+  /** El seguimiento de los mails (migración 023 del backend). Ver `MailsAdmin`. */
+  mails?: MailsAdmin;
+}
+
+/** Lo que se mide de un grupo de mails. Todo se cuenta por mail enviado, no por evento. */
+export interface MedidasMail {
+  enviados: number;
+  abiertos: number;
+  con_clic: number;
+  tasa_apertura: number;
+  tasa_clic: number;
+  clic_sobre_abiertos: number;
+  /** La mediana de minutos entre el envío y la primera apertura. `null` si nadie abrió. */
+  minutos_hasta_abrir: number | null;
+}
+
+export interface MailsAdmin {
+  totales: MedidasMail;
+  pilotos: { con_mails: number; abrieron_alguno: number; hicieron_clic: number; nunca_abrieron: number };
+  campanas: (MedidasMail & { tipo: string; clave: string | null; ultimo_envio: string | null; destinos: { destino: string; clics: number }[] })[];
+  destinos: { destino: string; clics: number }[];
+  por_dia: { dia: string; enviados: number; abiertos: number; clics: number }[];
+  por_hora: { hora: number; aperturas: number }[];
+  hasta_abrir: { tramo: string; mails: number }[];
+  ultimos: {
+    enviado: string | null;
+    tipo: string;
+    clave: string | null;
+    arroba: string | null;
+    abierto: string | null;
+    aperturas: number;
+    clics: number;
+    destinos: string[];
+  }[];
 }
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -104,6 +138,42 @@ export function numero(n: number, decimales = 0): string {
   const [ent, dec] = n.toFixed(decimales).split(".");
   const conMiles = ent.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return dec ? `${conMiles},${dec}` : conMiles;
+}
+
+const NOMBRES_MAIL: Record<string, string> = {
+  "primer-vuelo": "Recordatorio del alta",
+  "resumen-mensual": "Resumen del mes",
+  briefing: "Briefing del vuelo",
+  novedades: "Novedades",
+};
+
+/** "novedades" + "2026-10" → "Novedades · 2026-10". */
+export function nombreDeMail(tipo: string, clave?: string | null): string {
+  const nombre = NOMBRES_MAIL[tipo] ?? tipo;
+  return clave ? `${nombre} · ${clave}` : nombre;
+}
+
+/** Minutos como se dicen: "25 min", "3 h", "2 días". `null` → "—". */
+export function duracion(minutos: number | null | undefined): string {
+  if (minutos === null || minutos === undefined) return "—";
+  if (minutos < 60) return `${Math.round(minutos)} min`;
+  const h = minutos / 60;
+  if (h < 24) return `${Math.round(h)} h`;
+  const dias = Math.round(h / 24);
+  return dias === 1 ? "1 día" : `${dias} días`;
+}
+
+/** Un porcentaje que ya viene calculado del backend: 66.7 → "66,7 %". */
+export function pct(valor: number): string {
+  return `${String(valor).replace(".", ",")} %`;
+}
+
+/** Las series de mails con la etiqueta escrita: el día "02/10" y la hora "09 h". */
+export function seriesDeMails(m: MailsAdmin) {
+  return {
+    porDia: m.por_dia.map((d) => ({ ...d, etiqueta: diaCorto(d.dia) })),
+    porHora: m.por_hora.map((h) => ({ ...h, etiqueta: `${dos(h.hora)} h` })),
+  };
 }
 
 /** Las series con su etiqueta ya escrita, para que el gráfico no haga cuentas con fechas. */

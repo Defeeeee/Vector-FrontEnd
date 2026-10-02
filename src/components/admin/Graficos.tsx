@@ -119,6 +119,40 @@ export function GraficoVuelosPorMes({ datos }: { datos: { etiqueta: string; hora
   );
 }
 
+/** Mails por día: lo que salió, lo que se abrió y lo que tuvo clic. */
+export function GraficoMailsPorDia({ datos }: { datos: { etiqueta: string; enviados: number; abiertos: number; clics: number }[] }) {
+  const p = usePaleta();
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={datos} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+        <CartesianGrid stroke={p.grilla} vertical={false} />
+        <XAxis dataKey="etiqueta" {...eje(p.texto)} interval={3} />
+        <YAxis allowDecimals={false} {...eje(p.texto)} />
+        <Tooltip {...estiloTooltip(p)} />
+        <Bar dataKey="enviados" name="Enviados" fill={p.tenue} radius={[5, 5, 0, 0]} maxBarSize={14} />
+        <Bar dataKey="abiertos" name="Abiertos" fill={p.principal} radius={[5, 5, 0, 0]} maxBarSize={14} />
+        <Bar dataKey="clics" name="Con clic" fill={p.secundario} radius={[5, 5, 0, 0]} maxBarSize={14} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** A qué hora se abren los mails, en hora argentina. */
+export function GraficoHoras({ datos }: { datos: { etiqueta: string; aperturas: number }[] }) {
+  const p = usePaleta();
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={datos} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+        <CartesianGrid stroke={p.grilla} vertical={false} />
+        <XAxis dataKey="etiqueta" {...eje(p.texto)} interval={2} />
+        <YAxis allowDecimals={false} {...eje(p.texto)} />
+        <Tooltip {...estiloTooltip(p)} />
+        <Bar dataKey="aperturas" name="Mails abiertos" fill={p.principal} radius={[5, 5, 0, 0]} maxBarSize={18} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 /** Licencias, en anillo. */
 export function GraficoLicencias({ datos }: { datos: { licencia: string; cuentas: number }[] }) {
   const p = usePaleta();

@@ -31,7 +31,7 @@ export const metadata: Metadata = {
  */
 export default function PrivacidadPage() {
   return (
-    <LegalShell title="Política de Privacidad" updated="24 de septiembre de 2026">
+    <LegalShell title="Política de Privacidad" updated="2 de octubre de 2026">
       <section>
         <h2>Qué es esto</h2>
         <p>
@@ -70,6 +70,15 @@ export default function PrivacidadPage() {
           <li>
             <strong>Conversaciones con el copiloto:</strong> si lo usás por WhatsApp, se
             guarda el historial de la conversación junto a tu número.
+          </li>
+          <li>
+            <strong>Los mails que te mandamos:</strong> qué mail te llegó y cuándo, si lo
+            abriste y qué links tocaste. Lo medimos nosotros, con una imagen que se carga al
+            abrir el mail y con los links, que pasan por Vector antes de llevarte a destino.
+            De cada link guardamos a dónde iba (la pantalla de Vector o el sitio de afuera),
+            no la dirección completa. Si tu correo bloquea las imágenes, la apertura no se
+            registra; y si preferís que no quede registro de los links, podés copiar la
+            dirección de destino en vez de tocarlos. El link para darte de baja no se mide.
           </li>
         </ul>
       </section>
@@ -173,7 +182,8 @@ export default function PrivacidadPage() {
           </li>
           <li>
             <strong>Resend</strong> — el envío de los mails (el briefing del vuelo, el de
-            bienvenida y el resumen del mes). Implica compartir tu correo y el contenido del
+            bienvenida, el resumen del mes, las novedades y los de tu cuenta: confirmar el
+            mail y recuperar la contraseña). Implica compartir tu correo y el contenido del
             mensaje.
           </li>
           <li>
@@ -203,6 +213,16 @@ export default function PrivacidadPage() {
             aterrizajes, lo que te falta para la próxima licencia, tu saldo y si tu CMA está
             por vencer. Te llega si cargaste al menos un vuelo, y te das de baja con el link
             que trae cada mail.
+          </li>
+          <li>
+            Mandarte por mail, de vez en cuando, las novedades de Vector. Te llegan si tenés
+            una cuenta con el mail confirmado, y te das de baja con el link que trae cada
+            mail. Darte de baja de las novedades no te saca del resumen del mes, ni al revés.
+          </li>
+          <li>
+            Saber si los mails sirven: cuántos se abren y qué links se tocan, para mejorarlos
+            y para detectar si están cayendo en spam. Lo vemos en conjunto y por cuenta, y
+            no lo compartimos con nadie.
           </li>
           <li>Responder tus consultas cuando usás el copiloto.</li>
           <li>Detectar inconsistencias en tu libro (superposiciones, duplicados).</li>

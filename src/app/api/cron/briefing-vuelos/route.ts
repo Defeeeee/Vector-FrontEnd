@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { armarMensaje, type PuntoBriefing } from "@/lib/briefing-mail";
 import { enviarMail, mailConfigurado } from "@/lib/mailer";
+import { enviarConSeguimiento } from "@/lib/mail-envio";
 import { componentesDePista, mejorPista } from "@/lib/briefing";
 import { getAirport } from "@/lib/airports";
 import { parsearRuta, rutaAUrl } from "@/lib/ruta-planificada";
@@ -178,7 +179,8 @@ export async function POST(req: NextRequest) {
       appUrl: APP_URL,
     });
 
-    const r = await enviarMail({ para: p.email, ...mensaje });
+    const r = await enviarConSeguimiento({ para: p.email, userId: p.user_id, tipo: "briefing", clave: p.date, mensaje });
+    if (r.aviso) problemas.push(`${p.planned_id}: ${r.aviso}`);
     if (r.enviado) {
       enviados++;
       exitosos.push(p.planned_id);

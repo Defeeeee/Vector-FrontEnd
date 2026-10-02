@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { enviarMail, mailConfigurado } from "@/lib/mailer";
+import { enviarConSeguimiento } from "@/lib/mail-envio";
 import { armarMensajeResumen, calcularResumen } from "@/lib/resumen-mensual";
 import { linksDeBaja } from "@/lib/baja-mail";
 import { esTravesiaLarga } from "@/lib/travesia-larga";
@@ -105,14 +106,20 @@ export async function POST(req: NextRequest) {
       });
       const baja = linksDeBaja(APP_URL, p.user_id, esperado);
       const mensaje = armarMensajeResumen(resumen, { appUrl: APP_URL, linkBaja: baja.pagina });
-      const r = await enviarMail({
+      const r = await enviarConSeguimiento({
         para: p.email,
-        ...mensaje,
+        userId: p.user_id,
+        tipo: "resumen-mensual",
+        clave: mes,
+        mensaje,
         cabeceras: {
           "List-Unsubscribe": `<${baja.unClick}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
+        // La baja no pasa por la redirección: tiene que andar aunque el seguimiento falle.
+        sinSeguir: [baja.pagina],
       });
+      if (r.aviso) problemas.push(`${p.user_id}: ${r.aviso}`);
       if (r.enviado) exitosos.push(p.user_id);
       // Sin el mail en el log: el id alcanza para buscarlo.
       else problemas.push(`${p.user_id}: ${r.motivo ?? "no se pudo enviar"}`);

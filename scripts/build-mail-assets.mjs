@@ -63,7 +63,7 @@ const archivos = {
   // Los íconos de cada bloque: 40 px en el mail, dibujados a 80.
   ...Object.fromEntries(
     await Promise.all(
-      ["mic", "file-text", "pencil-line", "plane", "target", "wallet", "triangle-alert"].map(async (n) => [
+      ["mic", "file-text", "pencil-line", "plane", "target", "wallet", "triangle-alert", "zap", "smartphone", "mail"].map(async (n) => [
         `${n}.png`,
         await cuadrado(n, { lado: 80, radio: 20, icono: 40 }),
       ])

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaCorto, haceCuanto, mesCorto, momento, numero, porcentaje } from "./admin";
+import { diaCorto, duracion, haceCuanto, mesCorto, momento, nombreDeMail, numero, pct, porcentaje, seriesDeMails, type MailsAdmin } from "./admin";
 
 describe("fechas del panel, en hora argentina", () => {
   it("un alta a las 00:05 UTC del 24 es del 23 a las 21:05", () => {
@@ -44,5 +44,36 @@ describe("números", () => {
     expect(numero(1252)).toBe("1.252");
     expect(numero(150.14, 1)).toBe("150,1");
     expect(numero(9)).toBe("9");
+  });
+});
+
+describe("los mails en el panel", () => {
+  it("nombra cada mail, con su tanda si la tiene", () => {
+    expect(nombreDeMail("novedades", "2026-10")).toBe("Novedades · 2026-10");
+    expect(nombreDeMail("primer-vuelo", null)).toBe("Recordatorio del alta");
+    expect(nombreDeMail("resumen-mensual")).toBe("Resumen del mes");
+    // Un tipo que el panel todavía no conoce se muestra tal cual, no se rompe.
+    expect(nombreDeMail("otro")).toBe("otro");
+  });
+
+  it("dice las demoras como se dicen", () => {
+    expect(duracion(25)).toBe("25 min");
+    expect(duracion(180)).toBe("3 h");
+    expect(duracion(60 * 24)).toBe("1 día");
+    expect(duracion(60 * 50)).toBe("2 días");
+    // Nadie abrió: no hay demora, y no se inventa un cero.
+    expect(duracion(null)).toBe("—");
+  });
+
+  it("escribe los porcentajes del backend con coma", () => {
+    expect(pct(66.7)).toBe("66,7 %");
+    expect(pct(50)).toBe("50 %");
+  });
+
+  it("las series llegan al gráfico con la etiqueta escrita", () => {
+    const m = { por_dia: [{ dia: "2026-10-02", enviados: 3, abiertos: 1, clics: 1 }], por_hora: [{ hora: 9, aperturas: 2 }] } as MailsAdmin;
+    const s = seriesDeMails(m);
+    expect(s.porDia[0].etiqueta).toBe("02/10");
+    expect(s.porHora[0].etiqueta).toBe("09 h");
   });
 });

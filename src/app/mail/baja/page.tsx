@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MailX } from "lucide-react";
-import { firmaValida } from "@/lib/baja-mail";
+import { firmaValida, tipoDeBaja } from "@/lib/baja-mail";
 
-export const metadata: Metadata = { title: "Resumen del mes · Vector", robots: { index: false } };
+export const metadata: Metadata = { title: "Mails de Vector", robots: { index: false } };
 
 /**
  * La página del link "No recibirlo más" del resumen del mes.
@@ -14,20 +14,24 @@ export const metadata: Metadata = { title: "Resumen del mes · Vector", robots: 
 export default async function BajaResumen({
   searchParams,
 }: {
-  searchParams: Promise<{ u?: string; t?: string; hecho?: string }>;
+  searchParams: Promise<{ u?: string; t?: string; m?: string; hecho?: string }>;
 }) {
-  const { u = "", t = "", hecho } = await searchParams;
-  const valido = firmaValida(u, t, process.env.DOCUMENTS_ALERT_SECRET ?? "");
+  const { u = "", t = "", m, hecho } = await searchParams;
+  const tipo = tipoDeBaja(m);
+  const valido = firmaValida(u, t, process.env.DOCUMENTS_ALERT_SECRET ?? "", tipo);
   const accion = (volver: boolean) =>
-    `/api/mail/baja?${new URLSearchParams({ u, t, desde: "pagina", ...(volver ? { volver: "1" } : {}) })}`;
+    `/api/mail/baja?${new URLSearchParams({ u, t, ...(tipo === "resumen" ? {} : { m: tipo }), desde: "pagina", ...(volver ? { volver: "1" } : {}) })}`;
 
-  let titulo = "¿Dejar de recibir el resumen del mes?";
-  let texto = "Es el mail que te llega el día 1 con tus horas, lo que te falta para la próxima licencia y tu saldo. Los avisos de vencimientos y el briefing del vuelo siguen igual.";
+  let titulo = tipo === "novedades" ? "¿Dejar de recibir las novedades?" : "¿Dejar de recibir el resumen del mes?";
+  let texto =
+    tipo === "novedades"
+      ? "Son los mails que te mandamos de vez en cuando con lo nuevo de Vector. El resumen del mes, los avisos de vencimientos y el briefing del vuelo siguen igual."
+      : "Es el mail que te llega el día 1 con tus horas, lo que te falta para la próxima licencia y tu saldo. Los avisos de vencimientos y el briefing del vuelo siguen igual.";
   let boton: { label: string; volver: boolean } | null = { label: "No recibirlo más", volver: false };
 
   if (!valido) {
     titulo = "Este link no es válido";
-    texto = "Puede estar cortado. Abrí el link desde el último mail del resumen.";
+    texto = "Puede estar cortado. Abrí el link desde el último mail que recibiste.";
     boton = null;
   } else if (hecho === "baja") {
     titulo = "Listo, no te lo mandamos más";
@@ -35,7 +39,7 @@ export default async function BajaResumen({
     boton = { label: "Volver a recibirlo", volver: true };
   } else if (hecho === "alta") {
     titulo = "Listo, te lo volvemos a mandar";
-    texto = "Te llega el primer día de cada mes.";
+    texto = tipo === "novedades" ? "Te vuelven a llegar las novedades de Vector." : "Te llega el primer día de cada mes.";
     boton = null;
   } else if (hecho === "error") {
     titulo = "No pudimos guardarlo";
