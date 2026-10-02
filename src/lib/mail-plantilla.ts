@@ -8,7 +8,7 @@
  * **Cómo está hecha, y por qué así:**
  * - Con tablas y estilos en línea. Gmail borra el `<style>` en varios de sus clientes,
  *   y Outlook dibuja con el motor de Word, que no entiende flex ni grid.
- * - Las imágenes son PNG en el dominio público (`public/correo/`, las arma
+ * - Las imágenes son PNG en el dominio público (`public/hotlink-ok/correo/`, las arma
  *   `npm run build:correo`): ningún cliente de correo muestra SVG.
  * - La tipografía es Nunito donde el cliente carga fuentes web (Apple Mail, iOS) y la
  *   del sistema donde no (Gmail).
@@ -30,8 +30,21 @@ export const GRIS = "#52525b";
 export const GRIS_CLARO = "#a1a1aa";
 export const BORDE = "#e4e4e7";
 
-/** La imagen de `public/correo/` por URL absoluta. */
-const imagen = (appUrl: string, nombre: string) => `${appUrl}/correo/${nombre}.png`;
+/**
+ * La carpeta de las imágenes en el dominio público. **Se llama `hotlink-ok` a propósito:**
+ * el dominio está detrás de Cloudflare con la protección contra hotlinking prendida, que
+ * contesta 403 a toda imagen pedida con el `Referer` de otro sitio. Gmail no la sufre
+ * (baja las imágenes con su servidor, sin `Referer`), pero un correo web que las pide
+ * desde el navegador recibía el mail sin logo ni íconos, y mail-tester lo contaba como
+ * cuatro links rotos (2026-10-02). Cloudflare exceptúa lo que está bajo una carpeta con
+ * ese nombre, así que no hace falta tocar la configuración de la cuenta.
+ *
+ * `public/correo/` se queda: los mails ya enviados apuntan ahí.
+ */
+export const CARPETA_IMAGENES = "/hotlink-ok/correo";
+
+/** La imagen por URL absoluta. */
+const imagen = (appUrl: string, nombre: string) => `${appUrl}${CARPETA_IMAGENES}/${nombre}.png`;
 
 export type Icono = "mic" | "file-text" | "pencil-line" | "plane" | "target" | "wallet" | "triangle-alert";
 

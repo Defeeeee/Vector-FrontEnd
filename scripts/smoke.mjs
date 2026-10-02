@@ -62,8 +62,10 @@ const ROUTES = [
   // da de baja a nadie: los filtros de correo abren los links de los mails con GET.
   // Las imágenes de los mails (`npm run build:correo`): los clientes de correo las piden
   // por URL, y sin ellas todos los mails se ven rotos.
+  { path: "/hotlink-ok/correo/logo.png", expect: (s) => s === 200 },
+  { path: "/hotlink-ok/correo/mic.png", expect: (s) => s === 200 },
+  // La carpeta vieja se queda: los mails ya enviados apuntan ahí.
   { path: "/correo/logo.png", expect: (s) => s === 200 },
-  { path: "/correo/mic.png", expect: (s) => s === 200 },
   { path: "/mail/baja", expect: (s) => s === 200 },
   { path: "/api/mail/baja", expect: (s) => s === 405 },
   { path: "/no-existe-esta-ruta", expect: (s) => s === 404 },

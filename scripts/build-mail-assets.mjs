@@ -3,7 +3,7 @@
  *
  * Los clientes de correo no muestran SVG (Gmail lo bloquea), así que el logo de la
  * landing —el cuadrado negro con la brújula de `NavPublica`— y los íconos de Lucide que
- * usa la app se dibujan acá como PNG en `public/correo/`, al doble del tamaño en que se
+ * usa la app se dibujan acá como PNG en `public/hotlink-ok/correo/`, al doble del tamaño en que se
  * muestran, para que se vean nítidos en pantallas retina.
  *
  *   npm run build:correo
@@ -16,7 +16,12 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SALIDA = join(RAIZ, "public", "correo");
+/*
+  Dos carpetas con lo mismo. La que usan los mails es `hotlink-ok/correo`: Cloudflare
+  bloquea el hotlinking de imágenes y exceptúa esa carpeta (ver `CARPETA_IMAGENES` en
+  `src/lib/mail-plantilla.ts`). `correo` se mantiene porque los mails ya enviados apuntan ahí.
+*/
+const SALIDAS = [join(RAIZ, "public", "hotlink-ok", "correo"), join(RAIZ, "public", "correo")];
 const NEGRO = "#18181b";
 
 /** Los nodos de un ícono de Lucide, sacados del paquete que ya usa la app. */
@@ -50,7 +55,7 @@ async function cuadrado(nombre, { lado, radio, icono }) {
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-mkdirSync(SALIDA, { recursive: true });
+for (const dir of SALIDAS) mkdirSync(dir, { recursive: true });
 
 const archivos = {
   // El logo: 36 px en el mail, dibujado a 72.
@@ -67,6 +72,6 @@ const archivos = {
 };
 
 for (const [nombre, png] of Object.entries(archivos)) {
-  writeFileSync(join(SALIDA, nombre), png);
-  console.log(`public/correo/${nombre}  ${png.length} bytes`);
+  for (const dir of SALIDAS) writeFileSync(join(dir, nombre), png);
+  console.log(`${nombre}  ${png.length} bytes`);
 }
