@@ -89,8 +89,8 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
         <h2 className="text-2xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">Mails</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-3xl">
           Medido por Vector, por mail enviado. Una apertura es que el correo pidió la imagen del mail: Gmail la pide al abrirlo y Apple Mail la baja
-          solo, así que sirve para comparar un mail con otro más que como cuenta exacta. Un clic a los pocos segundos del envío suele ser el filtro de
-          un correo corporativo.
+          solo, así que sirve para comparar un mail con otro más que como cuenta exacta. Lo que pasa en el primer minuto después del envío no se
+          cuenta como apertura ni como clic: es el correo, o su antispam, revisando el mail al recibirlo. Va aparte, como automático.
         </p>
       </div>
 
@@ -106,12 +106,12 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
             <Dato titulo="Abrieron alguno" valor={numero(m.pilotos.abrieron_alguno)} nota={`${porcentaje(m.pilotos.abrieron_alguno, m.pilotos.con_mails)} de los pilotos con mails`} />
             <Dato titulo="Hicieron clic" valor={numero(m.pilotos.hicieron_clic)} nota={`${porcentaje(m.pilotos.hicieron_clic, m.pilotos.con_mails)} de los pilotos con mails`} />
             <Dato titulo="Nunca abrieron" valor={numero(m.pilotos.nunca_abrieron)} nota="ningún mail: puede ser spam, o imágenes bloqueadas" />
-            <Dato titulo="Tipos de mail" valor={numero(m.campanas.length)} nota="con al menos un envío" />
+            <Dato titulo="Automáticos" valor={numero(t.automaticos ?? 0)} nota="mails que tocó una máquina en el primer minuto" />
           </div>
 
           <Bloque titulo="Por mail" nota="Cada tanda por separado, de la más nueva a la más vieja.">
             <div className="overflow-x-auto -mx-2">
-              <table className="w-full text-sm min-w-[860px]">
+              <table className="w-full text-sm min-w-[940px]">
                 <thead>
                   <tr className="text-left text-zinc-500 dark:text-zinc-400">
                     <th className="font-medium pb-2 px-2">Mail</th>
@@ -119,6 +119,7 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
                     <th className="font-medium pb-2 px-2 text-right">Abiertos</th>
                     <th className="font-medium pb-2 px-2 text-right">Con clic</th>
                     <th className="font-medium pb-2 px-2 text-right">Hasta abrirlo</th>
+                    <th className="font-medium pb-2 px-2 text-right">Automáticos</th>
                     <th className="font-medium pb-2 px-2">Link más tocado</th>
                     <th className="font-medium pb-2 px-2 text-right">Último envío</th>
                   </tr>
@@ -131,6 +132,7 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
                       <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">{c.abiertos} · {pct(c.tasa_apertura)}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">{c.con_clic} · {pct(c.tasa_clic)}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-600 dark:text-zinc-400">{duracion(c.minutos_hasta_abrir)}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-500">{c.automaticos ?? 0}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap text-zinc-600 dark:text-zinc-400">{c.destinos[0] ? `${c.destinos[0].destino} (${c.destinos[0].clics})` : "—"}</td>
                       <td className="py-2.5 px-2 text-right text-zinc-500 whitespace-nowrap">{haceCuanto(c.ultimo_envio, generado)}</td>
                     </tr>

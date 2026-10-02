@@ -66,6 +66,11 @@ export interface MedidasMail {
   clic_sobre_abiertos: number;
   /** La mediana de minutos entre el envío y la primera apertura. `null` si nadie abrió. */
   minutos_hasta_abrir: number | null;
+  /**
+   * Mails que una máquina tocó en el primer minuto (el correo bajando las imágenes al
+   * recibirlo). No cuentan como abiertos ni como clic: ver `services/mails.py`.
+   */
+  automaticos?: number;
 }
 
 export interface MailsAdmin {
