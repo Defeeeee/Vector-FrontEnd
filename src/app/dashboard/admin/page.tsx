@@ -111,7 +111,7 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
 
           <Bloque titulo="Por mail" nota="Cada tanda por separado, de la más nueva a la más vieja.">
             <div className="overflow-x-auto -mx-2">
-              <table className="w-full text-sm min-w-[720px]">
+              <table className="w-full text-sm min-w-[860px]">
                 <thead>
                   <tr className="text-left text-zinc-500 dark:text-zinc-400">
                     <th className="font-medium pb-2 px-2">Mail</th>
@@ -128,10 +128,10 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
                     <tr key={`${c.tipo}|${c.clave ?? ""}`} className="border-t border-zinc-100 dark:border-white/5">
                       <td className="py-2.5 px-2 font-semibold text-zinc-900 dark:text-white whitespace-nowrap">{nombreDeMail(c.tipo, c.clave)}</td>
                       <td className="py-2.5 px-2 data text-right font-bold text-zinc-900 dark:text-white">{c.enviados}</td>
-                      <td className="py-2.5 px-2 data text-right text-zinc-700 dark:text-zinc-300">{c.abiertos} · {pct(c.tasa_apertura)}</td>
-                      <td className="py-2.5 px-2 data text-right text-zinc-700 dark:text-zinc-300">{c.con_clic} · {pct(c.tasa_clic)}</td>
-                      <td className="py-2.5 px-2 data text-right text-zinc-600 dark:text-zinc-400">{duracion(c.minutos_hasta_abrir)}</td>
-                      <td className="py-2.5 px-2 data text-zinc-600 dark:text-zinc-400">{c.destinos[0] ? `${c.destinos[0].destino} (${c.destinos[0].clics})` : "—"}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">{c.abiertos} · {pct(c.tasa_apertura)}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">{c.con_clic} · {pct(c.tasa_clic)}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-600 dark:text-zinc-400">{duracion(c.minutos_hasta_abrir)}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap text-zinc-600 dark:text-zinc-400">{c.destinos[0] ? `${c.destinos[0].destino} (${c.destinos[0].clics})` : "—"}</td>
                       <td className="py-2.5 px-2 text-right text-zinc-500 whitespace-nowrap">{haceCuanto(c.ultimo_envio, generado)}</td>
                     </tr>
                   ))}
