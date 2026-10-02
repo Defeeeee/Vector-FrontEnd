@@ -88,9 +88,10 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
       <div className="pt-6">
         <h2 className="text-2xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">Mails</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-3xl">
-          Medido por Vector, por mail enviado. Una apertura es que el correo pidió la imagen del mail: Gmail la pide al abrirlo y Apple Mail la baja
-          solo, así que sirve para comparar un mail con otro más que como cuenta exacta. Lo que pasa en el primer minuto después del envío no se
-          cuenta como apertura ni como clic: es el correo, o su antispam, revisando el mail al recibirlo. Va aparte, como automático.
+          Medido por Vector, por mail enviado. <strong>Abierto</strong> es que el correo pidió la imagen del mail pasado el primer minuto.{" "}
+          <strong>Al instante</strong> es que la pidió en el primer minuto y nunca más: puede ser el correo revisando el mail al recibirlo, o
+          alguien que lo abrió enseguida. En Gmail, además, si la imagen ya se bajó al instante, abrirlo más tarde no se nota. Por eso es un estado
+          aparte y no se suma a ninguno de los dos lados. <strong>El clic es lo más confiable</strong>: pasa siempre por Vector.
         </p>
       </div>
 
@@ -100,13 +101,13 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Dato titulo="Enviados" valor={numero(t.enviados)} nota={`a ${m.pilotos.con_mails} ${m.pilotos.con_mails === 1 ? "piloto" : "pilotos"}`} />
-            <Dato titulo="Abiertos" valor={pct(t.tasa_apertura)} nota={`${t.abiertos} de ${t.enviados} mails`} />
+            <Dato titulo="Abiertos" valor={pct(t.tasa_apertura)} nota={`${t.abiertos} de ${t.enviados} mails, con certeza`} />
             <Dato titulo="Con clic" valor={pct(t.tasa_clic)} nota={`${t.con_clic} mails · ${pct(t.clic_sobre_abiertos)} de los abiertos`} />
             <Dato titulo="Hasta abrirlo" valor={duracion(t.minutos_hasta_abrir)} nota="la mediana, desde el envío" />
             <Dato titulo="Abrieron alguno" valor={numero(m.pilotos.abrieron_alguno)} nota={`${porcentaje(m.pilotos.abrieron_alguno, m.pilotos.con_mails)} de los pilotos con mails`} />
             <Dato titulo="Hicieron clic" valor={numero(m.pilotos.hicieron_clic)} nota={`${porcentaje(m.pilotos.hicieron_clic, m.pilotos.con_mails)} de los pilotos con mails`} />
-            <Dato titulo="Nunca abrieron" valor={numero(m.pilotos.nunca_abrieron)} nota="ningún mail: puede ser spam, o imágenes bloqueadas" />
-            <Dato titulo="Automáticos" valor={numero(t.automaticos ?? 0)} nota="mails que tocó una máquina en el primer minuto" />
+            <Dato titulo="Al instante" valor={numero(t.al_instante ?? 0)} nota={`mails con señal sólo en el primer minuto · con ellos, ${porcentaje(t.abiertos + (t.al_instante ?? 0), t.enviados)}`} />
+            <Dato titulo="Sin señales" valor={numero(t.sin_senales ?? 0)} nota={`mails · ${m.pilotos.nunca_abrieron} ${m.pilotos.nunca_abrieron === 1 ? "piloto" : "pilotos"} sin ninguna: spam, o imágenes bloqueadas`} />
           </div>
 
           <Bloque titulo="Por mail" nota="Cada tanda por separado, de la más nueva a la más vieja.">
@@ -119,7 +120,7 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
                     <th className="font-medium pb-2 px-2 text-right">Abiertos</th>
                     <th className="font-medium pb-2 px-2 text-right">Con clic</th>
                     <th className="font-medium pb-2 px-2 text-right">Hasta abrirlo</th>
-                    <th className="font-medium pb-2 px-2 text-right">Automáticos</th>
+                    <th className="font-medium pb-2 px-2 text-right">Al instante</th>
                     <th className="font-medium pb-2 px-2">Link más tocado</th>
                     <th className="font-medium pb-2 px-2 text-right">Último envío</th>
                   </tr>
@@ -132,7 +133,7 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
                       <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">{c.abiertos} · {pct(c.tasa_apertura)}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">{c.con_clic} · {pct(c.tasa_clic)}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-600 dark:text-zinc-400">{duracion(c.minutos_hasta_abrir)}</td>
-                      <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-500">{c.automaticos ?? 0}</td>
+                      <td className="py-2.5 px-2 data whitespace-nowrap text-right text-zinc-500">{c.al_instante ?? 0}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap text-zinc-600 dark:text-zinc-400">{c.destinos[0] ? `${c.destinos[0].destino} (${c.destinos[0].clics})` : "—"}</td>
                       <td className="py-2.5 px-2 text-right text-zinc-500 whitespace-nowrap">{haceCuanto(c.ultimo_envio, generado)}</td>
                     </tr>
@@ -179,7 +180,13 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
                       <td className="py-2.5 px-2 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">{nombreDeMail(u.tipo, u.clave)}</td>
                       <td className="py-2.5 px-2">{u.arroba ? <span className="font-semibold text-zinc-900 dark:text-white">@{u.arroba}</span> : <span className="text-zinc-400">sin @</span>}</td>
                       <td className="py-2.5 px-2 data whitespace-nowrap">
-                        {u.abierto ? <span className="text-emerald-600 dark:text-emerald-400">{momento(u.abierto)}</span> : <span className="text-zinc-400">no</span>}
+                        {u.abierto ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">{momento(u.abierto)}</span>
+                        ) : u.al_instante ? (
+                          <span className="text-amber-600 dark:text-amber-400">al instante</span>
+                        ) : (
+                          <span className="text-zinc-400">sin señales</span>
+                        )}
                       </td>
                       <td className="py-2.5 px-2 data text-right font-bold text-zinc-900 dark:text-white">{u.clics}</td>
                       <td className="py-2.5 px-2 data text-zinc-500">{u.destinos.length ? u.destinos.join(", ") : "—"}</td>

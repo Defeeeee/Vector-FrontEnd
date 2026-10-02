@@ -15,9 +15,10 @@
  * **Qué no mide, y el panel lo dice:** una apertura no prueba lectura (Apple Mail baja las
  * imágenes solo; Gmail las pide al abrir) y un clic puede ser el filtro de un correo
  * corporativo. Son indicios para comparar un mail con otro.
- * En la primera tanda de novedades, 5 de 15 mails pidieron la imagen entre 6 y 21 segundos
- * después de salir: por eso el backend cuenta aparte, como automático, todo lo que pasa en
- * el primer minuto (`services/mails.py`). Acá se anota todo; el corte es al contar.
+ * En la primera tanda de novedades, 6 de 15 mails pidieron la imagen en el primer minuto y
+ * nunca más, incluido el de Federico, que sí lo abrió: en Gmail, si la imagen ya se bajó,
+ * la apertura de más tarde no se ve. Por eso el backend cuenta eso como un tercer estado,
+ * "al instante" (`services/mails.py`). Acá se anota todo; el corte es al contar.
  *
  * **Lo que se guarda de un clic es a dónde iba, sin query string:** la ruta de Vector o
  * el dominio de afuera (`destinoDe`). El link de la baja no se mide.

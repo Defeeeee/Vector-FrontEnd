@@ -67,15 +67,18 @@ export interface MedidasMail {
   /** La mediana de minutos entre el envío y la primera apertura. `null` si nadie abrió. */
   minutos_hasta_abrir: number | null;
   /**
-   * Mails que una máquina tocó en el primer minuto (el correo bajando las imágenes al
-   * recibirlo). No cuentan como abiertos ni como clic: ver `services/mails.py`.
+   * Mails cuya única señal fue en el primer minuto después del envío. Es dudoso: puede
+   * ser el correo bajando las imágenes al recibirlo, o alguien que lo abrió al toque (y
+   * en Gmail, la apertura de más tarde ya no se ve). Ver `services/mails.py` del backend.
    */
-  automaticos?: number;
+  al_instante?: number;
+  /** Mails sin ninguna señal: ni abiertos, ni al instante. */
+  sin_senales?: number;
 }
 
 export interface MailsAdmin {
   totales: MedidasMail;
-  pilotos: { con_mails: number; abrieron_alguno: number; hicieron_clic: number; nunca_abrieron: number };
+  pilotos: { con_mails: number; abrieron_alguno: number; hicieron_clic: number; solo_al_instante?: number; nunca_abrieron: number };
   campanas: (MedidasMail & { tipo: string; clave: string | null; ultimo_envio: string | null; destinos: { destino: string; clics: number }[] })[];
   destinos: { destino: string; clics: number }[];
   por_dia: { dia: string; enviados: number; abiertos: number; clics: number }[];
@@ -87,6 +90,8 @@ export interface MailsAdmin {
     clave: string | null;
     arroba: string | null;
     abierto: string | null;
+    /** Sólo tuvo una señal en el primer minuto: dudoso. */
+    al_instante?: boolean;
     aperturas: number;
     clics: number;
     destinos: string[];
