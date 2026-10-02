@@ -88,7 +88,8 @@ function Mails({ m, generado }: { m: MailsAdmin; generado: string }) {
       <div className="pt-6">
         <h2 className="text-2xl font-display font-bold text-zinc-900 dark:text-white tracking-tight">Mails</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-3xl">
-          Medido por Vector, por mail enviado. <strong>Abierto</strong> es que el correo pidió la imagen del mail pasado el primer minuto.{" "}
+          Medido por Vector, por mail enviado. <strong>Abierto</strong> es que el correo pidió la imagen del mail pasado el primer minuto, o que alguien tocó un
+          link.{" "}
           <strong>Al instante</strong> es que la pidió en el primer minuto y nunca más: puede ser el correo revisando el mail al recibirlo, o
           alguien que lo abrió enseguida. En Gmail, además, si la imagen ya se bajó al instante, abrirlo más tarde no se nota. Por eso es un estado
           aparte y no se suma a ninguno de los dos lados. <strong>El clic es lo más confiable</strong>: pasa siempre por Vector.
