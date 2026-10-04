@@ -51,6 +51,22 @@ jobs:
 
             cd ~/Vector-FrontEnd
 
+            # **Lugar en disco antes de tocar nada.** El 2026-10-03 el VPS llegó a
+            # 1,4 GB libres de 45. El deploy borra `node_modules` (~790 MB) y `.next`
+            # antes de rehacerlos, y baja de nuevo lo que falte en el caché de npm:
+            # un build que se queda sin disco deja a Vector sin `.next`. Con menos de
+            # 2 GB no se despliega y el sitio sigue con el commit que tiene.
+            LIBRE_MB=$(df -Pm . | awk 'NR==2 {print $4}')
+            # Un valor que no es número haría fallar el `[ -lt ]` adentro del `if`, y
+            # el deploy seguiría como si hubiera lugar.
+            case "$LIBRE_MB" in
+              ''|*[!0-9]*) echo "No pude leer el espacio libre ('$LIBRE_MB'): no despliego."; exit 1 ;;
+            esac
+            if [ "$LIBRE_MB" -lt 2048 ]; then
+              echo "Sólo ${LIBRE_MB} MB libres en el VPS: no despliego (pido 2048)."
+              exit 1
+            fi
+
             ANTERIOR=$(git rev-parse HEAD)
             git fetch origin main
             # El commit que el CI aprobó, no "lo último de main": si entró otro push
@@ -67,9 +83,25 @@ jobs:
             # porque el `git pull` decía "Already up to date" y el build decía
             # "Compiled successfully".
             #
-            # Deja el sitio sin archivos ~15 s. Es el precio de un deploy simple.
+            # Deja el sitio sin archivos mientras construye (~40 s en el deploy del
+            # 2026-10-02). Es el precio de un deploy simple.
+            #
+            # Si falla el build o el health check, vuelve al commit anterior. Antes sólo
+            # volvía por el health check: un build roto cortaba el script por el
+            # `set -e` justo después del `rm -rf .next`, y Vector quedaba sin `.next`.
+            volver() {
+              echo "Volviendo a $ANTERIOR"
+              git reset --hard "$ANTERIOR"
+              rm -rf .next && npm run build
+              pm2 restart vector-frontend --update-env
+              exit 1
+            }
+
             rm -rf .next
-            npm run build
+            if ! npm run build; then
+              echo "El build falló."
+              volver
+            fi
 
             pm2 restart vector-frontend --update-env
 
@@ -89,8 +121,5 @@ jobs:
               sleep 1
             done
 
-            echo "El health check falló. Volviendo a $ANTERIOR"
-            git reset --hard "$ANTERIOR"
-            rm -rf .next && npm run build
-            pm2 restart vector-frontend --update-env
-            exit 1
+            echo "El health check falló."
+            volver

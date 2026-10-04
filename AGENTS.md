@@ -187,11 +187,17 @@ Sin credenciales, y sin tocar producción: un backend falso local y una cookie c
 
 **Se despliega pusheando a `main`, y sólo si el CI pasa.** `ci.yml` corre `tsc`, tests,
 build y smoke con sesión; cuando termina en verde, `.github/workflows/deploy.yml`
-(`workflow_run`) entra por SSH al VPS, hace `git reset --hard` **al commit que aprobó el
-CI**, `npm ci`, borra `.next`, construye, reinicia con
-`pm2 restart vector-frontend --update-env` y **vuelve solo al commit anterior** si el
-health check falla. No copiar archivos ni reiniciar PM2 a mano. Para desplegar sin
-esperar al CI está el botón de `workflow_dispatch`.
+(`workflow_run`) entra por SSH al VPS, **no sigue si hay menos de 2 GB libres**, hace
+`git reset --hard` **al commit que aprobó el CI**, `npm ci`, borra `.next`, construye,
+reinicia con `pm2 restart vector-frontend --update-env` y **vuelve solo al commit
+anterior** si fallan el build o el health check. No copiar archivos ni reiniciar PM2 a
+mano. Para desplegar sin esperar al CI está el botón de `workflow_dispatch`.
+
+**El disco del VPS es chico** (45 GB, compartido con ~40 contenedores de Coolify y 17 apps
+de PM2): el 2026-10-03 quedaban 1,4 GB. Lo mantienen a raya journald con tope de 300 MB,
+pm2-logrotate (10 MB, 3 copias) y `/etc/cron.weekly/disk-prune` (caché de npm e
+imágenes de Docker sin tag; **nunca volúmenes**). Docker ya limitaba sus logs en
+`daemon.json`. Antes de borrar algo más, `df -h /` y la entrada del 2026-10-04.
 
 Hasta el 2026-09-22 el deploy corría en cada push sin mirar el CI, y así llegaron once
 commits en rojo a producción. El health check pega a `/api/airports/search`, que lee los
@@ -206,7 +212,7 @@ antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tam
 cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
 importa es el del backend (`request_max_body_size`, 30 MB).
 
-## Estado y pendientes (al 2026-10-02)
+## Estado y pendientes (al 2026-10-04)
 
 - **Alumno piloto** (Federico, 2026-09-24; `lib/licencias.ts`):
   - no lleva libro de vuelo, así que no ve el PDF, el importador, "cerrar hoja", los
