@@ -1,0 +1,271 @@
+<!doctype html>
+<!--
+  Las piezas de marketing de Vector: el anuncio de Meta y el carrusel para publicar.
+
+  Cada pieza es una mesa de trabajo del tamaño exacto que pide Meta. `marketing/render.mjs`
+  abre este archivo con `?p=<pieza>` en Chrome y la exporta a PNG en `marketing/salida/`.
+
+  Lo que se muestra de la app es la app: las etiquetas del tracker son las de
+  `lib/ppa-progress.ts`, y los números de la tarjeta "Hoy" son los de la landing. Todo lo
+  que dicen las piezas se verificó contra el código, como la landing. No dicen "gratis" ni
+  "oficial".
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #f6f6f7; --tinta: #18181b; --gris: #52525b; --gris2: #71717a; --gris3: #a1a1aa;
+    --borde: #e4e4e7; --azul: #2563eb; --cian: #38bdf8; --verde: #10b981;
+    --fuente: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--fondo); }
+  body { font-family: var(--fuente); color: var(--tinta); -webkit-font-smoothing: antialiased; }
+  .pieza { display: none; position: relative; overflow: hidden; background: var(--fondo); }
+  .pieza.activa { display: flex; flex-direction: column; }
+  .pieza::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 600px at 85% 8%, rgba(37, 99, 235, .10), transparent 60%),
+      radial-gradient(700px 500px at 0% 100%, rgba(56, 189, 248, .08), transparent 60%);
+  }
+  .pieza > * { position: relative; }
+
+  /* --- la marca --- */
+  .marca { display: flex; align-items: center; gap: 18px; }
+  .logo { width: 72px; height: 72px; border-radius: 20px; background: var(--tinta); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(24,24,27,.18); }
+  .logo svg { width: 40px; height: 40px; }
+  .marca b { font-size: 40px; font-weight: 800; letter-spacing: -.02em; }
+  .pildora { display: inline-flex; align-items: center; gap: 12px; border: 2px solid var(--borde); background: rgba(255,255,255,.8); border-radius: 999px; padding: 12px 24px; font-size: 26px; color: var(--gris); font-weight: 600; }
+  .pildora i { width: 12px; height: 12px; border-radius: 50%; background: var(--azul); display: inline-block; }
+  h1 { font-size: 104px; line-height: 1.0; font-weight: 900; letter-spacing: -.035em; }
+  h1 span, .azul { color: var(--azul); }
+  .bajada { font-size: 36px; line-height: 1.4; color: var(--gris); font-weight: 600; }
+  .etiqueta { font-family: var(--mono); font-size: 22px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gris2); }
+  .pie { display: flex; align-items: center; justify-content: space-between; }
+  .boton { background: var(--tinta); color: #fff; border-radius: 22px; padding: 28px 40px; font-size: 34px; font-weight: 800; display: inline-flex; align-items: center; gap: 16px; }
+  .dominio { font-family: var(--mono); font-size: 26px; color: var(--gris2); font-weight: 600; }
+
+  /* --- el tracker de la PPA, como en la app (PPATracker.tsx) --- */
+  .tracker { background: var(--tinta); color: #fff; border-radius: 44px; padding: 44px 48px; box-shadow: 0 30px 80px rgba(24,24,27,.28); }
+  .tracker .cab { display: flex; justify-content: space-between; align-items: flex-end; }
+  .tracker .mini { font-family: var(--mono); font-size: 18px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+  .tracker .grande { font-family: var(--mono); font-size: 84px; font-weight: 700; line-height: 1; margin-top: 14px; }
+  .tracker .grande small { font-size: 32px; color: rgba(255,255,255,.5); font-weight: 600; margin-left: 8px; }
+  .tracker .nota { font-size: 20px; color: rgba(255,255,255,.5); margin-top: 12px; }
+  .reqs { margin-top: 34px; display: flex; flex-direction: column; gap: 22px; }
+  .req .fila { display: flex; justify-content: space-between; font-size: 26px; font-weight: 700; }
+  .req .fila em { font-style: normal; font-family: var(--mono); font-weight: 600; color: rgba(255,255,255,.7); }
+  .req.listo .fila em { color: #34d399; }
+  .req .barra { height: 10px; border-radius: 10px; background: rgba(255,255,255,.1); margin-top: 10px; overflow: hidden; }
+  .req .barra div { height: 100%; border-radius: 10px; background: var(--cian); }
+  .req.listo .barra div { background: #34d399; }
+  .chk { color: #34d399; margin-right: 8px; }
+  .tracker.compacto { padding: 34px 40px; border-radius: 38px; }
+  .tracker.compacto .grande { font-size: 64px; margin-top: 10px; }
+  .tracker.compacto .nota { margin-top: 8px; }
+  .tracker.compacto .reqs { margin-top: 24px; gap: 15px; }
+  .tracker.compacto .req .fila { font-size: 23px; }
+  .tracker.compacto .req .barra { height: 8px; margin-top: 8px; }
+  .logo.grande { width: 150px; height: 150px; border-radius: 40px; }
+  .logo.grande svg { width: 84px; height: 84px; }
+  .burbuja-audio { align-self: flex-start; background: #d9fdd3; border-radius: 30px; border-top-right-radius: 10px; padding: 26px 30px; box-shadow: 0 20px 50px rgba(24,24,27,.12); }
+  .burbuja-audio .audio { min-width: 640px; }
+  .burbuja-audio .audio .play { width: 64px; height: 64px; }
+  .burbuja-audio .audio .onda { height: 56px; }
+  .burbuja-audio .hora { display: block; text-align: right; font-size: 20px; color: var(--gris3); margin-top: 8px; }
+
+  /* --- la tarjeta "Hoy" de la landing --- */
+  .hoy { background: #fff; border: 2px solid var(--borde); border-radius: 44px; padding: 36px; box-shadow: 0 30px 80px rgba(24,24,27,.10); }
+  .hoy .top { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 20px; letter-spacing: .14em; text-transform: uppercase; color: var(--gris2); font-weight: 600; }
+  .hoy .top span:last-child { letter-spacing: 0; text-transform: none; color: var(--gris3); }
+  .ok { margin-top: 22px; display: flex; gap: 22px; align-items: center; background: #ecfdf5; border: 2px solid #a7f3d0; border-radius: 26px; padding: 24px; }
+  .ok .tilde { width: 56px; height: 56px; border-radius: 16px; background: var(--verde); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 900; flex: none; }
+  .ok b { font-size: 30px; display: block; }
+  .ok span { font-size: 22px; color: var(--gris); }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .caja { border-radius: 26px; padding: 26px; }
+  .caja.negra { background: var(--tinta); color: #fff; }
+  .caja.clara { background: #fafafa; border: 2px solid var(--borde); }
+  .caja .mini { font-family: var(--mono); font-size: 16px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gris3); }
+  .caja.clara .mini { color: var(--gris2); }
+  .caja .num { font-family: var(--mono); font-size: 50px; font-weight: 700; margin-top: 10px; }
+  .caja .sub { font-size: 20px; color: var(--gris3); margin-top: 6px; }
+  .caja.clara .sub { color: var(--gris2); }
+  .caja .barra { height: 8px; border-radius: 8px; margin-top: 18px; overflow: hidden; }
+  .caja.negra .barra { background: #3f3f46; } .caja.negra .barra div { background: var(--cian); height: 100%; }
+  .caja.clara .barra { background: var(--borde); } .caja.clara .barra div { background: var(--tinta); height: 100%; }
+
+  /* --- el chat con el copiloto --- */
+  .chat { background: #efeae2; border-radius: 44px; overflow: hidden; border: 2px solid var(--borde); box-shadow: 0 30px 80px rgba(24,24,27,.14); }
+  .chat .barra-chat { background: #fff; display: flex; align-items: center; gap: 18px; padding: 24px 30px; border-bottom: 2px solid var(--borde); }
+  .chat .barra-chat .logo { width: 60px; height: 60px; border-radius: 18px; box-shadow: none; }
+  .chat .barra-chat .logo svg { width: 32px; height: 32px; }
+  .chat .barra-chat b { font-size: 28px; display: block; }
+  .chat .barra-chat span { font-size: 20px; color: var(--gris2); }
+  .mensajes { padding: 30px; display: flex; flex-direction: column; gap: 18px; }
+  .msj { max-width: 82%; border-radius: 26px; padding: 20px 24px; font-size: 26px; line-height: 1.4; box-shadow: 0 2px 4px rgba(0,0,0,.06); }
+  .msj.yo { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 8px; }
+  .msj.el { align-self: flex-start; background: #fff; border-top-left-radius: 8px; }
+  .msj .hora { display: block; text-align: right; font-size: 17px; color: var(--gris3); margin-top: 6px; }
+  .audio { display: flex; align-items: center; gap: 18px; min-width: 420px; }
+  .audio .play { width: 52px; height: 52px; border-radius: 50%; background: #25a35a; display: flex; align-items: center; justify-content: center; flex: none; }
+  .audio .onda { display: flex; align-items: center; gap: 5px; flex: 1; height: 44px; }
+  .audio .onda i { width: 6px; border-radius: 4px; background: #6b8f7a; display: block; }
+  .audio .dur { font-family: var(--mono); font-size: 20px; color: var(--gris2); }
+  .resumen { font-family: var(--mono); font-size: 22px; line-height: 1.6; background: #f4f4f5; border-radius: 16px; padding: 16px 20px; margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<!-- ======================================================================
+     EL ANUNCIO — "¿Cuánto te falta para la PPA?"
+     ====================================================================== -->
+
+<!-- Feed 4:5 -->
+<section class="pieza" id="anuncio-4x5" style="width:1080px;height:1350px;padding:64px 80px 60px;gap:34px">
+  <div class="marca">%%LOGO%%<b>Vector</b></div>
+  <div><span class="pildora"><i></i>Para alumnos y pilotos en Argentina</span></div>
+  <h1 style="font-size:92px">¿Cuánto te falta<br><span>para la PPA?</span></h1>
+  %%TRACKER_COMPACTO%%
+  <div class="pie" style="margin-top:auto">
+    <span class="boton" style="font-size:30px;padding:24px 36px">Empezá tu bitácora →</span>
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+  </div>
+</section>
+
+<!-- Feed 1:1 -->
+<section class="pieza" id="anuncio-1x1" style="width:1080px;height:1080px;padding:64px 72px;flex-direction:row !important;gap:48px">
+  <div style="flex:1;display:flex;flex-direction:column;gap:34px">
+    <div class="marca">%%LOGO%%<b>Vector</b></div>
+    <h1 style="font-size:84px">¿Cuánto<br>te falta<br><span>para la<br>PPA?</span></h1>
+    <p class="bajada" style="font-size:30px">Requisito por requisito, con la RAAC 61 en la mano.</p>
+    <div style="margin-top:auto"><span class="boton" style="font-size:28px;padding:24px 32px">Empezá tu bitácora →</span></div>
+  </div>
+  <div style="width:520px;display:flex;align-items:center">%%TRACKER_CHICO%%</div>
+</section>
+
+<!-- Historias y reels 9:16 (las franjas de arriba y abajo quedan libres para la interfaz de Meta) -->
+<section class="pieza" id="anuncio-9x16" style="width:1080px;height:1920px;padding:250px 80px 340px;gap:44px">
+  <!-- Sin botón propio: abajo va el de Meta, con el texto del anuncio. -->
+  <div class="marca">%%LOGO%%<b>Vector</b></div>
+  <h1 style="font-size:112px">¿Cuánto<br>te falta<br><span>para la PPA?</span></h1>
+  <p class="bajada">Doble mando, vuelo solo, travesía y nocturno: Vector te lo dice requisito por requisito.</p>
+  %%TRACKER_COMPACTO%%
+</section>
+
+<!-- ======================================================================
+     LA PUBLICACIÓN — carrusel "Cargá un vuelo con un audio"
+     ====================================================================== -->
+
+<section class="pieza" id="carrusel-1" style="width:1080px;height:1350px;padding:80px;gap:52px">
+  <div class="marca">%%LOGO%%<b>Vector</b></div>
+  <h1 style="font-size:124px;margin-top:40px">¿Volaste hoy?<br><span>Cargalo con<br>un audio.</span></h1>
+  <p class="bajada" style="font-size:40px;max-width:820px">Le contás el vuelo al copiloto por WhatsApp al bajar del avión, y queda en tu bitácora.</p>
+  <div class="burbuja-audio" style="margin-top:20px">
+    <div class="audio">
+      <span class="play"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="#fff"/></svg></span>
+      <span class="onda">%%ONDA%%</span>
+      <span class="dur">0:14</span>
+    </div>
+    <span class="hora">17:42 ✓✓</span>
+  </div>
+  <div class="pie" style="margin-top:auto">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<section class="pieza" id="carrusel-2" style="width:1080px;height:1350px;padding:72px 80px;gap:36px">
+  <span class="etiqueta">1 · Le contás el vuelo</span>
+  <h1 style="font-size:72px">Te muestra el resumen<br><span>y lo carga cuando confirmás.</span></h1>
+  <div class="chat">
+    <div class="barra-chat">%%LOGO%%<div><b>Copiloto de Vector</b><span>en WhatsApp</span></div></div>
+    <div class="mensajes">
+      <div class="msj yo">
+        <div class="audio">
+          <span class="play"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="#fff"/></svg></span>
+          <span class="onda">%%ONDA%%</span>
+          <span class="dur">0:14</span>
+        </div>
+        <span class="hora">17:42</span>
+      </div>
+      <div class="msj el">
+        Tengo esto. ¿Lo cargo?
+        <div class="resumen">06/10 · LV-ABC<br>SADF → SADM · 1,2 h<br>2 aterrizajes · instrucción</div>
+        <span class="hora">17:42</span>
+      </div>
+      <div class="msj yo">Sí, dale<span class="hora">17:43</span></div>
+      <div class="msj el">Listo, quedó en tu bitácora ✈️<span class="hora">17:43</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="pieza" id="carrusel-3" style="width:1080px;height:1350px;padding:72px 80px;gap:40px">
+  <span class="etiqueta">2 · Abrís Vector y sabés</span>
+  <h1 style="font-size:76px">Si podés volar,<br>cuánto te falta<br><span>y cuánto te queda.</span></h1>
+  <div class="hoy">
+    <div class="top"><span>Hoy</span><span>Inicio</span></div>
+    <div class="ok"><span class="tilde">✓</span><div><b>Podés volar hoy</b><span>CMA vigente · 4 aterrizajes en los últimos 180 días</span></div></div>
+    <div class="dos">
+      <div class="caja negra"><div class="mini">Para la PCA</div><div class="num">51.8 h</div><div class="sub">te faltan de 200</div><div class="barra"><div style="width:74%"></div></div></div>
+      <div class="caja clara"><div class="mini">En el pack</div><div class="num">6.5 h</div><div class="sub">te quedan de 10</div><div class="barra"><div style="width:65%"></div></div></div>
+    </div>
+  </div>
+  <p class="bajada" style="font-size:30px">Y cuando lo necesitás, el libro en PDF con la hoja de siempre, listo para que te lo firmen.</p>
+  <div class="pie" style="margin-top:auto">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<section class="pieza" id="carrusel-4" style="width:1080px;height:1350px;padding:80px;gap:48px;align-items:flex-start">
+  <div class="marca" style="margin-top:120px">%%LOGO_GRANDE%%</div>
+  <h1 style="font-size:112px">Tu bitácora<br>de vuelo,<br><span>siempre al día.</span></h1>
+  <p class="bajada" style="font-size:38px">Para alumnos y pilotos en Argentina. Se instala en el teléfono como una app.</p>
+  <span class="boton" style="font-size:40px;padding:32px 48px">vector.fdiaznem.com.ar</span>
+  <span class="etiqueta" style="margin-top:auto">Link en la bio</span>
+</section>
+
+<script>
+  const COMPASS = (s) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+  const LOGO = `<span class="logo">${COMPASS(40)}</span>`;
+  const LOGO_GRANDE = `<span class="logo grande">${COMPASS(84)}</span>`;
+
+  // Los requisitos de 61.520(a), con las etiquetas de lib/ppa-progress.ts. Números de ejemplo.
+  const REQS = [
+    ["Instrucción y vuelo solo", 28.4, 40, true],
+    ["Doble mando", 20, 20, true],
+    ["Vuelo solo diurno", 6.5, 10, true],
+    ["Solo de travesía", 2, 5, true],
+    ["Travesía de 150 NM", 0, 1, false],
+    ["Instrucción nocturna", 3, 3, true],
+    ["Aterrizajes nocturnos", 10, 10, false],
+  ];
+  function tracker(n) {
+    const filas = REQS.slice(0, n).map(([nombre, act, obj, horas]) => {
+      const listo = act >= obj;
+      const valor = nombre === "Travesía de 150 NM" ? (listo ? "Hecha" : "Pendiente") : horas ? `${act.toFixed(1)}/${obj}` : `${act}/${obj}`;
+      return `<div class="req ${listo ? "listo" : ""}"><div class="fila"><span>${listo ? '<span class="chk">✓</span>' : ""}${nombre}</span><em>${valor}</em></div><div class="barra"><div style="width:${Math.min(100, (100 * act) / obj)}%"></div></div></div>`;
+    }).join("");
+    return `<div class="tracker"><div class="cab"><div><div class="mini">Camino a la PPA</div><div class="grande">11.6<small>hs</small></div><div class="nota">te faltan de 40 · RAAC 61.520(a)</div></div></div><div class="reqs">${filas}</div></div>`;
+  }
+  const onda = Array.from({ length: 34 }, (_, i) => `<i style="height:${10 + Math.round(30 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * .45)))}px"></i>`).join("");
+
+  for (const s of document.querySelectorAll(".pieza")) {
+    s.innerHTML = s.innerHTML
+      .replaceAll("%%LOGO_GRANDE%%", LOGO_GRANDE).replaceAll("%%LOGO%%", LOGO)
+      .replaceAll("%%TRACKER_CHICO%%", tracker(6).replace('class="tracker"', 'class="tracker" style="padding:36px 38px;width:100%"'))
+      .replaceAll("%%TRACKER_COMPACTO%%", tracker(7).replace('class="tracker"', 'class="tracker compacto"'))
+      .replaceAll("%%TRACKER%%", tracker(7)).replaceAll("%%ONDA%%", onda);
+  }
+  const p = new URLSearchParams(location.search).get("p");
+  const pieza = document.getElementById(p) || document.querySelector(".pieza");
+  pieza.classList.add("activa");
+  document.body.style.width = pieza.style.width;
+</script>
+</body>
+</html>
