@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
 import ServiceWorkerVector from "@/components/ServiceWorkerVector";
+import PixelMeta from "@/components/PixelMeta";
 import { SITIO_URL } from "@/lib/sitio";
 
 // Single unified typeface across the app — Nunito for both body text and
@@ -118,6 +119,8 @@ export default function RootLayout({
             roto, el remedio no puede vivir adentro.
           */}
           <ServiceWorkerVector />
+          {/* Sólo en la portada y las guías, y con consentimiento: ver `lib/pixel-meta.ts`. */}
+          <PixelMeta />
         </ThemeProvider>
       </body>
     </html>

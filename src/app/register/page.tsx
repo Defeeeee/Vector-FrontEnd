@@ -7,6 +7,7 @@ import GoogleButton from "@/components/GoogleButton";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { registroCompleto } from "@/lib/pixel-meta";
 
 export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
@@ -21,6 +22,8 @@ export default function RegisterPage() {
         setError(result.error);
       } else if (result?.success) {
         setIsSuccess(true);
+        // Para medir los anuncios: sólo llega a Meta si el visitante aceptó el píxel.
+        registroCompleto();
       }
     });
   }
