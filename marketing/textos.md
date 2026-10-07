@@ -1,5 +1,38 @@
 # Textos para Meta (2026-10)
 
+## 0. La publicación de una foto (2026-10-06) — "Volá más. Anotá menos."
+
+Es la que se sube. Federico descartó las piezas de abajo (el anuncio y el carrusel), y el
+anuncio quedó en pausa.
+
+**Imagen:** `marketing/salida/publicacion.png` (1080×1350, 4:5). La pantalla del teléfono
+es una captura real de la app con datos inventados (`marketing/recursos/`).
+
+### Pie de foto
+> Volá más. Anotá menos. ✈️
+>
+> Vector es tu bitácora de vuelo en el teléfono. Al bajar del avión le mandás un audio al
+> copiloto por WhatsApp contando el vuelo, y queda cargado cuando confirmás.
+>
+> Con eso, Vector hace las cuentas:
+> ✓ si podés volar hoy, según la RAAC 61
+> ✓ cuánto te falta para la próxima licencia, requisito por requisito
+> ✓ cuánto te queda del pack de horas
+>
+> Y cuando lo necesitás, el libro en PDF con la hoja de siempre, listo para que te lo firmen.
+>
+> Para alumnos y pilotos en Argentina. Entrá desde el link de la bio.
+>
+> #piloto #pilotoprivado #alumnopiloto #aviacion #aviacionargentina #aeroclub #bitacora
+
+### Texto alternativo
+"Un teléfono con la app Vector abierta: dice 'Podés volar como piloto al mando y llevar
+pasajeros', el CMA vence en 215 días y el progreso a la PCA va en 137,7 de 200 horas. De
+fondo, una pista iluminada de noche. Título: Volá más. Anotá menos."
+
+---
+
+
 Las imágenes están en `marketing/salida/` y se regeneran con `node marketing/render.mjs`
 desde `marketing/piezas.html`. Todo lo que dicen las piezas y estos textos se verificó
 contra el código, como la landing. No dicen "gratis" ni "oficial".

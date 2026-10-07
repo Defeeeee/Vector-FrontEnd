@@ -1,0 +1,103 @@
+<!doctype html>
+<!--
+  La publicación de una foto (2026-10-06): la app de verdad en un teléfono, sobre una pista
+  de noche. `node marketing/render.mjs publicacion` la exporta a `marketing/salida/`.
+
+  La pantalla es una captura real de la app (`recursos/app-inicio.png`), sacada con
+  `recursos/captura.mjs` contra `recursos/backend-falso.mjs`: datos inventados de una
+  piloto con PPA en camino a la PCA. No hay datos de nadie.
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; background: #050b1a; }
+  body { font-family: 'Nunito', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }
+
+  .lienzo { position: relative; width: 1080px; height: 1350px; overflow: hidden;
+    background:
+      radial-gradient(1200px 520px at 50% 108%, rgba(251, 146, 60, .28), transparent 62%),
+      radial-gradient(900px 600px at 50% 100%, rgba(37, 99, 235, .35), transparent 70%),
+      linear-gradient(180deg, #050b1a 0%, #0a1733 42%, #13265a 72%, #1d2f63 100%); }
+  canvas { position: absolute; inset: 0; }
+
+  .arriba { position: absolute; top: 76px; left: 84px; right: 84px; }
+  .marca { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 64px; height: 64px; border-radius: 18px; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .marca b { font-size: 36px; font-weight: 800; letter-spacing: -.02em; }
+  h1 { margin-top: 54px; font-size: 128px; line-height: .95; font-weight: 900; letter-spacing: -.04em; }
+  h1 span { color: #7dd3fc; }
+  .bajada { margin-top: 30px; font-size: 32px; line-height: 1.4; color: rgba(255,255,255,.72); font-weight: 600; max-width: 470px; }
+
+  /* El teléfono, a la derecha y cortado por abajo. */
+  .telefono { position: absolute; left: 600px; top: 470px; width: 420px; height: 910px; border-radius: 70px; background: #0b0b0d;
+    padding: 14px; box-shadow: 0 0 0 2px #2a2a30, 0 40px 120px rgba(0,0,0,.6), 0 0 160px rgba(56,189,248,.25); transform: rotate(-4deg); transform-origin: 50% 0; }
+  .telefono .pantalla { width: 100%; height: 100%; border-radius: 58px; overflow: hidden; background: #fafafa; position: relative; }
+  .telefono img { width: 100%; display: block; }
+  .telefono .isla { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 118px; height: 34px; border-radius: 20px; background: #0b0b0d; }
+
+  .pie { position: absolute; left: 84px; bottom: 84px; }
+  .chips { display: flex; flex-direction: column; gap: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 14px; font-size: 27px; font-weight: 700; color: rgba(255,255,255,.9); }
+  .chip i { width: 36px; height: 36px; border-radius: 11px; background: rgba(125, 211, 252, .16); border: 1.5px solid rgba(125, 211, 252, .4); display: inline-flex; align-items: center; justify-content: center; font-style: normal; color: #7dd3fc; font-size: 20px; font-weight: 900; }
+  .dominio { margin-top: 40px; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #fff; background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.18); border-radius: 16px; padding: 14px 22px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="lienzo">
+  <canvas id="cielo" width="1080" height="1350"></canvas>
+
+  <div class="arriba">
+    <div class="marca">
+      <span class="logo"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#0b0b0d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
+      <b>Vector</b>
+    </div>
+    <h1>Volá más.<br><span>Anotá menos.</span></h1>
+    <p class="bajada">Tu bitácora de vuelo en el teléfono. Cargás el vuelo con un audio y Vector hace las cuentas.</p>
+  </div>
+
+  <div class="telefono"><div class="pantalla"><img src="recursos/app-inicio.png" alt=""><span class="isla"></span></div></div>
+
+  <div class="pie">
+    <div class="chips">
+      <span class="chip"><i>✓</i>Si podés volar hoy</span>
+      <span class="chip"><i>✓</i>Cuánto te falta para la licencia</span>
+      <span class="chip"><i>✓</i>Cuánto te queda del pack</span>
+    </div>
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+  </div>
+</div>
+
+<script>
+  // Las estrellas y la pista de noche, dibujadas para que no dependan de una foto con derechos.
+  const c = document.getElementById("cielo").getContext("2d");
+  let semilla = 7;
+  const azar = () => ((semilla = (semilla * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 170; i++) {
+    const x = azar() * 1080, y = azar() * 760, r = azar() * 1.6 + .3;
+    c.fillStyle = `rgba(255,255,255,${(.25 + azar() * .6) * (1 - y / 900)})`;
+    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+  }
+  // La pista: dos filas de luces que se juntan en el horizonte.
+  const fuga = { x: 780, y: 1010 };
+  for (const lado of [-1, 1]) {
+    for (let k = 1; k <= 16; k++) {
+      const t = Math.pow(k / 16, 1.9);
+      const x = fuga.x + lado * (18 + t * 520), y = fuga.y + t * 420, r = 1.2 + t * 7;
+      const g = c.createRadialGradient(x, y, 0, x, y, r * 5);
+      g.addColorStop(0, "rgba(255,236,190,.95)"); g.addColorStop(.25, "rgba(255,200,120,.45)"); g.addColorStop(1, "rgba(255,180,90,0)");
+      c.fillStyle = g; c.beginPath(); c.arc(x, y, r * 5, 0, Math.PI * 2); c.fill();
+    }
+  }
+  // La línea central, apenas.
+  c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 3; c.setLineDash([26, 30]);
+  c.beginPath(); c.moveTo(fuga.x, fuga.y + 6); c.lineTo(fuga.x - 20, 1350); c.stroke();
+  // El horizonte.
+  const h = c.createLinearGradient(0, 990, 0, 1030);
+  h.addColorStop(0, "rgba(251,146,60,0)"); h.addColorStop(.5, "rgba(251,146,60,.35)"); h.addColorStop(1, "rgba(251,146,60,0)");
+  c.fillStyle = h; c.fillRect(0, 990, 1080, 40);
+</script>
+</body>
+</html>
