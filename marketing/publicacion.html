@@ -1,11 +1,11 @@
 <!doctype html>
 <!--
-  La publicación de una foto (2026-10-06): la app de verdad en un teléfono, sobre una pista
-  de noche. `node marketing/render.mjs publicacion` la exporta a `marketing/salida/`.
+  La publicación de una foto (2026-10-06, segunda versión): "¿Seguís llenando el libro a mano?"
 
-  La pantalla es una captura real de la app (`recursos/app-inicio.png`), sacada con
-  `recursos/captura.mjs` contra `recursos/backend-falso.mjs`: datos inventados de una
-  piloto con PPA en camino a la PCA. No hay datos de nadie.
+  La hoja es la que genera Vector de verdad (`lib/libro-anac-pdf.ts`), armada con
+  `recursos/libro-ejemplo.mjs` sobre los vuelos inventados de `recursos/backend-falso.mjs`.
+  El vuelo que el copiloto confirma en el teléfono es el último renglón de esa hoja.
+  `node marketing/render.mjs publicacion` la exporta a `marketing/salida/`.
 -->
 <html lang="es-AR">
 <head>
@@ -13,91 +13,118 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 1080px; height: 1350px; overflow: hidden; background: #050b1a; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; background: #060d1c; }
   body { font-family: 'Nunito', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }
 
   .lienzo { position: relative; width: 1080px; height: 1350px; overflow: hidden;
     background:
-      radial-gradient(1200px 520px at 50% 108%, rgba(251, 146, 60, .28), transparent 62%),
-      radial-gradient(900px 600px at 50% 100%, rgba(37, 99, 235, .35), transparent 70%),
-      linear-gradient(180deg, #050b1a 0%, #0a1733 42%, #13265a 72%, #1d2f63 100%); }
-  canvas { position: absolute; inset: 0; }
+      radial-gradient(900px 520px at 18% -6%, rgba(56, 189, 248, .22), transparent 65%),
+      radial-gradient(900px 700px at 100% 100%, rgba(37, 99, 235, .30), transparent 65%),
+      #060d1c; }
+  /* La grilla de una carta aeronáutica, apenas. */
+  .grilla { position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(125, 211, 252, .06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(125, 211, 252, .06) 1px, transparent 1px);
+    background-size: 90px 90px; background-position: -20px -10px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.6) 55%, transparent 100%); }
 
-  .arriba { position: absolute; top: 76px; left: 84px; right: 84px; }
-  .marca { display: flex; align-items: center; gap: 16px; }
-  .logo { width: 64px; height: 64px; border-radius: 18px; background: #fff; display: flex; align-items: center; justify-content: center; }
-  .marca b { font-size: 36px; font-weight: 800; letter-spacing: -.02em; }
-  h1 { margin-top: 54px; font-size: 128px; line-height: .95; font-weight: 900; letter-spacing: -.04em; }
+  .arriba { position: absolute; top: 72px; left: 80px; right: 80px; }
+  .fila-marca { display: flex; align-items: center; justify-content: space-between; }
+  .marca { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 56px; height: 56px; border-radius: 16px; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .marca b { font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
+  .pildora { font-size: 22px; font-weight: 700; color: rgba(255,255,255,.8); border: 1.5px solid rgba(255,255,255,.2); border-radius: 999px; padding: 10px 20px; }
+  h1 { margin-top: 56px; font-size: 98px; line-height: 1.0; font-weight: 900; letter-spacing: -.035em; }
   h1 span { color: #7dd3fc; }
-  .bajada { margin-top: 30px; font-size: 32px; line-height: 1.4; color: rgba(255,255,255,.72); font-weight: 600; max-width: 470px; }
+  .bajada { margin-top: 26px; font-size: 34px; line-height: 1.38; color: rgba(255,255,255,.76); font-weight: 600; max-width: 860px; }
+  .bajada b { color: #fff; }
 
-  /* El teléfono, a la derecha y cortado por abajo. */
-  .telefono { position: absolute; left: 600px; top: 470px; width: 420px; height: 910px; border-radius: 70px; background: #0b0b0d;
-    padding: 14px; box-shadow: 0 0 0 2px #2a2a30, 0 40px 120px rgba(0,0,0,.6), 0 0 160px rgba(56,189,248,.25); transform: rotate(-4deg); transform-origin: 50% 0; }
-  .telefono .pantalla { width: 100%; height: 100%; border-radius: 58px; overflow: hidden; background: #fafafa; position: relative; }
-  .telefono img { width: 100%; display: block; }
-  .telefono .isla { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 118px; height: 34px; border-radius: 20px; background: #0b0b0d; }
+  /* La hoja del libro, grande, en perspectiva y cortada por los costados. */
+  .escena { position: absolute; left: 0; right: 0; top: 520px; height: 830px; perspective: 1800px; }
+  .hoja { position: absolute; left: -170px; top: -10px; width: 1300px; transform: rotateX(16deg) rotateZ(-6deg); transform-origin: 50% 0;
+    box-shadow: 0 50px 120px rgba(0,0,0,.55); border-radius: 6px; overflow: hidden; background: #fff; }
+  .hoja img { display: block; width: 100%; }
+  /* El último renglón (de 80,55 % a 84,82 % del alto de la hoja, medido en la imagen): el vuelo que acaba de confirmar el copiloto. */
+  .hoja .ultimo { position: absolute; left: 0.6%; right: 0.6%; top: 80.4%; height: 4.6%; border: 4px solid #0ea5e9; background: rgba(56, 189, 248, .16); border-radius: 6px; box-shadow: 0 0 0 6px rgba(56,189,248,.18); }
 
-  .pie { position: absolute; left: 84px; bottom: 84px; }
-  .chips { display: flex; flex-direction: column; gap: 14px; }
-  .chip { display: inline-flex; align-items: center; gap: 14px; font-size: 27px; font-weight: 700; color: rgba(255,255,255,.9); }
-  .chip i { width: 36px; height: 36px; border-radius: 11px; background: rgba(125, 211, 252, .16); border: 1.5px solid rgba(125, 211, 252, .4); display: inline-flex; align-items: center; justify-content: center; font-style: normal; color: #7dd3fc; font-size: 20px; font-weight: 900; }
-  .dominio { margin-top: 40px; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #fff; background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.18); border-radius: 16px; padding: 14px 22px; display: inline-block; }
+  /* El teléfono, adelante a la derecha. */
+  .telefono { position: absolute; z-index: 3; right: 64px; top: 650px; width: 420px; height: 760px; border-radius: 64px; background: #0b0b0d; padding: 13px;
+    box-shadow: 0 0 0 2px #2c2c33, 0 50px 120px rgba(0,0,0,.65); }
+  .pantalla { width: 100%; height: 100%; border-radius: 52px; overflow: hidden; background: #efeae2; position: relative; display: flex; flex-direction: column; }
+  .isla { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 112px; height: 32px; border-radius: 18px; background: #0b0b0d; z-index: 2; }
+  .cabecera { background: #fff; padding: 58px 22px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e4e4e7; }
+  .cabecera .av { width: 44px; height: 44px; border-radius: 13px; background: #18181b; display: flex; align-items: center; justify-content: center; flex: none; }
+  .cabecera b { font-size: 21px; color: #18181b; display: block; }
+  .cabecera span { font-size: 15px; color: #71717a; }
+  .mensajes { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; color: #18181b; }
+  .msj { max-width: 86%; border-radius: 18px; padding: 12px 14px; font-size: 19px; line-height: 1.35; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .msj.yo { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 6px; }
+  .msj.el { align-self: flex-start; background: #fff; border-top-left-radius: 6px; }
+  .hora { display: block; text-align: right; font-size: 12px; color: #a1a1aa; margin-top: 4px; }
+  .audio { display: flex; align-items: center; gap: 10px; width: 270px; }
+  .play { width: 38px; height: 38px; border-radius: 50%; background: #25a35a; display: flex; align-items: center; justify-content: center; flex: none; }
+  .onda { display: flex; align-items: center; gap: 3px; flex: 1; height: 30px; }
+  .onda i { width: 4px; border-radius: 3px; background: #6b8f7a; display: block; }
+  .dur { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #71717a; }
+  .resumen { font-family: 'IBM Plex Mono', monospace; font-size: 15.5px; line-height: 1.55; background: #f4f4f5; border-radius: 10px; padding: 10px 12px; margin: 8px 0 2px; }
+
+  /* El pie: el llamado, sobre una franja que oscurece la hoja. */
+  .pie { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: 250px; padding: 0 80px 72px; display: flex; flex-direction: column; justify-content: flex-end;
+    background: linear-gradient(180deg, rgba(6,13,28,0) 0%, rgba(6,13,28,.9) 40%, #060d1c 100%); }
+  .cta { display: inline-flex; align-items: center; gap: 14px; background: #fff; color: #0b0b0d; border-radius: 20px; padding: 22px 30px; font-size: 30px; font-weight: 900; align-self: flex-start; box-shadow: 0 20px 50px rgba(56,189,248,.25); }
+  .cta small { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: #2563eb; }
+  .extras { margin-top: 22px; font-size: 22px; color: rgba(255,255,255,.62); font-weight: 700; max-width: 440px; line-height: 1.5; }
 </style>
 </head>
 <body>
 <div class="lienzo">
-  <canvas id="cielo" width="1080" height="1350"></canvas>
+  <div class="grilla"></div>
 
   <div class="arriba">
-    <div class="marca">
-      <span class="logo"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#0b0b0d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
-      <b>Vector</b>
+    <div class="fila-marca">
+      <div class="marca">
+        <span class="logo"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#0b0b0d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
+        <b>Vector</b>
+      </div>
+      <span class="pildora">Para pilotos en Argentina</span>
     </div>
-    <h1>Volá más.<br><span>Anotá menos.</span></h1>
-    <p class="bajada">Tu bitácora de vuelo en el teléfono. Cargás el vuelo con un audio y Vector hace las cuentas.</p>
+    <h1>¿Seguís llenando<br><span>el libro a mano?</span></h1>
+    <p class="bajada">Mandale un audio al copiloto de Vector y <b>la hoja se llena sola</b>, con los totales hechos.</p>
   </div>
 
-  <div class="telefono"><div class="pantalla"><img src="recursos/app-inicio.png" alt=""><span class="isla"></span></div></div>
+  <div class="escena">
+    <div class="hoja"><img src="recursos/libro-hoja.png" alt=""><span class="ultimo"></span></div>
+  </div>
+
+  <div class="telefono"><div class="pantalla">
+    <span class="isla"></span>
+    <div class="cabecera">
+      <span class="av"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
+      <div><b>Copiloto de Vector</b><span>en WhatsApp</span></div>
+    </div>
+    <div class="mensajes">
+      <div class="msj yo">
+        <div class="audio"><span class="play"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="#fff"/></svg></span><span class="onda" id="onda"></span><span class="dur">0:14</span></div>
+        <span class="hora">17:42</span>
+      </div>
+      <div class="msj el">Tengo esto. ¿Lo cargo?
+        <div class="resumen">25/09 · LV-ABC<br>SADF → SAZS · 2,3 h<br>2 aterrizajes</div>
+        <span class="hora">17:42</span>
+      </div>
+      <div class="msj yo">Sí, dale<span class="hora">17:43</span></div>
+      <div class="msj el">Listo, quedó en tu bitácora ✈️<span class="hora">17:43</span></div>
+    </div>
+  </div></div>
 
   <div class="pie">
-    <div class="chips">
-      <span class="chip"><i>✓</i>Si podés volar hoy</span>
-      <span class="chip"><i>✓</i>Cuánto te falta para la licencia</span>
-      <span class="chip"><i>✓</i>Cuánto te queda del pack</span>
-    </div>
-    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="cta">Probala <small>vector.fdiaznem.com.ar</small></span>
+    <p class="extras">También te dice si podés volar hoy y cuánto te falta para la PCA.</p>
   </div>
 </div>
-
 <script>
-  // Las estrellas y la pista de noche, dibujadas para que no dependan de una foto con derechos.
-  const c = document.getElementById("cielo").getContext("2d");
-  let semilla = 7;
-  const azar = () => ((semilla = (semilla * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 170; i++) {
-    const x = azar() * 1080, y = azar() * 760, r = azar() * 1.6 + .3;
-    c.fillStyle = `rgba(255,255,255,${(.25 + azar() * .6) * (1 - y / 900)})`;
-    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
-  }
-  // La pista: dos filas de luces que se juntan en el horizonte.
-  const fuga = { x: 780, y: 1010 };
-  for (const lado of [-1, 1]) {
-    for (let k = 1; k <= 16; k++) {
-      const t = Math.pow(k / 16, 1.9);
-      const x = fuga.x + lado * (18 + t * 520), y = fuga.y + t * 420, r = 1.2 + t * 7;
-      const g = c.createRadialGradient(x, y, 0, x, y, r * 5);
-      g.addColorStop(0, "rgba(255,236,190,.95)"); g.addColorStop(.25, "rgba(255,200,120,.45)"); g.addColorStop(1, "rgba(255,180,90,0)");
-      c.fillStyle = g; c.beginPath(); c.arc(x, y, r * 5, 0, Math.PI * 2); c.fill();
-    }
-  }
-  // La línea central, apenas.
-  c.strokeStyle = "rgba(255,255,255,.18)"; c.lineWidth = 3; c.setLineDash([26, 30]);
-  c.beginPath(); c.moveTo(fuga.x, fuga.y + 6); c.lineTo(fuga.x - 20, 1350); c.stroke();
-  // El horizonte.
-  const h = c.createLinearGradient(0, 990, 0, 1030);
-  h.addColorStop(0, "rgba(251,146,60,0)"); h.addColorStop(.5, "rgba(251,146,60,.35)"); h.addColorStop(1, "rgba(251,146,60,0)");
-  c.fillStyle = h; c.fillRect(0, 990, 1080, 40);
+  document.getElementById("onda").innerHTML = Array.from({ length: 26 }, (_, i) =>
+    `<i style="height:${7 + Math.round(22 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * .45)))}px"></i>`).join("");
 </script>
 </body>
 </html>

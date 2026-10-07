@@ -1,34 +1,33 @@
 # Textos para Meta (2026-10)
 
-## 0. La publicación de una foto (2026-10-06) — "Volá más. Anotá menos."
+## 0. La publicación de una foto (2026-10-06) — "¿Seguís llenando el libro a mano?"
 
-Es la que se sube. Federico descartó las piezas de abajo (el anuncio y el carrusel), y el
-anuncio quedó en pausa.
+Es la que se sube. Reemplaza a "Volá más. Anotá menos.", que a Federico no le convenció, y a
+las piezas de más abajo (el anuncio y el carrusel), que descartó.
 
-**Imagen:** `marketing/salida/publicacion.png` (1080×1350, 4:5). La pantalla del teléfono
-es una captura real de la app con datos inventados (`marketing/recursos/`).
+**Imagen:** `marketing/salida/publicacion.png` (1080×1350, 4:5).
+- La hoja es la que genera Vector de verdad (`lib/libro-anac-pdf.ts`), con vuelos inventados (`marketing/recursos/`).
+- El vuelo que confirma el copiloto en el teléfono (25/09, SADF → SAZS, 2,3 h) es el último renglón de la hoja, resaltado.
 
 ### Pie de foto
-> Volá más. Anotá menos. ✈️
+> ¿Seguís llenando el libro a mano? ✍️
 >
-> Vector es tu bitácora de vuelo en el teléfono. Al bajar del avión le mandás un audio al
-> copiloto por WhatsApp contando el vuelo, y queda cargado cuando confirmás.
+> Con Vector, al bajar del avión le mandás un audio al copiloto por WhatsApp contando el
+> vuelo. Te muestra el resumen, confirmás, y queda cargado. El libro sale en PDF con la
+> hoja de siempre y los totales hechos, listo para que te lo firmen.
 >
-> Con eso, Vector hace las cuentas:
-> ✓ si podés volar hoy, según la RAAC 61
-> ✓ cuánto te falta para la próxima licencia, requisito por requisito
-> ✓ cuánto te queda del pack de horas
+> Y además te dice si podés volar hoy, cuánto te falta para la PCA y cuánto te queda del
+> pack.
 >
-> Y cuando lo necesitás, el libro en PDF con la hoja de siempre, listo para que te lo firmen.
+> Para alumnos y pilotos en Argentina. Probala desde el link de la bio.
 >
-> Para alumnos y pilotos en Argentina. Entrá desde el link de la bio.
->
-> #piloto #pilotoprivado #alumnopiloto #aviacion #aviacionargentina #aeroclub #bitacora
+> #piloto #pilotoprivado #alumnopiloto #aviacion #aviacionargentina #aeroclub #librodevuelo
 
 ### Texto alternativo
-"Un teléfono con la app Vector abierta: dice 'Podés volar como piloto al mando y llevar
-pasajeros', el CMA vence en 215 días y el progreso a la PCA va en 137,7 de 200 horas. De
-fondo, una pista iluminada de noche. Título: Volá más. Anotá menos."
+"Una hoja del libro de vuelo llena de vuelos, con el último renglón resaltado, y adelante un
+teléfono con un chat de WhatsApp: un audio, el copiloto de Vector que resume el vuelo
+SADF a SAZS de 2,3 horas, y 'Listo, quedó en tu bitácora'. Título: ¿Seguís llenando el libro
+a mano?"
 
 ---
 
