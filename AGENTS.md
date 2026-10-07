@@ -233,6 +233,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   Son indicios, no certezas, y el panel lo dice. Está en la política de privacidad, y la
   baja es por tipo de mail (resumen del mes, novedades). El mail de novedades
   (`/api/cron/novedades?clave=…`) se manda a mano, no está en el crontab.
+- **El píxel de Meta** (2026-10-06, `lib/pixel-meta.ts`): sólo con consentimiento, sólo en
+  la portada y las guías, y en el registro recién después de enviarlo. Sin configuración
+  automática ni seguimiento de la navegación. Se prende con `NEXT_PUBLIC_META_PIXEL_ID` en
+  el `.env` del VPS (lo mete el build). Está en la política de privacidad, sección `#meta`.
 - **SEO:** hay guías, sitemap y datos estructurados, y el dominio está verificado en
   Google Search Console (Federico, 2026-09-24). El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice

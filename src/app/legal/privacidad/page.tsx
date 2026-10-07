@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LegalShell from "../LegalShell";
+import CambiarConsentimientoMeta from "@/components/publico/CambiarConsentimientoMeta";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad | Vector",
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
  */
 export default function PrivacidadPage() {
   return (
-    <LegalShell title="Política de Privacidad" updated="2 de octubre de 2026">
+    <LegalShell title="Política de Privacidad" updated="6 de octubre de 2026">
       <section>
         <h2>Qué es esto</h2>
         <p>
@@ -191,6 +192,10 @@ export default function PrivacidadPage() {
             según cuál uses) — sólo si activás los avisos push. El aviso viaja cifrado de
             punta a punta: ese servicio lo entrega, pero no puede leerlo.
           </li>
+          <li>
+            <strong>Meta</strong> (Facebook e Instagram) — sólo si aceptás el píxel en la
+            portada o las guías. Ver <a href="#meta">Medición de anuncios</a>.
+          </li>
         </ul>
         <p>
           <strong>Transferencia internacional:</strong> estos proveedores procesan la
@@ -231,6 +236,36 @@ export default function PrivacidadPage() {
           No usamos tus datos de vuelo para entrenar modelos ni para elaborar perfiles con
           fines comerciales.
         </p>
+      </section>
+
+      <section id="meta">
+        <h2>Medición de anuncios (píxel de Meta)</h2>
+        <p>
+          Vector publica anuncios en Instagram y Facebook. Para saber si funcionan usamos el
+          píxel de Meta, y <strong>sólo si lo aceptás</strong> en el cartel que aparece la
+          primera vez. Si no elegís o decís que no, no se carga.
+        </p>
+        <ul>
+          <li>
+            <strong>Dónde:</strong> sólo en la portada y en las guías, y al terminar el
+            registro. Nunca adentro de la app, ni en el perfil público de un piloto, ni en las
+            pantallas de ingreso.
+          </li>
+          <li>
+            <strong>Qué le llega a Meta:</strong> que visitaste esa página o que creaste una
+            cuenta, junto con lo que el navegador le manda a cualquier sitio (dirección IP, tipo
+            de navegador) y las cookies de Meta, que le permiten relacionarlo con tu cuenta de
+            Facebook o Instagram si tenés una. No le mandamos tu mail, tus vuelos ni ningún dato
+            de tu bitácora, y la carga automática de datos de la página está apagada.
+          </li>
+          <li>
+            <strong>Para qué:</strong> medir cuántas personas llegan desde un anuncio y se
+            registran, y mostrarle los anuncios a gente parecida. Meta trata esos datos según su
+            propia política de privacidad.
+          </li>
+        </ul>
+        <p>Tu elección queda guardada en este navegador, y la podés cambiar cuando quieras:</p>
+        <CambiarConsentimientoMeta />
       </section>
 
       <section>
