@@ -41,6 +41,21 @@ export function textoAts(texto: string): string {
 }
 
 /**
+ * Texto de la información suplementaria (casilla 19: A/, N/, C/ y quien presenta).
+ * **No viaja en el mensaje FPL**, así que no tiene sus restricciones: un teléfono se
+ * escribe `+5491168862612` y no `5491168862612`. Mayúsculas y sin acentos, como el resto.
+ */
+export function textoFormulario(texto: string): string {
+  return (texto ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9 +.,:/-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Casilla 7: la matrícula "sin exceder de 7 caracteres alfanuméricos y sin guiones o
  * símbolos" (p. ej., LVGVE). `LV-ABC` → `LVABC`.
  */
@@ -158,8 +173,10 @@ type Item15 = { texto: string; aerovia: boolean; geografico: boolean };
  *   desde el punto, con 3 cifras, dando los grados magnéticos, seguida de la distancia
  *   desde el punto, con 3 cifras" — `BAR/045/25` → `BAR045025`. El radial del
  *   planificador ya es magnético (`lib/puntos.ts`), que es lo que se pide;
- * - un aeródromo intermedio, en coordenadas: no es un punto significativo con designador,
- *   y la coordenada es la forma que la casilla acepta siempre.
+ * - un aeródromo intermedio, con su indicador (`SAAJ`) o su designador ANAC (`ATE`): así
+ *   lo escribió Federico en el plan que EANA le aceptó el 10/10/2026, y la AIP reconoce
+ *   los "indicadores de lugares nacionales de tres letras" (casillas 13 y 16). Sin
+ *   código válido, va en coordenadas.
  */
 function puntoItem15(e: Exclude<ElementoRuta, { tipo: "aerovia" }>): Item15 | null {
   if (e.tipo === "radial") {
@@ -172,6 +189,9 @@ function puntoItem15(e: Exclude<ElementoRuta, { tipo: "aerovia" }>): Item15 | nu
       aerovia: false,
       geografico: true,
     };
+  }
+  if (e.tipo === "aerodromo" && /^[A-Z0-9]{3,4}$/.test(e.codigo.trim().toUpperCase())) {
+    return { texto: e.codigo.trim().toUpperCase(), aerovia: false, geografico: false };
   }
   if (e.tipo === "coordenada" || e.tipo === "aerodromo") {
     if (e.lat === undefined || e.lon === undefined) return null;
@@ -188,8 +208,9 @@ function puntoItem15(e: Exclude<ElementoRuta, { tipo: "aerovia" }>): Item15 | nu
  *   coordenadas geográficas o por marcación y distancia."
  * - Al lado de una aerovía no va DCT: se entra por un punto y se sale por otro
  *   (`BCA W67 OSA`), que es la misma sintaxis que ya acepta el planificador.
- * - La salida cuenta como el primer punto, así que un vuelo fuera de aerovías empieza con
- *   DCT. Sin puntos intermedios, la ruta entera es `DCT`.
+ * - La salida y el destino cuentan como puntos, así que un vuelo fuera de aerovías
+ *   empieza y termina con DCT: `DCT ATE DCT`, como lo acepta EANA (el ejemplo de
+ *   Federico del 10/10/2026). Sin puntos intermedios, la ruta entera es `DCT`.
  *
  * `null` si algún elemento no se puede escribir: mejor frenar que mandar una ruta a la
  * que le falta un punto.
@@ -220,6 +241,7 @@ export function rutaItem15(elementos: ElementoRuta[]): string | null {
     partes.push(it.texto);
     anterior = it;
   }
+  if (!anterior?.aerovia) partes.push("DCT");
   return partes.join(" ");
 }
 
@@ -280,7 +302,10 @@ export interface DatosPlanDeVuelo {
   consumoLh: number;
   operador: string;
   observaciones: string;
-  /** Casilla 19. */
+  /** NAV/ en la casilla 18: la aumentación GNSS, p. ej. `ABAS` (Nota 2 de la casilla 10). */
+  nav: string;
+  /** PER/: la categoría de performance del PANS-OPS (A si la velocidad de umbral es menor a 91 kt). */
+  per: string;
   personas: string;
   radio: { uhf: boolean; vhf: boolean; elt: boolean };
   supervivencia: { lleva: boolean; polar: boolean; desierto: boolean; maritimo: boolean; selva: boolean };
@@ -291,6 +316,8 @@ export interface DatosPlanDeVuelo {
   piloto: string;
   presentadoPor: string;
 }
+
+
 
 /** Lo que va en el formulario, ya en el formato de cada casilla. */
 export interface PlanOaci {
@@ -312,6 +339,8 @@ export interface PlanOaci {
   c16altn1: string;
   c16altn2: string;
   c18: string;
+  /** La fecha de DOF/ (AAMMDD), también para el nombre del archivo. */
+  dof: string;
   c19: {
     autonomia: string;
     personas: string;
@@ -377,16 +406,19 @@ export function armarPlan(d: DatosPlanDeVuelo): { plan: PlanOaci; faltas: FaltaP
   const personas = /^\d{1,3}$/.test(p) && Number(p) > 0 ? String(Number(p)) : p === "TBN" ? "TBN" : "";
   if (!personas) falta("19", "Faltan las personas a bordo (o TBN si todavía no sabés).");
 
-  const piloto = textoAts(d.piloto);
+  const piloto = textoFormulario(d.piloto);
   if (!piloto) falta("19", "Falta el nombre del piloto al mando.");
 
   const altn = alternativas.flatMap((a) => (a.otrosDatos ? [a.otrosDatos] : []));
+  const per = (d.per ?? "").trim().toUpperCase();
   const c18 = casilla18({
+    NAV: textoAts(d.nav),
     DEP: salida.otrosDatos,
     DEST: destino.otrosDatos,
     DOF: hora?.dof,
     TYP: tipoValido ? undefined : textoAts(d.descripcionAeronave),
     OPR: textoAts(d.operador),
+    PER: /^[A-E]$/.test(per) ? per : undefined,
     ALTN: altn.join(" "),
     RMK: textoAts(d.observaciones),
   });
@@ -410,6 +442,7 @@ export function armarPlan(d: DatosPlanDeVuelo): { plan: PlanOaci; faltas: FaltaP
     c16altn1: alternativas[0]?.casilla ?? "",
     c16altn2: alternativas[1]?.casilla ?? "",
     c18,
+    dof: hora?.dof ?? "",
     c19: {
       autonomia: autonomia ?? "",
       personas,
@@ -433,13 +466,14 @@ export function armarPlan(d: DatosPlanDeVuelo): { plan: PlanOaci; faltas: FaltaP
         numero: d.botes.lleva ? d.botes.numero.replace(/\D/g, "").slice(0, 2) : "",
         capacidad: d.botes.lleva ? d.botes.capacidad.replace(/\D/g, "").slice(0, 3) : "",
         c: d.botes.lleva && d.botes.cubierta,
-        color: d.botes.lleva ? textoAts(d.botes.color) : "",
+        color: d.botes.lleva ? textoFormulario(d.botes.color) : "",
       },
-      colorMarcas: textoAts(d.colorMarcas),
-      observaciones: textoAts(d.observacionesSupervivencia) || null,
+      colorMarcas: textoFormulario(d.colorMarcas),
+      observaciones: textoFormulario(d.observacionesSupervivencia) || null,
       piloto,
     },
-    presentadoPor: textoAts(d.presentadoPor) || piloto,
+    // Vacío si no se escribió: así lo presentó Federico y se lo aceptaron.
+    presentadoPor: textoFormulario(d.presentadoPor),
   };
 
   return { plan, faltas };
@@ -471,4 +505,14 @@ export function asuntoDelMail(p: PlanOaci, fechaLocal: string): string {
   const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaLocal) ? ` ${fechaLocal.split("-").reverse().join("/")}` : "";
   const salida = p.c13hora ? ` ${p.c13ad} ${p.c13hora}Z` : "";
   return `FPL ${p.c7}${salida}${fecha}`;
+}
+
+/**
+ * El nombre del PDF, como el que Federico presentó el 10/10/2026:
+ * `LVS114-SADF1530SADF_101026.pdf` — matrícula, salida y hora UTC, destino, y la fecha
+ * de DOF/ como DDMMAA.
+ */
+export function nombreDelArchivo(p: PlanOaci): string {
+  const fecha = /^\d{6}$/.test(p.dof) ? `_${p.dof.slice(4, 6)}${p.dof.slice(2, 4)}${p.dof.slice(0, 2)}` : "";
+  return `${p.c7 || "FPL"}-${p.c13ad}${p.c13hora}${p.c16ad}${fecha}.pdf`;
 }

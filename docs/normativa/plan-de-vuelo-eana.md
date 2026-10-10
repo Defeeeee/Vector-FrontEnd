@@ -57,11 +57,18 @@ Leídas el 2026-10-10. Lo regulatorio se escribe contra esto, no de memoria
 - **DOF/ va siempre**, con la fecha **UTC** de la salida: una salida a las 22:00 en
   Argentina es otro día en UTC. La AIP no obliga a ponerlo en un vuelo del día, pero
   tampoco lo prohíbe, y saca la duda de qué día es.
-- **Un aeródromo intermedio va en coordenadas**: la casilla 15 pide designadores de
-  *puntos significativos*, y un aeródromo no lo es. La coordenada es la forma que la
-  casilla acepta siempre.
-- **La ruta empieza con DCT** desde la salida, y no termina con DCT al destino: el destino
-  está en la 16.
+- **El formulario es el de EANA**, no el dibujo de la AIP: el que se imprime en las
+  oficinas ARO/AIS. El fondo sale del plan que Federico presentó el 10/10/2026 y le
+  aceptaron (`LVS114-SADF1530SADF_101026.pdf`), y de ese plan salen también las
+  convenciones de abajo.
+- **Un aeródromo intermedio va con su código** (`ATE`), como en ese plan. La AIP reconoce
+  los indicadores nacionales de tres letras.
+- **La ruta empieza y termina con DCT** (`DCT ATE DCT`), como en ese plan.
+- **NAV/ABAS** cuando el GPS tiene aumentación ABAS (con Z en la casilla 10), y **PER/**
+  con la categoría de performance, si el piloto la marca.
+- **Casilla 19:** el teléfono va en las observaciones (`N/ T.E. +54…`); "Comandante de la
+  aeronave" lleva nombre, licencia y número; las radios de emergencia son las de
+  supervivencia, no la VHF del avión; "Presentado por" queda vacío si no lo presenta otro.
 - **Hora oficial argentina = UTC−3**, sin horario de verano (`DESFASE_ARGENTINA_HORAS`).
 - **No se completa nada con valores estimados**: si el planificador usa la TAS o el
   consumo por defecto, el PDF no se baja hasta cargarlos.

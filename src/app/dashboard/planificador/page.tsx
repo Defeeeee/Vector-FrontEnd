@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api";
 import type { Aircraft, Profile } from "@/types";
 import { oficinasAro } from "@/lib/oficinas-aro-disco";
 import { DESFASE_ARGENTINA_HORAS } from "@/lib/plan-de-vuelo";
+import { esAlumno } from "@/lib/licencias";
 import PlanificadorClient from "@/components/dashboard/PlanificadorClient";
 import { parsearRuta } from "@/lib/ruta-planificada";
 import type { SearchParams } from "@/lib/prefill";
@@ -34,18 +35,26 @@ async function getAeronaves(): Promise<Aircraft[]> {
 }
 
 /**
- * El nombre del piloto, para la casilla 19 del plan de vuelo. Si no se puede leer queda
- * vacío y el piloto lo escribe: no es motivo para romper la pantalla.
+ * Del perfil, para el plan de vuelo: "Comandante de la aeronave" con nombre, licencia y
+ * número —como lo presentó Federico el 10/10/2026: `FEDERICO DIAZ NEMETH PPA 48225513`—
+ * y el celular para las observaciones. Un alumno no tiene licencia: va sólo el nombre.
+ * Si el perfil no se puede leer, quedan vacíos y el piloto los escribe.
  */
-async function getNombrePiloto(): Promise<string> {
+async function getPiloto(): Promise<{ comandante: string; telefono: string }> {
+  const vacio = { comandante: "", telefono: "" };
   const res = await apiFetch("/profiles");
-  if (!res.ok) return "";
+  if (!res.ok) return vacio;
   try {
-    const perfiles = (await res.json()) as Profile[];
-    const p = perfiles[0];
-    return p ? [p.first_name, p.last_name].filter(Boolean).join(" ").trim() : "";
+    const p = ((await res.json()) as Profile[])[0];
+    if (!p) return vacio;
+    const licencia = p.license_type && !esAlumno(p.license_type) ? p.license_type : "";
+    const comandante = [p.first_name, p.last_name, licencia, licencia ? (p.licencia_numero ?? "") : ""]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    return { comandante, telefono: p.whatsapp_phone ?? "" };
   } catch {
-    return "";
+    return vacio;
   }
 }
 
@@ -57,7 +66,7 @@ export default async function PlanificadorPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const [aeronaves, params, nombrePiloto] = await Promise.all([getAeronaves(), searchParams, getNombrePiloto()]);
+  const [aeronaves, params, piloto] = await Promise.all([getAeronaves(), searchParams, getPiloto()]);
 
   const rutaInicial = parsearRuta(unParametro(params.ruta));
   const aeronaveInicial = unParametro(params.av);
@@ -68,7 +77,7 @@ export default async function PlanificadorPage({
       rutaInicial={rutaInicial}
       aeronaveInicial={aeronaves.some((a) => a.id === aeronaveInicial) ? aeronaveInicial : ""}
       oficinas={oficinasAro()}
-      nombrePiloto={nombrePiloto}
+      piloto={piloto}
       hoy={new Date(Date.now() + DESFASE_ARGENTINA_HORAS * 3_600_000).toISOString().slice(0, 10)}
     />
   );

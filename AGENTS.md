@@ -40,7 +40,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
 | `src/app/page.tsx`, `src/app/guias/`, `src/components/publico/`, `src/lib/sitio.ts` | Lo público: la landing (Server Component, estática), las guías con sus fuentes, `robots.ts`, `sitemap.ts` y las imágenes para compartir. Una guía nueva se agrega en `GUIAS` y aparece en el sitemap, el índice y el pie. **Todo lo que promete la landing se verifica contra el código**; lo regulatorio de las guías, contra la norma (invariante 6). |
 | `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |
-| `src/lib/plan-de-vuelo.ts`, `src/lib/plan-de-vuelo-pdf.ts`, `src/lib/oficinas-aro.ts`, `PlanDeVueloOaci.tsx` | El plan de vuelo OACI desde el planificador: cada casilla (puro, testeado), el formulario dibujado con pdf-lib **en el navegador** (anda sin señal) y las 49 oficinas ARO/AIS de la AIC A 19/2026, testeadas contra su texto. Fuentes en `docs/normativa/plan-de-vuelo-eana.md`. |
+| `src/lib/plan-de-vuelo.ts`, `src/lib/plan-de-vuelo-pdf.ts`, `src/lib/oficinas-aro.ts`, `PlanDeVueloOaci.tsx` | El plan de vuelo desde el planificador: cada casilla (puro, testeado), el **formulario de EANA** (`plan-de-vuelo-eana.jpg`, de un plan que EANA aceptó) lleno con pdf-lib **en el navegador** (anda sin señal) y las 49 oficinas ARO/AIS de la AIC A 19/2026, testeadas contra su texto. Fuentes en `docs/normativa/plan-de-vuelo-eana.md`. |
 | `src/lib/mail-plantilla.ts`, `src/lib/mail-envio.ts`, `src/lib/mail-seguimiento.ts`, `src/app/api/mail/`, `src/app/api/cron/` | Los mails: la plantilla con la estética de la landing, el envío **con seguimiento propio** (aperturas y clics, firmados) y los barridos que los mandan. Las imágenes viven en `public/hotlink-ok/correo/` (Cloudflare bloquea el hotlinking fuera de esa carpeta). Todo mail sale por `enviarConSeguimiento`; las métricas se ven en el panel de administración. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
@@ -246,8 +246,8 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   Google Search Console (Federico, 2026-09-24). El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice
   "gratis": el precio es decisión de Federico.
-- **El plan de vuelo para EANA** (2026-10-10): sale del planificador como el formulario
-  OACI de la AIP en PDF, firmado en la pantalla. **Se manda desde el mail del piloto**, no
+- **El plan de vuelo para EANA** (2026-10-10): sale del planificador en el formulario de
+  EANA, en PDF, firmado en la pantalla, con las convenciones de un plan que EANA aceptó. **Se manda desde el mail del piloto**, no
   desde Vector (AIC A 19/2026: firmado, en PDF, y confirmar por teléfono). Con la TAS o
   el consumo estimados no se baja. Faltan CHG, DLA y CNL, y guardar los planes: no se
   persiste nada, como el resto del planificador.

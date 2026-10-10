@@ -86,7 +86,7 @@ export const CHANGELOG: VersionPublicada[] = [
         icono: "brujula",
         titulo: "Tu plan de vuelo para EANA, desde el planificador",
         texto:
-          "Armá la ruta y Vector completa el formulario OACI: ruta, velocidad, nivel, tiempo y autonomía. Marcá el equipo del avión, firmá con el dedo y mandá el PDF a la oficina ARO/AIS, con el mail y el teléfono a mano.",
+          "Armá la ruta y Vector completa el formulario de EANA: ruta, velocidad, nivel, tiempo y autonomía. Marcá el equipo del avión, firmá con el dedo y mandá el PDF a la oficina ARO/AIS, con el mail y el teléfono a mano.",
         href: "/dashboard/planificador",
         cta: "Ir al planificador",
       },

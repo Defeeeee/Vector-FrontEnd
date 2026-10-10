@@ -4,10 +4,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronDown, Download, FileText, Mail, Phone, Share2, Eraser } from "lucide-react";
 import type { Aircraft } from "@/types";
 import type { PuntoResuelto } from "@/app/api/puntos/route";
+import fondoEana from "@/lib/plan-de-vuelo-eana.jpg";
 import {
   armarPlan,
   asuntoDelMail,
   mensajeFpl,
+  nombreDelArchivo,
   salidaUtc,
   type DatosPlanDeVuelo,
   type ElementoRuta,
@@ -15,7 +17,12 @@ import {
 import { oficinaParaSalida, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
 
 /**
- * El plan de vuelo OACI, armado con la ruta del planificador.
+ * El plan de vuelo en el formulario de EANA, armado con la ruta del planificador.
+ *
+ * Copia las convenciones del plan que Federico presentó el 10/10/2026 y le aceptaron
+ * (`plan-de-vuelo-pdf.ts`): `NAV/ABAS` con el GPS, `PER/`, el teléfono en las
+ * observaciones de la casilla 19 (`T.E. +54…`), y nombre, licencia y número en
+ * "Comandante de la aeronave".
  *
  * Lo calculado (ruta, velocidad, nivel, duración, autonomía) sale del planificador; lo
  * que sólo sabe el piloto (equipo, supervivencia, personas a bordo) se marca acá. **El
@@ -46,7 +53,10 @@ interface Props {
   litros: number;
   consumoLh: number;
   oficinas: OficinaUbicada[];
-  nombrePiloto: string;
+  /** Para "Comandante de la aeronave": nombre, licencia y número, del perfil. */
+  comandante: string;
+  /** El celular del perfil, para las observaciones (`T.E. +54…`). */
+  telefono: string;
   /** La fecha de hoy en Argentina, resuelta en el server (invariante 1). */
   hoy: string;
 }
@@ -60,8 +70,12 @@ interface Equipo {
   adf: boolean;
   gnss: boolean;
   ochoTreintaTres: boolean;
+  /** GPS con aumentación ABAS: Z en la casilla 10 y NAV/ABAS en la 18. */
+  abas: boolean;
   transponder: "" | "N" | "A" | "C" | "S" | "E";
-  adsbOut: boolean;
+  adsb: "" | "B1" | "B2";
+  /** PER/: la categoría de performance (A para casi todo avión de escuela). */
+  per: "" | "A" | "B";
   colorMarcas: string;
   elt: boolean;
 }
@@ -74,8 +88,10 @@ const EQUIPO_VACIO: Equipo = {
   adf: false,
   gnss: false,
   ochoTreintaTres: false,
+  abas: false,
   transponder: "",
-  adsbOut: false,
+  adsb: "",
+  per: "",
   colorMarcas: "",
   elt: true,
 };
@@ -94,6 +110,8 @@ function codigoEquipo(e: Equipo): string {
     e.adf ? "F" : "",
     e.gnss ? "G" : "",
     e.ochoTreintaTres ? "Y" : "",
+    // Nota 5 de la casilla 10: con Z, el otro equipo va en la 18 (NAV/).
+    e.gnss && e.abas ? "Z" : "",
   ]
     .filter(Boolean)
     .sort()
@@ -105,7 +123,7 @@ function codigoEquipo(e: Equipo): string {
 function codigoVigilancia(e: Equipo): string {
   if (!e.transponder) return "";
   if (e.transponder === "N") return "N";
-  return `${e.transponder}${e.adsbOut && (e.transponder === "E" || e.transponder === "S") ? "B1" : ""}`;
+  return `${e.transponder}${e.adsb && (e.transponder === "E" || e.transponder === "S") ? e.adsb : ""}`;
 }
 
 function leer<T>(clave: string, base: T): T {
@@ -123,6 +141,15 @@ function guardar(clave: string, valor: unknown) {
   } catch {
     // Sin almacenamiento se usa igual: sólo no se recuerda.
   }
+}
+
+/**
+ * El teléfono como va en las observaciones: con el +. El perfil guarda el celular como lo
+ * reconoce el copiloto (`5491168862612`), y en el formulario se lee `+5491168862612`.
+ */
+function conMas(telefono: string): string {
+  const t = telefono.trim();
+  return /^54\d{8,}$/.test(t) ? `+${t}` : t;
 }
 
 /** Los puntos del medio de la ruta como los necesita la casilla 15. */
@@ -161,7 +188,7 @@ export default function PlanDeVueloOaci(props: Props) {
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-bold text-zinc-900 dark:text-white">Plan de vuelo para EANA</span>
           <span className="block text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            El formulario OACI lleno con esta ruta, en PDF para mandar a la oficina ARO/AIS.
+            El formulario de EANA lleno con esta ruta, en PDF para mandar a la oficina ARO/AIS.
           </span>
         </span>
         <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${abierto ? "rotate-180" : ""}`} />
@@ -183,7 +210,8 @@ function Formulario({
   litros,
   consumoLh,
   oficinas,
-  nombrePiloto,
+  comandante,
+  telefono: telefonoPerfil,
   hoy,
 }: Props) {
   const claveAvion = `vector_fpl_avion_${aeronave?.id ?? "sin"}`;
@@ -201,7 +229,10 @@ function Formulario({
   const [supervivencia, setSupervivencia] = useState(false);
   const [chalecos, setChalecos] = useState(false);
   const [notaSupervivencia, setNotaSupervivencia] = useState("");
-  const [piloto, setPiloto] = useState(nombrePiloto);
+  const [radioUhf, setRadioUhf] = useState(false);
+  const [radioVhf, setRadioVhf] = useState(false);
+  const [telefono, setTelefono] = useState(conMas(telefonoPerfil));
+  const [piloto, setPiloto] = useState(comandante);
   const [presentadoPor, setPresentadoPor] = useState("");
   const [oficinaElegida, setOficinaElegida] = useState("");
   const [hayFirma, setHayFirma] = useState(false);
@@ -213,9 +244,13 @@ function Formulario({
     setEquipo(leer(claveAvion, EQUIPO_VACIO));
   }, [claveAvion]);
   useEffect(() => {
-    const p = leer("vector_fpl_piloto", { piloto: "", operador: "" });
+    const p = leer("vector_fpl_piloto", { piloto: "", operador: "", telefono: "" });
     if (p.piloto) setPiloto(p.piloto);
     if (p.operador) setOperador(p.operador);
+    if (p.telefono) setTelefono(p.telefono);
+    // El formulario en blanco se baja apenas se abre la sección: así queda en el cache del
+    // service worker y el PDF se arma después aunque no haya señal.
+    fetch(fondoEana.src).catch(() => {});
   }, []);
 
   const cambiarEquipo = (cambio: Partial<Equipo>) => {
@@ -257,13 +292,15 @@ function Formulario({
     consumoLh,
     operador,
     observaciones,
+    nav: equipo.gnss && equipo.abas ? "ABAS" : "",
+    per: equipo.per,
     personas,
-    radio: { uhf: false, vhf: equipo.vhf, elt: equipo.elt },
+    radio: { uhf: radioUhf, vhf: radioVhf, elt: equipo.elt },
     supervivencia: { lleva: supervivencia, polar: false, desierto: false, maritimo: false, selva: false },
     chalecos: { lleva: chalecos, luz: false, fluoresceina: false, uhf: false, vhf: false },
     botes: { lleva: false, numero: "", capacidad: "", cubierta: false, color: "" },
     colorMarcas: equipo.colorMarcas,
-    observacionesSupervivencia: notaSupervivencia,
+    observacionesSupervivencia: [telefono.trim() ? `T.E. ${conMas(telefono)}` : "", notaSupervivencia].filter(Boolean).join(" "),
     piloto,
     presentadoPor,
   };
@@ -278,12 +315,12 @@ function Formulario({
 
   const sugerida = useMemo(() => oficinaParaSalida(salida, oficinas), [salida.codigo, salida.lat, salida.lon, oficinas]); // eslint-disable-line react-hooks/exhaustive-deps
   const oficina = oficinas.find((o) => o.oaci === oficinaElegida) ?? sugerida?.oficina ?? null;
-  const telefono = oficina ? primerTelefono(oficina.telefonos) : null;
+  const telOficina = oficina ? primerTelefono(oficina.telefonos) : null;
   const asunto = asuntoDelMail(plan, fecha);
   const sinAltitud = !vfrNoControlado && altitudFt === null;
   const listo = faltas.length === 0 && !sinAltitud && hayFirma;
 
-  const recordarPiloto = () => guardar("vector_fpl_piloto", { piloto, operador });
+  const recordarPiloto = () => guardar("vector_fpl_piloto", { piloto, operador, telefono });
 
   async function generarPdf(): Promise<File | null> {
     setEstado("armando");
@@ -294,14 +331,13 @@ function Formulario({
         if (!c || !hayFirma) return resolve(undefined);
         c.toBlob(async (b) => resolve(b ? new Uint8Array(await b.arrayBuffer()) : undefined), "image/png");
       });
-      const { pdfPlanDeVuelo } = await import("@/lib/plan-de-vuelo-pdf");
-      const bytes = await pdfPlanDeVuelo(plan, {
-        firmaPng,
-        pie: "Formulario modelo OACI de la AIP Argentina (ENR 1.10, Apéndice 1), completado con Vector.",
-      });
+      const [{ pdfPlanDeVuelo }, fondo] = await Promise.all([
+        import("@/lib/plan-de-vuelo-pdf"),
+        fetch(fondoEana.src).then((r) => r.arrayBuffer()),
+      ]);
+      const bytes = await pdfPlanDeVuelo(plan, { fondoJpg: new Uint8Array(fondo), firmaPng });
       setEstado("listo");
-      const nombre = `plan-de-vuelo-${plan.c7}-${fecha}.pdf`;
-      return new File([bytes as BlobPart], nombre, { type: "application/pdf" });
+      return new File([bytes as BlobPart], nombreDelArchivo(plan), { type: "application/pdf" });
     } catch {
       setEstado("error");
       return null;
@@ -404,11 +440,27 @@ function Formulario({
             <option value="E">Modo S con ADS-B (E)</option>
           </select>
         </Campo>
-        {(equipo.transponder === "S" || equipo.transponder === "E") && (
-          <Tilde activo={equipo.adsbOut} onChange={(v) => cambiarEquipo({ adsbOut: v })}>
-            ADS-B &ldquo;out&rdquo; de 1090 MHz (B1)
+        {equipo.gnss && (
+          <Tilde activo={equipo.abas} onChange={(v) => cambiarEquipo({ abas: v })}>
+            GPS con aumentación ABAS (Z y NAV/ABAS)
           </Tilde>
         )}
+        {(equipo.transponder === "S" || equipo.transponder === "E") && (
+          <Campo etiqueta="ADS-B">
+            <select value={equipo.adsb} onChange={(e) => cambiarEquipo({ adsb: e.target.value as Equipo["adsb"] })} className={INPUT}>
+              <option value="">Sin ADS-B</option>
+              <option value="B1">&ldquo;Out&rdquo; de 1090 MHz (B1)</option>
+              <option value="B2">&ldquo;Out&rdquo; e &ldquo;in&rdquo; de 1090 MHz (B2)</option>
+            </select>
+          </Campo>
+        )}
+        <Campo etiqueta="Categoría de performance (PER/)">
+          <select value={equipo.per} onChange={(e) => cambiarEquipo({ per: e.target.value as Equipo["per"] })} className={INPUT}>
+            <option value="">No la pongo</option>
+            <option value="A">A · menos de 91 kt en el umbral</option>
+            <option value="B">B · de 91 a 120 kt</option>
+          </select>
+        </Campo>
         <Campo etiqueta="Color y marcas">
           <input
             value={equipo.colorMarcas}
@@ -452,29 +504,34 @@ function Formulario({
       <Grupo titulo="Emergencia y supervivencia">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Tilde activo={equipo.elt} onChange={(v) => cambiarEquipo({ elt: v })}>ELT</Tilde>
+          <Tilde activo={radioVhf} onChange={setRadioVhf}>Radio de emergencia VHF 121,5</Tilde>
+          <Tilde activo={radioUhf} onChange={setRadioUhf}>Radio de emergencia UHF 243,0</Tilde>
           <Tilde activo={supervivencia} onChange={setSupervivencia}>Equipo de supervivencia</Tilde>
           <Tilde activo={chalecos} onChange={setChalecos}>Chalecos salvavidas</Tilde>
         </div>
         {(supervivencia || chalecos) && (
-          <Campo etiqueta="Qué llevás (va en N/)">
+          <Campo etiqueta="Qué llevás (va en observaciones)">
             <input value={notaSupervivencia} onChange={(e) => setNotaSupervivencia(e.target.value)} className={INPUT} placeholder="Botiquín, bengalas…" />
           </Campo>
         )}
         <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
-          Lo que no se lleva sale tachado, como pide la AIP. La radio de 121,5 sigue a la VHF de arriba; la de 243,0
-          (UHF) sale tachada.
+          Lo que no se lleva sale tachado, como pide la AIP. Las radios de emergencia son las de supervivencia, no la VHF
+          del avión.
         </p>
       </Grupo>
 
       <Grupo titulo="Piloto y firma">
         <div className="grid grid-cols-2 gap-4">
-          <Campo etiqueta="Piloto al mando">
-            <input value={piloto} onChange={(e) => setPiloto(e.target.value)} className={INPUT} />
+          <Campo etiqueta="Comandante (nombre, licencia y número)">
+            <input value={piloto} onChange={(e) => setPiloto(e.target.value)} className={INPUT} placeholder="Nombre PPA 12345678" />
           </Campo>
-          <Campo etiqueta="Presentado por">
-            <input value={presentadoPor} onChange={(e) => setPresentadoPor(e.target.value)} className={INPUT} placeholder={piloto || "Nombre"} />
+          <Campo etiqueta="Teléfono (va en observaciones)">
+            <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={INPUT} placeholder="+54 9 11…" inputMode="tel" />
           </Campo>
         </div>
+        <Campo etiqueta="Presentado por (opcional)">
+          <input value={presentadoPor} onChange={(e) => setPresentadoPor(e.target.value)} className={INPUT} placeholder="Si lo presenta otro" />
+        </Campo>
         <Firma lienzo={lienzo} onCambio={setHayFirma} />
       </Grupo>
 
@@ -544,17 +601,17 @@ function Formulario({
             </Paso>
             <Paso n={3}>
               Llamá para confirmar que lo recibieron
-              {telefono ? (
+              {telOficina ? (
                 <>
                   :{" "}
-                  <a href={`tel:${telefono.marcar}`} className="font-semibold text-aviation-blue dark:text-aviation-cyan underline underline-offset-2">
+                  <a href={`tel:${telOficina.marcar}`} className="font-semibold text-aviation-blue dark:text-aviation-cyan underline underline-offset-2">
                     <Phone className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
-                    {telefono.mostrar}
+                    {telOficina.mostrar}
                   </a>
                 </>
               ) : null}
               . Te dicen si lo aceptan o por qué lo rechazan.
-              {telefono?.mostrar !== oficina.telefonos && (
+              {telOficina?.mostrar !== oficina.telefonos && (
                 <span className="block text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">{oficina.telefonos}</span>
               )}
             </Paso>

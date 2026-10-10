@@ -88,12 +88,13 @@ interface Props {
   aeronaveInicial: string;
   /** Para el plan de vuelo OACI: las oficinas ARO/AIS (AIC A 19/2026). */
   oficinas: OficinaUbicada[];
-  nombrePiloto: string;
+  /** Para el plan de vuelo, del perfil: "NOMBRE PPA 12345678" y el celular. */
+  piloto: { comandante: string; telefono: string };
   /** La fecha de hoy en Argentina, del server. */
   hoy: string;
 }
 
-export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveInicial, oficinas, nombrePiloto, hoy }: Props) {
+export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveInicial, oficinas, piloto, hoy }: Props) {
   const [codigos, setCodigos] = useState<string[]>(() =>
     rutaInicial.length >= 2 ? rutaInicial : ["", ""]
   );
@@ -1112,7 +1113,8 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                 litros={combustibleNum}
                 consumoLh={consumoNum}
                 oficinas={oficinas}
-                nombrePiloto={nombrePiloto}
+                comandante={piloto.comandante}
+                telefono={piloto.telefono}
                 hoy={hoy}
               />
 
