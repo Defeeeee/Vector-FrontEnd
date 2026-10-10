@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.23.0 — El plan de vuelo, listo para mandar
+
+_10 de octubre de 2026_
+
+- **Tu plan de vuelo para EANA, desde el planificador** — Armá la ruta y Vector completa el formulario OACI: ruta, velocidad, nivel, tiempo y autonomía. Marcá el equipo del avión, firmá con el dedo y mandá el PDF a la oficina ARO/AIS, con el mail y el teléfono a mano.
+- **Tus horas, arriba de todo** — El inicio arranca por tus horas totales, con los últimos 30 días, PIC, noche, instrumentos, aterrizajes y vuelos. El camino a la próxima licencia sigue más abajo.
+
 ## v2.22.0 — Vector, también para quien recién empieza
 
 _24 de septiembre de 2026_

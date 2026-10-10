@@ -1,0 +1,141 @@
+# AIC A 19/2026, Anexo ALFA — extraído de https://ais.anac.gob.ar/descarga/aic-6a32db490b7b8
+# Publicada el 17 de junio de 2026 (GO-EANA). Cancela la AIC A 08/2025.
+# Copia verbatim de las páginas 5 a 7 del PDF, contra la que oficinas-aro.test.ts contrasta
+# src/data/oficinas-aro.tsv en los dos sentidos. NO EDITAR A MANO: si cambia la AIC, se
+# vuelve a extraer el texto del PDF nuevo.
+--- pág 5
+1
+Anexo ALFA / ALFA ANNEX
+AERÓDROMOS FIR
+RESISTENCIA /
+RESISTENCIA FIR
+AERODROMES
+INDICATIVO /
+ADDRESS
+CORREO
+ELECTRÓNICO /
+E-MAILS
+TELÉFONOS /
+TELEPHONE NUMBERS
+SARC SARCZPZX accrr@eana.com.ar (+54 379) 4458844 /
+ARO-AIS móvil/mobile (+54 9 379) 488177
+SARE SAREZPZX acsis@eana.com.ar (+54 362) 4436280 - INT / EXT 32146-
+32151 / (+54 3624) 436291/2/3
+SARF SARFZPZX acfsa@eana.com.ar (+54 370) 4454448
+SARI SARIZPZX acigu@eana.com.ar (+54 3757) 564632 / (+54 3757) 530075 /
+(+54 11) 36701386 / (+54 3757) 420595
+SARL SARLZPZX aclib@eana.com.ar Conmutador/Switch (+54 362) 4436291/2/3
+- INT / EXT 32933 / (+54 377) 2425528
+SARP SARPZPZX acpos@eana.com.ar (+54 376) 4451903
+SATG SATGZPZX acgoy@eana.com.ar (+54 3624) 436291-2-3 -INT / EXT 32972
+SATR SATRZPZX acrta@eana.com.ar (+54 3624) 436291/2/3 - INT / EXT 32941
+AERÓDROMOS FIR
+CÓRDOBA /
+CÓRDOBA FIR
+AERODROMES
+INDICATIVO /
+ADDRESS
+CORREO
+ELECTRÓNICO /
+E-MAILS
+TELÉFONOS /
+TELEPHONE NUMBERS
+SACO SACOZPZX accba@eana.com.ar (+54 351) 4756428
+SANC SANCZPZX accat@eana.com.ar (+54 383) 4453686
+SANE SANEZPZX acsde@eana.com.ar (+54 385) 4340710 - INT / EXT 36960
+SANL SANLZPZX aclar@eana.com.ar (+54 380) 4439211
+SANT SANTZPZX actuc@eana.com.ar (+54 381) 4511036 / (+54 381) 4260756 -
+INT / EXT 52311
+SAOS SAOSZPZX acsrc@eana.com.ar (+54 9 351) 2921338
+SASA SASAZPZX acsal@eana.com.ar (+54 387) 4375113 - INT / EXT 52643 -
+52648
+SASJ SASJZPZX acjuj@eana.com.ar (+54 388) 4911102 / (+54 388) 4911104 -
+INT / EXT 131 / RTI 58212
+SANR SANRZPZX actrh@eana.com.ar (+54 11) 44802211/9 - INT / EXT 36926
+SAOC SAOCZPZX acrcu@eana.com.ar (+54 358) 4970883
+--- pág 6
+2
+AERÓDROMOS FIR
+MENDOZA /
+MENDOZA FIR
+AERODROMES
+INDICATIVO /
+ADDRESS
+CORREO
+ELECTRÓNICO /
+E-MAILS
+TELÉFONOS /
+TELEPHONE NUMBERS
+SANU SANUZPZX acjua@eana.com.ar (+54 264) 4250400 - INT / EXT 47614
+SAME SAMEZPZX acdoz@eana.com.ar (+54 261) 4487486 - INT / EXT 65413 -
+65337
+SAMM SAMMZPZX acmlg@eana.com.ar (+54 260) 4471265
+SAMR SAMRZPZX acsra@eana.com.ar (+54 260) 4430703
+SAOU SAOUZPZX acuis@eana.com.ar (+54 266) 4423047 - INT / RTI 43317 Móvil /
+Mobile (+54 9 11) 23604976
+SAOR SAORZPZX acryd@eana.com.ar (+54 11) 54910878
+AERÓDROMOS FIR
+COMODORO
+RIVADAVIA /
+COMODORO
+RIVADAVIA FIR
+AERODROMES
+INDICATIVO /
+ADDRESS
+CORREO
+ELECTRÓNICO /
+E-MAILS
+TELÉFONOS /
+TELEPHONE NUMBERS
+SAVC SAVCZPZX accrv@eana.com.ar (+54 297) 4549439 - INT / EXT 50356 /
+5374714, 4548084
+SAVE SAVEZPZX acesq@eana.com.ar (+54 294) 5451354 - INT / EXT 45304 -
+45300
+SAVT SAVTZPZX actre@eana.com.ar (+54 280) 4421009 - INT / EXT 46309 
+Corp.Ais-Com (+54 9 11) 31977395
+SAVV SAVVZPZX acvie@eana.com.ar (+54 2920) 424416 - INT / EXT 46203 -
+46204
+SAVY SAVYZPZX acdry@eana.com.ar (+54 280) 4475938
+SAWC SAWCZPZX aceca@eana.com.ar
+(+54 2902) 492051 / (+54 2902) 493702
+Ofic. Corporativo móvil / CorporativeOffice
+mobile (+54 9 2902) 485640
+SAWE SAWEZPZX acgde@eana.com.ar (+54 2964) 492351 - INT / EXT 44209
+SAWH SAWHZPZX acusu@eana.com.ar (+54 2901) 434390 / (+54 11) 44802385 -
+INT / EXT 44306
+SAWG SAWGZPZX acgal@eana.com.ar (+54 2966) 442044
+--- pág 7
+3
+AERÓDROMOS FIR
+EZEIZA /
+EZEIZA FIR
+AERODROMES
+INDICATIVO /
+ADDRESS
+CORREO
+ELECTRÓNICO /
+E-MAILS
+TELÉFONOS /
+TELEPHONE NUMBERS
+SAAC SAACZPZX acdia@eana.com.ar (+54 11) 44802210
+SAAP SAAPZPZX acpar@eana.com.ar (+54 343) 4261914 - INT / EXT 67324 -
+67325
+SAAR SAARZPZX acros@eana.com.ar (54 341) 4513202 - INT / EXT 1120 - 1134 /
+(+54 341) 5038804
+SAAV SAAVZPZX acsvo@eana.com.ar (+54 342) 4995065 - INT / EXT 67600
+SABE SABEZPZX acaer@eana.com.ar (+54 11) 45141513 / 1611
+SADM SADMZPZX acmor@eana.com.ar (+54 11) 46279402 – móvil / mobile (+54 9
+11) 41792087
+SADF SADFZPZX acfdo@eana.com.ar (+54 11) 45800261
+SADP SADPZPZX acpal@eana.com.ar (+54 11) 60064271 / (+54 11) 44802413
+SAEZ SAEZZPZX aceze@eana.com.ar (+54 11) 44800331 - INT / EXT 57330 / Fax 
+(+54 11) 44802330
+SAZB SAZBZPZX acbca@eana.com.ar (+54 351) 4756428 - INT / EXT 36428
+SAZM SAZMZPZX acmdp@eana.com.ar (+54 223) 4786444 - INT / EXT 53530
+SAZN SAZNZPZX acneu@eana.com.ar (+54 011) 44802444
+SAZR SAZRZPZX acosa@eana.com.ar (+54 2954) 426664 - INT / EXT 57064 / (+54 
+2954) 433814
+SAZS SAZSZPZX acbar@eana.com.ar (+54 294) 4405030/29 - INT / EXT 57870
+SAZT SAZTZPZX acdil@eana.com.ar (+54 249) 4440043 / móvil / mobile (+54 9
+11) 65290132
+SAZY SAZYZPZX acchp@eana.com.ar (+54 297) 2428398 INT / EXT 57975

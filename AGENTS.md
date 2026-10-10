@@ -40,6 +40,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/lib/resumen-social.ts`, `src/lib/publicaciones-servidor.ts` | Lo que la red lee del backend, con lo que le agrega el server: las fechas ya escritas y el mapa del vuelo. |
 | `src/app/page.tsx`, `src/app/guias/`, `src/components/publico/`, `src/lib/sitio.ts` | Lo público: la landing (Server Component, estática), las guías con sus fuentes, `robots.ts`, `sitemap.ts` y las imágenes para compartir. Una guía nueva se agrega en `GUIAS` y aparece en el sitemap, el índice y el pie. **Todo lo que promete la landing se verifica contra el código**; lo regulatorio de las guías, contra la norma (invariante 6). |
 | `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |
+| `src/lib/plan-de-vuelo.ts`, `src/lib/plan-de-vuelo-pdf.ts`, `src/lib/oficinas-aro.ts`, `PlanDeVueloOaci.tsx` | El plan de vuelo OACI desde el planificador: cada casilla (puro, testeado), el formulario dibujado con pdf-lib **en el navegador** (anda sin señal) y las 49 oficinas ARO/AIS de la AIC A 19/2026, testeadas contra su texto. Fuentes en `docs/normativa/plan-de-vuelo-eana.md`. |
 | `src/lib/mail-plantilla.ts`, `src/lib/mail-envio.ts`, `src/lib/mail-seguimiento.ts`, `src/app/api/mail/`, `src/app/api/cron/` | Los mails: la plantilla con la estética de la landing, el envío **con seguimiento propio** (aperturas y clics, firmados) y los barridos que los mandan. Las imágenes viven en `public/hotlink-ok/correo/` (Cloudflare bloquea el hotlinking fuera de esa carpeta). Todo mail sale por `enviarConSeguimiento`; las métricas se ven en el panel de administración. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
@@ -47,7 +48,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/proxy.ts` | Protege `/dashboard` y renueva la sesión (el JWT de Supabase dura una hora). |
 | `src/data/` | Aeródromos, pistas, AIP, aerovías, fixes y radioayudas en TSV **commiteados**: la app no depende de red en build ni en runtime. Se regeneran con `npm run build:*`. |
 | `src/sw/sw.ts` | El service worker (PWA). Lo compila `scripts/build-sw.mjs` después de `next build`. |
-| `docs/normativa/` | Las secciones de la RAAC 61 que cita el código, y las fuentes del libro de vuelo (RAAC 61.120 y Res. ANAC 470/2025). **La VI edición de la RAAC 61 (enero 2026) renumeró**: el libro de vuelo ya no es la 61.51. |
+| `docs/normativa/` | Las secciones de la RAAC 61 que cita el código, las fuentes del libro de vuelo (RAAC 61.120 y Res. ANAC 470/2025) y las del plan de vuelo (AIP ENR 1.10 y AIC A 19/2026). **La VI edición de la RAAC 61 (enero 2026) renumeró**: el libro de vuelo ya no es la 61.51. |
 | `docs/brief/` | Los planes 01–11, tal como se escribieron. Son historia, no backlog: verificá contra el código antes de dar algo de ahí por pendiente. |
 
 ### La navegación
@@ -210,7 +211,7 @@ antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tam
 cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
 importa es el del backend (`request_max_body_size`, 30 MB).
 
-## Estado y pendientes (al 2026-10-02)
+## Estado y pendientes (al 2026-10-10)
 
 - **Alumno piloto** (Federico, 2026-09-24; `lib/licencias.ts`):
   - no lleva libro de vuelo, así que no ve el PDF, el importador, "cerrar hoja", los
@@ -245,6 +246,11 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   Google Search Console (Federico, 2026-09-24). El sitio vive en un subdominio
   personal (`vector.fdiaznem.com.ar`): un dominio propio ayudaría. La landing no dice
   "gratis": el precio es decisión de Federico.
+- **El plan de vuelo para EANA** (2026-10-10): sale del planificador como el formulario
+  OACI de la AIP en PDF, firmado en la pantalla. **Se manda desde el mail del piloto**, no
+  desde Vector (AIC A 19/2026: firmado, en PDF, y confirmar por teléfono). Con la TAS o
+  el consumo estimados no se baja. Faltan CHG, DLA y CNL, y guardar los planes: no se
+  persiste nada, como el resto del planificador.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

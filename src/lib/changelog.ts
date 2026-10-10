@@ -78,6 +78,29 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.23.0",
+    fecha: "2026-10-10",
+    titulo: "El plan de vuelo, listo para mandar",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Tu plan de vuelo para EANA, desde el planificador",
+        texto:
+          "Armá la ruta y Vector completa el formulario OACI: ruta, velocidad, nivel, tiempo y autonomía. Marcá el equipo del avión, firmá con el dedo y mandá el PDF a la oficina ARO/AIS, con el mail y el teléfono a mano.",
+        href: "/dashboard/planificador",
+        cta: "Ir al planificador",
+      },
+      {
+        icono: "reloj",
+        titulo: "Tus horas, arriba de todo",
+        texto:
+          "El inicio arranca por tus horas totales, con los últimos 30 días, PIC, noche, instrumentos, aterrizajes y vuelos. El camino a la próxima licencia sigue más abajo.",
+        href: "/dashboard",
+        cta: "Ver el inicio",
+      },
+    ],
+  },
+  {
     version: "2.22.0",
     fecha: "2026-09-24",
     titulo: "Vector, también para quien recién empieza",

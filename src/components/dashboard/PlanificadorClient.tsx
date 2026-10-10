@@ -11,6 +11,8 @@ import PageHeader from "./PageHeader";
 import PlanMapa from "./PlanMapa";
 import BriefingRuta from "./BriefingRuta";
 import AlternativasCerca from "./AlternativasCerca";
+import PlanDeVueloOaci from "./PlanDeVueloOaci";
+import type { OficinaUbicada } from "@/lib/oficinas-aro";
 import StyledSelect from "./StyledSelect";
 import { fmt, hoursToHm, num, NumberField, ToolNote } from "./tools/ToolPrimitives";
 import { calcularPlan, type ParametrosTramo } from "@/lib/navegacion";
@@ -84,9 +86,14 @@ interface Props {
   /** Estado inicial leído de la URL por la página. */
   rutaInicial: string[];
   aeronaveInicial: string;
+  /** Para el plan de vuelo OACI: las oficinas ARO/AIS (AIC A 19/2026). */
+  oficinas: OficinaUbicada[];
+  nombrePiloto: string;
+  /** La fecha de hoy en Argentina, del server. */
+  hoy: string;
 }
 
-export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveInicial }: Props) {
+export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveInicial, oficinas, nombrePiloto, hoy }: Props) {
   const [codigos, setCodigos] = useState<string[]>(() =>
     rutaInicial.length >= 2 ? rutaInicial : ["", ""]
   );
@@ -1091,6 +1098,22 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
               <AlternativasCerca
                 puntos={cargados.map((p) => ({ codigo: p.codigo, lat: p.lat, lon: p.lon }))}
                 groundSpeedKt={plan!.tramos[0]?.groundSpeed ?? null}
+              />
+
+              <PlanDeVueloOaci
+                codigos={codigos}
+                resueltos={resueltos}
+                aeronave={aeronave}
+                tasKt={tasNum}
+                tasEstimada={!tas.trim() && !aeronave?.cruise_tas_kt}
+                consumoEstimado={!consumo.trim() && !aeronave?.fuel_burn_lph}
+                altitudFt={num(altitud) > 0 ? num(altitud) : null}
+                minutosTotales={plan!.totales.minutos}
+                litros={combustibleNum}
+                consumoLh={consumoNum}
+                oficinas={oficinas}
+                nombrePiloto={nombrePiloto}
+                hoy={hoy}
               />
 
               {metar && (
