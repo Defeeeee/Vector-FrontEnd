@@ -72,8 +72,12 @@ Actividad.
   queda sin forma de llegar.
 - El inicio contesta tres preguntas —¿puedo volar hoy?, ¿cuánto me falta?, ¿cuánto me
   queda?— y cierra con los últimos vuelos. **Lo que no conteste una de las tres va al
-  Resumen**, no al inicio. La única excepción la decidió Federico: la tarjeta chica "Tu
-  red", al final y por `Suspense`, para que la red nunca demore lo de arriba.
+  Resumen**, no al inicio. Las excepciones las decidió Federico:
+  - **arriba de todo, las horas totales con seis cifras** (`HorasDeCarrera`, con las
+    piezas del Resumen en `Cifras.tsx`; 2026-10-10). El tracker de la PPA o la PCA
+    baja, después del saldo;
+  - la tarjeta chica "Tu red", al final y por `Suspense`, para que la red nunca demore
+    lo de arriba.
 - **Registrar vuelo es una sola página** (`/dashboard/log-flight`). Hubo un modal
   interceptado (`@modal/(.)log-flight`) que se llevó cinco commits de arreglos en un
   mes; se sacó en la 2.18.0. No volver a interceptar esa ruta.

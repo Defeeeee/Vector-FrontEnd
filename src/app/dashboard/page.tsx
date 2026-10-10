@@ -1,4 +1,6 @@
-import { Activity, ArrowRight, Plus } from "lucide-react";
+import { Activity, ArrowRight, CalendarDays, Clock, CloudFog, Moon, Plane, Plus, Sunrise } from "lucide-react";
+import { Odometer, StatTile } from "@/components/dashboard/Cifras";
+import { cifrasDeCarrera } from "@/lib/horas-carrera";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -22,8 +24,6 @@ import { listPlannedFlights } from "@/actions/planned-flight";
 import { estadoOnboarding } from "@/lib/onboarding";
 import { soloVolados } from "@/lib/simulador";
 import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
-import { openingTotals } from "@/lib/summary";
-import { horasPorMes } from "@/lib/tendencia";
 
 /**
  * Los endpoints que necesita esta pantalla, en paralelo.
@@ -189,6 +189,14 @@ export default async function Dashboard() {
         )}
       </section>
 
+      {/* Las horas de la carrera, como en el Resumen. Federico pidió el 2026-10-10 que el
+          inicio arranque por acá y que el tracker de la PCA deje de ser lo principal. */}
+      <HorasDeCarrera
+        flights={vuelosDesdeLaPpa(flights as Flight[], alumno ? null : profile?.fecha_ppa)}
+        logbooks={logbooks as Logbook[]}
+        todayIso={todayIso}
+      />
+
       {/* 1. ¿Puedo volar hoy? — las cuatro condiciones de RAAC 61.060(a)(1), y
           debajo lo que vence primero. Va arriba de todo porque es la única pregunta
           de esta pantalla con consecuencias antes de despegar. */}
@@ -237,7 +245,16 @@ export default async function Dashboard() {
       {/* Las novedades hablan del libro, la PCA y demás: al alumno no le aplican. */}
       {!alumno && <ChangelogNotice />}
 
-      {/* 2. ¿Cuánto me falta? — Recibe el libro entero, no `flights`: las horas de
+      {/* 3. ¿Cuánto me queda? — pesos para quien lleva saldo, horas para quien lleva
+          packs. Ninguno de los dos se dibuja si no tiene nada que decir. */}
+      {profile?.tracking_mode === "balance" ? (
+        saldoConocido && <SaldoCard saldo={balance} gasto={gastoMes} />
+      ) : (
+        <FlightPackWidget packs={packs} />
+      )}
+
+      {/* ¿Cuánto me falta? — Ya no es lo principal (Federico, 2026-10-10): va después del
+          saldo, y las horas totales encabezan la pantalla. Recibe el libro entero, no `flights`: las horas de
           instrumento en simulador cuentan para el requisito, y el tracker hace su
           propio corte con `separarSimuladores` para que no cuenten para nada más. */}
       {alumno ? (
@@ -255,17 +272,7 @@ export default async function Dashboard() {
           aircraft={aircraft as Aircraft[]}
           todayIso={todayIso}
         />
-      ) : (
-        <HorasTotales flights={vuelosDesdeLaPpa(flights as Flight[], profile?.fecha_ppa)} logbooks={logbooks as Logbook[]} todayIso={todayIso} />
-      )}
-
-      {/* 3. ¿Cuánto me queda? — pesos para quien lleva saldo, horas para quien lleva
-          packs. Ninguno de los dos se dibuja si no tiene nada que decir. */}
-      {profile?.tracking_mode === "balance" ? (
-        saldoConocido && <SaldoCard saldo={balance} gasto={gastoMes} />
-      ) : (
-        <FlightPackWidget packs={packs} />
-      )}
+      ) : null}
 
       {/* Cierra con el libro mismo. Todo lo de arriba es estado; esto es lo último
           que pasó. Una sesión de simulador es un renglón como cualquier otro y
@@ -283,64 +290,38 @@ export default async function Dashboard() {
 }
 
 /**
- * Para quien no va camino a la PCA —ya es comercial, o su licencia no es de
- * privado—, la segunda pregunta no es "cuánto me falta" sino "cuánto llevo".
+ * Las horas totales y la fila de cifras, arriba de todo y con la misma forma que en el
+ * Resumen (`components/dashboard/Cifras.tsx`). Las cuentas están en `lib/horas-carrera.ts`.
  *
- * Suma las horas de apertura de los libros: un piloto que migró 500 horas del libro de
- * papel no puede ver 46. Es el mismo total que el Resumen, que es adonde lleva.
+ * Una cuenta nueva no tiene nada que contar todavía, y de eso ya se ocupa
+ * `PrimerosPasos`: un cero grande acá sería ruido.
  */
-function HorasTotales({ flights, logbooks, todayIso }: { flights: Flight[]; logbooks: Logbook[]; todayIso: string }) {
-  const voladas = flights.reduce((acc, f) => acc + f.duration, 0);
-  const total = voladas + openingTotals(logbooks).totalHours;
-  // Una cuenta nueva no tiene nada que contar todavía, y de eso ya se ocupa
-  // `PrimerosPasos`. Un cero grande acá sería ruido.
-  if (total === 0) return null;
-
-  const hace30 = new Date(Date.parse(`${todayIso}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
-  const ultimos30 = flights.filter((f) => f.date >= hace30).reduce((acc, f) => acc + f.duration, 0);
-
+function HorasDeCarrera({ flights, logbooks, todayIso }: { flights: Flight[]; logbooks: Logbook[]; todayIso: string }) {
+  const c = cifrasDeCarrera(flights, logbooks, todayIso);
+  if (c.total === 0) return null;
+  const h = (n: number) => n.toFixed(1);
   return (
-    <Link
-      href="/dashboard/summary"
-      className="group flex items-end justify-between gap-6 rounded-[1.75rem] border p-5 md:p-6 bg-zinc-900 dark:bg-[#111111] border-zinc-900 dark:border-white/10 shadow-xl hover:bg-zinc-800 dark:hover:bg-[#161616] transition-colors"
-    >
-      <div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-white/50">Horas totales</p>
-        <p className="data text-3xl md:text-4xl font-bold leading-none mt-2 text-white">
-          {total.toFixed(1)}
-          <span className="text-base font-medium ml-1 text-white/50">hs</span>
-        </p>
-        <p className="text-[11px] text-white/50 mt-2">+{ultimos30.toFixed(1)} hs en 30 días · Ver resumen</p>
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-3">
+          <p className="eyebrow">Horas de vuelo · carrera total</p>
+          <Odometer value={c.total} />
+        </div>
+        <Link href="/dashboard/summary" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white mb-2">
+          Ver resumen <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
-      <Sparkline points={horasPorMes(flights, todayIso).map((m) => m.hours)} />
-    </Link>
-  );
-}
-
-/**
- * Six months of hours as a bare polyline.
- *
- * Hand-rolled SVG rather than pulling the chart library into the first paint to
- * draw six points.
- *
- * Coordinates are rounded before they reach the path — Math on floats
- * serializes differently in Node and Chrome, which is a hydration mismatch. The
- * radial dial on the summary page already got caught by exactly this.
- */
-function Sparkline({ points }: { points: number[] }) {
-  if (points.length < 2 || points.every((p) => p === 0)) return null;
-
-  const max = Math.max(...points, 1);
-  const w = 72;
-  const h = 20;
-  const step = w / (points.length - 1);
-  const d = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${(i * step).toFixed(1)} ${(h - (p / max) * h).toFixed(1)}`)
-    .join(" ");
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-[72px] h-5 overflow-visible shrink-0" aria-hidden="true">
-      <path d={d} fill="none" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-white/45" />
-    </svg>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatTile icon={<CalendarDays className="w-3.5 h-3.5" />} label="30 días" value={h(c.ultimos30)} caption="Horas en el último mes" />
+        <StatTile icon={<Clock className="w-3.5 h-3.5" />} label="PIC" value={h(c.pic)} caption="Al mando" />
+        <StatTile icon={<Moon className="w-3.5 h-3.5" />} label="Noche" value={h(c.noche)} caption="Vuelo nocturno" />
+        <StatTile icon={<CloudFog className="w-3.5 h-3.5" />} label="IMC" value={h(c.imc)} caption="En instrumentos" />
+        <StatTile icon={<Sunrise className="w-3.5 h-3.5" />} label="Ater." value={String(c.aterrizajes)} caption="Aterrizajes totales" />
+        <StatTile icon={<Plane className="w-3.5 h-3.5" />} label="Vuelos" value={String(c.vuelos)} caption="Entradas de log" />
+      </div>
+      <Link href="/dashboard/summary" className="sm:hidden inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+        Ver resumen <ArrowRight className="w-3.5 h-3.5" />
+      </Link>
+    </section>
   );
 }
