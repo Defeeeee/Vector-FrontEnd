@@ -1,22 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
-  armarPlan,
-  nombreDelArchivo,
   textoFormulario,
   asuntoDelMail,
+  cuerpoDelMail,
   autonomiaHhmm,
   casilla18,
   coordenadaOaci,
   duracionHhmm,
   identificacionAeronave,
   indicadorDeLugar,
-  mensajeFpl,
   nivelCrucero,
   rutaItem15,
   salidaUtc,
   textoAts,
   velocidadCrucero,
-  type DatosPlanDeVuelo,
 } from "./plan-de-vuelo";
 
 describe("formatos de las casillas (AIP ENR 1.10, Apéndice 1)", () => {
@@ -138,132 +135,30 @@ describe("casilla 18", () => {
   });
 });
 
-const BASE: DatosPlanDeVuelo = {
-  matricula: "LV-ABC",
-  reglas: "V",
-  tipoVuelo: "G",
-  tipoAeronave: "C152",
-  descripcionAeronave: "Cessna 152",
-  estela: "L",
-  equipo: "V",
-  vigilancia: "C",
-  salida: { codigo: "SADF", nombre: "San Fernando", lat: -34.4532, lon: -58.5896 },
-  destino: { codigo: "CNL", nombre: "Cañuelas", lat: -35.0, lon: -58.75 },
-  alternativas: [{ codigo: "SADM", nombre: "Morón" }],
-  fechaLocal: "2026-10-10",
-  horaLocal: "10:30",
-  tasKt: 95,
-  altitudFt: 2500,
-  ruta: [],
-  minutosTotales: 22,
-  litros: 90,
-  consumoLh: 24,
-  operador: "",
-  observaciones: "Vuelo de instrucción",
-  nav: "",
-  per: "",
-  personas: "2",
-  radio: { uhf: false, vhf: true, elt: true },
-  supervivencia: { lleva: false, polar: false, desierto: false, maritimo: false, selva: false },
-  chalecos: { lleva: false, luz: false, fluoresceina: false, uhf: false, vhf: false },
-  botes: { lleva: false, numero: "", capacidad: "", cubierta: false, color: "" },
-  colorMarcas: "Blanco con franjas azules",
-  observacionesSupervivencia: "",
-  piloto: "Lucía Ferrari",
-  presentadoPor: "",
-};
+describe("el mail, con el formato de FPL.AR", () => {
+  const plan = { c7: "LVS100", c9tipo: "ECHO", c13ad: "SRDL", c13hora: "1815", c16ad: "SADM", dof: "261017", c19: { piloto: "LUCIA FERRARI PPA 12345678" } };
 
-describe("el plan entero", () => {
-  it("arma todas las casillas sin faltas", () => {
-    const { plan, faltas } = armarPlan(BASE);
-    expect(faltas).toEqual([]);
-    expect(mensajeFpl(plan)).toBe(
-      "(FPL-LVABC-VG-C152/L-V/C-SADF1330-N0095A025 DCT-ZZZZ0022 SADM-DEST/CANUELAS 3500S05845W DOF/261010 RMK/VUELO DE INSTRUCCION)"
+  it("el asunto: matrícula, salida (EOBT) destino y fecha", () => {
+    expect(asuntoDelMail(plan)).toBe("LVS100-SRDL(1815)SADM_171026");
+  });
+
+  it("el cuerpo", () => {
+    expect(cuerpoDelMail(plan, { salida: "Luján", destino: "Morón" })).toBe(
+      [
+        "Estimados,",
+        "",
+        "Adjunto el plan de vuelo de la aeronave LVS100 (ECHO).",
+        "",
+        "  Desde : LUJAN (SRDL)",
+        "  Hasta : MORON (SADM)",
+        "  Fecha : 17 de octubre de 2026",
+        "  EOBT  : 1815 UTC",
+        "",
+        "Cordiales saludos,",
+        "",
+        "LUCIA FERRARI PPA 12345678",
+        "LVS100",
+      ].join("\n")
     );
-    expect(plan.c19).toMatchObject({ autonomia: "0345", personas: "2", piloto: "LUCIA FERRARI", observaciones: null });
-    expect(plan.presentadoPor).toBe("");
-    expect(asuntoDelMail(plan, BASE.fechaLocal)).toBe("FPL LVABC SADF 1330Z 10/10/2026");
-  });
-
-  it("sin designador OACI de tipo va ZZZZ y TYP/", () => {
-    const { plan } = armarPlan({ ...BASE, tipoAeronave: "", descripcionAeronave: "Aero Boero 115" });
-    expect(plan.c9tipo).toBe("ZZZZ");
-    expect(plan.c18).toContain("TYP/AERO BOERO 115");
-  });
-
-  it("dice qué falta en vez de inventarlo", () => {
-    const { faltas } = armarPlan({
-      ...BASE,
-      matricula: "",
-      equipo: "",
-      horaLocal: "",
-      litros: 0,
-      personas: "",
-      piloto: "",
-    });
-    expect(faltas.map((f) => f.casilla)).toEqual(["7", "10", "13", "19", "19", "19"]);
-  });
-
-  it("TBN cuando todavía no se sabe cuántos van", () => {
-    expect(armarPlan({ ...BASE, personas: "tbn" }).plan.c19.personas).toBe("TBN");
-  });
-
-  it("lo que no se lleva, se tacha aunque haya quedado marcado adentro", () => {
-    const { plan } = armarPlan({
-      ...BASE,
-      supervivencia: { lleva: false, polar: true, desierto: true, maritimo: false, selva: false },
-    });
-    expect(plan.c19.supervivencia).toEqual({ s: false, p: false, d: false, m: false, j: false });
-  });
-});
-
-describe("el formato que acepta EANA", () => {
-  /**
-   * El plan que Federico presentó el 10/10/2026 y le aceptaron, con otro nombre y otro
-   * teléfono. Cada casilla tiene que salir igual.
-   */
-  it("reproduce un plan presentado de verdad", () => {
-    const { plan, faltas } = armarPlan({
-      ...BASE,
-      matricula: "LV-S114",
-      tipoAeronave: "ECHO",
-      equipo: "SDGZ",
-      vigilancia: "EB2",
-      salida: { codigo: "SADF", nombre: "San Fernando" },
-      destino: { codigo: "SADF", nombre: "San Fernando" },
-      alternativas: [{ codigo: "SADM", nombre: "Morón" }],
-      horaLocal: "12:30",
-      tasKt: 90,
-      altitudFt: 1000,
-      ruta: [{ tipo: "radioayuda", codigo: "ATE" }],
-      minutosTotales: 60,
-      litros: 100,
-      consumoLh: 20,
-      operador: "Smart Flight",
-      observaciones: "",
-      nav: "ABAS",
-      per: "A",
-      colorMarcas: "Blanco y azul",
-      observacionesSupervivencia: "T.E. +5491100000000",
-      piloto: "Lucía Ferrari PPA 12345678",
-      radio: { uhf: false, vhf: false, elt: true },
-    });
-    expect(faltas).toEqual([]);
-    expect(mensajeFpl(plan)).toBe(
-      "(FPL-LVS114-VG-ECHO/L-SDGZ/EB2-SADF1530-N0090A010 DCT ATE DCT-SADF0100 SADM-NAV/ABAS DOF/261010 OPR/SMART FLIGHT PER/A)"
-    );
-    expect(plan.c19).toMatchObject({
-      autonomia: "0500",
-      personas: "2",
-      radio: { u: false, v: false, e: true },
-      colorMarcas: "BLANCO Y AZUL",
-      observaciones: "T.E. +5491100000000",
-      piloto: "LUCIA FERRARI PPA 12345678",
-    });
-    expect(nombreDelArchivo(plan)).toBe("LVS114-SADF1530SADF_101026.pdf");
-  });
-
-  it("la casilla 19 conserva el + y el punto de un teléfono", () => {
-    expect(textoFormulario("t.e. +54 9 11 6886-2612")).toBe("T.E. +54 9 11 6886-2612");
   });
 });

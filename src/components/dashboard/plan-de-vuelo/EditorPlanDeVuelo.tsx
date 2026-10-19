@@ -1,0 +1,973 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Clock,
+  CloudOff,
+  Copy,
+  Download,
+  Loader2,
+  Mail,
+  Phone,
+  Save,
+  Share2,
+  Sparkles,
+} from "lucide-react";
+import fondoEana from "@/lib/plan-de-vuelo-eana.jpg";
+import fondoDla from "@/lib/plan-de-vuelo-dla.png";
+import { duplicarPlan, guardarDemoras, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
+import {
+  aplicarAvion,
+  leerFormulario,
+  localDesdeUtc,
+  normalizar,
+  revisar,
+  sugerirAutonomia,
+  sugerirEet,
+  tasDeVelocidad,
+  tokensDeRuta,
+  type FormularioPlan,
+  type PerfilAvionPlan,
+  type PilotoParaPlan,
+  type Sugerencia,
+} from "@/lib/formulario-plan";
+import { asuntoDelMail, cuerpoDelMail, mensajeFpl, nombreDelArchivo, salidaUtc, type Indicador18 } from "@/lib/plan-de-vuelo";
+import { demoraDesdeHoraLocal, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, revisarDemora, type Demora } from "@/lib/demora-plan";
+import { horarioAro, oficinaParaSalida, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
+import { distanciaNmPrecisa } from "@/lib/distance";
+import CampoAerodromo from "./CampoAerodromo";
+import FirmaPiloto from "./FirmaPiloto";
+
+export interface AvionEditor {
+  id: string;
+  registration: string;
+  icao: string;
+  type: string;
+  cruise_tas_kt?: number | null;
+  fuel_burn_lph?: number | null;
+  fuel_capacity_l?: number | null;
+  plan_vuelo?: PerfilAvionPlan | null;
+}
+
+interface Props {
+  id: string;
+  formularioInicial: unknown;
+  demorasIniciales: Demora[];
+  aviones: AvionEditor[];
+  piloto: PilotoParaPlan;
+  firmaInicial: string | null;
+  oficinas: OficinaUbicada[];
+  /** La hora del server, para el primer render; después se actualiza en el navegador. */
+  ahoraIso: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Estilos                                                                     */
+/* -------------------------------------------------------------------------- */
+
+const INPUT =
+  "w-full bg-transparent py-2 text-sm font-bold data text-zinc-900 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium";
+
+const BORDE: Record<string, string> = {
+  ok: "border-emerald-300 dark:border-emerald-500/40",
+  falta: "border-red-300 dark:border-red-500/40",
+  error: "border-red-400 dark:border-red-500/60",
+  opcional: "border-zinc-200 dark:border-white/10",
+};
+
+const INDICADORES: Indicador18[] = [
+  "STS", "PBN", "NAV", "COM", "DAT", "SUR", "REG", "EET", "SEL", "TYP", "CODE", "DLE", "OPR", "ORGN", "PER", "RALT", "TALT", "RIF", "RMK",
+];
+
+function Campo({
+  casilla,
+  etiqueta,
+  estado,
+  delAvion,
+  children,
+  arriba,
+  className = "",
+}: {
+  casilla?: string;
+  etiqueta: string;
+  estado?: string;
+  delAvion?: boolean;
+  children: ReactNode;
+  arriba?: ReactNode;
+  className?: string;
+}) {
+  const borde = BORDE[estado ?? "opcional"] ?? BORDE.opcional;
+  return (
+    <div className={className}>
+      {arriba}
+      <label
+        className={`block rounded-2xl border px-3.5 pt-2 pb-1 transition-colors ${borde} ${
+          delAvion ? "bg-violet-50/60 dark:bg-violet-500/[0.06]" : "bg-white dark:bg-white/[0.02]"
+        }`}
+      >
+        <span className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+            {casilla && <span className="data font-bold text-zinc-400 dark:text-zinc-500 mr-1">{casilla}</span>}
+            {etiqueta}
+          </span>
+          {estado === "ok" && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+          {(estado === "falta" || estado === "error") && <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />}
+        </span>
+        {children}
+      </label>
+    </div>
+  );
+}
+
+function Seccion({ titulo, children, accion }: { titulo: string; children: ReactNode; accion?: ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-zinc-200 dark:border-white/10 bg-zinc-50/50 dark:bg-white/[0.015] p-4 md:p-6 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{titulo}</h3>
+        {accion}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Sugerido({ s, onUsar, actual }: { s: Sugerencia | null; onUsar: () => void; actual: string }) {
+  if (!s) return null;
+  const igual = s.valor === actual;
+  return (
+    <button
+      type="button"
+      onClick={onUsar}
+      disabled={igual}
+      className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-sky-50 dark:bg-sky-500/10 px-3 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20 disabled:opacity-60 transition-colors text-left"
+    >
+      <Sparkles className="w-3 h-3 shrink-0" />
+      <span>
+        Sugerido <span className="data font-bold">{s.valor}</span> · {s.motivo}
+        {!igual && <span className="ml-1 underline underline-offset-2">usar</span>}
+      </span>
+    </button>
+  );
+}
+
+function Tilde({ activo, onChange, children }: { activo: boolean; onChange: (v: boolean) => void; children: ReactNode }) {
+  return (
+    <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
+      <input type="checkbox" checked={activo} onChange={(e) => onChange(e.target.checked)} className="w-4 h-4 accent-zinc-900 dark:accent-white" />
+      {children}
+    </label>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* La sugerencia de la duración: la ruta escrita, de vuelta a puntos          */
+/* -------------------------------------------------------------------------- */
+
+interface PuntoApi {
+  lat: number;
+  lon: number;
+  tramo?: { lat: number; lon: number }[];
+}
+
+/**
+ * Resuelve la ruta escrita con `/api/puntos` (el mismo directorio del planificador, que
+ * anda sin señal) y sugiere la duración con la TAS de la casilla 15. Sin viento: lo dice.
+ * Con un punto que no reconoce ("SECTOR"), no inventa: lo nombra.
+ */
+function useSugerenciaEet(f: FormularioPlan, tasAvion: number | null): { sugerencia: Sugerencia | null; nota: string | null } {
+  const cache = useRef(new Map<string, PuntoApi | null>());
+  const [resultado, setResultado] = useState<{ sugerencia: Sugerencia | null; nota: string | null }>({ sugerencia: null, nota: null });
+
+  const clave = JSON.stringify([f.ruta, f.salida?.codigo, f.destino?.codigo, f.velocidad, f.sugerencias.eet?.ruta]);
+  useEffect(() => {
+    let vigente = true;
+    const correr = async () => {
+      // La del planificador, si la ruta no cambió: esa tiene el viento.
+      const delPlanificador = f.sugerencias.eet;
+      if (delPlanificador && delPlanificador.ruta === f.ruta.trim().toUpperCase()) {
+        setResultado({ sugerencia: delPlanificador, nota: null });
+        return;
+      }
+      const tas = tasDeVelocidad(f.velocidad) ?? tasAvion;
+      if (!f.salida || !f.destino || f.salida.lat === undefined || f.destino.lat === undefined) {
+        setResultado({ sugerencia: null, nota: null });
+        return;
+      }
+      if (!tas) {
+        setResultado({ sugerencia: null, nota: "Con la velocidad de la casilla 15 te sugiero la duración." });
+        return;
+      }
+      const tokens = tokensDeRuta(f.ruta);
+      const desconocidos = tokens.filter((t) => t.tipo === "desconocido").map((t) => t.texto);
+      const puntos: { lat: number; lon: number }[] = [{ lat: f.salida.lat!, lon: f.salida.lon! }];
+      const noResueltos: string[] = [...desconocidos];
+      for (let i = 0; i < tokens.length; i++) {
+        const t = tokens[i];
+        if (t.tipo === "desconocido") continue;
+        const desde = tokens[i - 1]?.tipo === "punto" ? (tokens[i - 1] as { token: string }).token : f.salida.codigo;
+        const hasta = tokens[i + 1]?.tipo === "punto" ? (tokens[i + 1] as { token: string }).token : f.destino.codigo;
+        const k = `${t.token}|${t.tipo === "aerovia" ? `${desde}|${hasta}` : ""}`;
+        let p = cache.current.get(k);
+        if (p === undefined) {
+          try {
+            const q = new URLSearchParams({ q: t.token, desde, hasta });
+            const res = await fetch(`/api/puntos?${q}`);
+            const data = (await res.json()) as { punto: PuntoApi | null };
+            p = data.punto && Number.isFinite(data.punto.lat) ? data.punto : null;
+          } catch {
+            p = null;
+          }
+          cache.current.set(k, p);
+        }
+        if (!p) {
+          noResueltos.push(t.texto);
+          continue;
+        }
+        if (t.tipo === "aerovia") puntos.push(...(p.tramo ?? []));
+        else puntos.push({ lat: p.lat, lon: p.lon });
+      }
+      puntos.push({ lat: f.destino.lat!, lon: f.destino.lon! });
+      if (!vigente) return;
+      if (noResueltos.length) {
+        setResultado({
+          sugerencia: null,
+          nota: `No reconozco ${noResueltos.join(", ")} en la ruta: la duración la calculás vos.`,
+        });
+        return;
+      }
+      let nm = 0;
+      for (let i = 1; i < puntos.length; i++) nm += distanciaNmPrecisa(puntos[i - 1].lat, puntos[i - 1].lon, puntos[i].lat, puntos[i].lon);
+      if (nm < 1) {
+        setResultado({ sugerencia: null, nota: "Vuelo local: la duración depende de lo que vayas a hacer." });
+        return;
+      }
+      setResultado({ sugerencia: sugerirEet(nm, tas), nota: null });
+    };
+    const t = setTimeout(correr, 400);
+    return () => {
+      vigente = false;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave, tasAvion]);
+
+  return resultado;
+}
+
+/* -------------------------------------------------------------------------- */
+/* El editor                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export default function EditorPlanDeVuelo({
+  id,
+  formularioInicial,
+  demorasIniciales,
+  aviones,
+  piloto,
+  firmaInicial,
+  oficinas,
+  ahoraIso: ahoraServer,
+}: Props) {
+  const [f, setF] = useState<FormularioPlan>(() => leerFormulario(formularioInicial));
+  const [guardado, setGuardado] = useState<"guardado" | "guardando" | "error">("guardado");
+  const [ahoraIso, setAhoraIso] = useState(ahoraServer);
+  const [firma, setFirma] = useState<string | null>(firmaInicial);
+  const [demoras, setDemoras] = useState<Demora[]>(demorasIniciales);
+  const [pdf, setPdf] = useState<"" | "armando" | "error">("");
+  const [perfilGuardado, setPerfilGuardado] = useState<"" | "guardando" | "listo" | "error">("");
+  const [indicadoresAbiertos, setIndicadoresAbiertos] = useState<Set<string>>(() => new Set(Object.keys(f.otros)));
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ultimo = useRef(f);
+
+  // La hora real del navegador, después de montar: para avisar si la salida ya pasó.
+  useEffect(() => {
+    setAhoraIso(new Date().toISOString());
+    const i = setInterval(() => setAhoraIso(new Date().toISOString()), 60_000);
+    // El fondo del formulario se pide al abrir: queda en el cache del service worker.
+    fetch(fondoEana.src).catch(() => {});
+    return () => clearInterval(i);
+  }, []);
+
+  const guardar = useCallback(async () => {
+    setGuardado("guardando");
+    const r = await guardarPlan(id, ultimo.current);
+    setGuardado("error" in r ? "error" : "guardado");
+  }, [id]);
+
+  const cambiar = useCallback(
+    (cambio: Partial<FormularioPlan> | ((prev: FormularioPlan) => FormularioPlan)) => {
+      setF((prev) => {
+        const nuevo = normalizar(typeof cambio === "function" ? cambio(prev) : { ...prev, ...cambio });
+        ultimo.current = nuevo;
+        return nuevo;
+      });
+      setGuardado("guardando");
+      if (temporizador.current) clearTimeout(temporizador.current);
+      temporizador.current = setTimeout(guardar, 1500);
+    },
+    [guardar]
+  );
+
+  // Que no se pierda lo último si se cierra la pestaña con el guardado pendiente.
+  useEffect(() => {
+    const antes = () => {
+      if (temporizador.current) void guardar();
+    };
+    window.addEventListener("pagehide", antes);
+    return () => window.removeEventListener("pagehide", antes);
+  }, [guardar]);
+
+  const r = useMemo(() => revisar(f, ahoraIso), [f, ahoraIso]);
+  const avion = aviones.find((a) => a.id === f.aircraftId) ?? null;
+  const { sugerencia: sugEet, nota: notaEet } = useSugerenciaEet(f, avion?.cruise_tas_kt ?? null);
+  const sugAutonomia: Sugerencia | null =
+    f.sugerencias.autonomia ??
+    (avion?.fuel_capacity_l && avion.fuel_burn_lph
+      ? sugerirAutonomia(avion.fuel_capacity_l, avion.fuel_burn_lph, "con los tanques llenos")
+      : null);
+
+  const sugerida = useMemo(() => (f.salida ? oficinaParaSalida(f.salida, oficinas) : null), [f.salida, oficinas]);
+  const oficina = oficinas.find((o) => o.oaci === f.oficina) ?? sugerida?.oficina ?? null;
+  const telOficina = oficina ? primerTelefono(oficina.telefonos) : null;
+  const horario = oficina ? horarioAro(oficina.horario, f.eobtUtc || undefined) : null;
+  const e = r.estados;
+  const utc = salidaUtc(f.fechaLocal, f.horaLocal);
+  const listo = r.completo && !!firma;
+
+  /* ------------------------------------------------------------ el PDF ---- */
+
+  const generar = async (): Promise<File | null> => {
+    setPdf("armando");
+    try {
+      const [{ pdfPlanDeVuelo }, fondo] = await Promise.all([
+        import("@/lib/plan-de-vuelo-pdf"),
+        fetch(fondoEana.src).then((x) => x.arrayBuffer()),
+      ]);
+      const firmaPng = firma ? new Uint8Array(await (await fetch(firma)).arrayBuffer()) : undefined;
+      const bytes = await pdfPlanDeVuelo(r.plan, { fondoJpg: new Uint8Array(fondo), firmaPng });
+      setPdf("");
+      void marcarDescargado(id);
+      return new File([bytes as BlobPart], nombreDelArchivo(r.plan), { type: "application/pdf" });
+    } catch {
+      setPdf("error");
+      return null;
+    }
+  };
+
+  const bajarArchivo = (archivo: File) => {
+    const url = URL.createObjectURL(archivo);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = archivo.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  };
+
+  const compartirArchivo = async (archivo: File, titulo: string) => {
+    if (navigator.canShare?.({ files: [archivo] })) {
+      try {
+        await navigator.share({ files: [archivo], title: titulo });
+      } catch {
+        // Cancelar el menú no es un error.
+      }
+    } else {
+      bajarArchivo(archivo);
+    }
+  };
+
+  /* ------------------------------------------------- guardar en el avión -- */
+
+  const guardarEnAvion = async () => {
+    if (!avion) return;
+    setPerfilGuardado("guardando");
+    const res = await guardarPerfilAvion(avion.id, {
+      ...(avion.plan_vuelo ?? {}),
+      estela: f.estela,
+      equipo: f.equipo.trim().toUpperCase(),
+      vigilancia: f.vigilancia.trim().toUpperCase(),
+      nav: f.otros.NAV ?? "",
+      pbn: f.otros.PBN ?? "",
+      opr: f.otros.OPR ?? "",
+      per: f.otros.PER ?? "",
+      colorMarcas: f.colorMarcas,
+      elt: f.radio.e,
+      radioUhf: f.radio.u,
+      radioVhf: f.radio.v,
+    });
+    setPerfilGuardado("error" in res ? "error" : "listo");
+  };
+
+  /* ---------------------------------------------------------- la demora -- */
+
+  const [horaDemora, setHoraDemora] = useState("");
+  const [demoraEstado, setDemoraEstado] = useState<"" | "armando" | "error">("");
+  const vigente = eobtVigente(f, demoras);
+  const demoraNueva = horaDemora ? demoraDesdeHoraLocal(f, demoras, horaDemora) : null;
+  const chequeoDemora = revisarDemora(f, demoras, ahoraIso);
+
+  const avisarDemora = async (compartir: boolean) => {
+    if (!demoraNueva) return;
+    setDemoraEstado("armando");
+    try {
+      const c18 = r.plan.c18.replace(/DOF\/\d{6}/, `DOF/${dofDeDemora(demoraNueva)}`);
+      const [{ pdfDemora }, fondo] = await Promise.all([
+        import("@/lib/plan-de-vuelo-pdf"),
+        fetch(fondoDla.src).then((x) => x.arrayBuffer()),
+      ]);
+      const firmaPng = firma ? new Uint8Array(await (await fetch(firma)).arrayBuffer()) : undefined;
+      const bytes = await pdfDemora(
+        { plan: r.plan, eobt: demoraNueva.eobt, c18, nombre: (piloto.nombre || f.piloto).toUpperCase(), licencia: piloto.licencia ?? "" },
+        { fondoPng: new Uint8Array(fondo), firmaPng }
+      );
+      const nuevas = [...demoras, { ...demoraNueva, creada: new Date().toISOString() }];
+      const g = await guardarDemoras(id, nuevas);
+      if (!("error" in g)) setDemoras(nuevas);
+      const archivo = new File([bytes as BlobPart], `DLA-${r.plan.c7}-${r.plan.c13ad}${demoraNueva.eobt}.pdf`, { type: "application/pdf" });
+      if (compartir) await compartirArchivo(archivo, `DLA ${r.plan.c7}`);
+      else bajarArchivo(archivo);
+      setHoraDemora("");
+      setDemoraEstado("");
+    } catch {
+      setDemoraEstado("error");
+    }
+  };
+
+  /* ------------------------------------------------------------ render ---- */
+
+  const cambiarOtro = (ind: Indicador18, valor: string) =>
+    cambiar((prev) => {
+      const otros = { ...prev.otros, [ind]: valor };
+      const origen = { ...prev.origen };
+      delete origen[`otros.${ind}`];
+      return { ...prev, otros, origen };
+    });
+
+  const autoOtros = useMemo(() => {
+    const auto: Partial<Record<Indicador18, string>> = {};
+    for (const parte of r.plan.c18.split(/ (?=[A-Z]{2,4}\/)/)) {
+      const m = /^([A-Z]{2,4})\/(.*)$/.exec(parte);
+      if (m && ["DEP", "DEST", "ALTN", "DOF"].includes(m[1])) auto[m[1] as Indicador18] = m[2];
+    }
+    return auto;
+  }, [r.plan.c18]);
+
+  return (
+    <div className="space-y-6 pb-16">
+      {/* Encabezado */}
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/dashboard/plan-de-vuelo" className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+          <ArrowLeft className="w-4 h-4" /> Planes
+        </Link>
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+          {guardado === "guardando" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando…</>)}
+          {guardado === "guardado" && (<><Check className="w-3.5 h-3.5 text-emerald-500" /> Guardado</>)}
+          {guardado === "error" && (<><CloudOff className="w-3.5 h-3.5 text-amber-500" /> Sin guardar: reintenta al seguir escribiendo</>)}
+        </span>
+      </div>
+
+      <div className="rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-5 md:p-6 space-y-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <p className="flex items-center gap-2 text-2xl md:text-3xl font-display font-bold text-zinc-900 dark:text-white">
+            <span className="data">{r.plan.c13ad || "????"}</span>
+            <ArrowRight className="w-5 h-5 text-zinc-400" />
+            <span className="data">{r.plan.c16ad || "????"}</span>
+          </p>
+          <p className="data text-sm text-zinc-500 dark:text-zinc-400">
+            {r.plan.c7 || "—"} · {r.plan.c9tipo || "—"}/{f.reglas} · EOBT {r.plan.c13hora || "????"}Z · ETE {r.plan.c16eet || "????"}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-1.5 rounded-full bg-zinc-100 dark:bg-white/10 overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${r.completo ? "bg-emerald-500" : "bg-sky-500"}`} style={{ width: `${r.porcentaje}%` }} />
+          </div>
+          <span className={`data text-xs font-bold ${r.completo ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500"}`}>
+            {r.completo ? "Completo" : `${r.porcentaje}%`}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+          <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border border-emerald-300" /> Completo</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border border-zinc-300 bg-violet-100 dark:bg-violet-500/20" /> Lo llenó Vector (avión o planificador)</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded border border-red-300" /> Falta o está mal</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-6 items-start">
+        <div className="space-y-6">
+          {/* 7 a 10 */}
+          <Seccion
+            titulo="Aeronave · casillas 7 a 10"
+            accion={
+              avion && (
+                <button
+                  type="button"
+                  onClick={guardarEnAvion}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                >
+                  {perfilGuardado === "guardando" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : perfilGuardado === "listo" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Save className="w-3.5 h-3.5" />}
+                  {perfilGuardado === "listo" ? `Guardado en ${avion.registration}` : `Guardar en ${avion.registration}`}
+                </button>
+              )
+            }
+          >
+            {aviones.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {aviones.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => cambiar((prev) => aplicarAvion(prev, a, piloto))}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold border data transition-colors ${
+                      a.id === f.aircraftId
+                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                        : "border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400"
+                    }`}
+                  >
+                    {a.registration}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Campo casilla="7" etiqueta="Matrícula" estado={e.matricula} delAvion={f.origen.matricula === "avion"} className="col-span-2 md:col-span-1">
+                <input value={f.matricula} onChange={(ev) => cambiar({ matricula: ev.target.value })} placeholder="LV-S114" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="8" etiqueta="Reglas" estado={e.reglas}>
+                <select value={f.reglas} onChange={(ev) => cambiar({ reglas: ev.target.value })} className={INPUT}>
+                  <option value="V">V · VFR</option>
+                  <option value="I">I · IFR</option>
+                  <option value="Y">Y · IFR → VFR</option>
+                  <option value="Z">Z · VFR → IFR</option>
+                </select>
+              </Campo>
+              <Campo casilla="8" etiqueta="Tipo de vuelo" estado={e.tipoVuelo}>
+                <select value={f.tipoVuelo} onChange={(ev) => cambiar({ tipoVuelo: ev.target.value })} className={INPUT}>
+                  <option value="G">G · General</option>
+                  <option value="N">N · No regular</option>
+                  <option value="S">S · Regular</option>
+                  <option value="M">M · Militar</option>
+                  <option value="X">X · Otro</option>
+                </select>
+              </Campo>
+              <Campo casilla="9" etiqueta="Número" estado={e.numero}>
+                <input value={f.numero} onChange={(ev) => cambiar({ numero: ev.target.value })} placeholder="Sólo si son 2+" className={INPUT} inputMode="numeric" />
+              </Campo>
+              <Campo casilla="9" etiqueta="Tipo OACI" estado={e.tipoAeronave} delAvion={f.origen.tipoAeronave === "avion"}>
+                <input value={f.tipoAeronave} onChange={(ev) => cambiar({ tipoAeronave: ev.target.value })} placeholder="C152" maxLength={4} className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="9" etiqueta="Estela" estado={e.estela}>
+                <select value={f.estela} onChange={(ev) => cambiar({ estela: ev.target.value })} className={INPUT}>
+                  <option value="L">L · Ligera</option>
+                  <option value="M">M · Media</option>
+                  <option value="H">H · Pesada</option>
+                  <option value="J">J · Súper</option>
+                </select>
+              </Campo>
+              <Campo casilla="10a" etiqueta="Equipo" estado={e.equipo} delAvion={f.origen.equipo === "avion"}>
+                <input value={f.equipo} onChange={(ev) => cambiar({ equipo: ev.target.value })} placeholder="SDGZ" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="10b" etiqueta="Transponder" estado={e.vigilancia} delAvion={f.origen.vigilancia === "avion"}>
+                <input value={f.vigilancia} onChange={(ev) => cambiar({ vigilancia: ev.target.value })} placeholder="C, EB2" className={`${INPUT} uppercase`} />
+              </Campo>
+            </div>
+            {!avion?.plan_vuelo?.equipo && (
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
+                10a: S = VHF, VOR e ILS; D DME, F ADF, G GPS, Z otro (va en NAV/). 10b: N sin transponder, C modo C, S modo S,
+                E modo S con ADS-B; B1/B2 ADS-B. {avion ? `Con "Guardar en ${avion.registration}" queda para la próxima.` : ""}
+              </p>
+            )}
+          </Seccion>
+
+          {/* 13 y 15 */}
+          <Seccion titulo="Salida y ruta · casillas 13 y 15">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Campo casilla="13" etiqueta="Aeródromo de salida" estado={e.salida}>
+                <CampoAerodromo valor={f.salida} onCambio={(a) => cambiar({ salida: a, oficina: "" })} placeholder="SADF o nombre" claseInput={INPUT} />
+              </Campo>
+              <Campo casilla="13" etiqueta="Fecha (hora argentina)" estado={e.fechaHora}>
+                <input type="date" value={f.fechaLocal} onChange={(ev) => cambiar({ fechaLocal: ev.target.value })} className={INPUT} />
+              </Campo>
+              <Campo
+                casilla="13"
+                etiqueta="Fuera de calzos (hora argentina)"
+                estado={e.fechaHora}
+                arriba={
+                  utc ? (
+                    <p className="mb-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      En el plan: <span className="data font-bold text-zinc-900 dark:text-white">{utc.hora}Z</span>, DOF/{utc.dof}
+                    </p>
+                  ) : undefined
+                }
+              >
+                <input type="time" value={f.horaLocal} onChange={(ev) => cambiar({ horaLocal: ev.target.value })} className={INPUT} />
+              </Campo>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Campo casilla="15" etiqueta="Velocidad" estado={e.velocidad} delAvion={f.origen.velocidad === "planificador"}>
+                <input value={f.velocidad} onChange={(ev) => cambiar({ velocidad: ev.target.value })} placeholder="N0090" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="15" etiqueta="Nivel" estado={e.nivel}>
+                <input value={f.nivel} onChange={(ev) => cambiar({ nivel: ev.target.value })} placeholder="A015 o VFR" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="15" etiqueta="Ruta" estado={e.ruta} className="col-span-2">
+                <input value={f.ruta} onChange={(ev) => cambiar({ ruta: ev.target.value })} placeholder="DCT ATE DCT" className={`${INPUT} uppercase`} />
+              </Campo>
+            </div>
+            {!avion?.cruise_tas_kt && !f.velocidad && (
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                La velocidad es la TAS de crucero, en nudos con N y cuatro cifras: 90 kt es N0090.
+              </p>
+            )}
+          </Seccion>
+
+          {/* 16 */}
+          <Seccion titulo="Destino · casilla 16">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Campo casilla="16" etiqueta="Destino" estado={e.destino} className="col-span-2 md:col-span-1">
+                <CampoAerodromo valor={f.destino} onCambio={(a) => cambiar({ destino: a })} placeholder="SAAK o nombre" claseInput={INPUT} />
+              </Campo>
+              <Campo
+                casilla="16"
+                etiqueta="Duración total (EET)"
+                estado={e.eet}
+                className="col-span-2 md:col-span-1"
+                arriba={<Sugerido s={sugEet} actual={f.eet} onUsar={() => sugEet && cambiar({ eet: sugEet.valor })} />}
+              >
+                <input value={f.eet} onChange={(ev) => cambiar({ eet: ev.target.value })} placeholder="0035" maxLength={4} className={INPUT} inputMode="numeric" />
+              </Campo>
+              <Campo casilla="16" etiqueta="Alternativa" estado={e.altn1}>
+                <CampoAerodromo valor={f.altn1} onCambio={(a) => cambiar({ altn1: a })} placeholder="SADM" claseInput={INPUT} />
+              </Campo>
+              <Campo casilla="16" etiqueta="2ª alternativa" estado={e.altn2}>
+                <CampoAerodromo valor={f.altn2} onCambio={(a) => cambiar({ altn2: a })} placeholder="Opcional" claseInput={INPUT} />
+              </Campo>
+            </div>
+            {!sugEet && notaEet && <p className="text-[11px] text-zinc-400 dark:text-zinc-500">{notaEet}</p>}
+          </Seccion>
+
+          {/* 18 */}
+          <Seccion titulo="Otros datos · casilla 18">
+            <div className="flex flex-wrap gap-1.5">
+              {INDICADORES.map((ind) => {
+                const activo = indicadoresAbiertos.has(ind) || !!f.otros[ind];
+                return (
+                  <button
+                    key={ind}
+                    type="button"
+                    onClick={() =>
+                      setIndicadoresAbiertos((s) => {
+                        const n = new Set(s);
+                        if (activo && !f.otros[ind]) n.delete(ind);
+                        else n.add(ind);
+                        return n;
+                      })
+                    }
+                    className={`data px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                      activo ? "border-emerald-400 text-emerald-700 dark:text-emerald-300" : "border-zinc-200 dark:border-white/10 text-zinc-500"
+                    }`}
+                  >
+                    {ind}/
+                  </button>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(autoOtros).map(([ind, valor]) => (
+                <div key={ind} className="rounded-2xl border border-dashed border-zinc-200 dark:border-white/10 px-3.5 py-2">
+                  <span className="text-[11px] font-semibold text-zinc-400">
+                    <span className="data font-bold">{ind}/</span> · lo arma Vector
+                  </span>
+                  <p className="data text-sm font-bold text-zinc-700 dark:text-zinc-300 py-1">{valor}</p>
+                </div>
+              ))}
+              {INDICADORES.filter((ind) => indicadoresAbiertos.has(ind) || f.otros[ind]).map((ind) => (
+                <Campo key={ind} etiqueta={`${ind}/`} estado={f.otros[ind] ? "ok" : "opcional"} delAvion={f.origen[`otros.${ind}`] === "avion"}>
+                  {ind === "PER" ? (
+                    <select value={f.otros.PER ?? ""} onChange={(ev) => cambiarOtro("PER", ev.target.value)} className={INPUT}>
+                      <option value="">—</option>
+                      <option value="A">A · menos de 91 kt en el umbral</option>
+                      <option value="B">B · 91 a 120 kt</option>
+                      <option value="C">C · 121 a 140 kt</option>
+                      <option value="D">D · 141 a 165 kt</option>
+                      <option value="E">E · más de 165 kt</option>
+                    </select>
+                  ) : (
+                    <input value={f.otros[ind] ?? ""} onChange={(ev) => cambiarOtro(ind, ev.target.value)} className={`${INPUT} uppercase`} />
+                  )}
+                </Campo>
+              ))}
+            </div>
+            {r.errores.filter((x) => x.campo.startsWith("otros")).map((x) => (
+              <p key={x.campo} className="text-xs text-red-600 dark:text-red-400">{x.mensaje}</p>
+            ))}
+          </Seccion>
+
+          {/* 19 */}
+          <Seccion titulo="Información suplementaria · casilla 19">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Campo
+                casilla="E/"
+                etiqueta="Autonomía"
+                estado={e.autonomia}
+                className="col-span-2 md:col-span-1"
+                arriba={<Sugerido s={sugAutonomia} actual={f.autonomia} onUsar={() => sugAutonomia && cambiar({ autonomia: sugAutonomia.valor })} />}
+              >
+                <input value={f.autonomia} onChange={(ev) => cambiar({ autonomia: ev.target.value })} placeholder="0400" maxLength={4} className={INPUT} inputMode="numeric" />
+              </Campo>
+              <Campo casilla="P/" etiqueta="Personas a bordo" estado={e.personas}>
+                <input value={f.personas} onChange={(ev) => cambiar({ personas: ev.target.value })} placeholder="2 o TBN" maxLength={3} className={`${INPUT} uppercase`} />
+              </Campo>
+            </div>
+            <div className="space-y-3 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-4">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Lo que no se marca sale tachado en el formulario, como pide la AIP.</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <span className="data text-xs font-bold text-zinc-400 w-8">R/</span>
+                <Tilde activo={f.radio.e} onChange={(v) => cambiar((p) => ({ ...p, radio: { ...p.radio, e: v } }))}>ELT</Tilde>
+                <Tilde activo={f.radio.v} onChange={(v) => cambiar((p) => ({ ...p, radio: { ...p.radio, v: v } }))}>Radio de emergencia VHF 121,5</Tilde>
+                <Tilde activo={f.radio.u} onChange={(v) => cambiar((p) => ({ ...p, radio: { ...p.radio, u: v } }))}>UHF 243,0</Tilde>
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <span className="data text-xs font-bold text-zinc-400 w-8">S/</span>
+                <Tilde activo={f.supervivencia.s} onChange={(v) => cambiar((p) => ({ ...p, supervivencia: { ...p.supervivencia, s: v } }))}>Equipo de supervivencia</Tilde>
+                {f.supervivencia.s &&
+                  (["p", "d", "m", "j"] as const).map((k) => (
+                    <Tilde key={k} activo={f.supervivencia[k]} onChange={(v) => cambiar((p) => ({ ...p, supervivencia: { ...p.supervivencia, [k]: v } }))}>
+                      {{ p: "Polar", d: "Desierto", m: "Marítimo", j: "Selva" }[k]}
+                    </Tilde>
+                  ))}
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <span className="data text-xs font-bold text-zinc-400 w-8">J/</span>
+                <Tilde activo={f.chalecos.j} onChange={(v) => cambiar((p) => ({ ...p, chalecos: { ...p.chalecos, j: v } }))}>Chalecos salvavidas</Tilde>
+                {f.chalecos.j &&
+                  (["l", "f", "u", "v"] as const).map((k) => (
+                    <Tilde key={k} activo={f.chalecos[k]} onChange={(v) => cambiar((p) => ({ ...p, chalecos: { ...p.chalecos, [k]: v } }))}>
+                      {{ l: "Con luz", f: "Fluoresceína", u: "UHF", v: "VHF" }[k]}
+                    </Tilde>
+                  ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <span className="data text-xs font-bold text-zinc-400 w-8">D/</span>
+                <Tilde activo={f.botes.d} onChange={(v) => cambiar((p) => ({ ...p, botes: { ...p.botes, d: v } }))}>Botes neumáticos</Tilde>
+                {f.botes.d && (
+                  <>
+                    <input value={f.botes.numero} onChange={(ev) => cambiar((p) => ({ ...p, botes: { ...p.botes, numero: ev.target.value } }))} placeholder="Cantidad" className={`${INPUT} w-24 border-b border-zinc-200`} />
+                    <input value={f.botes.capacidad} onChange={(ev) => cambiar((p) => ({ ...p, botes: { ...p.botes, capacidad: ev.target.value } }))} placeholder="Capacidad" className={`${INPUT} w-24 border-b border-zinc-200`} />
+                    <Tilde activo={f.botes.c} onChange={(v) => cambiar((p) => ({ ...p, botes: { ...p.botes, c: v } }))}>Cubiertos</Tilde>
+                    <input value={f.botes.color} onChange={(ev) => cambiar((p) => ({ ...p, botes: { ...p.botes, color: ev.target.value } }))} placeholder="Color" className={`${INPUT} w-32 border-b border-zinc-200`} />
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Campo casilla="A/" etiqueta="Color y marcas del avión" estado={e.colorMarcas} delAvion={f.origen.colorMarcas === "avion"}>
+                <input value={f.colorMarcas} onChange={(ev) => cambiar({ colorMarcas: ev.target.value })} placeholder="Blanco y azul" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="N/" etiqueta="Observaciones" estado={f.observaciones.trim() ? "ok" : "opcional"} delAvion={f.origen.observaciones === "avion"}>
+                <input value={f.observaciones} onChange={(ev) => cambiar({ observaciones: ev.target.value })} placeholder="T.E. +54 9 11…" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo casilla="C/" etiqueta="Comandante (nombre, licencia y número)" estado={e.piloto} delAvion={f.origen.piloto === "avion"}>
+                <input value={f.piloto} onChange={(ev) => cambiar({ piloto: ev.target.value })} placeholder="Nombre PPA 12345678" className={`${INPUT} uppercase`} />
+              </Campo>
+              <Campo etiqueta="Presentado por (si lo presenta otro)" estado="opcional">
+                <input value={f.presentadoPor} onChange={(ev) => cambiar({ presentadoPor: ev.target.value })} placeholder="Opcional" className={`${INPUT} uppercase`} />
+              </Campo>
+            </div>
+          </Seccion>
+        </div>
+
+        {/* Columna derecha: firma, revisión, presentar, demora */}
+        <div className="space-y-6 xl:sticky xl:top-6">
+          <Seccion titulo="Firma del comandante">
+            <FirmaPiloto inicial={firma} onCambio={setFirma} />
+          </Seccion>
+
+          <Seccion titulo="Revisión">
+            <p className="data text-[11px] leading-relaxed break-all rounded-2xl bg-white dark:bg-white/[0.03] border border-zinc-100 dark:border-white/5 p-3 text-zinc-700 dark:text-zinc-300">
+              {mensajeFpl(r.plan)}
+            </p>
+            {(r.errores.length > 0 || r.avisos.length > 0 || !firma) && (
+              <ul className="space-y-1.5">
+                {r.errores.map((x, i) => (
+                  <li key={`e${i}`} className="flex gap-2 text-xs text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {x.mensaje}
+                  </li>
+                ))}
+                {!firma && (
+                  <li className="flex gap-2 text-xs text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> Falta la firma: la AIC A 19/2026 pide el plan firmado.
+                  </li>
+                )}
+                {r.avisos.map((x, i) => (
+                  <li key={`a${i}`} className="flex gap-2 text-xs text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {x.mensaje}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Seccion>
+
+          <Seccion titulo="Presentarlo">
+            <Campo etiqueta="Oficina ARO/AIS" estado={oficina ? "ok" : "falta"}>
+              <select value={oficina?.oaci ?? ""} onChange={(ev) => cambiar({ oficina: ev.target.value })} className={INPUT}>
+                {!oficina && <option value="">Elegí la oficina…</option>}
+                {oficinas.map((o) => (
+                  <option key={o.oaci} value={o.oaci}>
+                    {o.nombre} ({o.oaci})
+                  </option>
+                ))}
+              </select>
+            </Campo>
+            {oficina && (
+              <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Horario del ARO (AIP AD 2.3):{" "}
+                {horario ? <span className="data font-bold text-zinc-700 dark:text-zinc-200">{horario.texto}</span> : "no publicado"}
+                {horario?.abierta === true && f.eobtUtc && <span className="text-emerald-600 dark:text-emerald-400"> · abierta a las {f.eobtUtc}Z</span>}
+                {horario?.abierta === false && (
+                  <span className="text-red-600 dark:text-red-400"> · a las {f.eobtUtc}Z está cerrada: mandalo a la más cercana que atienda</span>
+                )}
+                {horario && horario.abierta === null && <span> · revisá que atienda a tu hora</span>}
+              </p>
+            )}
+            {sugerida && !sugerida.propia && !f.oficina && (
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                {f.salida?.codigo} no tiene oficina ARO/AIS: la más cercana es {sugerida.oficina.nombre}, a {Math.round(sugerida.distanciaNm ?? 0)} NM.
+                Si a esa hora está cerrada, elegí otra (AIC A 19/2026).
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!listo || pdf === "armando"}
+                onClick={async () => {
+                  const a = await generar();
+                  if (a) await compartirArchivo(a, `FPL ${r.plan.c7}`);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold disabled:opacity-40"
+              >
+                {pdf === "armando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} Compartir PDF
+              </button>
+              <button
+                type="button"
+                disabled={!listo || pdf === "armando"}
+                onClick={async () => {
+                  const a = await generar();
+                  if (a) bajarArchivo(a);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-zinc-200 dark:border-white/10 text-sm font-semibold text-zinc-700 dark:text-zinc-300 disabled:opacity-40"
+              >
+                <Download className="w-4 h-4" /> Bajar PDF
+              </button>
+            </div>
+            {pdf === "error" && <p className="text-xs text-red-600">No se pudo armar el PDF. Probá de nuevo.</p>}
+            {oficina && (
+              <ol className="space-y-2.5 text-sm text-zinc-600 dark:text-zinc-300">
+                <li>
+                  1. Mandalo adjunto a{" "}
+                  <a
+                    href={`mailto:${oficina.correo}?subject=${encodeURIComponent(asuntoDelMail(r.plan))}&body=${encodeURIComponent(
+                      cuerpoDelMail(r.plan, { salida: f.salida?.nombre ?? "", destino: f.destino?.nombre ?? "" })
+                    )}`} className="font-semibold text-aviation-blue dark:text-aviation-cyan underline underline-offset-2 break-all">
+                    <Mail className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                    {oficina.correo}
+                  </a>
+                  , con la matrícula en el asunto.
+                </li>
+                <li>
+                  2. Llamá para confirmar que lo recibieron
+                  {telOficina && (
+                    <>
+                      :{" "}
+                      <a href={`tel:${telOficina.marcar}`} className="font-semibold text-aviation-blue dark:text-aviation-cyan underline underline-offset-2">
+                        <Phone className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                        {telOficina.mostrar}
+                      </a>
+                    </>
+                  )}
+                  .
+                </li>
+                <li>3. Guardá el PDF un año: te lo pueden pedir.</li>
+              </ol>
+            )}
+            <button
+              type="button"
+              onClick={() => duplicarPlan(id)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+            >
+              <Copy className="w-3.5 h-3.5" /> Duplicar para otro día
+            </button>
+          </Seccion>
+
+          <Seccion titulo="Demora (DLA)">
+            {vigente ? (
+              <>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Si salís más tarde, avisá la nueva hora con el formulario de demora (AIP ENR 1.10, Apéndice 4). Hasta {MAXIMO_DEMORAS} por vuelo, y con
+                  al menos 30 minutos de anticipación.
+                </p>
+                {demoras.length > 0 && (
+                  <ul className="space-y-1 text-xs text-zinc-600 dark:text-zinc-300">
+                    {demoras.map((d, i) => {
+                      const l = localDesdeUtc(d.dof, d.eobt);
+                      return (
+                        <li key={i} className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-zinc-400" /> Demora {i + 1}: <span className="data font-bold">{d.eobt}Z</span>
+                          {l && <span className="text-zinc-400">({l.hora} hora argentina)</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {chequeoDemora.error ? (
+                  <p className="text-xs text-red-600 dark:text-red-400">{chequeoDemora.error}</p>
+                ) : (
+                  <>
+                    <Campo
+                      etiqueta="Nueva hora fuera de calzos (hora argentina)"
+                      estado={demoraNueva ? "ok" : "opcional"}
+                      arriba={
+                        demoraNueva ? (
+                          <p className="mb-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                            Nueva EOBT <span className="data font-bold text-zinc-900 dark:text-white">{demoraNueva.eobt}Z</span>, DOF/{dofDeDemora(demoraNueva)}
+                          </p>
+                        ) : undefined
+                      }
+                    >
+                      <input type="time" value={horaDemora} onChange={(ev) => setHoraDemora(ev.target.value)} className={INPUT} />
+                    </Campo>
+                    {chequeoDemora.aviso && <p className="text-xs text-amber-700 dark:text-amber-400">{chequeoDemora.aviso}</p>}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={!demoraNueva || demoraEstado === "armando"}
+                        onClick={() => avisarDemora(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40"
+                      >
+                        {demoraEstado === "armando" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />} Compartir demora
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!demoraNueva || demoraEstado === "armando"}
+                        onClick={() => avisarDemora(false)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-xs font-semibold text-zinc-700 dark:text-zinc-300 disabled:opacity-40"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Bajar demora
+                      </button>
+                    </div>
+                    {demoraEstado === "error" && <p className="text-xs text-red-600">No se pudo armar la demora.</p>}
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Con la fecha y la hora de salida cargadas, acá avisás una demora.</p>
+            )}
+          </Seccion>
+        </div>
+      </div>
+    </div>
+  );
+}

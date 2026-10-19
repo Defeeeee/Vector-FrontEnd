@@ -78,6 +78,37 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.24.0",
+    fecha: "2026-10-19",
+    titulo: "Tus planes de vuelo, guardados",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Plan de vuelo, en su propia pestaña",
+        texto:
+          "Tus planes quedan guardados y se duplican con un toque para el mismo vuelo otro día. La ruta se escribe libre (DCT SECTOR ESCUELA DCT), y Vector te sugiere la duración y la autonomía arriba de cada campo.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+      {
+        icono: "avion",
+        titulo: "Cada avión, listo para el plan",
+        texto:
+          "Cargá en el Hangar el equipo, el color y el operador de cada avión, y el formulario sale casi entero. Tu firma se guarda una vez para todos los planes.",
+        href: "/dashboard/settings",
+        cta: "Ir al Hangar",
+      },
+      {
+        icono: "reloj",
+        titulo: "Demoras y horario de la oficina",
+        texto:
+          "Si salís más tarde, el formulario de demora sale del mismo plan. Y te decimos si la oficina ARO atiende a la hora de tu salida, según la AIP.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+    ],
+  },
+  {
     version: "2.23.0",
     fecha: "2026-10-10",
     titulo: "El plan de vuelo, listo para mandar",

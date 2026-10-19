@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.24.0 — Tus planes de vuelo, guardados
+
+_19 de octubre de 2026_
+
+- **Plan de vuelo, en su propia pestaña** — Tus planes quedan guardados y se duplican con un toque para el mismo vuelo otro día. La ruta se escribe libre (DCT SECTOR ESCUELA DCT), y Vector te sugiere la duración y la autonomía arriba de cada campo.
+- **Cada avión, listo para el plan** — Cargá en el Hangar el equipo, el color y el operador de cada avión, y el formulario sale casi entero. Tu firma se guarda una vez para todos los planes.
+- **Demoras y horario de la oficina** — Si salís más tarde, el formulario de demora sale del mismo plan. Y te decimos si la oficina ARO atiende a la hora de tu salida, según la AIP.
+
 ## v2.23.0 — El plan de vuelo, listo para mandar
 
 _10 de octubre de 2026_

@@ -1,0 +1,51 @@
+# Horario de la oficina ARO/AIS de cada aeródromo: AIP AD 2.3, renglón 5. Generado por
+# scripts/build-horarios-aro.mjs; NO EDITAR A MANO. El renglón va verbatim para el test.
+# oaci	horario	renglon	edicion	vigente	url
+SAAC	LUN a DOM 11:00-19:00 UTC / MON to SUN 11:00-19:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a DOM 11:00-19:00 UTC / MON to SUN 11:00-19:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10469037bf
+SAAP	10:00-01:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00-01:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e12b515db21
+SAAR	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e105dba2f99
+SAAV	10:00-01:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00-01:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e13318f081b
+SABE	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-6a10684a7a5bd
+SACO	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1078aa7f9d
+SADF	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-6a68fbe672145
+SADM	11:00 HR a / to SS	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00 HR a / to SS	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e135e507da0
+SADP	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e26822c76b6
+SAEZ	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10875b7c89
+SAME	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69fc9d7664864
+SAMM	11:00-19:00 UTC - O/R (*)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00-19:00 UTC - O/R (*)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e168cc06ad1
+SAMR	10:00-23:59 UTC y / and O/R	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00-23:59 UTC y / and O/R	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e169708997f
+SANC	LUN a VIE 10:00-23:00 UTC, SAB 12:00-17:00 UTC, DOM 17:00- 23:00 UTC, resto O/R (**) / MON to FRI 10:00-23:00 UTC, SAT 12:00-17:00 UTC, SUN 17:00- 23:00 UTC, rest O/R (**)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a VIE 10:00-23:00 UTC, SAB 12:00-17:00 UTC, DOM 17:00- 23:00 UTC, resto O/R (**) / MON to FRI 10:00-23:00 UTC, SAT 12:00-17:00 UTC, SUN 17:00- 23:00 UTC, rest O/R (**)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e256ccb0f13
+SANE	10:00-23:59 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00-23:59 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1098092c2d
+SANL	DOM a VIE 19:00 – 23:59 UTC. resto (O/R) / SUN to FRI 19:00 – 23:59 UTC. resto (O/R)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) DOM a VIE 19:00 – 23:59 UTC. resto (O/R) / SUN to FRI 19:00 – 23:59 UTC. resto (O/R)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e254b904105
+SANR	O/R (*)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) O/R (*)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e6130f69047
+SANT	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10b1142729
+SANU	10:00-23:59 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00-23:59 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10b2277811
+SAOC	LUN a VIE 11:00-23:00 UTC – Resto O/R / MON to FRI 11:00-23:00 UTC – Rest O/R	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a VIE 11:00-23:00 UTC – Resto O/R / MON to FRI 11:00-23:00 UTC – Rest O/R	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10b83ad8fa
+SAOR	11:00-21:59 UTC LUN a VIE (Días hábiles). / 11:00-21:59 UTC MON to FRI (Working days).	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00-21:59 UTC LUN a VIE (Días hábiles). / 11:00-21:59 UTC MON to FRI (Working days).	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10c27bbaf1
+SAOS	12:00-18:00 UTC, días hábiles, resto O/R / working days, rest O/R	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 12:00-18:00 UTC, días hábiles, resto O/R / working days, rest O/R	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10c3899e4a
+SAOU	11:00-23:00 UTC. REST O/R 2HR BFR COOR TEL NR (+54 351) 6096349 AND and (+54 11) 23604976.	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00-23:00 UTC. REST O/R 2HR BFR COOR TEL NR (+54 351) 6096349 AND and (+54 11) 23604976.	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e23dcde0868
+SARC	09:00-23:59 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 09:00-23:59 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e10de8df659
+SARE	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e23557ecfd0
+SARF	11:00-23:00 UTC (**)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00-23:00 UTC (**)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e249b1a7ad5
+SARI	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e6163c31b23
+SARL	LUN a VIE 12:30-20:30 UTC. / MON to FRI 12:30-20:30 UTC.	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a VIE 12:30-20:30 UTC. / MON to FRI 12:30-20:30 UTC.	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1113b81c2b
+SARP	09:00-23:59 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 09:00-23:59 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1137370dba
+SASA	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1138586777
+SASJ	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e113f9e6050
+SATR	LUN a VIE 10:00-22:00 UTC. SAB, DOM y FERIADOS O/R (*) / MON to FRI 10:00-22:00 UTC. SAT, SUN and HOLIDAYS O/R (*)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a VIE 10:00-22:00 UTC. SAB, DOM y FERIADOS O/R (*) / MON to FRI 10:00-22:00 UTC. SAT, SUN and HOLIDAYS O/R (*)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e11419cd188
+SAVC	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1143c25a85
+SAVE	11:00-22:00 UTC(*) (**)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00-22:00 UTC(*) (**)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e114f5ef93e
+SAVT	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e11508bc15d
+SAVV	11:00-23:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 11:00-23:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e7b1a89ea5e
+SAVY	LUN a VIE 11:00-01:00 UTC - SÁB y DOM 13:00-01:00 UTC / MON to FRI 11:00-01:00UTC – SAT and SUN 13:00-01:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a VIE 11:00-01:00 UTC - SÁB y DOM 13:00-01:00 UTC / MON to FRI 11:00-01:00UTC – SAT and SUN 13:00-01:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1155398740
+SAWC	10:00-23:59:00 UTC (*)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00-23:59:00 UTC (*)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e7b256c1c2c
+SAWE	09:00-03:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 09:00-03:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1380c9247f
+SAWG	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1165d02be1
+SAWH	10:00 a 02:00 UTC, rest O/R (**)	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 10:00 a 02:00 UTC, rest O/R (**)	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e7b2b7ee74b
+SAZB	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e7b314ac7f0
+SAZM	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1232468b6a
+SAZN	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e1234aab580
+SAZR	LUN a VIE 12:00 a 23:00 UTC. SÁB 17:00 a 23:00 UTC. DOM 13:00 a 21:00 UTC/ MON to FRI 12:00 to 23:00 UTC. SAT 17:00 to 23:00 UTC. SUN 13:00 to 21:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) LUN a VIE 12:00 a 23:00 UTC. SÁB 17:00 a 23:00 UTC. DOM 13:00 a 21:00 UTC/ MON to FRI 12:00 to 23:00 UTC. SAT 17:00 to 23:00 UTC. SUN 13:00 to 21:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e123c163177
+SAZS	H24	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) H24	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e8bacf19c28
+SAZT	Lunes a viernes 12:00 a 20:00 UTC. Resto O/R (*) / MON to FRI 12:00-20:00 UTC. Rest O/R.	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) Lunes a viernes 12:00 a 20:00 UTC. Resto O/R (*) / MON to FRI 12:00-20:00 UTC. Rest O/R.	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69e12466c7a15
+SAZY	12:00-20:00 UTC	Oficina de notificación ATS (ARO) / ATS Reporting Office (ARO) 12:00-20:00 UTC	01/26	11-Jun-26	https://ais.anac.gob.ar/descarga/aip-69fcdbcd57a67

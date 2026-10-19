@@ -31,6 +31,8 @@ export interface OficinaAro {
 export interface OficinaUbicada extends OficinaAro {
   /** El nombre corto del aeródromo, para el selector: "San Fernando". */
   nombre: string;
+  /** El horario del ARO según la AIP (AD 2.3), tal cual. Sin ficha en la AIP, no hay. */
+  horario?: string;
   lat?: number;
   lon?: number;
 }
@@ -80,4 +82,41 @@ export function oficinaParaSalida(
     if (!mejor || d < mejor.distanciaNm) mejor = { oficina: o, distanciaNm: d };
   }
   return mejor ? { ...mejor, propia: false } : null;
+}
+
+/**
+ * El horario de la oficina ARO (AIP AD 2.3, `aip-horarios-aro.tsv`) y si está abierta a la
+ * hora de salida.
+ *
+ * **Sólo se contesta lo que el texto dice sin ambigüedad:** `H24`, o un único rango
+ * `HH:MM-HH:MM UTC` (que puede pasar la medianoche: `10:00-01:00`). Con días de la semana,
+ * "O/R" (a pedido), "SS" (puesta del sol) o feriados, `abierta` es `null` y la pantalla
+ * muestra el horario tal cual: decidir mal que una oficina atiende es peor que no decirlo.
+ */
+export function horarioAro(texto: string | undefined, eobtUtc?: string): { texto: string; abierta: boolean | null } | null {
+  const t = (texto ?? "").trim();
+  if (!t) return null;
+  // La AIP lo escribe en castellano / inglés: se muestra la mitad en castellano si es entera.
+  const partes = t.split(" / ");
+  const castellano = partes.length === 2 && /UTC|H24|O\/R/.test(partes[0]) ? partes[0].trim() : t;
+  if (/^H24$/.test(t)) return { texto: "H24", abierta: true };
+
+  const rango = /^(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})(?::\d{2})?\s*UTC(\s*\(\*+\))*$/.exec(t);
+  if (!rango || !/^\d{4}$/.test(eobtUtc ?? "")) return { texto: castellano, abierta: null };
+  const min = (h: string, m: string) => Number(h) * 60 + Number(m);
+  const desde = min(rango[1], rango[2]);
+  const hasta = min(rango[3], rango[4]);
+  const salida = min(eobtUtc!.slice(0, 2), eobtUtc!.slice(2));
+  const abierta = desde <= hasta ? salida >= desde && salida <= hasta : salida >= desde || salida <= hasta;
+  return { texto: castellano, abierta };
+}
+
+export function parsearHorarios(tsv: string): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const l of tsv.split("\n")) {
+    if (!l.trim() || l.startsWith("#")) continue;
+    const [oaci, horario] = l.split("\t");
+    m.set(oaci, horario);
+  }
+  return m;
 }

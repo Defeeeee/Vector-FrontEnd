@@ -101,6 +101,8 @@ export interface Aircraft {
    * ANAC 470/2025, Anexo I, punto 5). Sin cargar, queda en blanco en el PDF.
    */
   potencia_hp?: number | null;
+  /** Lo fijo del avión para el plan de vuelo (migración 024). Ver `lib/formulario-plan.ts`. */
+  plan_vuelo?: import("@/lib/formulario-plan").PerfilAvionPlan | null;
   /**
    * `true` = dispositivo de entrenamiento, no aeronave.
    *

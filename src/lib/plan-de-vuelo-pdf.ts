@@ -247,3 +247,89 @@ export async function pdfPlanDeVuelo(p: PlanOaci, opciones: OpcionesPdfPlan): Pr
 
   return doc.save();
 }
+
+/* -------------------------------------------------------------------------- */
+/* La demora (DLA)                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * El formulario de demora del Apéndice 4 de la AIP ENR 1.10 (`plan-de-vuelo-dla.png`).
+ *
+ * En la AIP el formulario es una imagen de 895×835 px puesta en x 42,55–552,75 pt y a
+ * 140,9 pt del borde de arriba; acá va en el mismo lugar de la hoja A4, así que las cajas
+ * se miden en píxeles de esa imagen y `DX`/`DY` las pasan a puntos.
+ */
+const DLA_K = (552.75 - 42.55) / 895;
+const DX = (px: number) => 42.55 + px * DLA_K;
+const DY = (py: number) => ALTO - (140.9 + py * DLA_K);
+const cajaDla = (x1: number, y1: number, x2: number, y2: number): Caja => [DX(x1), DY(y2), DX(x2), DY(y1)];
+
+const CAJAS_DLA = {
+  c7: cajaDla(277, 344, 518, 382),
+  c13ad: cajaDla(128, 425, 260, 451),
+  c13hora: cajaDla(372, 425, 502, 451),
+  c16ad: cajaDla(128, 540, 260, 566),
+  c16eet: cajaDla(372, 540, 502, 566),
+  c16altn: cajaDla(579, 540, 715, 566),
+  nombre: cajaDla(8, 795, 384, 826),
+  licencia: cajaDla(390, 801, 594, 828),
+};
+const RENGLONES_DLA: Caja[] = [622, 644, 666, 688, 710, 732, 754].map((y) => cajaDla(6, y, 883, y + 22));
+const FIRMA_DLA = cajaDla(610, 795, 880, 830);
+
+/** Un carácter por celda, como en el formulario impreso; si no entra, centrado. */
+function enCeldas(page: PDFPage, f: PDFFont, texto: string, c: Caja, n: number) {
+  if (!texto) return;
+  if (texto.length > n) return centrado(page, f, texto, c);
+  const ancho = (c[2] - c[0]) / n;
+  [...texto].forEach((ch, i) => {
+    const w = f.widthOfTextAtSize(ch, TAMANO);
+    page.drawText(ch, { x: c[0] + ancho * i + (ancho - w) / 2, y: base(c, TAMANO), size: TAMANO, font: f, color: NEGRO });
+  });
+}
+
+export interface DatosPdfDemora {
+  plan: PlanOaci;
+  /** La nueva EOBT (UTC) y la casilla 18 con la DOF/ de la nueva fecha. */
+  eobt: string;
+  c18: string;
+  nombre: string;
+  licencia: string;
+}
+
+export async function pdfDemora(
+  d: DatosPdfDemora,
+  opciones: { fondoPng: Uint8Array; firmaPng?: Uint8Array }
+): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  doc.setTitle(`Demora ${d.plan.c7} ${d.plan.c13ad} ${d.eobt}`);
+  doc.setCreator("Vector");
+  doc.setProducer("Vector");
+  doc.setSubject("Formulario de demora (DLA), AIP Argentina ENR 1.10, Apéndice 4");
+  const f: Fuentes = {
+    normal: await doc.embedFont(StandardFonts.Helvetica),
+    negrita: await doc.embedFont(StandardFonts.HelveticaBold),
+  };
+  const page = doc.addPage([ANCHO, ALTO]);
+  const fondo = await doc.embedPng(opciones.fondoPng);
+  page.drawImage(fondo, { x: DX(0), y: DY(835), width: DX(895) - DX(0), height: DY(0) - DY(835) });
+
+  const n = f.negrita;
+  enCeldas(page, n, d.plan.c7, CAJAS_DLA.c7, 7);
+  enCeldas(page, n, d.plan.c13ad, CAJAS_DLA.c13ad, 4);
+  enCeldas(page, n, d.eobt, CAJAS_DLA.c13hora, 4);
+  enCeldas(page, n, d.plan.c16ad, CAJAS_DLA.c16ad, 4);
+  enCeldas(page, n, d.plan.c16eet, CAJAS_DLA.c16eet, 4);
+  enCeldas(page, n, d.plan.c16altn1, CAJAS_DLA.c16altn, 4);
+  enRenglones(page, f, d.c18, RENGLONES_DLA, true);
+  izquierda(page, n, d.nombre, CAJAS_DLA.nombre);
+  enCeldas(page, n, d.licencia, CAJAS_DLA.licencia, 6);
+
+  if (opciones.firmaPng) {
+    const firma = await doc.embedPng(opciones.firmaPng);
+    const escala = Math.min((FIRMA_DLA[2] - FIRMA_DLA[0]) / firma.width, (FIRMA_DLA[3] - FIRMA_DLA[1]) / firma.height);
+    const w = firma.width * escala;
+    page.drawImage(firma, { x: FIRMA_DLA[0] + (FIRMA_DLA[2] - FIRMA_DLA[0] - w) / 2, y: FIRMA_DLA[1], width: w, height: firma.height * escala });
+  }
+  return doc.save();
+}

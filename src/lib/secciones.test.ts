@@ -34,6 +34,7 @@ const FUERA_DE_LA_BARRA: Record<string, string> = {
 const CUELGAN_DE_UNA_PESTANA: Record<string, string> = {
   "/dashboard/pilotos/publicar": "Compartir en cada vuelo, el aviso después de registrar uno, y el perfil propio",
   "/dashboard/pilotos/[handle]": "tocar un piloto en cualquier lista, publicación o actividad",
+  "/dashboard/plan-de-vuelo/[id]": "tocar un plan en la lista de Plan de vuelo, o armarlo desde el planificador",
 };
 
 /** Las rutas con `page.tsx` bajo `src/app/dashboard`, sin grupos ni slots. */

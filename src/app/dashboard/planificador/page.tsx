@@ -1,8 +1,6 @@
 import { apiFetch } from "@/lib/api";
-import type { Aircraft, Profile } from "@/types";
-import { oficinasAro } from "@/lib/oficinas-aro-disco";
-import { DESFASE_ARGENTINA_HORAS } from "@/lib/plan-de-vuelo";
-import { esAlumno } from "@/lib/licencias";
+import type { Aircraft } from "@/types";
+import { pilotoParaPlan } from "@/lib/plan-de-vuelo-servidor";
 import PlanificadorClient from "@/components/dashboard/PlanificadorClient";
 import { parsearRuta } from "@/lib/ruta-planificada";
 import type { SearchParams } from "@/lib/prefill";
@@ -34,30 +32,6 @@ async function getAeronaves(): Promise<Aircraft[]> {
   }
 }
 
-/**
- * Del perfil, para el plan de vuelo: "Comandante de la aeronave" con nombre, licencia y
- * número —como lo presentó Federico el 10/10/2026: `FEDERICO DIAZ NEMETH PPA 48225513`—
- * y el celular para las observaciones. Un alumno no tiene licencia: va sólo el nombre.
- * Si el perfil no se puede leer, quedan vacíos y el piloto los escribe.
- */
-async function getPiloto(): Promise<{ comandante: string; telefono: string }> {
-  const vacio = { comandante: "", telefono: "" };
-  const res = await apiFetch("/profiles");
-  if (!res.ok) return vacio;
-  try {
-    const p = ((await res.json()) as Profile[])[0];
-    if (!p) return vacio;
-    const licencia = p.license_type && !esAlumno(p.license_type) ? p.license_type : "";
-    const comandante = [p.first_name, p.last_name, licencia, licencia ? (p.licencia_numero ?? "") : ""]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-    return { comandante, telefono: p.whatsapp_phone ?? "" };
-  } catch {
-    return vacio;
-  }
-}
-
 const unParametro = (v: string | string[] | undefined): string =>
   Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
 
@@ -66,7 +40,7 @@ export default async function PlanificadorPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const [aeronaves, params, piloto] = await Promise.all([getAeronaves(), searchParams, getPiloto()]);
+  const [aeronaves, params, piloto] = await Promise.all([getAeronaves(), searchParams, pilotoParaPlan()]);
 
   const rutaInicial = parsearRuta(unParametro(params.ruta));
   const aeronaveInicial = unParametro(params.av);
@@ -76,9 +50,7 @@ export default async function PlanificadorPage({
       aeronaves={aeronaves}
       rutaInicial={rutaInicial}
       aeronaveInicial={aeronaves.some((a) => a.id === aeronaveInicial) ? aeronaveInicial : ""}
-      oficinas={oficinasAro()}
       piloto={piloto}
-      hoy={new Date(Date.now() + DESFASE_ARGENTINA_HORAS * 3_600_000).toISOString().slice(0, 10)}
     />
   );
 }

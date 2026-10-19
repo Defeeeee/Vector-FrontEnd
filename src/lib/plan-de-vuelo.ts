@@ -269,55 +269,8 @@ export function casilla18(datos: Partial<Record<Indicador18, string>>): string {
 }
 
 /* -------------------------------------------------------------------------- */
-/* El plan entero                                                              */
+/* El plan entero (lo arma `formulario-plan.ts`)                               */
 /* -------------------------------------------------------------------------- */
-
-export interface DatosPlanDeVuelo {
-  matricula: string;
-  reglas: "V" | "I" | "Y" | "Z";
-  tipoVuelo: "G" | "S" | "N" | "M" | "X";
-  /** Designador OACI de tipo (Doc 8643): `C152`, `PA11`. Vacío = ZZZZ y TYP/. */
-  tipoAeronave: string;
-  /** Para TYP/ cuando no hay designador: la marca y modelo. */
-  descripcionAeronave: string;
-  estela: "L" | "M" | "H" | "J";
-  /** Casilla 10 a), tal cual: `S`, `VG`, `SDFG`… */
-  equipo: string;
-  /** Casilla 10 b): `N`, `C`, `S`… */
-  vigilancia: string;
-  salida: AerodromoPlan;
-  destino: AerodromoPlan;
-  alternativas: AerodromoPlan[];
-  /** En hora argentina, como lo carga el piloto. */
-  fechaLocal: string;
-  horaLocal: string;
-  tasKt: number;
-  /** `null` = VFR no controlado, se escribe "VFR". */
-  altitudFt: number | null;
-  ruta: ElementoRuta[];
-  /** Duración total prevista, del planificador (con el viento cargado). */
-  minutosTotales: number;
-  /** Autonomía: combustible a bordo y consumo. */
-  litros: number;
-  consumoLh: number;
-  operador: string;
-  observaciones: string;
-  /** NAV/ en la casilla 18: la aumentación GNSS, p. ej. `ABAS` (Nota 2 de la casilla 10). */
-  nav: string;
-  /** PER/: la categoría de performance del PANS-OPS (A si la velocidad de umbral es menor a 91 kt). */
-  per: string;
-  personas: string;
-  radio: { uhf: boolean; vhf: boolean; elt: boolean };
-  supervivencia: { lleva: boolean; polar: boolean; desierto: boolean; maritimo: boolean; selva: boolean };
-  chalecos: { lleva: boolean; luz: boolean; fluoresceina: boolean; uhf: boolean; vhf: boolean };
-  botes: { lleva: boolean; numero: string; capacidad: string; cubierta: boolean; color: string };
-  colorMarcas: string;
-  observacionesSupervivencia: string;
-  piloto: string;
-  presentadoPor: string;
-}
-
-
 
 /** Lo que va en el formulario, ya en el formato de cada casilla. */
 export interface PlanOaci {
@@ -357,128 +310,6 @@ export interface PlanOaci {
   presentadoPor: string;
 }
 
-export interface FaltaPlan {
-  casilla: string;
-  mensaje: string;
-}
-
-/**
- * Arma el plan y dice qué falta. **Con faltas igual devuelve el plan**, para que la
- * pantalla lo muestre a medio hacer, pero el PDF no se baja hasta que no haya ninguna:
- * la ARO "comprobará que han sido completadas con exactitud, todas las casillas (de la 7
- * hasta la 19 inclusive)" (PROGEN-ARO, 4.1.9).
- */
-export function armarPlan(d: DatosPlanDeVuelo): { plan: PlanOaci; faltas: FaltaPlan[] } {
-  const faltas: FaltaPlan[] = [];
-  const falta = (casilla: string, mensaje: string) => faltas.push({ casilla, mensaje });
-
-  const c7 = identificacionAeronave(d.matricula);
-  if (!c7) falta("7", "Falta la matrícula.");
-
-  const tipo = (d.tipoAeronave ?? "").trim().toUpperCase();
-  const tipoValido = /^[A-Z0-9]{2,4}$/.test(tipo);
-  if (!tipoValido && !textoAts(d.descripcionAeronave)) {
-    falta("9", "Falta el tipo de aeronave (designador OACI, p. ej. C152).");
-  }
-
-  const equipo = (d.equipo ?? "").trim().toUpperCase();
-  if (!equipo) falta("10", "Marcá el equipo de comunicaciones y navegación (N si no llevás).");
-  const vigilancia = (d.vigilancia ?? "").trim().toUpperCase();
-  if (!vigilancia) falta("10", "Marcá el transponder (N si no tenés).");
-
-  const salida = indicadorDeLugar(d.salida);
-  const destino = indicadorDeLugar(d.destino);
-  const alternativas = d.alternativas.filter((a) => a.codigo.trim()).slice(0, 2).map(indicadorDeLugar);
-
-  const hora = salidaUtc(d.fechaLocal, d.horaLocal);
-  if (!hora) falta("13", "Falta la fecha y la hora de salida (fuera de calzos).");
-
-  if (!(d.tasKt > 0)) falta("15", "Falta la velocidad de crucero.");
-  const ruta = rutaItem15(d.ruta);
-  if (ruta === null) falta("15", "Hay un punto de la ruta que no se puede escribir en formato OACI.");
-
-  if (!(d.minutosTotales > 0)) falta("16", "Falta la duración total: completá la ruta en el planificador.");
-
-  const autonomia = autonomiaHhmm(d.litros, d.consumoLh);
-  if (!autonomia) falta("19", "Cargá el combustible a bordo en el planificador: de ahí sale la autonomía.");
-
-  const p = d.personas.trim().toUpperCase();
-  const personas = /^\d{1,3}$/.test(p) && Number(p) > 0 ? String(Number(p)) : p === "TBN" ? "TBN" : "";
-  if (!personas) falta("19", "Faltan las personas a bordo (o TBN si todavía no sabés).");
-
-  const piloto = textoFormulario(d.piloto);
-  if (!piloto) falta("19", "Falta el nombre del piloto al mando.");
-
-  const altn = alternativas.flatMap((a) => (a.otrosDatos ? [a.otrosDatos] : []));
-  const per = (d.per ?? "").trim().toUpperCase();
-  const c18 = casilla18({
-    NAV: textoAts(d.nav),
-    DEP: salida.otrosDatos,
-    DEST: destino.otrosDatos,
-    DOF: hora?.dof,
-    TYP: tipoValido ? undefined : textoAts(d.descripcionAeronave),
-    OPR: textoAts(d.operador),
-    PER: /^[A-E]$/.test(per) ? per : undefined,
-    ALTN: altn.join(" "),
-    RMK: textoAts(d.observaciones),
-  });
-
-  const plan: PlanOaci = {
-    c7,
-    c8reglas: d.reglas,
-    c8tipo: d.tipoVuelo,
-    c9numero: "",
-    c9tipo: tipoValido ? tipo : "ZZZZ",
-    c9estela: d.estela,
-    c10a: equipo,
-    c10b: vigilancia,
-    c13ad: salida.casilla,
-    c13hora: hora?.hora ?? "",
-    c15velocidad: d.tasKt > 0 ? velocidadCrucero(d.tasKt) : "",
-    c15nivel: nivelCrucero(d.altitudFt),
-    c15ruta: ruta ?? "",
-    c16ad: destino.casilla,
-    c16eet: d.minutosTotales > 0 ? duracionHhmm(d.minutosTotales) : "",
-    c16altn1: alternativas[0]?.casilla ?? "",
-    c16altn2: alternativas[1]?.casilla ?? "",
-    c18,
-    dof: hora?.dof ?? "",
-    c19: {
-      autonomia: autonomia ?? "",
-      personas,
-      radio: { u: d.radio.uhf, v: d.radio.vhf, e: d.radio.elt },
-      supervivencia: {
-        s: d.supervivencia.lleva,
-        p: d.supervivencia.lleva && d.supervivencia.polar,
-        d: d.supervivencia.lleva && d.supervivencia.desierto,
-        m: d.supervivencia.lleva && d.supervivencia.maritimo,
-        j: d.supervivencia.lleva && d.supervivencia.selva,
-      },
-      chalecos: {
-        j: d.chalecos.lleva,
-        l: d.chalecos.lleva && d.chalecos.luz,
-        f: d.chalecos.lleva && d.chalecos.fluoresceina,
-        u: d.chalecos.lleva && d.chalecos.uhf,
-        v: d.chalecos.lleva && d.chalecos.vhf,
-      },
-      botes: {
-        d: d.botes.lleva,
-        numero: d.botes.lleva ? d.botes.numero.replace(/\D/g, "").slice(0, 2) : "",
-        capacidad: d.botes.lleva ? d.botes.capacidad.replace(/\D/g, "").slice(0, 3) : "",
-        c: d.botes.lleva && d.botes.cubierta,
-        color: d.botes.lleva ? textoFormulario(d.botes.color) : "",
-      },
-      colorMarcas: textoFormulario(d.colorMarcas),
-      observaciones: textoFormulario(d.observacionesSupervivencia) || null,
-      piloto,
-    },
-    // Vacío si no se escribió: así lo presentó Federico y se lo aceptaron.
-    presentadoPor: textoFormulario(d.presentadoPor),
-  };
-
-  return { plan, faltas };
-}
-
 /**
  * El mensaje FPL en una línea, para copiar o revisar: `(FPL-LVABC-VG -C152/L-…)`.
  * Es lo que la oficina carga en el sistema; la casilla 19 no viaja en el mensaje.
@@ -497,14 +328,46 @@ export function mensajeFpl(p: PlanOaci): string {
 }
 
 /**
- * "indicando en el asunto del correo electrónico el Nro. de vuelo/matricula" (AIC A
- * 19/2026). Con la salida y la fecha, para que la oficina lo encuentre si hay dos del
- * mismo avión en el día.
+ * El asunto del mail: "indicando en el asunto del correo electrónico el Nro. de
+ * vuelo/matricula" (AIC A 19/2026). Con el formato de FPL.AR, que es el que ya reciben
+ * las oficinas de los planes de Federico: `LVS100-SRDL(1815)SADM_171026` — matrícula,
+ * salida (EOBT UTC) destino, y la fecha de DOF/ como DDMMAA.
  */
-export function asuntoDelMail(p: PlanOaci, fechaLocal: string): string {
-  const fecha = /^\d{4}-\d{2}-\d{2}$/.test(fechaLocal) ? ` ${fechaLocal.split("-").reverse().join("/")}` : "";
-  const salida = p.c13hora ? ` ${p.c13ad} ${p.c13hora}Z` : "";
-  return `FPL ${p.c7}${salida}${fecha}`;
+export function asuntoDelMail(p: Pick<PlanOaci, "c7" | "c13ad" | "c13hora" | "c16ad" | "dof">): string {
+  const fecha = /^\d{6}$/.test(p.dof) ? `_${p.dof.slice(4, 6)}${p.dof.slice(2, 4)}${p.dof.slice(0, 2)}` : "";
+  return `${p.c7 || "FPL"}-${p.c13ad}(${p.c13hora || "????"})${p.c16ad}${fecha}`;
+}
+
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+/**
+ * El cuerpo del mail, con el texto de FPL.AR (17/10/2026): a quién va, desde dónde, hasta
+ * dónde, cuándo, y la firma con el comandante y la matrícula. Sin `toLocaleString`: el
+ * mes se escribe con la tabla de arriba, igual en el server y en el navegador.
+ */
+export function cuerpoDelMail(
+  p: Pick<PlanOaci, "c7" | "c9tipo" | "c13ad" | "c13hora" | "c16ad" | "dof"> & { c19: { piloto: string } },
+  nombres: { salida: string; destino: string }
+): string {
+  const fecha = /^\d{6}$/.test(p.dof)
+    ? `${Number(p.dof.slice(4, 6))} de ${MESES[Number(p.dof.slice(2, 4)) - 1]} de 20${p.dof.slice(0, 2)}`
+    : "";
+  const lugar = (nombre: string, codigo: string) => (nombre ? `${textoFormulario(nombre)} (${codigo})` : codigo);
+  return [
+    "Estimados,",
+    "",
+    `Adjunto el plan de vuelo de la aeronave ${p.c7}${p.c9tipo ? ` (${p.c9tipo})` : ""}.`,
+    "",
+    `  Desde : ${lugar(nombres.salida, p.c13ad)}`,
+    `  Hasta : ${lugar(nombres.destino, p.c16ad)}`,
+    `  Fecha : ${fecha}`,
+    `  EOBT  : ${p.c13hora} UTC`,
+    "",
+    "Cordiales saludos,",
+    "",
+    p.c19.piloto,
+    p.c7,
+  ].join("\n");
 }
 
 /**

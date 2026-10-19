@@ -11,8 +11,7 @@ import PageHeader from "./PageHeader";
 import PlanMapa from "./PlanMapa";
 import BriefingRuta from "./BriefingRuta";
 import AlternativasCerca from "./AlternativasCerca";
-import PlanDeVueloOaci from "./PlanDeVueloOaci";
-import type { OficinaUbicada } from "@/lib/oficinas-aro";
+import ArmarDesdePlanificador from "./plan-de-vuelo/ArmarDesdePlanificador";
 import StyledSelect from "./StyledSelect";
 import { fmt, hoursToHm, num, NumberField, ToolNote } from "./tools/ToolPrimitives";
 import { calcularPlan, type ParametrosTramo } from "@/lib/navegacion";
@@ -86,15 +85,11 @@ interface Props {
   /** Estado inicial leído de la URL por la página. */
   rutaInicial: string[];
   aeronaveInicial: string;
-  /** Para el plan de vuelo OACI: las oficinas ARO/AIS (AIC A 19/2026). */
-  oficinas: OficinaUbicada[];
   /** Para el plan de vuelo, del perfil: "NOMBRE PPA 12345678" y el celular. */
   piloto: { comandante: string; telefono: string };
-  /** La fecha de hoy en Argentina, del server. */
-  hoy: string;
 }
 
-export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveInicial, oficinas, piloto, hoy }: Props) {
+export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveInicial, piloto }: Props) {
   const [codigos, setCodigos] = useState<string[]>(() =>
     rutaInicial.length >= 2 ? rutaInicial : ["", ""]
   );
@@ -1101,7 +1096,7 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                 groundSpeedKt={plan!.tramos[0]?.groundSpeed ?? null}
               />
 
-              <PlanDeVueloOaci
+              <ArmarDesdePlanificador
                 codigos={codigos}
                 resueltos={resueltos}
                 aeronave={aeronave}
@@ -1110,12 +1105,10 @@ export default function PlanificadorClient({ aeronaves, rutaInicial, aeronaveIni
                 consumoEstimado={!consumo.trim() && !aeronave?.fuel_burn_lph}
                 altitudFt={num(altitud) > 0 ? num(altitud) : null}
                 minutosTotales={plan!.totales.minutos}
+                distanciaNm={plan!.totales.distanciaNm}
                 litros={combustibleNum}
                 consumoLh={consumoNum}
-                oficinas={oficinas}
-                comandante={piloto.comandante}
-                telefono={piloto.telefono}
-                hoy={hoy}
+                piloto={piloto}
               />
 
               {metar && (

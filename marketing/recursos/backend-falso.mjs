@@ -4,9 +4,11 @@ import { readFileSync, existsSync } from "node:fs";
 const DIR = new URL(".", import.meta.url).pathname;
 const hoy = new Date("2026-10-06T12:00:00Z");
 const dia = (n) => new Date(hoy.getTime() - n * 86400000).toISOString().slice(0, 10);
-const perfil = { id: "u1", first_name: "Lucía", last_name: "Ferrari", license_type: "PPA", tracking_mode: "packs", whatsapp_phone: "5491100000000", fecha_ppa: null };
+const perfil = { id: "u1", first_name: "Lucía", last_name: "Ferrari", license_type: "PPA", tracking_mode: "packs", whatsapp_phone: "5491100000000", licencia_numero: "12345678", fecha_ppa: null };
 const aviones = [
-  { id: "a1", user_id: "u1", registration: "LV-ABC", icao: "C152", type: "Cessna 152", type_acft: "MONT-T", is_simulator: false },
+  { id: "a1", user_id: "u1", registration: "LV-ABC", icao: "C152", type: "Cessna 152", type_acft: "MONT-T", is_simulator: false,
+    cruise_tas_kt: 95, fuel_burn_lph: 24, fuel_capacity_l: 92,
+    plan_vuelo: { estela: "L", equipo: "SDGZ", vigilancia: "C", nav: "ABAS", opr: "AEROCLUB ARGENTINO", per: "A", colorMarcas: "BLANCO Y ROJO", elt: true } },
   { id: "a2", user_id: "u1", registration: "LV-XYZ", icao: "PA11", type: "Piper PA-11", type_acft: "MONT-T", is_simulator: false },
 ];
 const rutas = ["SADF SADF", "SADF SADM", "SADF SADL", "SADF SAAK", "SADF SAZS", "SADF SADP", "SADF SADF"];
@@ -48,8 +50,55 @@ const rutasFijas = {
   "/api/social/resumen": { handle: "lucia.vuela", solicitudes: 0, actividad_nueva: 0, avatar_url: null },
 };
 export const DATOS = { perfil, aviones, vuelos };
-if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer((req, res) => {
+// Planes de vuelo (migración 024), en memoria: se pierden al reiniciar.
+const planes = new Map();
+let firma = null;
+const resumenPlan = (p) => {
+  const f = p.formulario ?? {};
+  return { ...p, salida: f.salida?.codigo ?? null, destino: f.destino?.codigo ?? null, matricula: f.matricula ?? null, dof: f.dofUtc || null, eobt: f.eobtUtc || null };
+};
+function planesDeVuelo(req, ruta, json) {
+  const ahora = new Date().toISOString();
+  if (ruta === "/api/planes-de-vuelo/firma") {
+    if (req.method === "PUT") firma = json.png;
+    if (req.method === "DELETE") firma = null;
+    return firma ? { png: firma } : null;
+  }
+  if (ruta === "/api/planes-de-vuelo") {
+    if (req.method === "POST") {
+      const p = resumenPlan({ id: crypto.randomUUID(), aircraft_id: json.aircraft_id ?? null, completo: !!json.completo, formulario: json.formulario, demoras: [], descargado_at: null, created_at: ahora, updated_at: ahora });
+      planes.set(p.id, p);
+      return p;
+    }
+    return [...planes.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).map(({ formulario, demoras, ...r }) => r);
+  }
+  const id = ruta.split("/").pop();
+  const p = planes.get(id);
+  if (!p) return undefined;
+  if (req.method === "DELETE") { planes.delete(id); return {}; }
+  if (req.method === "PATCH") {
+    const n = resumenPlan({ ...p, ...("formulario" in json ? { formulario: json.formulario } : {}), ...("completo" in json ? { completo: json.completo } : {}), ...("demoras" in json ? { demoras: json.demoras } : {}), ...(json.descargado ? { descargado_at: ahora } : {}), updated_at: ahora });
+    planes.set(id, n);
+    return n;
+  }
+  return p;
+}
+if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res) => {
   const ruta = new URL(req.url, "http://x").pathname;
+  let crudo = "";
+  for await (const parte of req) crudo += parte;
+  const json = crudo ? JSON.parse(crudo) : {};
+  if (ruta.startsWith("/api/planes-de-vuelo")) {
+    const r = planesDeVuelo(req, ruta, json);
+    res.writeHead(r === undefined ? 404 : 200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(r ?? { detail: "No existe" }));
+  }
+  if (req.method === "PATCH" && ruta.startsWith("/api/aircraft/")) {
+    const a = aviones.find((x) => x.id === ruta.split("/").pop());
+    if (a) Object.assign(a, json);
+    res.writeHead(a ? 200 : 404, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(a ?? {}));
+  }
   let cuerpo = rutasFijas[ruta];
   if (ruta === "/api/admin/estadisticas" && existsSync(DIR + "admin-estadisticas.json")) cuerpo = JSON.parse(readFileSync(DIR + "admin-estadisticas.json", "utf8"));
   if (cuerpo === undefined) cuerpo = ruta.endsWith("s") ? [] : {};

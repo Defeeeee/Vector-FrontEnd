@@ -72,6 +72,9 @@ export const SECCIONES: Seccion[] = [
     label: "Preparar vuelo",
     pestanas: [
       { href: "/dashboard/planificador", label: "Planificador" },
+      // Los planes de vuelo guardados para EANA (2026-10-19). Al lado del planificador,
+      // que es de donde sale la mayoría.
+      { href: "/dashboard/plan-de-vuelo", label: "Plan de vuelo" },
       { href: "/dashboard/airports", label: "Aeropuertos" },
       { href: "/dashboard/clima", label: "Clima" },
       { href: "/dashboard/tools", label: "Herramientas" },

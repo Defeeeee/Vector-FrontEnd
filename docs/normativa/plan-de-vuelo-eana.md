@@ -86,3 +86,28 @@ Leídas el 2026-10-10. Lo regulatorio se escribe contra esto, no de memoria
   de cambios (CHG, hasta 15 minutos antes de la EOBT) y demoras (DLA, avisar con 30
   minutos; más de 1 hora de demora en un vuelo no controlado obliga a enmendar o
   presentar uno nuevo).
+
+## La demora (DLA) — AIP ENR 1.10, punto 7 y Apéndice 4
+
+- **7.1:** si la demora supera **una hora** respecto de la hora prevista de inicio de
+  rodaje en un vuelo no controlado (30 minutos si es controlado o IFR), "el plan de vuelo
+  deberá enmendarse o presentarse un nuevo plan de vuelo cancelando el antiguo".
+- **7.2:** "Las demoras deberán ser notificadas a la oficina ARO/AIS con no menos de 30
+  minutos antes de la EOBT, pasado ese tiempo deberá presentar un nuevo plan de vuelo."
+  Vector avisa, no frena.
+- **7.3:** "La cantidad máxima de presentaciones de DLA en la Oficina ARO/AIS es de tres
+  (3) formularios por vuelo." Vector no deja armar la cuarta, y el backend tampoco la guarda.
+- **El formulario es el del Apéndice 4** (ENR 1.10-40, AIRAC AMDT 2/2025): casillas 7, 13
+  con la nueva EOBT, 16 con duración y alternativa, 18, y nombre, licencia y firma. Es la
+  imagen de la AIP (`src/lib/plan-de-vuelo-dla.png`). La casilla 18 va con la DOF/ de la
+  nueva fecha, como lo hace FPL.AR.
+
+## El horario de las oficinas — AIP AD 2.3
+
+- Cada ficha de aeródromo publica en AD 2.3, renglón 5, el horario de la "Oficina de
+  notificación ATS (ARO)". `scripts/build-horarios-aro.mjs` lo copia para las oficinas de
+  la AIC (48 de 49: Goya, SATG, no tiene ficha en la AIP) a `src/data/aip-horarios-aro.tsv`,
+  con el renglón verbatim.
+- **Vector sólo dice "abierta" o "cerrada" con H24 o con un único rango UTC.** Con días de
+  la semana, "O/R" (a pedido), "SS" (puesta del sol) o feriados, muestra el texto y pide
+  revisarlo: decidir mal que una oficina atiende es peor que no decirlo.

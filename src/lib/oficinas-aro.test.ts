@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { oficinaParaSalida, parsearOficinas, primerTelefono, type OficinaUbicada } from "./oficinas-aro";
+import { horarioAro, oficinaParaSalida, parsearHorarios, parsearOficinas, primerTelefono, type OficinaUbicada } from "./oficinas-aro";
 
 /**
  * La tabla de oficinas contra el texto de la AIC A 19/2026, **en los dos sentidos**, como
@@ -69,5 +69,43 @@ describe("oficinaParaSalida", () => {
 
   it("sin oficina y sin coordenadas no adivina", () => {
     expect(oficinaParaSalida({ codigo: "XYZ" }, ubicadas)).toBeNull();
+  });
+});
+
+describe("el horario del ARO (AIP AD 2.3)", () => {
+  const tsv = fs.readFileSync(path.join(RAIZ, "src", "data", "aip-horarios-aro.tsv"), "utf8");
+  const filas = tsv.split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => l.split("\t"));
+
+  it("cada horario sale literal del renglón del ARO de la AIP, y es de una oficina de la AIC", () => {
+    const codigos = new Set(oficinas.map((o) => o.oaci));
+    expect(filas.length).toBeGreaterThan(40);
+    for (const [oaci, horario, renglon] of filas) {
+      expect(codigos.has(oaci), oaci).toBe(true);
+      expect(renglon, oaci).toMatch(/\(ARO\)/);
+      expect(renglon.endsWith(horario), oaci).toBe(true);
+    }
+    expect(parsearHorarios(tsv).get("SADF")).toBe("H24");
+  });
+
+  it("H24 está abierta siempre", () => {
+    expect(horarioAro("H24", "0330")).toEqual({ texto: "H24", abierta: true });
+  });
+
+  it("un rango UTC, también el que pasa la medianoche", () => {
+    expect(horarioAro("10:00-01:00 UTC", "1830")?.abierta).toBe(true);
+    expect(horarioAro("10:00-01:00 UTC", "0030")?.abierta).toBe(true);
+    expect(horarioAro("10:00-01:00 UTC", "0300")?.abierta).toBe(false);
+    expect(horarioAro("12:00-20:00 UTC", "2030")?.abierta).toBe(false);
+    expect(horarioAro("10:00-23:59:00 UTC (*)", "2300")?.abierta).toBe(true);
+  });
+
+  it("con días, O/R o puesta del sol no decide: muestra el texto en castellano", () => {
+    expect(horarioAro("LUN a VIE 12:30-20:30 UTC. / MON to FRI 12:30-20:30 UTC.", "1500")).toEqual({
+      texto: "LUN a VIE 12:30-20:30 UTC.",
+      abierta: null,
+    });
+    expect(horarioAro("11:00 HR a / to SS", "1500")).toEqual({ texto: "11:00 HR a / to SS", abierta: null });
+    expect(horarioAro("O/R (*)", "1500")?.abierta).toBeNull();
+    expect(horarioAro(undefined, "1500")).toBeNull();
   });
 });

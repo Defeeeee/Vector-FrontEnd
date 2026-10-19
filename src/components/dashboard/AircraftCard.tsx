@@ -9,6 +9,7 @@ import CamposPerformance from "./CamposPerformance";
 import CampoSimulador from "./CampoSimulador";
 import CampoPotencia from "./CampoPotencia";
 import { useAvisos } from "./Avisos";
+import PerfilPlanAvion from "./plan-de-vuelo/PerfilPlanAvion";
 
 interface AircraftCardProps {
   aircraft: Aircraft;
@@ -188,6 +189,8 @@ export default function AircraftCard({ aircraft }: AircraftCardProps) {
             {aircraft.fuel_capacity_l && <span>{aircraft.fuel_capacity_l} L</span>}
           </p>
         )}
+
+        {!aircraft.is_simulator && <PerfilPlanAvion aircraftId={aircraft.id} perfil={aircraft.plan_vuelo ?? null} />}
       </div>
     </div>
   );

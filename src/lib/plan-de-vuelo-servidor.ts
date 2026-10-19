@@ -1,0 +1,100 @@
+import { apiFetch } from "./api";
+import { esAlumno } from "./licencias";
+import type { Aircraft, Profile } from "@/types";
+import type { PilotoParaPlan } from "./formulario-plan";
+
+/**
+ * Lo que leen del backend las pantallas del plan de vuelo. Server-only (usa `apiFetch`).
+ *
+ * Todo es tolerante: si algo no se puede leer, la pantalla sigue con el campo vacío y el
+ * piloto lo escribe. Ninguna de estas lecturas es el dato central de la pantalla.
+ */
+
+/**
+ * Del perfil: "Comandante de la aeronave" con nombre, licencia y número —como lo presentó
+ * Federico el 10/10/2026: `FEDERICO DIAZ NEMETH PPA 48225513`— y el celular para las
+ * observaciones. Un alumno no tiene licencia: va sólo el nombre.
+ */
+export async function pilotoParaPlan(): Promise<PilotoParaPlan> {
+  const vacio = { comandante: "", telefono: "", nombre: "", licencia: "" };
+  const res = await apiFetch("/profiles");
+  if (!res.ok) return vacio;
+  try {
+    const p = ((await res.json()) as Profile[])[0];
+    if (!p) return vacio;
+    const nombre = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+    const tipo = p.license_type && !esAlumno(p.license_type) ? p.license_type : "";
+    const numero = tipo ? (p.licencia_numero ?? "").trim() : "";
+    return {
+      comandante: [nombre, tipo, numero].filter(Boolean).join(" "),
+      telefono: p.whatsapp_phone ?? "",
+      nombre,
+      licencia: numero,
+    };
+  } catch {
+    return vacio;
+  }
+}
+
+/** Los aviones, sin los simuladores: un plan de vuelo es para algo que vuela. */
+export async function avionesParaPlan(): Promise<Aircraft[]> {
+  const res = await apiFetch("/aircraft");
+  if (!res.ok) return [];
+  try {
+    return ((await res.json()) as Aircraft[]).filter((a) => !a.is_simulator);
+  } catch {
+    return [];
+  }
+}
+
+/** La firma guardada (data URL de un PNG), o `null`. */
+export async function firmaGuardada(): Promise<string | null> {
+  const res = await apiFetch("/planes-de-vuelo/firma");
+  if (!res.ok) return null;
+  try {
+    const f = (await res.json()) as { png?: string } | null;
+    return f?.png ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export interface PlanResumen {
+  id: string;
+  aircraft_id: string | null;
+  completo: boolean;
+  salida: string | null;
+  destino: string | null;
+  matricula: string | null;
+  dof: string | null;
+  eobt: string | null;
+  descargado_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanGuardado extends PlanResumen {
+  formulario: unknown;
+  demoras: { eobt: string; dof: string; creada?: string }[];
+}
+
+/** La lista de planes. `null` = no se pudo leer (no es lo mismo que "no hay": invariante 2). */
+export async function listarPlanes(): Promise<PlanResumen[] | null> {
+  const res = await apiFetch("/planes-de-vuelo");
+  if (!res.ok) return null;
+  try {
+    return (await res.json()) as PlanResumen[];
+  } catch {
+    return null;
+  }
+}
+
+export async function leerPlan(id: string): Promise<PlanGuardado | null> {
+  const res = await apiFetch(`/planes-de-vuelo/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  try {
+    return (await res.json()) as PlanGuardado;
+  } catch {
+    return null;
+  }
+}
