@@ -566,3 +566,112 @@ export function localDesdeUtc(dofUtc: string, eobtUtc: string): { fecha: string;
 
 /** La coordenada de un aeródromo para DEP/ o DEST/ cuando no tiene OACI (re-exportada para la UI). */
 export { coordenadaOaci };
+
+/* -------------------------------------------------------------------------- */
+/* La ruta como nodos                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Un nodo de la ruta entre la salida y el destino, como lo muestra el editor: los DCT no
+ * son nodos, son las flechas entre ellos.
+ *
+ * - `punto`: un designador, una coordenada o un radial; se busca en el directorio.
+ * - `aerovia`: va sobre la flecha, entre su punto de entrada y el de salida.
+ * - `desconocido`: lo que no tiene forma de punto ("SECTOR ESCUELA"). Va igual en el plan
+ *   —la oficina lo lee—, pero no suma a la distancia.
+ */
+export interface NodoRuta {
+  texto: string;
+  tipo: "punto" | "aerovia" | "desconocido";
+  /** Para buscarlo en `/api/puntos`, en la gramática del planificador. Sólo en `punto` y `aerovia`. */
+  token?: string;
+  /** Coordenada o radial: dos seguidos van sin DCT entre ellos (casilla 15 c). */
+  geografico: boolean;
+}
+
+function nodoDeToken(t: TokenRutaPlan): NodoRuta {
+  if (t.tipo === "desconocido") return { texto: t.texto, tipo: "desconocido", geografico: false };
+  const geografico = t.tipo === "punto" && t.token.includes("/");
+  return { texto: t.texto, tipo: t.tipo, token: t.token, geografico };
+}
+
+/**
+ * La ruta escrita, como nodos. **Las palabras desconocidas seguidas, sin DCT en el medio,
+ * son un solo nodo**: `DCT SECTOR ESCUELA DCT` es un lugar, el sector escuela, y no dos.
+ * En cambio `DCT LAGUNA DCT ESCUELA DCT` son dos.
+ */
+export function nodosDeRuta(ruta: string): NodoRuta[] {
+  const nodos: NodoRuta[] = [];
+  let anteriorDesconocido = false;
+  for (const palabra of (ruta ?? "").toUpperCase().split(/\s+/).filter(Boolean)) {
+    if (palabra === "DCT") {
+      anteriorDesconocido = false;
+      continue;
+    }
+    const [t] = tokensDeRuta(palabra);
+    if (!t) continue;
+    if (t.tipo === "desconocido" && anteriorDesconocido) {
+      nodos[nodos.length - 1].texto += ` ${palabra}`;
+      continue;
+    }
+    nodos.push(nodoDeToken(t));
+    anteriorDesconocido = t.tipo === "desconocido";
+  }
+  return nodos;
+}
+
+/**
+ * Lo que el piloto escribe en el campo para sumar un nodo. Con un DCT adentro es una ruta
+ * entera pegada (`DCT ATE DCT`). Con espacios y sin DCT hay dos lecturas —"ATE BAR" son
+ * dos puntos, "PUNTA LARA" es un lugar— y **las decide el directorio**: quien llama busca
+ * cada parte y dice si existen todas (`todasExisten`). Si no, es un solo nodo.
+ */
+export function nodosDeEntrada(entrada: string, todasExisten = false): NodoRuta[] {
+  const t = (entrada ?? "").trim().toUpperCase().replace(/\s+/g, " ");
+  if (!t) return [];
+  if (/(^| )DCT( |$)/.test(t)) return nodosDeRuta(t);
+  if (t.includes(" ")) {
+    const partes = t.split(" ").flatMap((p) => tokensDeRuta(p));
+    if (todasExisten && partes.every((p) => p.tipo !== "desconocido")) return partes.map(nodoDeToken);
+    return [{ texto: t, tipo: "desconocido", geografico: false }];
+  }
+  return tokensDeRuta(t).map(nodoDeToken);
+}
+
+/**
+ * Los nodos, de vuelta a la casilla 15, con los DCT donde van (ENR 1.10, casilla 15 c):
+ * entre puntos sucesivos, salvo al lado de una aerovía y entre dos puntos geográficos; y
+ * al principio y al final, desde la salida y hasta el destino. Sin nodos, `DCT`.
+ */
+export function rutaDesdeNodos(nodos: NodoRuta[]): string {
+  if (nodos.length === 0) return "DCT";
+  const partes: string[] = [];
+  let anterior: NodoRuta | null = null;
+  for (const n of nodos) {
+    const sinDct = n.tipo === "aerovia" || anterior?.tipo === "aerovia" || (anterior?.geografico && n.geografico);
+    if (!sinDct) partes.push("DCT");
+    partes.push(n.texto);
+    anterior = n;
+  }
+  if (anterior?.tipo !== "aerovia") partes.push("DCT");
+  return partes.join(" ");
+}
+
+/**
+ * La duración sugerida con lo que se pudo ubicar: los tramos entre puntos conocidos, y
+ * **sin contar los que no se encontraron**, que se nombran en el motivo. `null` si no
+ * queda distancia (un vuelo local sin puntos conocidos).
+ */
+export function sugerirEetConocidos(
+  puntos: { lat: number; lon: number }[],
+  sinUbicar: string[],
+  tasKt: number,
+  distancia: (a: { lat: number; lon: number }, b: { lat: number; lon: number }) => number
+): Sugerencia | null {
+  let nm = 0;
+  for (let i = 1; i < puntos.length; i++) nm += distancia(puntos[i - 1], puntos[i]);
+  if (nm < 1) return null;
+  const s = sugerirEet(nm, tasKt);
+  if (!s) return null;
+  return sinUbicar.length ? { ...s, motivo: `${s.motivo}, sin contar ${sinUbicar.join(" ni ")}` } : s;
+}

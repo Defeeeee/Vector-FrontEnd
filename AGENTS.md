@@ -251,6 +251,9 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Qué es:** una pestaña de Preparar vuelo, con los planes guardados, duplicar, la ruta
     en texto libre, el perfil del avión en el Hangar (`aircraft.plan_vuelo`) y la firma
     guardada. La demora (DLA) se arma desde el mismo plan.
+  - **La ruta es texto y se ve como nodos** (`EditorRuta`): los DCT son flechas con las
+    millas del tramo; lo que el directorio no conoce queda "sin ubicar" y va igual en el
+    plan. Palabras desconocidas seguidas son un lugar ("SECTOR ESCUELA").
   - **Sugerir, no llenar** (Federico, 2026-10-19): la duración y la autonomía se sugieren
     arriba del campo y se aplican con un toque. La duración sale de la ruta escrita y la
     TAS, o del planificador con el viento.

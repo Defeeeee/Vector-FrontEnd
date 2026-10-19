@@ -5,8 +5,12 @@ import {
   formularioVacio,
   leerFormulario,
   localDesdeUtc,
+  nodosDeEntrada,
+  nodosDeRuta,
   normalizar,
   observacionesDe,
+  rutaDesdeNodos,
+  sugerirEetConocidos,
   revisar,
   sugerirAutonomia,
   sugerirEet,
@@ -208,5 +212,66 @@ describe("sugerencias", () => {
       { tipo: "desconocido", texto: "SECTOR-1" },
     ]);
     expect(tokensDeRuta("DCT SECTOR ESCUELA DCT").map((t) => t.tipo)).toEqual(["desconocido", "desconocido"]);
+  });
+});
+
+describe("la ruta como nodos", () => {
+  it("los DCT son flechas, no nodos", () => {
+    expect(nodosDeRuta("DCT ATE DCT").map((n) => n.texto)).toEqual(["ATE"]);
+    expect(nodosDeRuta("DCT")).toEqual([]);
+  });
+
+  it("palabras desconocidas seguidas son un solo lugar; separadas por DCT, dos", () => {
+    expect(nodosDeRuta("DCT SECTOR ESCUELA DCT")).toEqual([{ texto: "SECTOR ESCUELA", tipo: "desconocido", geografico: false }]);
+    expect(nodosDeRuta("DCT LAGUNA DCT ESCUELA DCT").map((n) => n.texto)).toEqual(["LAGUNA", "ESCUELA"]);
+  });
+
+  it("aerovías, coordenadas y radiales se reconocen", () => {
+    expect(nodosDeRuta("DCT BCA W67 OSA DCT 3441S05838W BAR045025").map((n) => [n.texto, n.tipo, n.geografico])).toEqual([
+      ["BCA", "punto", false],
+      ["W67", "aerovia", false],
+      ["OSA", "punto", false],
+      ["3441S05838W", "punto", true],
+      ["BAR045025", "punto", true],
+    ]);
+  });
+
+  it("de nodos a la casilla 15, con los DCT donde van", () => {
+    for (const ruta of [
+      "DCT ATE DCT",
+      "DCT SECTOR ESCUELA DCT",
+      "DCT LAGUNA DCT ESCUELA DCT",
+      "DCT BCA W67 OSA DCT SRA DCT",
+      "DCT 3441S05838W BAR045025 DCT BAR DCT",
+      "DCT BCA W67",
+      "DCT",
+    ]) {
+      expect(rutaDesdeNodos(nodosDeRuta(ruta))).toBe(ruta);
+    }
+  });
+
+  it("lo que se escribe para sumar: un nombre con espacios es un nodo; una ruta pegada, varios", () => {
+    expect(nodosDeEntrada("punta lara").map((n) => n.texto)).toEqual(["PUNTA LARA"]);
+    expect(nodosDeEntrada("ate bar").map((n) => n.texto)).toEqual(["ATE BAR"]);
+    expect(nodosDeEntrada("ate bar", true).map((n) => n.texto)).toEqual(["ATE", "BAR"]);
+    expect(nodosDeEntrada("sector escuela", true).map((n) => n.texto)).toEqual(["SECTOR ESCUELA"]);
+    expect(nodosDeEntrada("DCT ATE DCT SECTOR ESCUELA DCT").map((n) => n.texto)).toEqual(["ATE", "SECTOR ESCUELA"]);
+    expect(nodosDeEntrada("  ")).toEqual([]);
+  });
+
+  it("la duración con los puntos conocidos, nombrando los que no se contaron", () => {
+    const plano = (a: { lat: number; lon: number }, b: { lat: number; lon: number }) => Math.abs(a.lat - b.lat) + Math.abs(a.lon - b.lon);
+    const s = sugerirEetConocidos(
+      [
+        { lat: 0, lon: 0 },
+        { lat: 30, lon: 0 },
+        { lat: 60, lon: 0 },
+      ],
+      ["SECTOR ESCUELA"],
+      90,
+      plano
+    );
+    expect(s).toEqual({ valor: "0040", motivo: "60 NM a 90 kt, sin viento, sin contar SECTOR ESCUELA" });
+    expect(sugerirEetConocidos([{ lat: 0, lon: 0 }, { lat: 0, lon: 0 }], ["SECTOR"], 90, plano)).toBeNull();
   });
 });

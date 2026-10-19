@@ -28,9 +28,6 @@ import {
   normalizar,
   revisar,
   sugerirAutonomia,
-  sugerirEet,
-  tasDeVelocidad,
-  tokensDeRuta,
   type FormularioPlan,
   type PerfilAvionPlan,
   type PilotoParaPlan,
@@ -39,9 +36,10 @@ import {
 import { asuntoDelMail, cuerpoDelMail, mensajeFpl, nombreDelArchivo, salidaUtc, type Indicador18 } from "@/lib/plan-de-vuelo";
 import { demoraDesdeHoraLocal, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, revisarDemora, type Demora } from "@/lib/demora-plan";
 import { horarioAro, oficinaParaSalida, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
-import { distanciaNmPrecisa } from "@/lib/distance";
 import CampoAerodromo from "./CampoAerodromo";
 import FirmaPiloto from "./FirmaPiloto";
+import EditorRuta from "./EditorRuta";
+import { useRutaResuelta } from "./useRutaResuelta";
 
 export interface AvionEditor {
   id: string;
@@ -84,6 +82,12 @@ const INDICADORES: Indicador18[] = [
   "STS", "PBN", "NAV", "COM", "DAT", "SUR", "REG", "EET", "SEL", "TYP", "CODE", "DLE", "OPR", "ORGN", "PER", "RALT", "TALT", "RIF", "RMK",
 ];
 
+/**
+ * Una casilla. Es un `<label>` para que tocar en cualquier parte enfoque el campo, **salvo
+ * con `sinLabel`**: un label reenvía el clic a su primer control, y en el campo de
+ * aeródromo ese control es la "×" de borrar. Tocar el campo borraba el aeródromo, y elegir
+ * una sugerencia también (Federico, 2026-10-19). Ahí va un `div`.
+ */
 function Campo({
   casilla,
   etiqueta,
@@ -92,6 +96,7 @@ function Campo({
   children,
   arriba,
   className = "",
+  sinLabel = false,
 }: {
   casilla?: string;
   etiqueta: string;
@@ -100,12 +105,14 @@ function Campo({
   children: ReactNode;
   arriba?: ReactNode;
   className?: string;
+  sinLabel?: boolean;
 }) {
   const borde = BORDE[estado ?? "opcional"] ?? BORDE.opcional;
+  const Contenedor = sinLabel ? "div" : "label";
   return (
     <div className={className}>
       {arriba}
-      <label
+      <Contenedor
         className={`block rounded-2xl border px-3.5 pt-2 pb-1 transition-colors ${borde} ${
           delAvion ? "bg-violet-50/60 dark:bg-violet-500/[0.06]" : "bg-white dark:bg-white/[0.02]"
         }`}
@@ -119,7 +126,7 @@ function Campo({
           {(estado === "falta" || estado === "error") && <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />}
         </span>
         {children}
-      </label>
+      </Contenedor>
     </div>
   );
 }
@@ -165,101 +172,6 @@ function Tilde({ activo, onChange, children }: { activo: boolean; onChange: (v: 
 }
 
 /* -------------------------------------------------------------------------- */
-/* La sugerencia de la duración: la ruta escrita, de vuelta a puntos          */
-/* -------------------------------------------------------------------------- */
-
-interface PuntoApi {
-  lat: number;
-  lon: number;
-  tramo?: { lat: number; lon: number }[];
-}
-
-/**
- * Resuelve la ruta escrita con `/api/puntos` (el mismo directorio del planificador, que
- * anda sin señal) y sugiere la duración con la TAS de la casilla 15. Sin viento: lo dice.
- * Con un punto que no reconoce ("SECTOR"), no inventa: lo nombra.
- */
-function useSugerenciaEet(f: FormularioPlan, tasAvion: number | null): { sugerencia: Sugerencia | null; nota: string | null } {
-  const cache = useRef(new Map<string, PuntoApi | null>());
-  const [resultado, setResultado] = useState<{ sugerencia: Sugerencia | null; nota: string | null }>({ sugerencia: null, nota: null });
-
-  const clave = JSON.stringify([f.ruta, f.salida?.codigo, f.destino?.codigo, f.velocidad, f.sugerencias.eet?.ruta]);
-  useEffect(() => {
-    let vigente = true;
-    const correr = async () => {
-      // La del planificador, si la ruta no cambió: esa tiene el viento.
-      const delPlanificador = f.sugerencias.eet;
-      if (delPlanificador && delPlanificador.ruta === f.ruta.trim().toUpperCase()) {
-        setResultado({ sugerencia: delPlanificador, nota: null });
-        return;
-      }
-      const tas = tasDeVelocidad(f.velocidad) ?? tasAvion;
-      if (!f.salida || !f.destino || f.salida.lat === undefined || f.destino.lat === undefined) {
-        setResultado({ sugerencia: null, nota: null });
-        return;
-      }
-      if (!tas) {
-        setResultado({ sugerencia: null, nota: "Con la velocidad de la casilla 15 te sugiero la duración." });
-        return;
-      }
-      const tokens = tokensDeRuta(f.ruta);
-      const desconocidos = tokens.filter((t) => t.tipo === "desconocido").map((t) => t.texto);
-      const puntos: { lat: number; lon: number }[] = [{ lat: f.salida.lat!, lon: f.salida.lon! }];
-      const noResueltos: string[] = [...desconocidos];
-      for (let i = 0; i < tokens.length; i++) {
-        const t = tokens[i];
-        if (t.tipo === "desconocido") continue;
-        const desde = tokens[i - 1]?.tipo === "punto" ? (tokens[i - 1] as { token: string }).token : f.salida.codigo;
-        const hasta = tokens[i + 1]?.tipo === "punto" ? (tokens[i + 1] as { token: string }).token : f.destino.codigo;
-        const k = `${t.token}|${t.tipo === "aerovia" ? `${desde}|${hasta}` : ""}`;
-        let p = cache.current.get(k);
-        if (p === undefined) {
-          try {
-            const q = new URLSearchParams({ q: t.token, desde, hasta });
-            const res = await fetch(`/api/puntos?${q}`);
-            const data = (await res.json()) as { punto: PuntoApi | null };
-            p = data.punto && Number.isFinite(data.punto.lat) ? data.punto : null;
-          } catch {
-            p = null;
-          }
-          cache.current.set(k, p);
-        }
-        if (!p) {
-          noResueltos.push(t.texto);
-          continue;
-        }
-        if (t.tipo === "aerovia") puntos.push(...(p.tramo ?? []));
-        else puntos.push({ lat: p.lat, lon: p.lon });
-      }
-      puntos.push({ lat: f.destino.lat!, lon: f.destino.lon! });
-      if (!vigente) return;
-      if (noResueltos.length) {
-        setResultado({
-          sugerencia: null,
-          nota: `No reconozco ${noResueltos.join(", ")} en la ruta: la duración la calculás vos.`,
-        });
-        return;
-      }
-      let nm = 0;
-      for (let i = 1; i < puntos.length; i++) nm += distanciaNmPrecisa(puntos[i - 1].lat, puntos[i - 1].lon, puntos[i].lat, puntos[i].lon);
-      if (nm < 1) {
-        setResultado({ sugerencia: null, nota: "Vuelo local: la duración depende de lo que vayas a hacer." });
-        return;
-      }
-      setResultado({ sugerencia: sugerirEet(nm, tas), nota: null });
-    };
-    const t = setTimeout(correr, 400);
-    return () => {
-      vigente = false;
-      clearTimeout(t);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clave, tasAvion]);
-
-  return resultado;
-}
-
-/* -------------------------------------------------------------------------- */
 /* El editor                                                                   */
 /* -------------------------------------------------------------------------- */
 
@@ -294,10 +206,20 @@ export default function EditorPlanDeVuelo({
   }, []);
 
   const guardar = useCallback(async () => {
+    temporizador.current = null;
     setGuardado("guardando");
     const r = await guardarPlan(id, ultimo.current);
-    setGuardado("error" in r ? "error" : "guardado");
+    if ("error" in r) {
+      // Sin conexión o el servidor no contestó: se reintenta solo, no espera a que el piloto
+      // vuelva a escribir.
+      setGuardado("error");
+      if (!temporizador.current) temporizador.current = setTimeout(() => void guardarRef.current(), 5000);
+      return;
+    }
+    setGuardado("guardado");
   }, [id]);
+  const guardarRef = useRef(guardar);
+  guardarRef.current = guardar;
 
   const cambiar = useCallback(
     (cambio: Partial<FormularioPlan> | ((prev: FormularioPlan) => FormularioPlan)) => {
@@ -324,7 +246,8 @@ export default function EditorPlanDeVuelo({
 
   const r = useMemo(() => revisar(f, ahoraIso), [f, ahoraIso]);
   const avion = aviones.find((a) => a.id === f.aircraftId) ?? null;
-  const { sugerencia: sugEet, nota: notaEet } = useSugerenciaEet(f, avion?.cruise_tas_kt ?? null);
+  const rutaResuelta = useRutaResuelta(f, avion?.cruise_tas_kt ?? null);
+  const { sugerencia: sugEet, nota: notaEet } = rutaResuelta;
   const sugAutonomia: Sugerencia | null =
     f.sugerencias.autonomia ??
     (avion?.fuel_capacity_l && avion.fuel_burn_lph
@@ -466,7 +389,7 @@ export default function EditorPlanDeVuelo({
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
           {guardado === "guardando" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando…</>)}
           {guardado === "guardado" && (<><Check className="w-3.5 h-3.5 text-emerald-500" /> Guardado</>)}
-          {guardado === "error" && (<><CloudOff className="w-3.5 h-3.5 text-amber-500" /> Sin guardar: reintenta al seguir escribiendo</>)}
+          {guardado === "error" && (<><CloudOff className="w-3.5 h-3.5 text-amber-500" /> Sin guardar: reintentando…</>)}
         </span>
       </div>
 
@@ -585,7 +508,7 @@ export default function EditorPlanDeVuelo({
           {/* 13 y 15 */}
           <Seccion titulo="Salida y ruta · casillas 13 y 15">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Campo casilla="13" etiqueta="Aeródromo de salida" estado={e.salida}>
+              <Campo casilla="13" etiqueta="Aeródromo de salida" estado={e.salida} sinLabel>
                 <CampoAerodromo valor={f.salida} onCambio={(a) => cambiar({ salida: a, oficina: "" })} placeholder="SADF o nombre" claseInput={INPUT} />
               </Campo>
               <Campo casilla="13" etiqueta="Fecha (hora argentina)" estado={e.fechaHora}>
@@ -606,17 +529,24 @@ export default function EditorPlanDeVuelo({
                 <input type="time" value={f.horaLocal} onChange={(ev) => cambiar({ horaLocal: ev.target.value })} className={INPUT} />
               </Campo>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Campo casilla="15" etiqueta="Velocidad" estado={e.velocidad} delAvion={f.origen.velocidad === "planificador"}>
                 <input value={f.velocidad} onChange={(ev) => cambiar({ velocidad: ev.target.value })} placeholder="N0090" className={`${INPUT} uppercase`} />
               </Campo>
               <Campo casilla="15" etiqueta="Nivel" estado={e.nivel}>
                 <input value={f.nivel} onChange={(ev) => cambiar({ nivel: ev.target.value })} placeholder="A015 o VFR" className={`${INPUT} uppercase`} />
               </Campo>
-              <Campo casilla="15" etiqueta="Ruta" estado={e.ruta} className="col-span-2">
-                <input value={f.ruta} onChange={(ev) => cambiar({ ruta: ev.target.value })} placeholder="DCT ATE DCT" className={`${INPUT} uppercase`} />
-              </Campo>
+
             </div>
+            <EditorRuta
+              ruta={f.ruta}
+              salida={f.salida}
+              destino={f.destino}
+              nodos={rutaResuelta.nodos}
+              cache={rutaResuelta.cache}
+              estado={e.ruta}
+              onCambio={(ruta) => cambiar({ ruta })}
+            />
             {!avion?.cruise_tas_kt && !f.velocidad && (
               <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
                 La velocidad es la TAS de crucero, en nudos con N y cuatro cifras: 90 kt es N0090.
@@ -627,7 +557,7 @@ export default function EditorPlanDeVuelo({
           {/* 16 */}
           <Seccion titulo="Destino · casilla 16">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Campo casilla="16" etiqueta="Destino" estado={e.destino} className="col-span-2 md:col-span-1">
+              <Campo casilla="16" etiqueta="Destino" estado={e.destino} className="col-span-2 md:col-span-1" sinLabel>
                 <CampoAerodromo valor={f.destino} onCambio={(a) => cambiar({ destino: a })} placeholder="SAAK o nombre" claseInput={INPUT} />
               </Campo>
               <Campo
@@ -639,11 +569,11 @@ export default function EditorPlanDeVuelo({
               >
                 <input value={f.eet} onChange={(ev) => cambiar({ eet: ev.target.value })} placeholder="0035" maxLength={4} className={INPUT} inputMode="numeric" />
               </Campo>
-              <Campo casilla="16" etiqueta="Alternativa" estado={e.altn1}>
+              <Campo casilla="16" etiqueta="Alternativa" estado={e.altn1} sinLabel>
                 <CampoAerodromo valor={f.altn1} onCambio={(a) => cambiar({ altn1: a })} placeholder="SADM" claseInput={INPUT} />
               </Campo>
-              <Campo casilla="16" etiqueta="2ª alternativa" estado={e.altn2}>
-                <CampoAerodromo valor={f.altn2} onCambio={(a) => cambiar({ altn2: a })} placeholder="Opcional" claseInput={INPUT} />
+              <Campo casilla="16" etiqueta="2ª alternativa" estado={e.altn2} sinLabel>
+                <CampoAerodromo valor={f.altn2} onCambio={(a) => cambiar({ altn2: a })} placeholder="Opcional" claseInput={INPUT} alinear="derecha" />
               </Campo>
             </div>
             {!sugEet && notaEet && <p className="text-[11px] text-zinc-400 dark:text-zinc-500">{notaEet}</p>}

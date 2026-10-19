@@ -6,6 +6,12 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.24.1 — La ruta, punto por punto
+
+_19 de octubre de 2026_
+
+- **La ruta del plan, en nodos** — La casilla 15 se ve como salida, puntos y destino, con las millas de cada tramo. Lo que Vector no conoce, como el sector escuela, queda marcado y va igual en el plan; la duración sugerida se calcula con el resto.
+
 ## v2.24.0 — Tus planes de vuelo, guardados
 
 _19 de octubre de 2026_

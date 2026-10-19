@@ -78,6 +78,21 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.24.1",
+    fecha: "2026-10-19",
+    titulo: "La ruta, punto por punto",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "La ruta del plan, en nodos",
+        texto:
+          "La casilla 15 se ve como salida, puntos y destino, con las millas de cada tramo. Lo que Vector no conoce, como el sector escuela, queda marcado y va igual en el plan; la duración sugerida se calcula con el resto.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+    ],
+  },
+  {
     version: "2.24.0",
     fecha: "2026-10-19",
     titulo: "Tus planes de vuelo, guardados",
