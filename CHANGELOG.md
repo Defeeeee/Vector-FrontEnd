@@ -6,6 +6,12 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.24.2 — La hora del plan, en UTC
+
+_19 de octubre de 2026_
+
+- **La EOBT se carga en UTC** — La fecha y la hora de salida del plan van en UTC, como en el formulario, con cuatro cifras (1830). Debajo te mostramos la hora argentina. La demora también va en UTC.
+
 ## v2.24.1 — La ruta, punto por punto
 
 _19 de octubre de 2026_

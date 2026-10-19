@@ -23,18 +23,20 @@ import fondoDla from "@/lib/plan-de-vuelo-dla.png";
 import { duplicarPlan, guardarDemoras, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
 import {
   aplicarAvion,
+  horaDeTexto,
   leerFormulario,
   localDesdeUtc,
   normalizar,
   revisar,
+  salidaDelPlan,
   sugerirAutonomia,
   type FormularioPlan,
   type PerfilAvionPlan,
   type PilotoParaPlan,
   type Sugerencia,
 } from "@/lib/formulario-plan";
-import { asuntoDelMail, cuerpoDelMail, mensajeFpl, nombreDelArchivo, salidaUtc, type Indicador18 } from "@/lib/plan-de-vuelo";
-import { demoraDesdeHoraLocal, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, revisarDemora, type Demora } from "@/lib/demora-plan";
+import { asuntoDelMail, cuerpoDelMail, mensajeFpl, nombreDelArchivo, type Indicador18 } from "@/lib/plan-de-vuelo";
+import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, revisarDemora, type Demora } from "@/lib/demora-plan";
 import { horarioAro, oficinaParaSalida, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
 import CampoAerodromo from "./CampoAerodromo";
 import FirmaPiloto from "./FirmaPiloto";
@@ -94,7 +96,7 @@ function Campo({
   estado,
   delAvion,
   children,
-  arriba,
+  debajo,
   className = "",
   sinLabel = false,
 }: {
@@ -103,20 +105,22 @@ function Campo({
   estado?: string;
   delAvion?: boolean;
   children: ReactNode;
-  arriba?: ReactNode;
+  /** Una sugerencia o una nota: va adentro de la casilla, abajo, para no correrla de su fila. */
+  debajo?: ReactNode;
   className?: string;
   sinLabel?: boolean;
 }) {
   const borde = BORDE[estado ?? "opcional"] ?? BORDE.opcional;
   const Contenedor = sinLabel ? "div" : "label";
   return (
-    <div className={className}>
-      {arriba}
-      <Contenedor
-        className={`block rounded-2xl border px-3.5 pt-2 pb-1 transition-colors ${borde} ${
-          delAvion ? "bg-violet-50/60 dark:bg-violet-500/[0.06]" : "bg-white dark:bg-white/[0.02]"
-        }`}
-      >
+    // El borde va en la caja de afuera, que estira a la altura de la fila: así las casillas de
+    // un mismo renglón quedan parejas aunque una tenga una sugerencia y la otra no.
+    <div
+      className={`flex flex-col rounded-2xl border px-3.5 pt-2 pb-1 transition-colors ${borde} ${
+        delAvion ? "bg-violet-50/60 dark:bg-violet-500/[0.06]" : "bg-white dark:bg-white/[0.02]"
+      } ${className}`}
+    >
+      <Contenedor className="block min-w-0">
         <span className="flex items-center justify-between gap-2">
           <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
             {casilla && <span className="data font-bold text-zinc-400 dark:text-zinc-500 mr-1">{casilla}</span>}
@@ -127,7 +131,39 @@ function Campo({
         </span>
         {children}
       </Contenedor>
+      {debajo && <div className="pb-1.5">{debajo}</div>}
     </div>
+  );
+}
+
+/**
+ * Una hora en UTC con cuatro cifras (`1830`), escrita como texto y no con el reloj del
+ * navegador: el `<input type="time">` con el teléfono en 12 horas no da valor hasta elegir
+ * AM o PM, y Federico la veía escrita mientras el plan decía que faltaba (2026-10-19).
+ * Acepta `1830` y `18:30`; al salir del campo queda con cuatro cifras.
+ */
+function HoraUtc({ valor, onCambio, placeholder }: { valor: string; onCambio: (v: string) => void; placeholder: string }) {
+  const [texto, setTexto] = useState(valor);
+  useEffect(() => {
+    // Lo que cambie desde afuera (duplicar, otro dispositivo) se refleja, salvo mientras se escribe.
+    setTexto((t) => (horaDeTexto(t)?.replace(":", "") === valor ? t : valor));
+  }, [valor]);
+  return (
+    <input
+      value={texto}
+      onChange={(ev) => {
+        setTexto(ev.target.value);
+        onCambio(ev.target.value);
+      }}
+      onBlur={() => {
+        const h = horaDeTexto(texto);
+        if (h) setTexto(h.replace(":", ""));
+      }}
+      placeholder={placeholder}
+      inputMode="numeric"
+      maxLength={5}
+      className={INPUT}
+    />
   );
 }
 
@@ -151,7 +187,7 @@ function Sugerido({ s, onUsar, actual }: { s: Sugerencia | null; onUsar: () => v
       type="button"
       onClick={onUsar}
       disabled={igual}
-      className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-sky-50 dark:bg-sky-500/10 px-3 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20 disabled:opacity-60 transition-colors text-left"
+      className="inline-flex items-center gap-1.5 rounded-xl bg-sky-50 dark:bg-sky-500/10 px-3 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-500/20 disabled:opacity-60 transition-colors text-left"
     >
       <Sparkles className="w-3 h-3 shrink-0" />
       <span>
@@ -259,7 +295,8 @@ export default function EditorPlanDeVuelo({
   const telOficina = oficina ? primerTelefono(oficina.telefonos) : null;
   const horario = oficina ? horarioAro(oficina.horario, f.eobtUtc || undefined) : null;
   const e = r.estados;
-  const utc = salidaUtc(f.fechaLocal, f.horaLocal);
+  const utc = salidaDelPlan(f);
+  const local = utc ? localDesdeUtc(f.dofUtc, f.eobtUtc) : null;
   const listo = r.completo && !!firma;
 
   /* ------------------------------------------------------------ el PDF ---- */
@@ -330,7 +367,7 @@ export default function EditorPlanDeVuelo({
   const [horaDemora, setHoraDemora] = useState("");
   const [demoraEstado, setDemoraEstado] = useState<"" | "armando" | "error">("");
   const vigente = eobtVigente(f, demoras);
-  const demoraNueva = horaDemora ? demoraDesdeHoraLocal(f, demoras, horaDemora) : null;
+  const demoraNueva = horaDemora ? demoraDesdeHoraUtc(f, demoras, horaDemora) : null;
   const chequeoDemora = revisarDemora(f, demoras, ahoraIso);
 
   const avisarDemora = async (compartir: boolean) => {
@@ -511,22 +548,22 @@ export default function EditorPlanDeVuelo({
               <Campo casilla="13" etiqueta="Aeródromo de salida" estado={e.salida} sinLabel>
                 <CampoAerodromo valor={f.salida} onCambio={(a) => cambiar({ salida: a, oficina: "" })} placeholder="SADF o nombre" claseInput={INPUT} />
               </Campo>
-              <Campo casilla="13" etiqueta="Fecha (hora argentina)" estado={e.fechaHora}>
-                <input type="date" value={f.fechaLocal} onChange={(ev) => cambiar({ fechaLocal: ev.target.value })} className={INPUT} />
+              <Campo casilla="13" etiqueta="Fecha (DOF, UTC)" estado={e.fechaHora}>
+                <input type="date" value={f.dofUtc} onChange={(ev) => cambiar({ dofUtc: ev.target.value })} className={INPUT} />
               </Campo>
               <Campo
                 casilla="13"
-                etiqueta="Fuera de calzos (hora argentina)"
+                etiqueta="EOBT (UTC)"
                 estado={e.fechaHora}
-                arriba={
-                  utc ? (
-                    <p className="mb-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                      En el plan: <span className="data font-bold text-zinc-900 dark:text-white">{utc.hora}Z</span>, DOF/{utc.dof}
+                debajo={
+                  local ? (
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {local.hora} hora argentina{local.fecha !== f.dofUtc ? ` del ${local.fecha.slice(8)}/${local.fecha.slice(5, 7)}` : ""}
                     </p>
                   ) : undefined
                 }
               >
-                <input type="time" value={f.horaLocal} onChange={(ev) => cambiar({ horaLocal: ev.target.value })} className={INPUT} />
+                <HoraUtc valor={f.eobtUtc} onCambio={(v) => cambiar({ eobtUtc: v })} placeholder="1830" />
               </Campo>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -565,7 +602,7 @@ export default function EditorPlanDeVuelo({
                 etiqueta="Duración total (EET)"
                 estado={e.eet}
                 className="col-span-2 md:col-span-1"
-                arriba={<Sugerido s={sugEet} actual={f.eet} onUsar={() => sugEet && cambiar({ eet: sugEet.valor })} />}
+                debajo={<Sugerido s={sugEet} actual={f.eet} onUsar={() => sugEet && cambiar({ eet: sugEet.valor })} />}
               >
                 <input value={f.eet} onChange={(ev) => cambiar({ eet: ev.target.value })} placeholder="0035" maxLength={4} className={INPUT} inputMode="numeric" />
               </Campo>
@@ -644,7 +681,7 @@ export default function EditorPlanDeVuelo({
                 etiqueta="Autonomía"
                 estado={e.autonomia}
                 className="col-span-2 md:col-span-1"
-                arriba={<Sugerido s={sugAutonomia} actual={f.autonomia} onUsar={() => sugAutonomia && cambiar({ autonomia: sugAutonomia.valor })} />}
+                debajo={<Sugerido s={sugAutonomia} actual={f.autonomia} onUsar={() => sugAutonomia && cambiar({ autonomia: sugAutonomia.valor })} />}
               >
                 <input value={f.autonomia} onChange={(ev) => cambiar({ autonomia: ev.target.value })} placeholder="0400" maxLength={4} className={INPUT} inputMode="numeric" />
               </Campo>
@@ -857,17 +894,17 @@ export default function EditorPlanDeVuelo({
                 ) : (
                   <>
                     <Campo
-                      etiqueta="Nueva hora fuera de calzos (hora argentina)"
+                      etiqueta="Nueva EOBT (UTC)"
                       estado={demoraNueva ? "ok" : "opcional"}
-                      arriba={
+                      debajo={
                         demoraNueva ? (
-                          <p className="mb-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                            Nueva EOBT <span className="data font-bold text-zinc-900 dark:text-white">{demoraNueva.eobt}Z</span>, DOF/{dofDeDemora(demoraNueva)}
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            DOF/{dofDeDemora(demoraNueva)} · {localDesdeUtc(demoraNueva.dof, demoraNueva.eobt)?.hora} hora argentina
                           </p>
                         ) : undefined
                       }
                     >
-                      <input type="time" value={horaDemora} onChange={(ev) => setHoraDemora(ev.target.value)} className={INPUT} />
+                      <input value={horaDemora} onChange={(ev) => setHoraDemora(ev.target.value)} placeholder="1930" inputMode="numeric" maxLength={5} className={INPUT} />
                     </Campo>
                     {chequeoDemora.aviso && <p className="text-xs text-amber-700 dark:text-amber-400">{chequeoDemora.aviso}</p>}
                     <div className="flex flex-wrap gap-2">

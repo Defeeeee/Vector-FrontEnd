@@ -69,7 +69,10 @@ Leídas el 2026-10-10. Lo regulatorio se escribe contra esto, no de memoria
 - **Casilla 19:** el teléfono va en las observaciones (`N/ T.E. +54…`); "Comandante de la
   aeronave" lleva nombre, licencia y número; las radios de emergencia son las de
   supervivencia, no la VHF del avión; "Presentado por" queda vacío si no lo presenta otro.
-- **Hora oficial argentina = UTC−3**, sin horario de verano (`DESFASE_ARGENTINA_HORAS`).
+- **La salida se carga en UTC**, como la pide la casilla 13 ("Insértense siempre las horas
+  con 4 cifras UTC", 2.1). La hora argentina se muestra de ayuda, con UTC−3 sin horario de
+  verano (`DESFASE_ARGENTINA_HORAS`). Hasta el 2026-10-19 se cargaba en hora argentina y
+  se convertía; los planes de entonces se pasan a UTC al leerlos.
 - **No se completa nada con valores estimados**: si el planificador usa la TAS o el
   consumo por defecto, el PDF no se baja hasta cargarlos.
 - **Se manda desde el mail del piloto**, no desde Vector: la respuesta de la oficina le

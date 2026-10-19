@@ -5,6 +5,7 @@ import {
   formularioVacio,
   leerFormulario,
   localDesdeUtc,
+  horaDeTexto,
   nodosDeEntrada,
   nodosDeRuta,
   normalizar,
@@ -32,8 +33,8 @@ const ACEPTADO: FormularioPlan = {
   equipo: "SDGZ",
   vigilancia: "EB2",
   salida: { codigo: "SADF", nombre: "San Fernando" },
-  fechaLocal: "2026-10-10",
-  horaLocal: "12:30",
+  dofUtc: "2026-10-10",
+  eobtUtc: "1530",
   velocidad: "N0090",
   nivel: "A010",
   ruta: "DCT ATE DCT",
@@ -164,12 +165,22 @@ describe("el perfil del avión", () => {
 
 describe("duplicar y releer", () => {
   it("duplicar borra la fecha, la hora y las sugerencias del día", () => {
-    const d = duplicar({ ...normalizar(ACEPTADO), sugerencias: { autonomia: { valor: "0500", motivo: "x" } } });
-    expect(d).toMatchObject({ fechaLocal: "", horaLocal: "", dofUtc: "", eobtUtc: "", sugerencias: {}, ruta: "DCT ATE DCT" });
+    const d = duplicar({ ...ACEPTADO, sugerencias: { autonomia: { valor: "0500", motivo: "x" } } });
+    expect(d).toMatchObject({ dofUtc: "", eobtUtc: "", sugerencias: {}, ruta: "DCT ATE DCT" });
   });
 
-  it("normalizar guarda la salida en UTC, con la fecha UTC aunque en Argentina sea el día anterior", () => {
-    expect(normalizar({ ...ACEPTADO, fechaLocal: "2026-10-10", horaLocal: "22:15" })).toMatchObject({ dofUtc: "2026-10-11", eobtUtc: "0115" });
+  it("la EOBT se escribe en UTC y queda con cuatro cifras", () => {
+    expect(normalizar({ ...ACEPTADO, eobtUtc: "18:30" }).eobtUtc).toBe("1830");
+    expect(normalizar({ ...ACEPTADO, eobtUtc: "18" }).eobtUtc).toBe("18");
+    expect(revisar({ ...ACEPTADO, eobtUtc: "18" }).estados.fechaHora).toBe("error");
+    expect(revisar({ ...ACEPTADO, dofUtc: "2026-02-31" }).estados.fechaHora).toBe("error");
+  });
+
+  it("un plan de antes, con la salida en hora argentina, se pasa a UTC al leerlo", () => {
+    // 22:15 del 10/10 en Argentina es 0115 UTC del 11.
+    expect(leerFormulario({ fechaLocal: "2026-10-10", horaLocal: "22:15" })).toMatchObject({ dofUtc: "2026-10-11", eobtUtc: "0115" });
+    expect(leerFormulario({ fechaLocal: "2026-10-16", horaLocal: "" })).toMatchObject({ dofUtc: "2026-10-16", eobtUtc: "" });
+    expect("fechaLocal" in leerFormulario({ fechaLocal: "2026-10-10", horaLocal: "22:15" })).toBe(false);
   });
 
   it("un plan guardado con campos de menos se completa con los valores por defecto", () => {
@@ -273,5 +284,23 @@ describe("la ruta como nodos", () => {
     );
     expect(s).toEqual({ valor: "0040", motivo: "60 NM a 90 kt, sin viento, sin contar SECTOR ESCUELA" });
     expect(sugerirEetConocidos([{ lat: 0, lon: 0 }, { lat: 0, lon: 0 }], ["SECTOR"], 90, plano)).toBeNull();
+  });
+});
+
+describe("la hora, en 24 h", () => {
+  it("acepta como la escribe un piloto", () => {
+    expect(horaDeTexto("15:30")).toBe("15:30");
+    expect(horaDeTexto("1530")).toBe("15:30");
+    expect(horaDeTexto("15.30")).toBe("15:30");
+    expect(horaDeTexto("9:05")).toBe("09:05");
+    expect(horaDeTexto("905")).toBe("09:05");
+    expect(horaDeTexto(" 00:00 ")).toBe("00:00");
+  });
+
+  it("lo que no es una hora, no", () => {
+    expect(horaDeTexto("25:00")).toBeNull();
+    expect(horaDeTexto("15:75")).toBeNull();
+    expect(horaDeTexto("3 pm")).toBeNull();
+    expect(horaDeTexto("")).toBeNull();
   });
 });

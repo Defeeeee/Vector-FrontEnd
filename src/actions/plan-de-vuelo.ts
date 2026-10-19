@@ -7,7 +7,6 @@ import { esErrorDeRedirect } from "@/lib/redirect-error";
 import { duplicar, leerFormulario, normalizar, revisar, type FormularioPlan, type PerfilAvionPlan } from "@/lib/formulario-plan";
 import { leerPlan } from "@/lib/plan-de-vuelo-servidor";
 import type { Demora } from "@/lib/demora-plan";
-import { DESFASE_ARGENTINA_HORAS } from "@/lib/plan-de-vuelo";
 
 /**
  * Los planes de vuelo guardados (`/planes-de-vuelo` del backend, migración 024).
@@ -31,9 +30,9 @@ async function detalle(res: Response, porDefecto: string): Promise<string> {
 export async function crearPlan(formulario: FormularioPlan): Promise<{ error: string } | never> {
   let id: string | null = null;
   try {
-    // Sin fecha, la de hoy en Argentina, como FPL.AR. Se resuelve acá, en el server.
-    const hoy = new Date(Date.now() + DESFASE_ARGENTINA_HORAS * 3_600_000).toISOString().slice(0, 10);
-    const f = normalizar(formulario.fechaLocal ? formulario : { ...formulario, fechaLocal: hoy });
+    // Sin fecha, la de hoy en UTC (la DOF/ va en UTC), como FPL.AR. Se resuelve acá, en el server.
+    const hoy = new Date().toISOString().slice(0, 10);
+    const f = normalizar(formulario.dofUtc ? formulario : { ...formulario, dofUtc: hoy });
     const res = await apiFetch("/planes-de-vuelo", {
       method: "POST",
       body: JSON.stringify({ formulario: f, aircraft_id: f.aircraftId, completo: revisar(f).completo }),

@@ -78,6 +78,21 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.24.2",
+    fecha: "2026-10-19",
+    titulo: "La hora del plan, en UTC",
+    novedades: [
+      {
+        icono: "reloj",
+        titulo: "La EOBT se carga en UTC",
+        texto:
+          "La fecha y la hora de salida del plan van en UTC, como en el formulario, con cuatro cifras (1830). Debajo te mostramos la hora argentina. La demora también va en UTC.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+    ],
+  },
+  {
     version: "2.24.1",
     fecha: "2026-10-19",
     titulo: "La ruta, punto por punto",

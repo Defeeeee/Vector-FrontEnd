@@ -77,7 +77,7 @@ export default function CampoAerodromo({
 
   if (valor) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 min-w-0">
         <button
           type="button"
           title="Cambiar el aeródromo"
@@ -87,16 +87,18 @@ export default function CampoAerodromo({
             setAbierto(true);
             onCambio(null);
           }}
-          className={`${claseInput} flex items-baseline gap-2 text-left`}
+          // `min-w-0` y `truncate`: en una casilla angosta (las alternativas en el teléfono) el
+          // nombre se corta y la × queda adentro, en vez de empujarla afuera del campo.
+          className={`${claseInput} min-w-0 flex-1 flex items-baseline gap-2 text-left overflow-hidden`}
         >
-          <span className="data font-bold">{valor.codigo}</span>
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">{valor.nombre}</span>
+          <span className="data font-bold shrink-0">{valor.codigo}</span>
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate min-w-0">{valor.nombre}</span>
         </button>
         <button
           type="button"
           aria-label="Cambiar aeródromo"
           onClick={() => onCambio(null)}
-          className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+          className="shrink-0 p-1 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
         >
           <X className="w-4 h-4" />
         </button>

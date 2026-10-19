@@ -63,9 +63,6 @@ export interface FormularioPlan {
   equipo: string;
   vigilancia: string;
   salida: AerodromoForm | null;
-  /** La salida en hora argentina, como la piensa el piloto. La casilla 13 va en UTC. */
-  fechaLocal: string;
-  horaLocal: string;
   velocidad: string;
   nivel: string;
   ruta: string;
@@ -91,7 +88,12 @@ export interface FormularioPlan {
   origen: Partial<Record<string, Origen>>;
   /** Las sugerencias que dejó el planificador al crear el plan (con el viento). */
   sugerencias: { eet?: Sugerencia & { ruta: string }; autonomia?: Sugerencia };
-  /** Copias en UTC para la lista y el nombre del archivo; las recalcula `normalizar`. */
+  /**
+   * La salida, **en UTC**, como va en el plan: la fecha (`2026-10-20`, la de DOF/) y la
+   * EOBT con cuatro cifras (`1830`). El piloto la carga así —"la hora en el FPL se pone en
+   * hora ZULU/UTC, no argentina" (Federico, 2026-10-19)— y la hora argentina sólo se
+   * muestra de ayuda.
+   */
   dofUtc: string;
   eobtUtc: string;
 }
@@ -109,8 +111,6 @@ export function formularioVacio(): FormularioPlan {
     equipo: "",
     vigilancia: "",
     salida: null,
-    fechaLocal: "",
-    horaLocal: "",
     velocidad: "",
     nivel: "",
     ruta: "DCT",
@@ -141,14 +141,30 @@ export function formularioVacio(): FormularioPlan {
 /**
  * Lo que vuelve de la base, completado con los valores por defecto: si un día se suma un
  * campo, un plan viejo no rompe la pantalla.
+ *
+ * **Los planes de antes del 2026-10-19 guardaban la salida en hora argentina**
+ * (`fechaLocal`, `horaLocal`): se pasan a UTC al leerlos.
  */
 export function leerFormulario(crudo: unknown): FormularioPlan {
   const base = formularioVacio();
   if (!crudo || typeof crudo !== "object") return base;
-  const f = crudo as Partial<FormularioPlan>;
+  const f = crudo as Partial<FormularioPlan> & { fechaLocal?: string; horaLocal?: string };
+  const { fechaLocal, horaLocal, ...resto } = f;
+  let { dofUtc = "", eobtUtc = "" } = f;
+  if (!eobtUtc && fechaLocal && horaLocal) {
+    const utc = salidaUtc(fechaLocal, horaLocal);
+    if (utc) {
+      dofUtc = `20${utc.dof.slice(0, 2)}-${utc.dof.slice(2, 4)}-${utc.dof.slice(4, 6)}`;
+      eobtUtc = utc.hora;
+    }
+  } else if (!dofUtc && fechaLocal) {
+    dofUtc = fechaLocal;
+  }
   return normalizar({
     ...base,
-    ...f,
+    ...resto,
+    dofUtc,
+    eobtUtc,
     radio: { ...base.radio, ...(f.radio ?? {}) },
     supervivencia: { ...base.supervivencia, ...(f.supervivencia ?? {}) },
     chalecos: { ...base.chalecos, ...(f.chalecos ?? {}) },
@@ -159,11 +175,20 @@ export function leerFormulario(crudo: unknown): FormularioPlan {
   });
 }
 
-/** Recalcula las copias en UTC. Se llama antes de guardar. */
+/** Deja la EOBT con cuatro cifras si se escribió `18:30` o `1830`. Se llama antes de guardar. */
 export function normalizar(f: FormularioPlan): FormularioPlan {
-  const utc = salidaUtc(f.fechaLocal, f.horaLocal);
-  const dofUtc = utc ? `20${utc.dof.slice(0, 2)}-${utc.dof.slice(2, 4)}-${utc.dof.slice(4, 6)}` : "";
-  return { ...f, dofUtc, eobtUtc: utc?.hora ?? "" };
+  const hora = horaDeTexto(f.eobtUtc);
+  return hora ? { ...f, eobtUtc: hora.replace(":", "") } : f;
+}
+
+/** La salida en UTC como la usa el plan, o `null` si la fecha o la hora no son válidas. */
+export function salidaDelPlan(f: Pick<FormularioPlan, "dofUtc" | "eobtUtc">): { hora: string; dof: string } | null {
+  const fecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(f.dofUtc ?? "");
+  const hora = /^([01]\d|2[0-3])([0-5]\d)$/.exec(f.eobtUtc ?? "");
+  if (!fecha || !hora) return null;
+  const d = new Date(`${f.dofUtc}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== f.dofUtc) return null;
+  return { hora: f.eobtUtc, dof: `${fecha[1].slice(2)}${fecha[2]}${fecha[3]}` };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -351,8 +376,13 @@ export function revisar(f: FormularioPlan, ahoraIso?: string): Revision {
   // 13
   const salida = aerodromo(f.salida);
   obligatorio("salida", !!salida, !salida, "Casilla 13: falta el aeródromo de salida.");
-  const utc = salidaUtc(f.fechaLocal, f.horaLocal);
-  obligatorio("fechaHora", !!utc, !f.fechaLocal || !f.horaLocal, "Casilla 13: falta la fecha y la hora de salida.");
+  const utc = salidaDelPlan(f);
+  obligatorio(
+    "fechaHora",
+    !!utc,
+    !f.dofUtc || !f.eobtUtc,
+    !f.dofUtc || !f.eobtUtc ? "Casilla 13: falta la fecha y la hora de salida (UTC)." : "Casilla 13: la EOBT va en UTC con cuatro cifras, como 1830."
+  );
   if (utc && ahoraIso) {
     const salidaMs = Date.parse(
       `20${utc.dof.slice(0, 2)}-${utc.dof.slice(2, 4)}-${utc.dof.slice(4, 6)}T${utc.hora.slice(0, 2)}:${utc.hora.slice(2)}:00Z`
@@ -470,7 +500,7 @@ export function revisar(f: FormularioPlan, ahoraIso?: string): Revision {
  * (el plan viejo ya pasó) y las sugerencias del planificador, que eran de ese día.
  */
 export function duplicar(f: FormularioPlan): FormularioPlan {
-  return normalizar({ ...f, fechaLocal: "", horaLocal: "", sugerencias: {} });
+  return { ...f, dofUtc: "", eobtUtc: "", sugerencias: {} };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -674,4 +704,22 @@ export function sugerirEetConocidos(
   const s = sugerirEet(nm, tasKt);
   if (!s) return null;
   return sinUbicar.length ? { ...s, motivo: `${s.motivo}, sin contar ${sinUbicar.join(" ni ")}` } : s;
+}
+
+/**
+ * La hora como la escribe el piloto, en 24 h: `15:30`, `1530`, `15.30`, `9:05`, `905`.
+ * `null` si no es una hora.
+ *
+ * Existe porque el `<input type="time">` del navegador, con el teléfono en formato de 12
+ * horas, **no da ningún valor hasta que se elige AM o PM**: Federico la veía escrita y el
+ * plan decía que faltaba (2026-10-19). Un piloto piensa la hora en 24 h.
+ */
+export function horaDeTexto(texto: string): string | null {
+  const t = (texto ?? "").trim();
+  const m = /^(\d{1,2})[:.hH ]?(\d{2})$/.exec(t);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 }

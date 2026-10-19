@@ -1,5 +1,4 @@
-import { salidaUtc } from "./plan-de-vuelo";
-import { localDesdeUtc, type FormularioPlan } from "./formulario-plan";
+import { horaDeTexto, type FormularioPlan } from "./formulario-plan";
 
 /**
  * La demora (DLA) de un plan de vuelo presentado.
@@ -44,24 +43,20 @@ export function eobtVigente(f: FormularioPlan, demoras: Demora[]): { dof: string
 }
 
 /**
- * La demora a partir de la nueva hora en hora argentina. Se toma el mismo día local de la
- * salida vigente; **si la hora nueva es anterior, es al día siguiente** (salía 23:00 y
- * ahora sale 00:30).
+ * La demora a partir de la nueva EOBT **en UTC**, como se carga el plan (`1930` o `19:30`).
+ * Se toma el día de la salida vigente; **si la hora nueva es anterior o igual, es al día
+ * siguiente** (salía 2300Z y ahora sale 0030Z).
  */
-export function demoraDesdeHoraLocal(f: FormularioPlan, demoras: Demora[], horaLocal: string): Demora | null {
+export function demoraDesdeHoraUtc(f: FormularioPlan, demoras: Demora[], hora: string): Demora | null {
   const vigente = eobtVigente(f, demoras);
-  if (!vigente) return null;
-  const local = localDesdeUtc(vigente.dof, vigente.eobt);
-  if (!local) return null;
-  let utc = salidaUtc(local.fecha, horaLocal);
-  if (!utc) return null;
-  const toDof = (aammdd: string) => `20${aammdd.slice(0, 2)}-${aammdd.slice(2, 4)}-${aammdd.slice(4, 6)}`;
-  if (msUtc(toDof(utc.dof), utc.hora) <= msUtc(vigente.dof, vigente.eobt)) {
-    const manana = new Date(Date.parse(`${local.fecha}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
-    utc = salidaUtc(manana, horaLocal);
-    if (!utc) return null;
+  const h = horaDeTexto(hora);
+  if (!vigente || !h) return null;
+  const eobt = h.replace(":", "");
+  let dof = vigente.dof;
+  if (msUtc(dof, eobt) <= msUtc(vigente.dof, vigente.eobt)) {
+    dof = new Date(Date.parse(`${vigente.dof}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
   }
-  return { eobt: utc.hora, dof: toDof(utc.dof) };
+  return { eobt, dof };
 }
 
 /**
