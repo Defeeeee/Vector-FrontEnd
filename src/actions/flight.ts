@@ -134,6 +134,22 @@ export async function logFlight(
     }
   }
 
+  // Si se registró desde un plan de vuelo (el "¿ya volaste?" del inicio), se une el plan
+  // al vuelo y el inicio deja de preguntar. Best-effort, como el vuelo programado de arriba:
+  // si falla, el peor caso es que pregunte de nuevo.
+  const planVueloId = (formData.get("plan_vuelo_id") as string) || "";
+  if (planVueloId && creado?.id) {
+    try {
+      await apiFetch(`/planes-de-vuelo/${planVueloId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ vuelo_id: creado.id }),
+      });
+      revalidatePath("/dashboard/plan-de-vuelo");
+    } catch (err) {
+      console.error("No se pudo unir el plan de vuelo al vuelo", planVueloId, err);
+    }
+  }
+
   /*
     **Ya no hay `redirect()` acá, y no es un detalle menor.** Next 16 rechaza la
     promesa de una server action que redirige —a propósito, para que la maneje el

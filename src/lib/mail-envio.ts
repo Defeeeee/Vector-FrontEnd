@@ -17,7 +17,7 @@ import { conSeguimiento } from "@/lib/mail-seguimiento";
 const API_URL = process.env.API_URL || "http://127.0.0.1:7477/api";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://vector.fdiaznem.com.ar";
 
-export type TipoMail = "primer-vuelo" | "resumen-mensual" | "briefing" | "novedades";
+export type TipoMail = "primer-vuelo" | "resumen-mensual" | "briefing" | "novedades" | "plan-por-registrar";
 
 export interface MailConSeguimiento {
   para: string;

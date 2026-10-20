@@ -13,7 +13,7 @@ export interface FilaPlan {
   matricula: string | null;
   /** Ya escrito en el server: "20/10 15:30 · 1830Z". */
   cuando: string;
-  estado: "borrador" | "completo" | "descargado" | "enviado";
+  estado: "borrador" | "completo" | "descargado" | "enviado" | "cancelado" | "volado";
 }
 
 const ESTADOS: Record<FilaPlan["estado"], { texto: string; clase: string }> = {
@@ -21,6 +21,8 @@ const ESTADOS: Record<FilaPlan["estado"], { texto: string; clase: string }> = {
   completo: { texto: "Completo", clase: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" },
   descargado: { texto: "PDF bajado", clase: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400" },
   enviado: { texto: "Enviado", clase: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300" },
+  cancelado: { texto: "Cancelado", clase: "bg-zinc-100 text-zinc-500 dark:bg-white/5 dark:text-zinc-400" },
+  volado: { texto: "Volado", clase: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" },
 };
 
 export default function ListaPlanes({

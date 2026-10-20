@@ -338,6 +338,15 @@ export function asuntoDelMail(p: Pick<PlanOaci, "c7" | "c13ad" | "c13hora" | "c1
   return `${p.c7 || "FPL"}-${p.c13ad}(${p.c13hora || "????"})${p.c16ad}${fecha}`;
 }
 
+/** Un mensaje sobre un plan ya presentado (AIP ENR 1.10, Apéndices 4 y 5). */
+export type AvisoDelPlan = { tipo: "dla"; eobtAnterior: string } | { tipo: "cnl" };
+
+const QUE_SE_ADJUNTA = {
+  fpl: "el plan de vuelo",
+  dla: "el aviso de demora (DLA) del plan de vuelo",
+  cnl: "la cancelación (CNL) del plan de vuelo",
+} as const;
+
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 /**
@@ -348,8 +357,11 @@ const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
 export function cuerpoDelMail(
   p: Pick<PlanOaci, "c7" | "c9tipo" | "c13ad" | "c13hora" | "c16ad" | "dof"> & { c19: { piloto: string } },
   nombres: { salida: string; destino: string },
-  /** Un aviso de demora: `p` ya trae la nueva EOBT y fecha, y acá va la hora de antes. */
-  demora?: { eobtAnterior: string }
+  /**
+   * Un mensaje sobre el plan: la demora (`p` ya trae la nueva EOBT y fecha, y acá va la hora
+   * de antes) o la cancelación.
+   */
+  aviso?: AvisoDelPlan
 ): string {
   const fecha = /^\d{6}$/.test(p.dof)
     ? `${Number(p.dof.slice(4, 6))} de ${MESES[Number(p.dof.slice(2, 4)) - 1]} de 20${p.dof.slice(0, 2)}`
@@ -358,12 +370,12 @@ export function cuerpoDelMail(
   return [
     "Estimados,",
     "",
-    `Adjunto ${demora ? "el aviso de demora (DLA) del plan de vuelo" : "el plan de vuelo"} de la aeronave ${p.c7}${p.c9tipo ? ` (${p.c9tipo})` : ""}.`,
+    `Adjunto ${QUE_SE_ADJUNTA[aviso?.tipo ?? "fpl"]} de la aeronave ${p.c7}${p.c9tipo ? ` (${p.c9tipo})` : ""}.`,
     "",
     `  Desde : ${lugar(nombres.salida, p.c13ad)}`,
     `  Hasta : ${lugar(nombres.destino, p.c16ad)}`,
     `  Fecha : ${fecha}`,
-    demora ? `  Nueva EOBT : ${p.c13hora} UTC (antes ${demora.eobtAnterior} UTC)` : `  EOBT  : ${p.c13hora} UTC`,
+    aviso?.tipo === "dla" ? `  Nueva EOBT : ${p.c13hora} UTC (antes ${aviso.eobtAnterior} UTC)` : `  EOBT  : ${p.c13hora} UTC`,
     "",
     "Cordiales saludos,",
     "",

@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 import { Flight, Aircraft, FlightPack, PilotDocument, Logbook, PlannedFlight, Transaction, Profile } from "@/types";
 import ChangelogNotice from "@/components/dashboard/ChangelogNotice";
 import VuelosPendientes from "@/components/dashboard/VuelosPendientes";
+import PlanesParaRegistrar from "@/components/dashboard/plan-de-vuelo/PlanesParaRegistrar";
 import PrimerosPasos from "@/components/dashboard/PrimerosPasos";
 import FlightStatusCard from "@/components/dashboard/FlightStatusCard";
 import ProximoVencimiento from "@/components/dashboard/ProximoVencimiento";
@@ -221,6 +222,12 @@ export default async function Dashboard() {
         todayIso={todayIso}
         tieneVuelos={bitacora.length > 0}
       />
+
+      {/* "¿Ya volaste?" — un plan de vuelo presentado cuya llegada estimada ya pasó
+          (Federico, 2026-10-20). Por `Suspense`: lee los planes y nunca demora lo de arriba. */}
+      <Suspense fallback={null}>
+        <PlanesParaRegistrar vuelos={(bitacora as Flight[]).map((v) => ({ date: v.date, route: v.route }))} />
+      </Suspense>
 
       {/* Desaparece solo cuando los cuatro pasos están hechos. Los datos ya vienen
           del Promise.all de arriba: no agrega ni un viaje al backend. */}

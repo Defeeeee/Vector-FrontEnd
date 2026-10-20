@@ -10,7 +10,9 @@
  * Quién genera estas URLs:
  * - el backend, al cerrar una sesión de vuelo desde WhatsApp o desde un Atajo de
  *   iOS (`flight_helper.py`);
- * - `prefillHref` en `planned-flights.ts`, al completar un vuelo programado.
+ * - `prefillHref` en `planned-flights.ts`, al completar un vuelo programado;
+ * - `hrefRegistrarDesdePlan` en `plan-cierre.ts`, al registrar un plan de vuelo ya volado
+ *   (con `plan_vuelo_id`, y sin horarios).
  */
 
 export interface FlightPrefill {
@@ -45,6 +47,8 @@ function texto(v: string | string[] | undefined): string | undefined {
 export function parsePrefill(params: SearchParams | undefined): {
   initialData?: FlightPrefill;
   plannedId?: string;
+  /** El plan de vuelo que se está registrando: se une al vuelo cuando se guarda. */
+  planVueloId?: string;
 } {
   const p = params || {};
   if (texto(p.prefill) !== "true") return {};
@@ -68,11 +72,18 @@ export function parsePrefill(params: SearchParams | undefined): {
   // `purpose` viajaba en la URL y se descartaba al parsear, aunque el formulario
   // siempre lo aceptó. Un vuelo de instrucción programado puede llegar con INST.
   if (purpose) data.purpose = purpose;
+
   if (landings) {
     const n = parseInt(landings, 10);
     // Un `?landings=hola` dejaba `NaN` en un campo numérico del formulario.
     if (Number.isFinite(n)) data.landings = n;
   }
 
-  return { initialData: data, plannedId: texto(p.planned_id) };
+  const planVueloId = texto(p.plan_vuelo_id);
+  return {
+    initialData: data,
+    plannedId: texto(p.planned_id),
+    // Un id con otra forma no llega al backend: el PATCH lo rechazaría igual.
+    ...(planVueloId && /^[0-9a-f-]{36}$/i.test(planVueloId) ? { planVueloId } : {}),
+  };
 }

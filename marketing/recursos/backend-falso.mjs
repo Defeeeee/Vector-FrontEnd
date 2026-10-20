@@ -64,6 +64,15 @@ function planesDeVuelo(req, ruta, json) {
     if (req.method === "DELETE") firma = null;
     return firma ? { png: firma } : null;
   }
+  if (ruta === "/api/planes-de-vuelo/recordatorios") {
+    return [...planes.values()]
+      .filter((p) => p.completo && (p.enviado_at || p.descargado_at) && !p.vuelo_id && !p.cancelado_at && !p.descartado_at && !p.recordatorio_at)
+      .map((p) => ({ id: p.id, user_id: "u1", email: "lucia@example.com", first_name: perfil.first_name, formulario: p.formulario, demoras: p.demoras ?? [], vuelos: vuelos.slice(-5).map((v) => ({ date: v.date, route: v.route })) }));
+  }
+  if (ruta === "/api/planes-de-vuelo/recordatorios/enviados") {
+    for (const id of json.ids ?? []) if (planes.has(id)) planes.get(id).recordatorio_at = ahora;
+    return { marcados: (json.ids ?? []).length };
+  }
   if (ruta === "/api/planes-de-vuelo") {
     if (req.method === "POST") {
       const p = resumenPlan({ id: crypto.randomUUID(), aircraft_id: json.aircraft_id ?? null, completo: !!json.completo, formulario: json.formulario, demoras: [], envios: [], enviado_at: null, descargado_at: null, created_at: ahora, updated_at: ahora });
@@ -77,7 +86,7 @@ function planesDeVuelo(req, ruta, json) {
   if (!p) return undefined;
   if (req.method === "DELETE") { planes.delete(id); return {}; }
   if (req.method === "PATCH") {
-    const n = resumenPlan({ ...p, ...("formulario" in json ? { formulario: json.formulario } : {}), ...("completo" in json ? { completo: json.completo } : {}), ...("demoras" in json ? { demoras: json.demoras } : {}), ...(json.descargado ? { descargado_at: ahora } : {}), ...(json.envio ? { envios: [...(p.envios ?? []), { ...json.envio, at: ahora }], ...(json.envio.modo === "aro" ? { enviado_at: ahora } : {}) } : {}), updated_at: ahora });
+    const n = resumenPlan({ ...p, ...("formulario" in json ? { formulario: json.formulario } : {}), ...("completo" in json ? { completo: json.completo } : {}), ...("demoras" in json ? { demoras: json.demoras } : {}), ...(json.descargado ? { descargado_at: ahora } : {}), ...(json.vuelo_id ? { vuelo_id: json.vuelo_id } : {}), ...(json.cancelado ? { cancelado_at: ahora } : {}), ...(json.descartado ? { descartado_at: ahora } : {}), ...(json.envio ? { envios: [...(p.envios ?? []), { ...json.envio, at: ahora }], ...(json.envio.modo === "aro" ? { enviado_at: ahora } : {}) } : {}), updated_at: ahora });
     planes.set(id, n);
     return n;
   }
@@ -92,6 +101,12 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     const r = planesDeVuelo(req, ruta, json);
     res.writeHead(r === undefined ? 404 : 200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(r ?? { detail: "No existe" }));
+  }
+  if (req.method === "POST" && ruta === "/api/flights") {
+    const f = { id: `f${++n}`, user_id: "u1", ...json };
+    vuelos.push(f);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(f));
   }
   if (req.method === "PATCH" && ruta.startsWith("/api/aircraft/")) {
     const a = aviones.find((x) => x.id === ruta.split("/").pop());

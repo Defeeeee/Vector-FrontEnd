@@ -31,7 +31,17 @@ export default async function PlanDeVueloPage() {
         destino: p.destino,
         matricula: p.matricula,
         cuando: cuando(p.dof, p.eobt),
-        estado: p.enviado_at ? "enviado" : p.descargado_at ? "descargado" : p.completo ? "completo" : "borrador",
+        estado: p.vuelo_id
+          ? "volado"
+          : p.cancelado_at
+            ? "cancelado"
+            : p.enviado_at
+              ? "enviado"
+              : p.descargado_at
+                ? "descargado"
+                : p.completo
+                  ? "completo"
+                  : "borrador",
       }))
     : null;
 

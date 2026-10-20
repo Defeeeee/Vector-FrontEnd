@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.26.0 — Del plan de vuelo a la bitácora
+
+_20 de octubre de 2026_
+
+- **¿Ya volaste? Cargalo desde el plan** — Cuando pasa la llegada estimada de un plan que presentaste, el inicio te pregunta si volaste y te deja el formulario con el avión, la ruta y la fecha. Los horarios los ponés vos. Si todavía no lo cargaste, una hora y media después te llega un mail.
+- **Meteo y NOTAM a la hora de tu vuelo** — En el plan ves el METAR, el TAF recortado a tu hora de salida y de llegada, y los NOTAM de cada aeródromo que caen en tu horario. Los que están vigentes pero en otro horario quedan aparte.
+- **Cancelar el plan (CNL)** — Si no volás, la cancelación sale firmada a la misma oficina, con el formulario del Apéndice 5 de la AIP.
+
 ## v2.25.0 — El plan de vuelo, por mail desde Vector
 
 _20 de octubre de 2026_

@@ -89,4 +89,14 @@ describe("parsePrefill", () => {
     const { initialData } = parsePrefill({ prefill: "true", route: ["SADF SADR", "SAEZ"] });
     expect(initialData?.route).toBe("SADF SADR");
   });
+
+  it("desde un plan de vuelo: el id del plan", () => {
+    const r = parsePrefill({ prefill: "true", plan_vuelo_id: "d28e26ac-8887-4d07-8a82-f6424706c2ab", route: "SADF SADM" });
+    expect(r.planVueloId).toBe("d28e26ac-8887-4d07-8a82-f6424706c2ab");
+    expect(r.initialData).toEqual({ route: "SADF SADM" });
+  });
+
+  it("un id de plan con otra forma no pasa", () => {
+    expect(parsePrefill({ prefill: "true", plan_vuelo_id: "../borrar" }).planVueloId).toBeUndefined();
+  });
 });

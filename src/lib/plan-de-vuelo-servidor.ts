@@ -79,6 +79,10 @@ export interface PlanResumen {
   eobt: string | null;
   descargado_at: string | null;
   enviado_at?: string | null;
+  /** Cómo terminó (migración 026): el vuelo registrado, la cancelación o "no lo volé". */
+  vuelo_id?: string | null;
+  cancelado_at?: string | null;
+  descartado_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -86,7 +90,7 @@ export interface PlanResumen {
 export interface EnvioPlan {
   modo: "prueba" | "aro";
   /** El plan o un aviso de demora. Los anotados antes de la demora por mail son del plan. */
-  tipo?: "fpl" | "dla";
+  tipo?: "fpl" | "dla" | "cnl";
   a: string;
   resend_id?: string | null;
   at?: string | null;

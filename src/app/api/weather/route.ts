@@ -1,41 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAirport } from "@/lib/airports";
 import { distanceNm } from "@/lib/distance";
-
-const METAR_STATIONS = [
-  { icao: "SADM", name: "Morón", lat: -34.676, lon: -58.643 },
-  { icao: "SADP", name: "El Palomar", lat: -34.6097, lon: -58.6125 },
-  { icao: "SADF", name: "San Fernando", lat: -34.4533, lon: -58.5897 },
-  { icao: "SABE", name: "Aeroparque", lat: -34.5592, lon: -58.4156 },
-  { icao: "SAEZ", name: "Ezeiza", lat: -34.8222, lon: -58.5358 },
-  { icao: "SADL", name: "La Plata", lat: -34.9722, lon: -57.8944 },
-  { icao: "SAZM", name: "Mar del Plata", lat: -37.9342, lon: -57.5733 },
-  { icao: "SAZS", name: "Bariloche", lat: -41.1511, lon: -71.1575 },
-  { icao: "SACO", name: "Córdoba", lat: -31.3236, lon: -64.2081 },
-  { icao: "SACD", name: "Coronel Olmedo", lat: -31.4886, lon: -64.1558 },
-  { icao: "SAAR", name: "Rosario", lat: -32.9036, lon: -60.785 },
-  { icao: "SANC", name: "Catamarca", lat: -28.5925, lon: -65.7514 },
-  { icao: "SARI", name: "Iguazú", lat: -25.7372, lon: -54.4736 },
-  { icao: "SAVC", name: "Comodoro Rivadavia", lat: -45.7853, lon: -67.4656 },
-  { icao: "SAZB", name: "Bahía Blanca", lat: -38.725, lon: -62.1694 },
-  { icao: "SAVT", name: "Trelew", lat: -43.2106, lon: -65.2703 },
-  { icao: "SANT", name: "Tucumán", lat: -26.8408, lon: -65.1047 },
-  { icao: "SAWE", name: "Ushuaia", lat: -54.8433, lon: -68.2958 },
-  { icao: "SAZY", name: "El Calafate", lat: -50.2803, lon: -72.0531 },
-  { icao: "SAWG", name: "Río Gallegos", lat: -51.6089, lon: -69.3128 },
-  { icao: "SASA", name: "Salta", lat: -24.856, lon: -65.4861 },
-  { icao: "SANU", name: "San Juan", lat: -31.5714, lon: -68.4181 },
-  { icao: "SAOU", name: "San Luis", lat: -33.2731, lon: -66.3578 },
-  { icao: "SAMR", name: "San Rafael", lat: -34.5883, lon: -68.4028 },
-  { icao: "SAME", name: "Mendoza", lat: -32.8317, lon: -68.7928 },
-  { icao: "SAAV", name: "Sauce Viejo / Santa Fe", lat: -31.7117, lon: -60.8117 },
-  { icao: "SAAP", name: "Paraná", lat: -31.7947, lon: -60.4803 },
-  { icao: "SARE", name: "Resistencia", lat: -27.4456, lon: -59.0561 },
-  { icao: "SARC", name: "Corrientes", lat: -27.4456, lon: -58.7619 },
-  { icao: "SAGO", name: "Goya", lat: -29.1058, lon: -59.2175 },
-  { icao: "SANI", name: "Tinogasta", lat: -28.0631, lon: -67.5644 },
-  { icao: "SATR", name: "Reconquista", lat: -29.2108, lon: -59.6797 },
-];
+import { METAR_STATIONS } from "@/lib/estaciones-meteo";
 
 /**
  * La hora de observación del upstream, en ISO.

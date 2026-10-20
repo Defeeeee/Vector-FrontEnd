@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import fondoEana from "@/lib/plan-de-vuelo-eana.jpg";
 import fondoDla from "@/lib/plan-de-vuelo-dla.png";
-import { duplicarPlan, enviarDemora, enviarPlan, guardarDemoras, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
+import fondoCnl from "@/lib/plan-de-vuelo-cnl.png";
+import { cancelarPlan, duplicarPlan, enviarDemora, enviarPlan, guardarDemoras, marcarCancelado, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
 import type { EnvioPlan } from "@/lib/plan-de-vuelo-servidor";
 import {
   aplicarAvion,
@@ -36,9 +37,22 @@ import {
   type Sugerencia,
 } from "@/lib/formulario-plan";
 import { asuntoDelMail, cuerpoDelMail, mensajeFpl, nombreDelArchivo, type Indicador18 } from "@/lib/plan-de-vuelo";
-import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, nombreDeDemora, planConDemora, revisarDemora, type Demora } from "@/lib/demora-plan";
+import {
+  demoraDesdeHoraUtc,
+  dofDeDemora,
+  eobtVigente,
+  MAXIMO_DEMORAS,
+  nombreDeCancelacion,
+  nombreDeDemora,
+  planConDemora,
+  planVigente,
+  revisarDemora,
+  type Demora,
+} from "@/lib/demora-plan";
 import { horarioAro, oficinaParaSalida, oficinasCercanas, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
 import CampoAerodromo from "./CampoAerodromo";
+import MeteoDelVuelo from "./MeteoDelVuelo";
+import { horariosDelPlan } from "@/lib/plan-cierre";
 import FirmaPiloto from "./FirmaPiloto";
 import EditorRuta from "./EditorRuta";
 import { useRutaResuelta } from "./useRutaResuelta";
@@ -66,6 +80,8 @@ interface Props {
   ahoraIso: string;
   /** Lo que ya se mandó por mail: pruebas y envíos a la oficina. */
   enviosIniciales: EnvioPlan[];
+  /** Cuándo se canceló (CNL), si se canceló. */
+  canceladoInicial: string | null;
   /** Si el envío a la oficina está prendido (`PLAN_DE_VUELO_ENVIO_ARO`). Hasta entonces, sólo la prueba. */
   envioAroActivo: boolean;
 }
@@ -231,6 +247,7 @@ export default function EditorPlanDeVuelo({
   oficinas,
   ahoraIso: ahoraServer,
   enviosIniciales,
+  canceladoInicial,
   envioAroActivo,
 }: Props) {
   const [f, setF] = useState<FormularioPlan>(() => leerFormulario(formularioInicial));
@@ -452,6 +469,75 @@ export default function EditorPlanDeVuelo({
       texto: `Demora a las ${res.eobt}Z mandada a ${res.a}, con copia a ${res.cc.join(", ")}. Llamá para confirmar que la recibieron.`,
     });
   };
+
+  /* ------------------------------------------------------- la cancelación -- */
+
+  const [cancelado, setCancelado] = useState<string | null>(canceladoInicial);
+  const [cancelacion, setCancelacion] = useState<{ estado: "" | "armando" | "mandando" | "listo" | "error"; texto?: string }>({ estado: "" });
+  const ocupadoCancelacion = cancelacion.estado === "armando" || cancelacion.estado === "mandando";
+
+  /** Manda la cancelación (CNL) desde el server a la misma oficina que el plan. */
+  const mandarCancelacion = async () => {
+    if (!oficina) return;
+    if (!window.confirm(`¿Cancelar el plan y mandar la cancelación a ${oficina.correo} (ARO/AIS ${oficina.nombre})? Te llega una copia.`)) return;
+    setCancelacion({ estado: "mandando" });
+    await esperarGuardado();
+    const res = await cancelarPlan(id, "aro");
+    if ("error" in res) {
+      setCancelacion({ estado: "error", texto: res.error });
+      return;
+    }
+    const ahora = new Date().toISOString();
+    setEnvios((e) => [...e, { modo: "aro", tipo: "cnl", a: res.a, at: ahora }]);
+    setCancelado(ahora);
+    setCancelacion({ estado: "listo", texto: `Cancelación mandada a ${res.a}, con copia a ${res.cc.join(", ")}. Llamá para confirmar que la recibieron.` });
+  };
+
+  /** Baja el formulario de cancelación, para mandarlo a mano, y anota el plan como cancelado. */
+  const bajarCancelacion = async () => {
+    if (!window.confirm("¿Bajar la cancelación? El plan queda cancelado en Vector.")) return;
+    setCancelacion({ estado: "armando" });
+    try {
+      const plan = planVigente(r.plan, demoras);
+      const [{ pdfCancelacion }, fondo] = await Promise.all([
+        import("@/lib/plan-de-vuelo-pdf"),
+        fetch(fondoCnl.src).then((x) => x.arrayBuffer()),
+      ]);
+      const firmaPng = firma ? new Uint8Array(await (await fetch(firma)).arrayBuffer()) : undefined;
+      const bytes = await pdfCancelacion(
+        { plan, eobt: plan.c13hora, c18: plan.c18, nombre: (piloto.nombre || f.piloto).toUpperCase(), licencia: piloto.licencia ?? "" },
+        { fondoPng: new Uint8Array(fondo), firmaPng }
+      );
+      bajarArchivo(new File([bytes as BlobPart], nombreDeCancelacion(r.plan, demoras), { type: "application/pdf" }));
+      const g = await marcarCancelado(id);
+      if (!("error" in g)) setCancelado(new Date().toISOString());
+      setCancelacion({ estado: "" });
+    } catch {
+      setCancelacion({ estado: "error", texto: "No se pudo armar la cancelación." });
+    }
+  };
+
+  /* ----------------------------------------------- meteo y NOTAM a tu hora -- */
+
+  // La salida vigente (con la última demora) y la llegada estimada, para recortar el TAF y
+  // cruzar los NOTAM. Las horas viajan en ISO al server; acá no se muestran (invariante 1).
+  const meteo = useMemo(() => {
+    const h = horariosDelPlan(f, demoras);
+    const codigo = (a: { codigo: string } | null) => {
+      const c = a?.codigo?.trim().toUpperCase() ?? "";
+      return /^[A-Z0-9]{3,4}$/.test(c) ? c : null;
+    };
+    const aerodromos = [
+      { rol: "salida" as const, codigo: codigo(f.salida) },
+      { rol: "destino" as const, codigo: codigo(f.destino) },
+      { rol: "alternativa" as const, codigo: codigo(f.altn1) },
+      { rol: "alternativa" as const, codigo: codigo(f.altn2) },
+    ].filter((a): a is { rol: "salida" | "destino" | "alternativa"; codigo: string } => !!a.codigo);
+    if (!h || aerodromos.length === 0) return null;
+    // Un destino igual a la salida (un local) no se pide dos veces.
+    const unicos = aerodromos.filter((a, i) => aerodromos.findIndex((b) => b.codigo === a.codigo) === i);
+    return { aerodromos: unicos, salidaIso: new Date(h.salidaMs).toISOString(), llegadaIso: new Date(h.llegadaMs).toISOString() };
+  }, [f, demoras]);
 
   /* ------------------------------------------------------------ render ---- */
 
@@ -834,6 +920,12 @@ export default function EditorPlanDeVuelo({
             )}
           </Seccion>
 
+          {meteo && (
+            <Seccion titulo="Meteo y NOTAM a tu hora">
+              <MeteoDelVuelo {...meteo} />
+            </Seccion>
+          )}
+
           <Seccion titulo="Presentarlo">
             <Campo etiqueta="Oficina ARO/AIS" estado={oficina ? "ok" : "falta"}>
               <select value={oficina?.oaci ?? ""} onChange={(ev) => cambiar({ oficina: ev.target.value })} className={INPUT}>
@@ -903,7 +995,7 @@ export default function EditorPlanDeVuelo({
                 </p>
                 <button
                   type="button"
-                  disabled={!listo || !oficina || envio.estado === "mandando"}
+                  disabled={!listo || !oficina || !!cancelado || envio.estado === "mandando"}
                   onClick={mandar}
                   className="inline-flex max-w-full items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold disabled:opacity-40"
                 >
@@ -919,7 +1011,7 @@ export default function EditorPlanDeVuelo({
                   <ul className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                     {envios.map((e, i) => (
                       <li key={i}>
-                        {e.tipo === "dla" ? "Demora: " : ""}
+                        {e.tipo === "dla" ? "Demora: " : e.tipo === "cnl" ? "Cancelación: " : ""}
                         {e.modo === "prueba" ? "prueba a" : "enviado a"} <span className="font-semibold">{e.a}</span> · {cuandoEnvio(e.at)}
                       </li>
                     ))}
@@ -981,7 +1073,9 @@ export default function EditorPlanDeVuelo({
           </Seccion>
 
           <Seccion titulo="Demora (DLA)">
-            {vigente ? (
+            {cancelado ? (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">El plan está cancelado. Si vas a volar, duplicalo y presentá uno nuevo.</p>
+            ) : vigente ? (
               <>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                   Si salís más tarde, avisá la nueva hora con el formulario de demora (AIP ENR 1.10, Apéndice 4). Hasta {MAXIMO_DEMORAS} por vuelo, y con
@@ -1052,6 +1146,50 @@ export default function EditorPlanDeVuelo({
               </>
             ) : (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">Con la fecha y la hora de salida cargadas, acá avisás una demora.</p>
+            )}
+          </Seccion>
+
+          <Seccion titulo="Cancelación (CNL)">
+            {cancelado ? (
+              <p className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                <Check className="w-4 h-4 text-emerald-600" /> Plan cancelado · {cuandoEnvio(cancelado)}
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Si no vas a volar, avisá la cancelación con el formulario del Apéndice 5 de la AIP ENR 1.10, con la salida
+                  vigente{demoras.length > 0 ? " (la de tu última demora)" : ""}.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {envioAroActivo && (
+                    <button
+                      type="button"
+                      disabled={!listo || !oficina || ocupadoCancelacion}
+                      onClick={mandarCancelacion}
+                      className="inline-flex max-w-full items-center gap-2 px-4 py-2.5 rounded-full border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-xs font-semibold disabled:opacity-40"
+                    >
+                      {cancelacion.estado === "mandando" ? <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" /> : <Mail className="w-3.5 h-3.5 shrink-0" />}
+                      <span className="truncate">Cancelar y mandar a {oficina ? oficina.correo : "la oficina"}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={!listo || ocupadoCancelacion}
+                    onClick={bajarCancelacion}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-xs font-semibold text-zinc-700 dark:text-zinc-300 disabled:opacity-40"
+                  >
+                    {cancelacion.estado === "armando" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Bajar cancelación
+                  </button>
+                </div>
+                {!listo && (
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Para cancelarlo, el plan tiene que estar completo y firmado, como lo presentaste.</p>
+                )}
+              </>
+            )}
+            {cancelacion.texto && (
+              <p className={`text-xs ${cancelacion.estado === "error" ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}>
+                {cancelacion.texto}
+              </p>
             )}
           </Seccion>
         </div>

@@ -13,7 +13,7 @@ import { oficinaParaSalida } from "@/lib/oficinas-aro";
 import { enviarMail } from "@/lib/mailer";
 import fs from "node:fs";
 import path from "node:path";
-import { demoraDesdeHoraUtc, eobtVigente, nombreDeDemora, planConDemora, revisarDemora, type Demora } from "@/lib/demora-plan";
+import { demoraDesdeHoraUtc, eobtVigente, nombreDeCancelacion, nombreDeDemora, planConDemora, planVigente, revisarDemora, type Demora } from "@/lib/demora-plan";
 
 /**
  * Los planes de vuelo guardados (`/planes-de-vuelo` del backend, migración 024).
@@ -159,6 +159,35 @@ export async function guardarPerfilAvion(aircraftId: string, perfil: PerfilAvion
   }
 }
 
+/** El plan queda cancelado sin mandar nada: el piloto bajó la cancelación para mandarla él. */
+export async function marcarCancelado(id: string) {
+  try {
+    const res = await apiFetch(`/planes-de-vuelo/${id}`, { method: "PATCH", body: JSON.stringify({ cancelado: true }) });
+    if (!res.ok) return { error: await detalle(res, "No se pudo anotar la cancelación.") };
+    revalidatePath(LISTA);
+    revalidatePath("/dashboard");
+    return { ok: true as const };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { error: "Error de conexión con el servidor." };
+  }
+}
+
+/**
+ * "No lo volé", desde el "¿Ya volaste?" del inicio: el plan queda descartado y el inicio
+ * deja de preguntar. Es un `<form action>` sin cliente alrededor, como "No lo volé" de los
+ * vuelos programados.
+ */
+export async function descartarPlanForm(id: string) {
+  try {
+    await apiFetch(`/planes-de-vuelo/${id}`, { method: "PATCH", body: JSON.stringify({ descartado: true }) });
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+  }
+  revalidatePath("/dashboard");
+  revalidatePath(LISTA);
+}
+
 /** Si el envío a la oficina ARO/AIS está prendido (`PLAN_DE_VUELO_ENVIO_ARO=1` en el `.env`). */
 function envioAroActivo(): boolean {
   return process.env.PLAN_DE_VUELO_ENVIO_ARO === "1";
@@ -178,6 +207,7 @@ async function prepararEnvio(id: string, modo: ModoEnvio) {
   const guardado = await leerPlan(id);
   if (!guardado) return fallo("No se encontró el plan.");
   if ((guardado.envios?.length ?? 0) >= 20) return fallo("Este plan ya se mandó 20 veces.");
+  if (guardado.cancelado_at) return fallo("Este plan está cancelado. Si vas a volar, duplicalo y presentá uno nuevo.");
   const email = await emailDeLaSesion();
   if (!email) return fallo("No pudimos leer el mail de tu cuenta. Volvé a entrar y probá de nuevo.");
 
@@ -284,7 +314,7 @@ export async function enviarDemora(id: string, modo: ModoEnvio, hora: string) {
       piloto: p.email,
       oficina: p.oficina,
       modo,
-      demora: { eobtAnterior: anterior.eobt },
+      aviso: { tipo: "dla", eobtAnterior: anterior.eobt },
     });
     const enviado = await enviarMail({
       para: mail.para,
@@ -309,6 +339,54 @@ export async function enviarDemora(id: string, modo: ModoEnvio, hora: string) {
     });
     revalidatePath(LISTA);
     return { ok: true as const, a: mail.para, cc: mail.cc, eobt: nueva.eobt, demoras: nuevas, anotado: anotado.ok };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { error: "Error de conexión con el servidor." };
+  }
+}
+
+/**
+ * Manda la cancelación (CNL, AIP ENR 1.10 Apéndice 5) con su formulario firmado, a la misma
+ * oficina que el plan, con la salida vigente (la de la última demora, si hubo). Se anota
+ * después de que el mail salió, y un plan cancelado no se vuelve a cancelar: si el vuelo se
+ * hace igual, va un plan nuevo.
+ */
+export async function cancelarPlan(id: string, modo: ModoEnvio = "aro") {
+  try {
+    const p = await prepararEnvio(id, modo);
+    if (!p.ok) return { error: p.error };
+    const demoras = p.guardado.demoras ?? [];
+    const plan = planVigente(p.r.plan, demoras);
+
+    const { pdfCancelacion } = await import("@/lib/plan-de-vuelo-pdf");
+    const pdf = await pdfCancelacion(
+      { plan, eobt: plan.c13hora, c18: plan.c18, nombre: (p.piloto.nombre || p.f.piloto).toUpperCase(), licencia: p.piloto.licencia ?? "" },
+      { fondoPng: fondo("plan-de-vuelo-cnl.png"), firmaPng: p.firmaPng }
+    );
+    const mail = armarMailPlan({ plan, nombres: p.nombres, piloto: p.email, oficina: p.oficina, modo, aviso: { tipo: "cnl" } });
+    const enviado = await enviarMail({
+      para: mail.para,
+      cc: mail.cc,
+      responderA: mail.responderA,
+      asunto: mail.asunto,
+      texto: mail.texto,
+      html: mail.html,
+      adjuntos: [{ nombre: nombreDeCancelacion(p.r.plan, demoras), base64: Buffer.from(pdf).toString("base64") }],
+      nombreRemitente: p.piloto.nombre ? `${p.piloto.nombre} vía Vector` : undefined,
+      casilla: "plandevuelo",
+    });
+    if (!enviado.enviado) return { error: `No se pudo mandar el mail: ${enviado.motivo ?? "error desconocido"}` };
+
+    const anotado = await apiFetch(`/planes-de-vuelo/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        ...(modo === "aro" ? { cancelado: true } : {}),
+        envio: { modo, tipo: "cnl", a: mail.para, resend_id: enviado.id ?? null },
+      }),
+    });
+    revalidatePath(LISTA);
+    revalidatePath("/dashboard");
+    return { ok: true as const, a: mail.para, cc: mail.cc, anotado: anotado.ok };
   } catch (e) {
     if (esErrorDeRedirect(e)) throw e;
     return { error: "Error de conexión con el servidor." };

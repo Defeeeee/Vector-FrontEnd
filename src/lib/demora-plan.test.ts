@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, nombreDeDemora, planConDemora, revisarDemora, type Demora } from "./demora-plan";
+import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, nombreDeCancelacion, nombreDeDemora, planConDemora, planVigente, revisarDemora, type Demora } from "./demora-plan";
 import type { PlanOaci } from "./plan-de-vuelo";
 import { formularioVacio } from "./formulario-plan";
 
@@ -54,5 +54,12 @@ describe("la demora (AIP ENR 1.10, punto 7)", () => {
     const d = { dof: "2026-10-21", eobt: "0030" };
     expect(planConDemora(plan, d)).toMatchObject({ c13hora: "0030", dof: "261021", c18: "DOF/261021 RMK/ESCUELA" });
     expect(nombreDeDemora(plan, d)).toBe("DLA-LVS114-SADF0030SADF_211026.pdf");
+  });
+
+  it("la cancelación va con la salida vigente: la de la última demora, si hubo", () => {
+    const plan = { c7: "LVS114", c13ad: "SADF", c13hora: "1830", c16ad: "SADM", dof: "261020", c18: "DOF/261020" } as PlanOaci;
+    expect(planVigente(plan, [])).toBe(plan);
+    expect(planVigente(plan, [{ dof: "2026-10-20", eobt: "1900" }, { dof: "2026-10-20", eobt: "1930" }])).toMatchObject({ c13hora: "1930" });
+    expect(nombreDeCancelacion(plan, [])).toBe("CNL-LVS114-SADF1830SADM_201026.pdf");
   });
 });

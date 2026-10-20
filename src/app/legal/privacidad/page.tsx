@@ -26,6 +26,10 @@ export const metadata: Metadata = {
  * publicaciones: el chip del vuelo (`resumen_de_vuelo`), las fotos (`services/imagenes.py`
  * y sus buckets) y quién las ve (el RLS de la migración 019). Si eso cambia, esto cambia.
  *
+ * Desde la 2.25.0 (migraciones 024 a 027 del backend): los planes de vuelo y la firma, lo
+ * que va a la oficina ARO/AIS (`actions/plan-de-vuelo.ts`) y el mail para cargar el vuelo
+ * (`/api/cron/plan-por-registrar`).
+ *
  * Desde la 2.21.0 (migraciones 020 y 021): el número de licencia y el legajo del libro
  * en PDF, los bloqueos, los reportes y las suscripciones a los avisos push
  * (`services/avisos.py`: qué dice cada aviso, y que nunca lleva datos de la bitácora).
@@ -63,6 +67,13 @@ export default function PrivacidadPage() {
             <strong>Documentación:</strong> tipo de documento, nombre y fecha de
             vencimiento. Esto incluye el <strong>Certificado Médico Aeronáutico</strong>,
             que es un dato de salud y por lo tanto un dato sensible bajo la Ley 25.326.
+          </li>
+          <li>
+            <strong>Planes de vuelo:</strong> si los armás en Vector, el formulario (avión,
+            ruta, horarios, personas a bordo, el comandante con su licencia y su teléfono) y tu
+            firma, que se guarda para no pedírtela en cada plan. Si lo mandás desde Vector, el
+            PDF firmado va a la oficina ARO/AIS de EANA que elijas, con copia a vos; lo mismo
+            la demora y la cancelación.
           </li>
           <li>
             <strong>Saldo y paquetes de horas:</strong> si usás esa función, los
@@ -183,7 +194,8 @@ export default function PrivacidadPage() {
           </li>
           <li>
             <strong>Resend</strong> — el envío de los mails (el briefing del vuelo, el de
-            bienvenida, el resumen del mes, las novedades y los de tu cuenta: confirmar el
+            bienvenida, el resumen del mes, las novedades, el plan de vuelo que mandás a la
+            oficina, el aviso para cargar un vuelo de tu plan y los de tu cuenta: confirmar el
             mail y recuperar la contraseña). Implica compartir tu correo y el contenido del
             mensaje.
           </li>
@@ -212,6 +224,12 @@ export default function PrivacidadPage() {
           <li>
             Mandarte por mail el briefing del vuelo que programaste y, una sola vez en los días
             siguientes a crear tu cuenta, cómo cargar tu primer vuelo si todavía no lo hiciste.
+          </li>
+          <li>
+            Mandar tu plan de vuelo, su demora o su cancelación a la oficina ARO/AIS que
+            elegiste, cuando lo pedís; y, una hora y media después de la llegada estimada de un
+            plan que presentaste, avisarte por mail para que cargues el vuelo, si todavía no
+            está en tu bitácora. Es un mail por plan.
           </li>
           <li>
             Mandarte por mail, el primer día de cada mes, un resumen del mes anterior: horas,

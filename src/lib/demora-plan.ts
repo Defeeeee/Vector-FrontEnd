@@ -102,3 +102,14 @@ export function planConDemora(p: PlanOaci, d: Demora): PlanOaci {
 export function nombreDeDemora(p: PlanOaci, d: Demora): string {
   return `DLA-${nombreDelArchivo(planConDemora(p, d))}`;
 }
+
+/** El plan con la salida vigente: con la última demora, si hubo. Es el que se cancela. */
+export function planVigente(p: PlanOaci, demoras: Demora[]): PlanOaci {
+  const ultima = demoras[demoras.length - 1];
+  return ultima ? planConDemora(p, ultima) : p;
+}
+
+/** El PDF de la cancelación: `CNL-` y el nombre del plan con la salida vigente. */
+export function nombreDeCancelacion(p: PlanOaci, demoras: Demora[]): string {
+  return `CNL-${nombreDelArchivo(planVigente(p, demoras))}`;
+}

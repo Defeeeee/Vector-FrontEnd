@@ -78,6 +78,36 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.26.0",
+    fecha: "2026-10-20",
+    titulo: "Del plan de vuelo a la bitácora",
+    novedades: [
+      {
+        icono: "avion",
+        titulo: "¿Ya volaste? Cargalo desde el plan",
+        texto:
+          "Cuando pasa la llegada estimada de un plan que presentaste, el inicio te pregunta si volaste y te deja el formulario con el avión, la ruta y la fecha. Los horarios los ponés vos. Si todavía no lo cargaste, una hora y media después te llega un mail.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+      {
+        icono: "nube",
+        titulo: "Meteo y NOTAM a la hora de tu vuelo",
+        texto:
+          "En el plan ves el METAR, el TAF recortado a tu hora de salida y de llegada, y los NOTAM de cada aeródromo que caen en tu horario. Los que están vigentes pero en otro horario quedan aparte.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+      {
+        icono: "reloj",
+        titulo: "Cancelar el plan (CNL)",
+        texto: "Si no volás, la cancelación sale firmada a la misma oficina, con el formulario del Apéndice 5 de la AIP.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+    ],
+  },
+  {
     version: "2.25.0",
     fecha: "2026-10-20",
     titulo: "El plan de vuelo, por mail desde Vector",

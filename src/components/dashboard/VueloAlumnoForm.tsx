@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 import type { Aircraft } from "@/types";
+import type { FlightPrefill } from "@/lib/prefill";
 import { addAircraft, logFlight } from "@/actions/flight";
 import { calculateFlightDuration } from "@/lib/utils";
 import { aUtc } from "@/lib/horarios";
@@ -50,23 +51,37 @@ function Selector<T extends string>({ opciones, valor, alCambiar }: { opciones: 
   );
 }
 
-export default function VueloAlumnoForm({ aircraft, todayIso }: { aircraft: Aircraft[]; todayIso: string }) {
+export default function VueloAlumnoForm({
+  aircraft,
+  todayIso,
+  inicial,
+  planVueloId,
+}: {
+  aircraft: Aircraft[];
+  todayIso: string;
+  /** Lo que viene de un plan de vuelo ya volado (`lib/plan-cierre.ts`): avión, ruta y fecha. */
+  inicial?: FlightPrefill;
+  planVueloId?: string;
+}) {
   const router = useRouter();
   const { notificar } = useAvisos();
   const [pendiente, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const aviones = useMemo(() => aircraft.filter((a) => !a.is_simulator), [aircraft]);
-  const [fecha, setFecha] = useState(todayIso);
+  const [origenInicial, destinoInicial] = (inicial?.route ?? "").split(" ");
+  const [fecha, setFecha] = useState(inicial?.date ?? todayIso);
   const [salida, setSalida] = useState("");
   const [llegada, setLlegada] = useState("");
   const [aterrizajes, setAterrizajes] = useState("1");
-  const [avionId, setAvionId] = useState(aviones[0]?.id ?? "");
+  const [avionId, setAvionId] = useState(
+    (inicial?.aircraft_id && aviones.some((a) => a.id === inicial.aircraft_id) ? inicial.aircraft_id : null) ?? aviones[0]?.id ?? ""
+  );
   const [conInstructor, setConInstructor] = useState<"si" | "no">("si");
   const [momento, setMomento] = useState<"dia" | "noche">("dia");
-  const [tipo, setTipo] = useState<"local" | "travesia">("local");
-  const [desde, setDesde] = useState("");
-  const [hasta, setHasta] = useState("");
+  const [tipo, setTipo] = useState<"local" | "travesia">(origenInicial && destinoInicial && origenInicial !== destinoInicial ? "travesia" : "local");
+  const [desde, setDesde] = useState(origenInicial ?? "");
+  const [hasta, setHasta] = useState(origenInicial !== destinoInicial ? (destinoInicial ?? "") : "");
 
   // Alta rápida de un avión, sin ir al Hangar.
   const [agregando, setAgregando] = useState(aviones.length === 0);
@@ -136,6 +151,7 @@ export default function VueloAlumnoForm({ aircraft, todayIso }: { aircraft: Airc
       fd.set("route", ruta);
       fd.set("purpose", conInstructor === "si" ? "INST" : "ENT");
       fd.set(columna, horas.toFixed(1));
+      if (planVueloId) fd.set("plan_vuelo_id", planVueloId);
       const r = await logFlight(fd);
       if ("error" in r) {
         setError(r.error);

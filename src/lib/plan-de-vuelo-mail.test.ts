@@ -64,13 +64,21 @@ describe("el mail del plan de vuelo", () => {
 
   it("la demora: DLA en el asunto, la hora nueva y la de antes", () => {
     const conDemora = { ...plan, c13hora: "1915" } as PlanOaci;
-    const m = armarMailPlan({ ...base, plan: conDemora, modo: "aro", demora: { eobtAnterior: "1815" } });
+    const m = armarMailPlan({ ...base, plan: conDemora, modo: "aro", aviso: { tipo: "dla", eobtAnterior: "1815" } });
     expect(m.asunto).toBe("DLA LVS100-SRDL(1915)SADM_171026");
     expect(m.texto).toContain("Adjunto el aviso de demora (DLA) del plan de vuelo de la aeronave LVS100 (ECHO).");
     expect(m.texto).toContain("  Nueva EOBT : 1915 UTC (antes 1815 UTC)");
     expect(m).toMatchObject({ para: "acmor@eana.com.ar", cc: ["lucia@example.com"] });
-    expect(armarMailPlan({ ...base, plan: conDemora, modo: "prueba", demora: { eobtAnterior: "1815" } }).asunto).toBe(
+    expect(armarMailPlan({ ...base, plan: conDemora, modo: "prueba", aviso: { tipo: "dla", eobtAnterior: "1815" } }).asunto).toBe(
       "PRUEBA · DLA LVS100-SRDL(1915)SADM_171026"
     );
+  });
+
+  it("la cancelación: CNL en el asunto y la EOBT de siempre", () => {
+    const m = armarMailPlan({ ...base, modo: "aro", aviso: { tipo: "cnl" } });
+    expect(m.asunto).toBe("CNL LVS100-SRDL(1815)SADM_171026");
+    expect(m.texto).toContain("Adjunto la cancelación (CNL) del plan de vuelo de la aeronave LVS100 (ECHO).");
+    expect(m.texto).toContain("  EOBT  : 1815 UTC");
+    expect(m).toMatchObject({ para: "acmor@eana.com.ar", cc: ["lucia@example.com"], responderA: "lucia@example.com" });
   });
 });

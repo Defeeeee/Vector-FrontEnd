@@ -79,7 +79,10 @@ Actividad.
     piezas del Resumen en `Cifras.tsx`; 2026-10-10). El tracker de la PPA o la PCA
     baja, después del saldo;
   - la tarjeta chica "Tu red", al final y por `Suspense`, para que la red nunca demore
-    lo de arriba.
+    lo de arriba;
+  - "¿Ya volaste?" (`PlanesParaRegistrar`, 2026-10-20), también por `Suspense`: un plan
+    de vuelo presentado cuya llegada estimada ya pasó, con "Registrar el vuelo" y "No lo
+    volé".
 - **Registrar vuelo es una sola página** (`/dashboard/log-flight`). Hubo un modal
   interceptado (`@modal/(.)log-flight`) que se llevó cinco commits de arreglos en un
   mes; se sacó en la 2.18.0. No volver a interceptar esa ruta.
@@ -271,9 +274,21 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **La demora (DLA) también sale por mail** (2.25.0, `enviarDemora`): el server recalcula
     la hora con las demoras guardadas y la anota recién después de que el mail salió. El
     selector de oficina sugiere las tres más cercanas a la salida (`oficinasCercanas`).
+  - **La cancelación (CNL)** (2.26.0, `cancelarPlan`): formulario del Apéndice 5, con la
+    salida vigente. Un plan cancelado no manda nada más.
+  - **Del plan a la bitácora** (2.26.0, `lib/plan-cierre.ts`, migraciones 026 y 027):
+    - el inicio pregunta "¿ya volaste?" después de la EOBT vigente más la casilla 16;
+    - "Registrar el vuelo" precarga avión, ruta y fecha, **nunca horarios** (Federico: no
+      coinciden con lo real), y al guardar une el plan al vuelo (`plan_vuelo_id`);
+    - 90 minutos después de la llegada sale un mail, uno por plan
+      (`/api/cron/plan-por-registrar`, cada 10 minutos desde el crontab del VPS);
+    - no se pregunta si ese día ya hay un vuelo desde el mismo aeródromo.
+  - **Meteo y NOTAM a la hora del vuelo** (2.26.0, `lib/meteo-plan.ts`): el TAF recortado a
+    la salida y a la llegada, y los NOTAM de ANAC cruzados con su horario. Lo que no se
+    entiende va como "revisá el horario"; los de otro horario, plegados, nunca escondidos.
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
-  - **Falta:** CHG y CNL, y que el editor ande sin señal (el planificador sí anda).
+  - **Falta:** CHG, y que el editor ande sin señal (el planificador sí anda).
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

@@ -105,6 +105,22 @@ Leídas el 2026-10-10. Lo regulatorio se escribe contra esto, no de memoria
   imagen de la AIP (`src/lib/plan-de-vuelo-dla.png`). La casilla 18 va con la DOF/ de la
   nueva fecha, como lo hace FPL.AR.
 
+## La cancelación (CNL) — AIP ENR 1.10, Apéndice 5
+
+- **El formulario es el del Apéndice 5** (ENR 1.10-41, AIRAC AMDT 2/2025), la misma planilla
+  que la demora con "CANCELACIÓN" y "CNL": casillas 7, 13 con la EOBT, 16 con duración y
+  alternativa, 18, y nombre, licencia y firma. La imagen es la de la AIP
+  (`src/lib/plan-de-vuelo-cnl.png`, 876×847 px, a 148,22 pt del borde de arriba). Se le
+  borró el recuadro verde de selección que quedó en la casilla 18 cuando la exportaron de
+  una planilla.
+- **Va con la salida vigente**: la del plan, o la de la última demora (`planVigente`). La
+  DOF/ de la casilla 18 es la de esa salida, como en la demora.
+- El texto de la ENR 1.10 sobre la CNL (punto 4.4 del acuerdo de RPL) es para planes
+  repetitivos: "se trasmitirán cuando se anule un vuelo un día determinado". Para un plan
+  común, la AIP sólo trae el formulario; Vector no le pone plazo.
+- **La licencia tiene 6 celdas** en los dos formularios. Una licencia más larga (8 cifras)
+  va entera y centrada, tapando las divisiones, en vez de cortada.
+
 ## El horario de las oficinas — AIP AD 2.3
 
 - Cada ficha de aeródromo publica en AD 2.3, renglón 5, el horario de la "Oficina de
@@ -114,3 +130,32 @@ Leídas el 2026-10-10. Lo regulatorio se escribe contra esto, no de memoria
 - **Vector sólo dice "abierta" o "cerrada" con H24 o con un único rango UTC.** Con días de
   la semana, "O/R" (a pedido), "SS" (puesta del sol) o feriados, muestra el texto y pide
   revisarlo: decidir mal que una oficina atiende es peor que no decirlo.
+
+## La meteorología y los NOTAM a la hora del vuelo
+
+No es norma, es ayuda: el briefing sigue siendo del piloto, y la pantalla lo dice.
+
+- **La ventana del vuelo** va de una hora antes de la EOBT vigente a una hora después de la
+  llegada estimada (EOBT más la casilla 16). Todo en UTC, como los NOTAM (casillas B y C)
+  y el TAF.
+- **El TAF** se recorta a la hora: a la salida para el aeródromo de salida, a la llegada
+  para el destino y las alternativas. Se muestran los grupos que valen a esa hora, tal cual:
+  - la base o el último `FM`;
+  - los `BECMG` que ya empezaron;
+  - los `TEMPO` y `PROB` que la cubren.
+
+  Fuera de la validez del TAF se dice hasta cuándo llega. Un aeródromo sin TAF o sin METAR
+  toma el de la estación más cercana a menos de 60 NM, y lo nombra.
+- **Los NOTAM** salen del servicio de ANAC (`ais.anac.gob.ar/notam`). ANAC escribe el
+  horario al final del texto: días del mes con su rango (`07 0530-0830 09, 14 AND 30
+  0430-0830`), o un rango solo, que es todos los días (`CLSD 1000-2200`). Vector lo lee
+  (`lib/meteo-plan.ts`, testeado con NOTAM reales del 20/10/2026) y separa:
+  - **en tu horario**: rige en algún momento de la ventana;
+  - **revisá el horario**: con días de la semana, salida y puesta del sol, "EXC", o algo
+    que no se entiende sin dudas;
+  - **vigentes, pero no en tu horario**, y **permanentes** (obstáculos, enmiendas al AIP):
+    plegados, nunca escondidos.
+
+  FPL.AR avisa con sólo mirar la vigencia, y así le marcó a Federico un NOTAM que no
+  aplicaba a su vuelo (2026-10-19).
+

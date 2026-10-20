@@ -255,32 +255,23 @@ export async function pdfPlanDeVuelo(p: PlanOaci, opciones: OpcionesPdfPlan): Pr
 /**
  * El formulario de demora del Apéndice 4 de la AIP ENR 1.10 (`plan-de-vuelo-dla.png`).
  *
- * En la AIP el formulario es una imagen de 895×835 px puesta en x 42,55–552,75 pt y a
- * 140,9 pt del borde de arriba; acá va en el mismo lugar de la hoja A4, así que las cajas
- * se miden en píxeles de esa imagen y `DX`/`DY` las pasan a puntos.
+ * En la AIP el formulario es una imagen puesta en x 42,55–552,75 pt; acá va en el mismo
+ * lugar de la hoja A4, así que las cajas se miden en píxeles de esa imagen y `pdfMensaje`
+ * las pasa a puntos. La cancelación (Apéndice 5) es la misma planilla.
  */
-const DLA_K = (552.75 - 42.55) / 895;
-const DX = (px: number) => 42.55 + px * DLA_K;
-const DY = (py: number) => ALTO - (140.9 + py * DLA_K);
-const cajaDla = (x1: number, y1: number, x2: number, y2: number): Caja => [DX(x1), DY(y2), DX(x2), DY(y1)];
-
-const CAJAS_DLA = {
-  c7: cajaDla(277, 344, 518, 382),
-  c13ad: cajaDla(128, 425, 260, 451),
-  c13hora: cajaDla(372, 425, 502, 451),
-  c16ad: cajaDla(128, 540, 260, 566),
-  c16eet: cajaDla(372, 540, 502, 566),
-  c16altn: cajaDla(579, 540, 715, 566),
-  nombre: cajaDla(8, 795, 384, 826),
-  licencia: cajaDla(390, 801, 594, 828),
-};
-const RENGLONES_DLA: Caja[] = [622, 644, 666, 688, 710, 732, 754].map((y) => cajaDla(6, y, 883, y + 22));
-const FIRMA_DLA = cajaDla(610, 795, 880, 830);
-
-/** Un carácter por celda, como en el formulario impreso; si no entra, centrado. */
+/**
+ * Un carácter por celda, como en el formulario impreso. Si no entra —una licencia de 8
+ * cifras en las 6 celdas de "LIC NRO" de la AIP—, se tapan las divisiones y va centrado de
+ * corrido: el número entero y legible, no pisado por las rayitas.
+ */
 function enCeldas(page: PDFPage, f: PDFFont, texto: string, c: Caja, n: number) {
   if (!texto) return;
-  if (texto.length > n) return centrado(page, f, texto, c);
+  if (texto.length > n) {
+    page.drawRectangle({ x: c[0] + 1, y: c[1], width: c[2] - c[0] - 2, height: c[3] - c[1], color: rgb(1, 1, 1) });
+    // Los bordes de arriba y de abajo, que el blanco tapó a medias.
+    for (const y of [c[1], c[3]]) page.drawLine({ start: { x: c[0], y }, end: { x: c[2], y }, thickness: 0.6, color: NEGRO });
+    return centrado(page, f, texto, c);
+  }
   const ancho = (c[2] - c[0]) / n;
   [...texto].forEach((ch, i) => {
     const w = f.widthOfTextAtSize(ch, TAMANO);
@@ -297,39 +288,118 @@ export interface DatosPdfDemora {
   licencia: string;
 }
 
-export async function pdfDemora(
+/**
+ * Un formulario de mensaje ATS de la AIP (demora o cancelación): son la misma planilla con
+ * otro título, así que cambian el fondo, dónde lo puso la AIP y las cajas medidas en él.
+ */
+interface FormularioMensaje {
+  /** Ancho de la imagen en píxeles, y dónde la puso la AIP: pt desde el borde de arriba. */
+  anchoPx: number;
+  altoPx: number;
+  arribaPt: number;
+  cajas: Record<"c7" | "c13ad" | "c13hora" | "c16ad" | "c16eet" | "c16altn" | "nombre" | "licencia" | "firma", [number, number, number, number]>;
+  renglones: [number, number][];
+}
+
+async function pdfMensaje(
+  m: FormularioMensaje,
   d: DatosPdfDemora,
-  opciones: { fondoPng: Uint8Array; firmaPng?: Uint8Array }
+  opciones: { fondoPng: Uint8Array; firmaPng?: Uint8Array },
+  meta: { titulo: string; asunto: string }
 ): Promise<Uint8Array> {
+  const k = (552.75 - 42.55) / m.anchoPx;
+  const x = (px: number) => 42.55 + px * k;
+  const y = (py: number) => ALTO - (m.arribaPt + py * k);
+  const caja = ([x1, y1, x2, y2]: [number, number, number, number]): Caja => [x(x1), y(y2), x(x2), y(y1)];
+
   const doc = await PDFDocument.create();
-  doc.setTitle(`Demora ${d.plan.c7} ${d.plan.c13ad} ${d.eobt}`);
+  doc.setTitle(meta.titulo);
   doc.setCreator("Vector");
   doc.setProducer("Vector");
-  doc.setSubject("Formulario de demora (DLA), AIP Argentina ENR 1.10, Apéndice 4");
+  doc.setSubject(meta.asunto);
   const f: Fuentes = {
     normal: await doc.embedFont(StandardFonts.Helvetica),
     negrita: await doc.embedFont(StandardFonts.HelveticaBold),
   };
   const page = doc.addPage([ANCHO, ALTO]);
   const fondo = await doc.embedPng(opciones.fondoPng);
-  page.drawImage(fondo, { x: DX(0), y: DY(835), width: DX(895) - DX(0), height: DY(0) - DY(835) });
+  page.drawImage(fondo, { x: x(0), y: y(m.altoPx), width: x(m.anchoPx) - x(0), height: y(0) - y(m.altoPx) });
 
   const n = f.negrita;
-  enCeldas(page, n, d.plan.c7, CAJAS_DLA.c7, 7);
-  enCeldas(page, n, d.plan.c13ad, CAJAS_DLA.c13ad, 4);
-  enCeldas(page, n, d.eobt, CAJAS_DLA.c13hora, 4);
-  enCeldas(page, n, d.plan.c16ad, CAJAS_DLA.c16ad, 4);
-  enCeldas(page, n, d.plan.c16eet, CAJAS_DLA.c16eet, 4);
-  enCeldas(page, n, d.plan.c16altn1, CAJAS_DLA.c16altn, 4);
-  enRenglones(page, f, d.c18, RENGLONES_DLA, true);
-  izquierda(page, n, d.nombre, CAJAS_DLA.nombre);
-  enCeldas(page, n, d.licencia, CAJAS_DLA.licencia, 6);
+  enCeldas(page, n, d.plan.c7, caja(m.cajas.c7), 7);
+  enCeldas(page, n, d.plan.c13ad, caja(m.cajas.c13ad), 4);
+  enCeldas(page, n, d.eobt, caja(m.cajas.c13hora), 4);
+  enCeldas(page, n, d.plan.c16ad, caja(m.cajas.c16ad), 4);
+  enCeldas(page, n, d.plan.c16eet, caja(m.cajas.c16eet), 4);
+  enCeldas(page, n, d.plan.c16altn1, caja(m.cajas.c16altn), 4);
+  enRenglones(page, f, d.c18, m.renglones.map(([y1, y2]) => caja([6, y1, m.anchoPx - 12, y2])), true);
+  izquierda(page, n, d.nombre, caja(m.cajas.nombre));
+  enCeldas(page, n, d.licencia, caja(m.cajas.licencia), 6);
 
   if (opciones.firmaPng) {
     const firma = await doc.embedPng(opciones.firmaPng);
-    const escala = Math.min((FIRMA_DLA[2] - FIRMA_DLA[0]) / firma.width, (FIRMA_DLA[3] - FIRMA_DLA[1]) / firma.height);
+    const c = caja(m.cajas.firma);
+    const escala = Math.min((c[2] - c[0]) / firma.width, (c[3] - c[1]) / firma.height);
     const w = firma.width * escala;
-    page.drawImage(firma, { x: FIRMA_DLA[0] + (FIRMA_DLA[2] - FIRMA_DLA[0] - w) / 2, y: FIRMA_DLA[1], width: w, height: firma.height * escala });
+    page.drawImage(firma, { x: c[0] + (c[2] - c[0] - w) / 2, y: c[1], width: w, height: firma.height * escala });
   }
   return doc.save();
+}
+
+/** La demora: Apéndice 4, imagen de 895×835 px a 140,9 pt del borde de arriba. */
+const DLA: FormularioMensaje = {
+  anchoPx: 895,
+  altoPx: 835,
+  arribaPt: 140.9,
+  cajas: {
+    c7: [277, 344, 518, 382],
+    c13ad: [128, 425, 260, 451],
+    c13hora: [372, 425, 502, 451],
+    c16ad: [128, 540, 260, 566],
+    c16eet: [372, 540, 502, 566],
+    c16altn: [579, 540, 715, 566],
+    nombre: [8, 795, 384, 826],
+    licencia: [390, 802, 594, 826],
+    firma: [610, 795, 880, 830],
+  },
+  renglones: [622, 644, 666, 688, 710, 732, 754].map((y) => [y, y + 22]),
+};
+
+/**
+ * La cancelación: Apéndice 5 (ENR 1.10-41, AIRAC AMDT 2/2025), `plan-de-vuelo-cnl.png`.
+ * La imagen de la AIP es de 876×847 px, en x 42,55–552,75 pt y a 148,22 pt del borde de
+ * arriba. Las cajas se midieron con las líneas negras de la imagen, y se le borró el
+ * recuadro verde de selección que quedó en la casilla 18 cuando la exportaron de una planilla.
+ */
+const CNL: FormularioMensaje = {
+  anchoPx: 876,
+  altoPx: 847,
+  arribaPt: 148.22,
+  cajas: {
+    c7: [278, 329, 512, 367],
+    c13ad: [130, 410, 262, 437],
+    c13hora: [366, 410, 496, 437],
+    c16ad: [130, 506, 262, 533],
+    c16eet: [366, 506, 496, 533],
+    c16altn: [562, 506, 699, 533],
+    nombre: [8, 795, 380, 836],
+    licencia: [382, 816, 580, 840],
+    firma: [585, 795, 865, 838],
+  },
+  renglones: [589, 614, 636, 658, 680, 702, 724, 746, 768].map((y, i, a) => [y, a[i + 1] ?? 790]),
+};
+
+export function pdfDemora(d: DatosPdfDemora, opciones: { fondoPng: Uint8Array; firmaPng?: Uint8Array }): Promise<Uint8Array> {
+  return pdfMensaje(DLA, d, opciones, {
+    titulo: `Demora ${d.plan.c7} ${d.plan.c13ad} ${d.eobt}`,
+    asunto: "Formulario de demora (DLA), AIP Argentina ENR 1.10, Apéndice 4",
+  });
+}
+
+/** La cancelación (CNL): la EOBT y la DOF/ son las vigentes (la de la última demora, si hubo). */
+export function pdfCancelacion(d: DatosPdfDemora, opciones: { fondoPng: Uint8Array; firmaPng?: Uint8Array }): Promise<Uint8Array> {
+  return pdfMensaje(CNL, d, opciones, {
+    titulo: `Cancelación ${d.plan.c7} ${d.plan.c13ad} ${d.eobt}`,
+    asunto: "Formulario de cancelación (CNL), AIP Argentina ENR 1.10, Apéndice 5",
+  });
 }

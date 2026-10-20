@@ -155,6 +155,7 @@ const NOMBRES_MAIL: Record<string, string> = {
   "resumen-mensual": "Resumen del mes",
   briefing: "Briefing del vuelo",
   novedades: "Novedades",
+  "plan-por-registrar": "Cargá tu vuelo (plan)",
 };
 
 /** "novedades" + "2026-10" → "Novedades · 2026-10". */

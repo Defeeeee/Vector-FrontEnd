@@ -1,4 +1,4 @@
-import { asuntoDelMail, cuerpoDelMail, type PlanOaci } from "./plan-de-vuelo";
+import { asuntoDelMail, cuerpoDelMail, type AvisoDelPlan, type PlanOaci } from "./plan-de-vuelo";
 
 /**
  * El mail con el que Vector presenta el plan de vuelo a la oficina ARO/AIS.
@@ -29,10 +29,11 @@ export interface DatosMailPlan {
   oficina: { correo: string; nombre: string; oaci: string } | null;
   modo: ModoEnvio;
   /**
-   * Un aviso de demora (DLA, AIP ENR 1.10, 7.2): `plan` ya viene con la nueva EOBT y fecha
-   * (`planConDemora`), y acá va la hora de antes. El asunto lleva `DLA` adelante.
+   * Un aviso sobre el plan: la demora (DLA, AIP ENR 1.10, 7.2), con `plan` ya con la nueva
+   * EOBT y fecha (`planConDemora`) y la hora de antes acá, o la cancelación (CNL, Apéndice
+   * 5). El asunto lleva `DLA` o `CNL` adelante del de siempre.
    */
-  demora?: { eobtAnterior: string };
+  aviso?: AvisoDelPlan;
 }
 
 export interface MailPlan {
@@ -47,7 +48,7 @@ export interface MailPlan {
 const escapar = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export function armarMailPlan(d: DatosMailPlan): MailPlan {
-  const asuntoReal = `${d.demora ? "DLA " : ""}${asuntoDelMail(d.plan)}`;
+  const asuntoReal = `${d.aviso ? `${d.aviso.tipo.toUpperCase()} ` : ""}${asuntoDelMail(d.plan)}`;
   const pie = [
     "—",
     "Para cualquier consulta o respuesta, por favor escriban directamente al",
@@ -55,7 +56,7 @@ export function armarMailPlan(d: DatosMailPlan): MailPlan {
     "para incluir al piloto en la respuesta.",
     "Este mensaje fue generado automáticamente por Vector.",
   ];
-  const cuerpo = cuerpoDelMail(d.plan, d.nombres, d.demora);
+  const cuerpo = cuerpoDelMail(d.plan, d.nombres, d.aviso);
   const aviso =
     d.modo === "prueba"
       ? [

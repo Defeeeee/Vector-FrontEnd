@@ -44,7 +44,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
   const resolvedParams = searchParams ? (searchParams instanceof Promise ? await searchParams : searchParams) : {};
   // El mismo parser que usan los links de "Completar" del calendario y los atajos
   // de iOS. Ver `src/lib/prefill.ts`.
-  const { initialData: prefillData, plannedId } = parsePrefill(resolvedParams);
+  const { initialData: prefillData, plannedId, planVueloId } = parsePrefill(resolvedParams);
 
   const { aircraft, session, logbooks, alumno } = await getData();
 
@@ -77,7 +77,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
       {/* El alumno no tiene libro de vuelo: fecha, horarios, aterrizajes y avión, sin
           desglose ANAC ni finalidad (ver `VueloAlumnoForm`). Puede agregar el avión ahí. */}
       {alumno ? (
-        <VueloAlumnoForm aircraft={aircraft} todayIso={new Date().toISOString().slice(0, 10)} />
+        <VueloAlumnoForm aircraft={aircraft} todayIso={new Date().toISOString().slice(0, 10)} inicial={prefillData} planVueloId={planVueloId} />
       ) : aircraft.length === 0 ? (
         <SinAeronaves />
       ) : (
@@ -99,6 +99,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
             logbooks={logbooks}
             initialData={prefillData}
             plannedId={plannedId}
+            planVueloId={planVueloId}
             /*
               Antes de esto, `logFlight` redirigía sola con `push`, así que volver
               atrás desde `/dashboard/history` reabría este mismo formulario vacío.
