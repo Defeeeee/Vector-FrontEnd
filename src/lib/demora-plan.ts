@@ -1,4 +1,5 @@
 import { horaDeTexto, type FormularioPlan } from "./formulario-plan";
+import { nombreDelArchivo, type PlanOaci } from "./plan-de-vuelo";
 
 /**
  * La demora (DLA) de un plan de vuelo presentado.
@@ -86,4 +87,18 @@ export function revisarDemora(
 /** La fecha de una demora como va en DOF/: `AAMMDD`. */
 export function dofDeDemora(d: Demora): string {
   return `${d.dof.slice(2, 4)}${d.dof.slice(5, 7)}${d.dof.slice(8, 10)}`;
+}
+
+/**
+ * El plan como queda con la demora: la nueva EOBT en la casilla 13 y la nueva fecha en la
+ * DOF/ de la 18. De ahí salen el formulario de demora, el asunto del mail y el archivo.
+ */
+export function planConDemora(p: PlanOaci, d: Demora): PlanOaci {
+  const dof = dofDeDemora(d);
+  return { ...p, c13hora: d.eobt, dof, c18: p.c18.replace(/DOF\/\d{6}/, `DOF/${dof}`) };
+}
+
+/** El PDF de la demora: `DLA-` y el nombre del plan con la nueva hora y fecha. */
+export function nombreDeDemora(p: PlanOaci, d: Demora): string {
+  return `DLA-${nombreDelArchivo(planConDemora(p, d))}`;
 }

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { horarioAro, oficinaParaSalida, parsearHorarios, parsearOficinas, primerTelefono, type OficinaUbicada } from "./oficinas-aro";
+import { horarioAro, oficinaParaSalida, oficinasCercanas, parsearHorarios, parsearOficinas, primerTelefono, type OficinaUbicada } from "./oficinas-aro";
 
 /**
  * La tabla de oficinas contra el texto de la AIC A 19/2026, **en los dos sentidos**, como
@@ -69,6 +69,34 @@ describe("oficinaParaSalida", () => {
 
   it("sin oficina y sin coordenadas no adivina", () => {
     expect(oficinaParaSalida({ codigo: "XYZ" }, ubicadas)).toBeNull();
+  });
+});
+
+describe("oficinasCercanas", () => {
+  const ubicadas: OficinaUbicada[] = [
+    { oaci: "SAZS", aftn: "SAZSZPZX", correo: "acbar@eana.com.ar", telefonos: "", fir: "Ezeiza", nombre: "Bariloche", lat: -41.151, lon: -71.1575 },
+    { oaci: "SADF", aftn: "SADFZPZX", correo: "acfdo@eana.com.ar", telefonos: "", fir: "Ezeiza", nombre: "San Fernando", lat: -34.4532, lon: -58.5896 },
+    { oaci: "SADM", aftn: "SADMZPZX", correo: "acmor@eana.com.ar", telefonos: "", fir: "Ezeiza", nombre: "Morón", lat: -34.6763, lon: -58.6428 },
+    { oaci: "SAAR", aftn: "SAARZPZX", correo: "acros@eana.com.ar", telefonos: "", fir: "Ezeiza", nombre: "Rosario", lat: -32.9036, lon: -60.785 },
+  ];
+
+  it("de la más cercana a la más lejana, hasta tres", () => {
+    // Cañuelas: Morón, San Fernando, Rosario; Bariloche queda afuera.
+    const r = oficinasCercanas({ codigo: "CNL", lat: -35.0, lon: -58.75 }, ubicadas);
+    expect(r.map((x) => x.oficina.oaci)).toEqual(["SADM", "SADF", "SAAR"]);
+    expect(r.every((x) => !x.propia)).toBe(true);
+    expect(r[0].distanciaNm).toBeLessThan(r[1].distanciaNm);
+  });
+
+  it("la del propio aeródromo va primera, a cero millas", () => {
+    const r = oficinasCercanas({ codigo: "SADF", lat: -34.4532, lon: -58.5896 }, ubicadas);
+    expect(r[0]).toMatchObject({ propia: true, distanciaNm: 0, oficina: { oaci: "SADF" } });
+    expect(r.map((x) => x.oficina.oaci)).toEqual(["SADF", "SADM", "SAAR"]);
+  });
+
+  it("sin coordenadas, sólo la propia", () => {
+    expect(oficinasCercanas({ codigo: "sadm" }, ubicadas).map((x) => x.oficina.oaci)).toEqual(["SADM"]);
+    expect(oficinasCercanas({ codigo: "XYZ" }, ubicadas)).toEqual([]);
   });
 });
 

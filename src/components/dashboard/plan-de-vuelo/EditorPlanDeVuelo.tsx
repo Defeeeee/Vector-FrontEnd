@@ -15,12 +15,11 @@ import {
   Mail,
   Phone,
   Save,
-  Share2,
   Sparkles,
 } from "lucide-react";
 import fondoEana from "@/lib/plan-de-vuelo-eana.jpg";
 import fondoDla from "@/lib/plan-de-vuelo-dla.png";
-import { duplicarPlan, enviarPlan, guardarDemoras, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
+import { duplicarPlan, enviarDemora, enviarPlan, guardarDemoras, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
 import type { EnvioPlan } from "@/lib/plan-de-vuelo-servidor";
 import {
   aplicarAvion,
@@ -37,8 +36,8 @@ import {
   type Sugerencia,
 } from "@/lib/formulario-plan";
 import { asuntoDelMail, cuerpoDelMail, mensajeFpl, nombreDelArchivo, type Indicador18 } from "@/lib/plan-de-vuelo";
-import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, revisarDemora, type Demora } from "@/lib/demora-plan";
-import { horarioAro, oficinaParaSalida, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
+import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, MAXIMO_DEMORAS, nombreDeDemora, planConDemora, revisarDemora, type Demora } from "@/lib/demora-plan";
+import { horarioAro, oficinaParaSalida, oficinasCercanas, primerTelefono, type OficinaUbicada } from "@/lib/oficinas-aro";
 import CampoAerodromo from "./CampoAerodromo";
 import FirmaPiloto from "./FirmaPiloto";
 import EditorRuta from "./EditorRuta";
@@ -251,19 +250,13 @@ export default function EditorPlanDeVuelo({
   const mandar = async (modo: "prueba" | "aro") => {
     if (modo === "aro" && oficina && !window.confirm(`¿Mandar el plan a ${oficina.correo} (ARO/AIS ${oficina.nombre})? Te llega una copia.`)) return;
     setEnvio({ estado: "mandando" });
-    // Que salga con lo último que se escribió: el guardado pendiente y el que está en vuelo.
-    if (temporizador.current) {
-      clearTimeout(temporizador.current);
-      await guardar();
-    } else if (enCurso.current) {
-      await enCurso.current;
-    }
+    await esperarGuardado();
     const res = await enviarPlan(id, modo);
     if ("error" in res) {
       setEnvio({ estado: "error", texto: res.error });
       return;
     }
-    setEnvios((e) => [...e, { modo, a: res.a, at: new Date().toISOString() }]);
+    setEnvios((e) => [...e, { modo, tipo: "fpl", a: res.a, at: new Date().toISOString() }]);
     setEnvio({
       estado: "listo",
       texto:
@@ -340,6 +333,7 @@ export default function EditorPlanDeVuelo({
       : null);
 
   const sugerida = useMemo(() => (f.salida ? oficinaParaSalida(f.salida, oficinas) : null), [f.salida, oficinas]);
+  const cercanas = useMemo(() => (f.salida ? oficinasCercanas(f.salida, oficinas) : []), [f.salida, oficinas]);
   const oficina = oficinas.find((o) => o.oaci === f.oficina) ?? sugerida?.oficina ?? null;
   const telOficina = oficina ? primerTelefono(oficina.telefonos) : null;
   const horario = oficina ? horarioAro(oficina.horario, f.eobtUtc || undefined) : null;
@@ -377,17 +371,15 @@ export default function EditorPlanDeVuelo({
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   };
 
-  const compartirArchivo = async (archivo: File, titulo: string) => {
-    if (navigator.canShare?.({ files: [archivo] })) {
-      try {
-        await navigator.share({ files: [archivo], title: titulo });
-      } catch {
-        // Cancelar el menú no es un error.
-      }
-    } else {
-      bajarArchivo(archivo);
+  /** Que el mail salga con lo último que se escribió: el guardado pendiente y el que está en vuelo. */
+  async function esperarGuardado() {
+    if (temporizador.current) {
+      clearTimeout(temporizador.current);
+      await guardar();
+    } else if (enCurso.current) {
+      await enCurso.current;
     }
-  };
+  }
 
   /* ------------------------------------------------- guardar en el avión -- */
 
@@ -414,36 +406,66 @@ export default function EditorPlanDeVuelo({
   /* ---------------------------------------------------------- la demora -- */
 
   const [horaDemora, setHoraDemora] = useState("");
-  const [demoraEstado, setDemoraEstado] = useState<"" | "armando" | "error">("");
+  const [demoraEstado, setDemoraEstado] = useState<{ estado: "" | "armando" | "mandando" | "listo" | "error"; texto?: string }>({ estado: "" });
   const vigente = eobtVigente(f, demoras);
   const demoraNueva = horaDemora ? demoraDesdeHoraUtc(f, demoras, horaDemora) : null;
   const chequeoDemora = revisarDemora(f, demoras, ahoraIso);
+  const ocupadoDemora = demoraEstado.estado === "armando" || demoraEstado.estado === "mandando";
 
-  const avisarDemora = async (compartir: boolean) => {
+  /** Baja el formulario de demora y la anota (una de las tres del 7.3). */
+  const bajarDemora = async () => {
     if (!demoraNueva) return;
-    setDemoraEstado("armando");
+    setDemoraEstado({ estado: "armando" });
     try {
-      const c18 = r.plan.c18.replace(/DOF\/\d{6}/, `DOF/${dofDeDemora(demoraNueva)}`);
+      const plan = planConDemora(r.plan, demoraNueva);
       const [{ pdfDemora }, fondo] = await Promise.all([
         import("@/lib/plan-de-vuelo-pdf"),
         fetch(fondoDla.src).then((x) => x.arrayBuffer()),
       ]);
       const firmaPng = firma ? new Uint8Array(await (await fetch(firma)).arrayBuffer()) : undefined;
       const bytes = await pdfDemora(
-        { plan: r.plan, eobt: demoraNueva.eobt, c18, nombre: (piloto.nombre || f.piloto).toUpperCase(), licencia: piloto.licencia ?? "" },
+        { plan, eobt: demoraNueva.eobt, c18: plan.c18, nombre: (piloto.nombre || f.piloto).toUpperCase(), licencia: piloto.licencia ?? "" },
         { fondoPng: new Uint8Array(fondo), firmaPng }
       );
       const nuevas = [...demoras, { ...demoraNueva, creada: new Date().toISOString() }];
       const g = await guardarDemoras(id, nuevas);
       if (!("error" in g)) setDemoras(nuevas);
-      const archivo = new File([bytes as BlobPart], `DLA-${r.plan.c7}-${r.plan.c13ad}${demoraNueva.eobt}.pdf`, { type: "application/pdf" });
-      if (compartir) await compartirArchivo(archivo, `DLA ${r.plan.c7}`);
-      else bajarArchivo(archivo);
+      bajarArchivo(new File([bytes as BlobPart], nombreDeDemora(r.plan, demoraNueva), { type: "application/pdf" }));
       setHoraDemora("");
-      setDemoraEstado("");
+      setDemoraEstado({ estado: "" });
     } catch {
-      setDemoraEstado("error");
+      setDemoraEstado({ estado: "error", texto: "No se pudo armar la demora." });
     }
+  };
+
+  /** Manda la demora por mail desde el server, a la misma oficina que el plan. */
+  const mandarDemora = async (modo: "prueba" | "aro") => {
+    if (!demoraNueva) return;
+    if (
+      modo === "aro" &&
+      oficina &&
+      !window.confirm(`¿Mandar la demora a las ${demoraNueva.eobt}Z a ${oficina.correo} (ARO/AIS ${oficina.nombre})? Te llega una copia.`)
+    )
+      return;
+    setDemoraEstado({ estado: "mandando" });
+    await esperarGuardado();
+    const res = await enviarDemora(id, modo, horaDemora);
+    if ("error" in res) {
+      setDemoraEstado({ estado: "error", texto: res.error });
+      return;
+    }
+    setEnvios((e) => [...e, { modo, tipo: "dla", a: res.a, at: new Date().toISOString() }]);
+    if (modo === "aro") {
+      setDemoras(res.demoras);
+      setHoraDemora("");
+    }
+    setDemoraEstado({
+      estado: "listo",
+      texto:
+        modo === "prueba"
+          ? `Te mandamos la demora a ${res.a}. La prueba no cuenta como una de las tres.`
+          : `Demora a las ${res.eobt}Z mandada a ${res.a}, con copia a ${res.cc.join(", ")}. Llamá para confirmar que la recibieron.`,
+    });
   };
 
   /* ------------------------------------------------------------ render ---- */
@@ -838,6 +860,38 @@ export default function EditorPlanDeVuelo({
                 ))}
               </select>
             </Campo>
+            {cercanas.length > 1 && (
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">Las más cercanas a {f.salida?.codigo}:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {cercanas.map((c) => {
+                    const h = horarioAro(c.oficina.horario, f.eobtUtc || undefined);
+                    const elegida = c.oficina.oaci === oficina?.oaci;
+                    return (
+                      <button
+                        key={c.oficina.oaci}
+                        type="button"
+                        onClick={() => cambiar({ oficina: c.oficina.oaci })}
+                        aria-pressed={elegida}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-colors ${
+                          elegida
+                            ? "border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
+                            : "border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-white/30"
+                        }`}
+                      >
+                        {h?.abierta !== undefined && h?.abierta !== null && (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${h.abierta ? "bg-emerald-500" : "bg-red-500"}`}
+                            title={h.abierta ? "Abierta a esa hora" : "Cerrada a esa hora"}
+                          />
+                        )}
+                        {c.oficina.nombre} <span className="data opacity-70">{c.propia ? "acá" : `${Math.round(c.distanciaNm)} NM`}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {oficina && (
               <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                 Horario del ARO (AIP AD 2.3):{" "}
@@ -891,7 +945,8 @@ export default function EditorPlanDeVuelo({
                 <ul className="space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                   {envios.map((e, i) => (
                     <li key={i}>
-                      {e.modo === "prueba" ? "Prueba a" : "Enviado a"} <span className="font-semibold">{e.a}</span> · {cuandoEnvio(e.at)}
+                      {e.tipo === "dla" ? "Demora: " : ""}
+                      {e.modo === "prueba" ? "prueba a" : "enviado a"} <span className="font-semibold">{e.a}</span> · {cuandoEnvio(e.at)}
                     </li>
                   ))}
                 </ul>
@@ -904,22 +959,11 @@ export default function EditorPlanDeVuelo({
                 disabled={!listo || pdf === "armando"}
                 onClick={async () => {
                   const a = await generar();
-                  if (a) await compartirArchivo(a, `FPL ${r.plan.c7}`);
-                }}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold disabled:opacity-40"
-              >
-                {pdf === "armando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} Compartir PDF
-              </button>
-              <button
-                type="button"
-                disabled={!listo || pdf === "armando"}
-                onClick={async () => {
-                  const a = await generar();
                   if (a) bajarArchivo(a);
                 }}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-zinc-200 dark:border-white/10 text-sm font-semibold text-zinc-700 dark:text-zinc-300 disabled:opacity-40"
               >
-                <Download className="w-4 h-4" /> Bajar PDF
+                {pdf === "armando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Bajar PDF
               </button>
             </div>
             {pdf === "error" && <p className="text-xs text-red-600">No se pudo armar el PDF. Probá de nuevo.</p>}
@@ -1000,24 +1044,42 @@ export default function EditorPlanDeVuelo({
                     </Campo>
                     {chequeoDemora.aviso && <p className="text-xs text-amber-700 dark:text-amber-400">{chequeoDemora.aviso}</p>}
                     <div className="flex flex-wrap gap-2">
+                      {envioAroActivo && (
+                        <button
+                          type="button"
+                          disabled={!demoraNueva || !listo || !oficina || ocupadoDemora}
+                          onClick={() => mandarDemora("aro")}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40"
+                        >
+                          {demoraEstado.estado === "mandando" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />} Mandar a{" "}
+                          {oficina ? oficina.correo : "la oficina"}
+                        </button>
+                      )}
                       <button
                         type="button"
-                        disabled={!demoraNueva || demoraEstado === "armando"}
-                        onClick={() => avisarDemora(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40"
-                      >
-                        {demoraEstado === "armando" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />} Compartir demora
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!demoraNueva || demoraEstado === "armando"}
-                        onClick={() => avisarDemora(false)}
+                        disabled={!demoraNueva || !listo || ocupadoDemora}
+                        onClick={() => mandarDemora("prueba")}
                         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-xs font-semibold text-zinc-700 dark:text-zinc-300 disabled:opacity-40"
                       >
-                        <Download className="w-3.5 h-3.5" /> Bajar demora
+                        <Mail className="w-3.5 h-3.5" /> Mandarme una prueba
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!demoraNueva || ocupadoDemora}
+                        onClick={bajarDemora}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-xs font-semibold text-zinc-700 dark:text-zinc-300 disabled:opacity-40"
+                      >
+                        {demoraEstado.estado === "armando" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Bajar demora
                       </button>
                     </div>
-                    {demoraEstado === "error" && <p className="text-xs text-red-600">No se pudo armar la demora.</p>}
+                    {demoraNueva && !listo && (
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Para mandarla por mail, el plan tiene que estar completo y firmado.</p>
+                    )}
+                    {demoraEstado.texto && (
+                      <p className={`text-xs ${demoraEstado.estado === "error" ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}>
+                        {demoraEstado.texto}
+                      </p>
+                    )}
                   </>
                 )}
               </>

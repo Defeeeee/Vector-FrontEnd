@@ -85,6 +85,33 @@ export function oficinaParaSalida(
 }
 
 /**
+ * Las `n` oficinas más cercanas a la salida, de la más cercana a la más lejana: para
+ * sugerir a cuál mandar si la del aeródromo está cerrada a esa hora (AIC A 19/2026). La
+ * del propio aeródromo, si tiene, va primera. Sin coordenadas, sólo la propia.
+ */
+export function oficinasCercanas(
+  salida: { codigo: string; lat?: number; lon?: number },
+  oficinas: OficinaUbicada[],
+  n = 3
+): { oficina: OficinaUbicada; propia: boolean; distanciaNm: number }[] {
+  const codigo = salida.codigo.trim().toUpperCase();
+  const { lat, lon } = salida;
+  if (lat === undefined || lon === undefined) {
+    const propia = oficinas.find((o) => o.oaci === codigo);
+    return propia ? [{ oficina: propia, propia: true, distanciaNm: 0 }] : [];
+  }
+  return oficinas
+    .filter((o) => o.oaci === codigo || (o.lat !== undefined && o.lon !== undefined))
+    .map((o) => ({
+      oficina: o,
+      propia: o.oaci === codigo,
+      distanciaNm: o.oaci === codigo || o.lat === undefined || o.lon === undefined ? 0 : distanciaNmPrecisa(lat, lon, o.lat, o.lon),
+    }))
+    .sort((a, b) => Number(b.propia) - Number(a.propia) || a.distanciaNm - b.distanciaNm)
+    .slice(0, n);
+}
+
+/**
  * El horario de la oficina ARO (AIP AD 2.3, `aip-horarios-aro.tsv`) y si está abierta a la
  * hora de salida.
  *

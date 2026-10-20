@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, revisarDemora, type Demora } from "./demora-plan";
+import { demoraDesdeHoraUtc, dofDeDemora, eobtVigente, nombreDeDemora, planConDemora, revisarDemora, type Demora } from "./demora-plan";
+import type { PlanOaci } from "./plan-de-vuelo";
 import { formularioVacio } from "./formulario-plan";
 
 // Sale el 20/10 a las 1830 UTC.
@@ -46,5 +47,12 @@ describe("la demora (AIP ENR 1.10, punto 7)", () => {
 
   it("la fecha de la demora como DOF/", () => {
     expect(dofDeDemora({ dof: "2026-10-21", eobt: "0330" })).toBe("261021");
+  });
+
+  it("el plan con la demora: la nueva hora en la 13 y la nueva fecha en la DOF/", () => {
+    const plan = { c7: "LVS114", c13ad: "SADF", c13hora: "2300", c16ad: "SADF", dof: "261020", c18: "DOF/261020 RMK/ESCUELA" } as PlanOaci;
+    const d = { dof: "2026-10-21", eobt: "0030" };
+    expect(planConDemora(plan, d)).toMatchObject({ c13hora: "0030", dof: "261021", c18: "DOF/261021 RMK/ESCUELA" });
+    expect(nombreDeDemora(plan, d)).toBe("DLA-LVS114-SADF0030SADF_211026.pdf");
   });
 });

@@ -78,6 +78,29 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.25.0",
+    fecha: "2026-10-20",
+    titulo: "El plan de vuelo, por mail desde Vector",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Mandá el plan a la oficina ARO/AIS",
+        texto:
+          "Con el plan completo y firmado, Vector lo manda en PDF a la oficina, con la matrícula en el asunto y copia a vos; las respuestas te llegan a tu mail. Antes podés mandarte una prueba. Después, igual llamá para confirmar.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+      {
+        icono: "reloj",
+        titulo: "La demora, también por mail",
+        texto:
+          "Escribí la nueva hora en UTC y la demora (DLA) sale firmada a la misma oficina. Para elegir la oficina te sugerimos las tres más cercanas a tu salida, con la distancia y si atienden a esa hora.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver Plan de vuelo",
+      },
+    ],
+  },
+  {
     version: "2.24.2",
     fecha: "2026-10-19",
     titulo: "La hora del plan, en UTC",

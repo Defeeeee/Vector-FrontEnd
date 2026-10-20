@@ -212,7 +212,7 @@ antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tam
 cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
 importa es el del backend (`request_max_body_size`, 30 MB).
 
-## Estado y pendientes (al 2026-10-19)
+## Estado y pendientes (al 2026-10-20)
 
 - **Alumno piloto** (Federico, 2026-09-24; `lib/licencias.ts`):
   - no lleva libro de vuelo, así que no ve el PDF, el importador, "cerrar hoja", los
@@ -267,7 +267,12 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     2026-10-20 (Federico, después de recibir la prueba) con `PLAN_DE_VUELO_ENVIO_ARO=1` en
     el `.env` del VPS. Sale de `plandevuelo@vector.fdiaznem.com.ar` como "<nombre del
     piloto> vía Vector". El mail del piloto sale del token, después de que el backend lo
-    aceptó. Sigue estando el camino de bajar el PDF y mandarlo a mano.
+    aceptó. Sigue estando el camino de bajar el PDF y mandarlo a mano; "Compartir" se sacó
+    (Federico, 2026-10-20).
+  - **La demora (DLA) también sale por mail** (2.25.0, `enviarDemora`): el server recalcula la
+    hora con las demoras guardadas. Sólo el envío a la oficina anota la demora; la prueba no
+    gasta una de las tres. El selector de oficina sugiere las tres más cercanas a la salida
+    (`oficinasCercanas`).
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
   - **Falta:** CHG y CNL, y que el editor ande sin señal (el planificador sí anda).

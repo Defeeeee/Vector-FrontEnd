@@ -347,7 +347,9 @@ const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
  */
 export function cuerpoDelMail(
   p: Pick<PlanOaci, "c7" | "c9tipo" | "c13ad" | "c13hora" | "c16ad" | "dof"> & { c19: { piloto: string } },
-  nombres: { salida: string; destino: string }
+  nombres: { salida: string; destino: string },
+  /** Un aviso de demora: `p` ya trae la nueva EOBT y fecha, y acá va la hora de antes. */
+  demora?: { eobtAnterior: string }
 ): string {
   const fecha = /^\d{6}$/.test(p.dof)
     ? `${Number(p.dof.slice(4, 6))} de ${MESES[Number(p.dof.slice(2, 4)) - 1]} de 20${p.dof.slice(0, 2)}`
@@ -356,12 +358,12 @@ export function cuerpoDelMail(
   return [
     "Estimados,",
     "",
-    `Adjunto el plan de vuelo de la aeronave ${p.c7}${p.c9tipo ? ` (${p.c9tipo})` : ""}.`,
+    `Adjunto ${demora ? "el aviso de demora (DLA) del plan de vuelo" : "el plan de vuelo"} de la aeronave ${p.c7}${p.c9tipo ? ` (${p.c9tipo})` : ""}.`,
     "",
     `  Desde : ${lugar(nombres.salida, p.c13ad)}`,
     `  Hasta : ${lugar(nombres.destino, p.c16ad)}`,
     `  Fecha : ${fecha}`,
-    `  EOBT  : ${p.c13hora} UTC`,
+    demora ? `  Nueva EOBT : ${p.c13hora} UTC (antes ${demora.eobtAnterior} UTC)` : `  EOBT  : ${p.c13hora} UTC`,
     "",
     "Cordiales saludos,",
     "",

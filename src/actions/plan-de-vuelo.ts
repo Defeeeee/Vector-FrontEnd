@@ -13,7 +13,7 @@ import { oficinaParaSalida } from "@/lib/oficinas-aro";
 import { enviarMail } from "@/lib/mailer";
 import fs from "node:fs";
 import path from "node:path";
-import type { Demora } from "@/lib/demora-plan";
+import { demoraDesdeHoraUtc, eobtVigente, nombreDeDemora, planConDemora, revisarDemora, type Demora } from "@/lib/demora-plan";
 
 /**
  * Los planes de vuelo guardados (`/planes-de-vuelo` del backend, migración 024).
@@ -165,51 +165,126 @@ function envioAroActivo(): boolean {
 }
 
 /**
+ * Lo que comparten el plan y la demora antes de mandarse: el plan guardado, el mail del
+ * piloto, la firma y la oficina. Todo se rearma en el server con lo guardado, no con lo que
+ * mande el navegador: el mail sólo puede ir al piloto o a una oficina de la AIC.
+ */
+const fallo = (error: string) => ({ ok: false as const, error });
+
+async function prepararEnvio(id: string, modo: ModoEnvio) {
+  if (modo === "aro" && !envioAroActivo()) return fallo("El envío a la oficina todavía no está activado.");
+
+  // Primero el backend: si lee el plan, el token es auténtico y su mail también.
+  const guardado = await leerPlan(id);
+  if (!guardado) return fallo("No se encontró el plan.");
+  if ((guardado.envios?.length ?? 0) >= 20) return fallo("Este plan ya se mandó 20 veces.");
+  const email = await emailDeLaSesion();
+  if (!email) return fallo("No pudimos leer el mail de tu cuenta. Volvé a entrar y probá de nuevo.");
+
+  const f = leerFormulario(guardado.formulario);
+  const r = revisar(f, new Date().toISOString());
+  if (!r.completo) return fallo("Al plan le faltan casillas: completalo antes de mandarlo.");
+  const [firma, piloto] = await Promise.all([firmaGuardada(), pilotoParaPlan()]);
+  if (!firma) return fallo("Falta tu firma: la AIC pide el plan firmado.");
+
+  const oficinas = oficinasAro();
+  const oficina =
+    oficinas.find((o) => o.oaci === f.oficina) ?? (f.salida ? oficinaParaSalida(f.salida, oficinas)?.oficina : null) ?? null;
+  if (modo === "aro" && !oficina) return fallo("Elegí la oficina ARO/AIS.");
+
+  return {
+    ok: true as const,
+    guardado,
+    email,
+    f,
+    r,
+    piloto,
+    firmaPng: new Uint8Array(Buffer.from(firma.split(",")[1] ?? "", "base64")),
+    oficina: oficina ? { correo: oficina.correo, nombre: oficina.nombre, oaci: oficina.oaci } : null,
+    nombres: { salida: f.salida?.nombre ?? "", destino: f.destino?.nombre ?? "" },
+  };
+}
+
+/** Un fondo de formulario, leído del disco del server (los mismos que usa el navegador). */
+function fondo(archivo: string): Uint8Array {
+  return new Uint8Array(fs.readFileSync(path.join(process.cwd(), "src", "lib", archivo)));
+}
+
+/**
  * Manda el plan por mail con el PDF firmado: de prueba al piloto, o a la oficina ARO/AIS
  * con copia al piloto (`lib/plan-de-vuelo-mail.ts`).
  *
  * **El envío a la oficina se prende con `PLAN_DE_VUELO_ENVIO_ARO=1`**: Federico lo aprobó
  * el 2026-10-20, después de recibir la prueba. Sin la variable sólo sale la prueba.
- *
- * Todo se rearma en el server con lo guardado —el plan, la firma, la oficina—, no con lo
- * que mande el navegador: el mail sólo puede ir al piloto o a una oficina de la AIC.
  */
 export async function enviarPlan(id: string, modo: ModoEnvio) {
   try {
-    if (modo === "aro" && !envioAroActivo()) return { error: "El envío a la oficina todavía no está activado." };
-
-    // Primero el backend: si lee el plan, el token es auténtico y su mail también.
-    const guardado = await leerPlan(id);
-    if (!guardado) return { error: "No se encontró el plan." };
-    if ((guardado.envios?.length ?? 0) >= 20) return { error: "Este plan ya se mandó 20 veces." };
-    const email = await emailDeLaSesion();
-    if (!email) return { error: "No pudimos leer el mail de tu cuenta. Volvé a entrar y probá de nuevo." };
-
-    const f = leerFormulario(guardado.formulario);
-    const r = revisar(f, new Date().toISOString());
-    if (!r.completo) return { error: "Al plan le faltan casillas: completalo antes de mandarlo." };
-    if (modo === "aro" && r.avisos.some((a) => a.campo === "fechaHora")) {
+    const p = await prepararEnvio(id, modo);
+    if (!p.ok) return { error: p.error };
+    if (modo === "aro" && p.r.avisos.some((a) => a.campo === "fechaHora")) {
       return { error: "La salida ya pasó: revisá la fecha y la hora antes de mandarlo a la oficina." };
     }
-    const [firma, piloto] = await Promise.all([firmaGuardada(), pilotoParaPlan()]);
-    if (!firma) return { error: "Falta tu firma: la AIC pide el plan firmado." };
-
-    const oficinas = oficinasAro();
-    const oficina =
-      oficinas.find((o) => o.oaci === f.oficina) ?? (f.salida ? oficinaParaSalida(f.salida, oficinas)?.oficina : null) ?? null;
-    if (modo === "aro" && !oficina) return { error: "Elegí la oficina ARO/AIS." };
 
     const { pdfPlanDeVuelo } = await import("@/lib/plan-de-vuelo-pdf");
-    const fondo = fs.readFileSync(path.join(process.cwd(), "src", "lib", "plan-de-vuelo-eana.jpg"));
-    const firmaPng = Buffer.from(firma.split(",")[1] ?? "", "base64");
-    const pdf = await pdfPlanDeVuelo(r.plan, { fondoJpg: new Uint8Array(fondo), firmaPng: new Uint8Array(firmaPng) });
+    const pdf = await pdfPlanDeVuelo(p.r.plan, { fondoJpg: fondo("plan-de-vuelo-eana.jpg"), firmaPng: p.firmaPng });
+    const mail = armarMailPlan({ plan: p.r.plan, nombres: p.nombres, piloto: p.email, oficina: p.oficina, modo });
+    const enviado = await enviarMail({
+      para: mail.para,
+      cc: mail.cc,
+      responderA: mail.responderA,
+      asunto: mail.asunto,
+      texto: mail.texto,
+      html: mail.html,
+      adjuntos: [{ nombre: nombreDelArchivo(p.r.plan), base64: Buffer.from(pdf).toString("base64") }],
+      nombreRemitente: p.piloto.nombre ? `${p.piloto.nombre} vía Vector` : undefined,
+      casilla: "plandevuelo",
+    });
+    if (!enviado.enviado) return { error: `No se pudo mandar el mail: ${enviado.motivo ?? "error desconocido"}` };
 
+    // Si no se puede anotar, el mail igual salió: se dice, pero no es un error.
+    const anotado = await apiFetch(`/planes-de-vuelo/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ envio: { modo, tipo: "fpl", a: mail.para, resend_id: enviado.id ?? null } }),
+    });
+    revalidatePath(LISTA);
+    return { ok: true as const, a: mail.para, cc: mail.cc, anotado: anotado.ok };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { error: "Error de conexión con el servidor." };
+  }
+}
+
+/**
+ * Manda el aviso de demora (DLA, AIP ENR 1.10, punto 7) con su formulario firmado, a la
+ * misma oficina que el plan. La nueva hora se recalcula acá con las demoras guardadas.
+ *
+ * **Sólo el envío a la oficina anota la demora** (una de las tres del 7.3): la prueba no
+ * gasta ninguna. Y se anota después de que el mail salió, en el mismo PATCH que el envío.
+ */
+export async function enviarDemora(id: string, modo: ModoEnvio, hora: string) {
+  try {
+    const p = await prepararEnvio(id, modo);
+    if (!p.ok) return { error: p.error };
+    const demoras = p.guardado.demoras ?? [];
+    const chequeo = revisarDemora(p.f, demoras, new Date().toISOString());
+    if (chequeo.error) return { error: chequeo.error };
+    const nueva = demoraDesdeHoraUtc(p.f, demoras, hora);
+    const anterior = eobtVigente(p.f, demoras);
+    if (!nueva || !anterior) return { error: "Escribí la nueva hora de salida en UTC, como 1930." };
+
+    const plan = planConDemora(p.r.plan, nueva);
+    const { pdfDemora } = await import("@/lib/plan-de-vuelo-pdf");
+    const pdf = await pdfDemora(
+      { plan, eobt: nueva.eobt, c18: plan.c18, nombre: (p.piloto.nombre || p.f.piloto).toUpperCase(), licencia: p.piloto.licencia ?? "" },
+      { fondoPng: fondo("plan-de-vuelo-dla.png"), firmaPng: p.firmaPng }
+    );
     const mail = armarMailPlan({
-      plan: r.plan,
-      nombres: { salida: f.salida?.nombre ?? "", destino: f.destino?.nombre ?? "" },
-      piloto: email,
-      oficina: oficina ? { correo: oficina.correo, nombre: oficina.nombre, oaci: oficina.oaci } : null,
+      plan,
+      nombres: p.nombres,
+      piloto: p.email,
+      oficina: p.oficina,
       modo,
+      demora: { eobtAnterior: anterior.eobt },
     });
     const enviado = await enviarMail({
       para: mail.para,
@@ -218,19 +293,22 @@ export async function enviarPlan(id: string, modo: ModoEnvio) {
       asunto: mail.asunto,
       texto: mail.texto,
       html: mail.html,
-      adjuntos: [{ nombre: nombreDelArchivo(r.plan), base64: Buffer.from(pdf).toString("base64") }],
-      nombreRemitente: piloto.nombre ? `${piloto.nombre} vía Vector` : undefined,
+      adjuntos: [{ nombre: nombreDeDemora(p.r.plan, nueva), base64: Buffer.from(pdf).toString("base64") }],
+      nombreRemitente: p.piloto.nombre ? `${p.piloto.nombre} vía Vector` : undefined,
       casilla: "plandevuelo",
     });
     if (!enviado.enviado) return { error: `No se pudo mandar el mail: ${enviado.motivo ?? "error desconocido"}` };
 
-    // Si no se puede anotar, el mail igual salió: se dice, pero no es un error.
+    const nuevas = modo === "aro" ? [...demoras, { ...nueva, creada: new Date().toISOString() }] : demoras;
     const anotado = await apiFetch(`/planes-de-vuelo/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ envio: { modo, a: mail.para, resend_id: enviado.id ?? null } }),
+      body: JSON.stringify({
+        ...(modo === "aro" ? { demoras: nuevas } : {}),
+        envio: { modo, tipo: "dla", a: mail.para, resend_id: enviado.id ?? null },
+      }),
     });
     revalidatePath(LISTA);
-    return { ok: true as const, a: mail.para, cc: mail.cc, anotado: anotado.ok };
+    return { ok: true as const, a: mail.para, cc: mail.cc, eobt: nueva.eobt, demoras: nuevas, anotado: anotado.ok };
   } catch (e) {
     if (esErrorDeRedirect(e)) throw e;
     return { error: "Error de conexión con el servidor." };

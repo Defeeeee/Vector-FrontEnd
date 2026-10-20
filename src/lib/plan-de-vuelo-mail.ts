@@ -28,6 +28,11 @@ export interface DatosMailPlan {
   piloto: string;
   oficina: { correo: string; nombre: string; oaci: string } | null;
   modo: ModoEnvio;
+  /**
+   * Un aviso de demora (DLA, AIP ENR 1.10, 7.2): `plan` ya viene con la nueva EOBT y fecha
+   * (`planConDemora`), y acá va la hora de antes. El asunto lleva `DLA` adelante.
+   */
+  demora?: { eobtAnterior: string };
 }
 
 export interface MailPlan {
@@ -42,7 +47,7 @@ export interface MailPlan {
 const escapar = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export function armarMailPlan(d: DatosMailPlan): MailPlan {
-  const asuntoReal = asuntoDelMail(d.plan);
+  const asuntoReal = `${d.demora ? "DLA " : ""}${asuntoDelMail(d.plan)}`;
   const pie = [
     "—",
     "Para cualquier consulta o respuesta, por favor escriban directamente al",
@@ -50,7 +55,7 @@ export function armarMailPlan(d: DatosMailPlan): MailPlan {
     "para incluir al piloto en la respuesta.",
     "Este mensaje fue generado automáticamente por Vector.",
   ];
-  const cuerpo = cuerpoDelMail(d.plan, d.nombres);
+  const cuerpo = cuerpoDelMail(d.plan, d.nombres, d.demora);
   const aviso =
     d.modo === "prueba"
       ? [
