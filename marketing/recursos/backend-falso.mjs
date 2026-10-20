@@ -66,7 +66,7 @@ function planesDeVuelo(req, ruta, json) {
   }
   if (ruta === "/api/planes-de-vuelo") {
     if (req.method === "POST") {
-      const p = resumenPlan({ id: crypto.randomUUID(), aircraft_id: json.aircraft_id ?? null, completo: !!json.completo, formulario: json.formulario, demoras: [], descargado_at: null, created_at: ahora, updated_at: ahora });
+      const p = resumenPlan({ id: crypto.randomUUID(), aircraft_id: json.aircraft_id ?? null, completo: !!json.completo, formulario: json.formulario, demoras: [], envios: [], enviado_at: null, descargado_at: null, created_at: ahora, updated_at: ahora });
       planes.set(p.id, p);
       return p;
     }
@@ -77,7 +77,7 @@ function planesDeVuelo(req, ruta, json) {
   if (!p) return undefined;
   if (req.method === "DELETE") { planes.delete(id); return {}; }
   if (req.method === "PATCH") {
-    const n = resumenPlan({ ...p, ...("formulario" in json ? { formulario: json.formulario } : {}), ...("completo" in json ? { completo: json.completo } : {}), ...("demoras" in json ? { demoras: json.demoras } : {}), ...(json.descargado ? { descargado_at: ahora } : {}), updated_at: ahora });
+    const n = resumenPlan({ ...p, ...("formulario" in json ? { formulario: json.formulario } : {}), ...("completo" in json ? { completo: json.completo } : {}), ...("demoras" in json ? { demoras: json.demoras } : {}), ...(json.descargado ? { descargado_at: ahora } : {}), ...(json.envio ? { envios: [...(p.envios ?? []), { ...json.envio, at: ahora }], ...(json.envio.modo === "aro" ? { enviado_at: ahora } : {}) } : {}), updated_at: ahora });
     planes.set(id, n);
     return n;
   }

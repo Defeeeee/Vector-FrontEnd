@@ -33,6 +33,8 @@ export default async function EditarPlanPage({ params }: { params: Promise<{ id:
       firmaInicial={firma}
       oficinas={oficinasAro()}
       ahoraIso={new Date().toISOString()}
+      enviosIniciales={plan.envios ?? []}
+      envioAroActivo={process.env.PLAN_DE_VUELO_ENVIO_ARO === "1"}
     />
   );
 }

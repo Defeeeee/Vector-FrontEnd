@@ -68,6 +68,17 @@ export interface Mail {
   html: string;
   /** Cabeceras extra, como `List-Unsubscribe` en el resumen del mes. */
   cabeceras?: Record<string, string>;
+  /** Copias: el plan de vuelo va a la oficina con copia al piloto. */
+  cc?: string[];
+  /** A quién van las respuestas: al piloto, no a Vector. */
+  responderA?: string;
+  /** Archivos adjuntos, en base64: el PDF del plan. */
+  adjuntos?: { nombre: string; base64: string }[];
+  /**
+   * El nombre que se ve como remitente, con la misma casilla de `RESEND_FROM`: el plan de
+   * vuelo sale como "Lucía Ferrari vía Vector", para que la oficina sepa de quién es.
+   */
+  nombreRemitente?: string;
 }
 
 export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
@@ -87,7 +98,9 @@ export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
     return { enviado: false, motivo: `Destinatario inválido: ${mail.para}` };
   }
 
-  const { from, aviso } = remitente();
+  const { from: configurado, aviso } = remitente();
+  const casilla = /<([^>]+)>/.exec(configurado)?.[1] ?? configurado;
+  const from = mail.nombreRemitente ? `${mail.nombreRemitente.replace(/[<>"]/g, "")} <${casilla}>` : configurado;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -100,6 +113,9 @@ export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
         text: mail.texto,
         html: mail.html,
         ...(mail.cabeceras ? { headers: mail.cabeceras } : {}),
+        ...(mail.cc?.length ? { cc: mail.cc } : {}),
+        ...(mail.responderA ? { reply_to: mail.responderA } : {}),
+        ...(mail.adjuntos?.length ? { attachments: mail.adjuntos.map((a) => ({ filename: a.nombre, content: a.base64 })) } : {}),
       }),
     });
 
