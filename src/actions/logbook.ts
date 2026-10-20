@@ -2,7 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import { Logbook } from "@/types";
+import type { AperturaPPA, Logbook } from "@/types";
 
 /** The carried-forward hours, as the create/update endpoints expect them. */
 export interface OpeningBalanceInput {
@@ -40,6 +40,8 @@ export async function createLogbook(input: {
   description?: string;
   opening?: OpeningBalanceInput;
   renglones_por_hoja?: number;
+  /** Las horas de antes de un alumno (migración 028). */
+  apertura_ppa?: AperturaPPA;
 }) {
   const response = await apiFetch("/logbooks", {
     method: "POST",
@@ -48,6 +50,7 @@ export async function createLogbook(input: {
       description: input.description || null,
       opening: input.opening ?? null,
       renglones_por_hoja: input.renglones_por_hoja ?? null,
+      ...(input.apertura_ppa ? { apertura_ppa: input.apertura_ppa } : {}),
     }),
   });
 
@@ -62,7 +65,7 @@ export async function createLogbook(input: {
 
 export async function updateLogbook(
   id: string,
-  input: { name?: string; description?: string; opening?: OpeningBalanceInput; renglones_por_hoja?: number }
+  input: { name?: string; description?: string; opening?: OpeningBalanceInput; renglones_por_hoja?: number; apertura_ppa?: AperturaPPA }
 ) {
   const response = await apiFetch(`/logbooks/${id}`, {
     method: "PATCH",

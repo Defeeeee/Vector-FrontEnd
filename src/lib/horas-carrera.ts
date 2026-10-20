@@ -25,9 +25,11 @@ export interface CifrasDeCarrera {
   vuelos: number;
 }
 
-export function cifrasDeCarrera(vuelos: Flight[], libros: Logbook[], todayIso: string): CifrasDeCarrera {
+export function cifrasDeCarrera(vuelos: Flight[], libros: Logbook[], todayIso: string, opciones: { alumno?: boolean } = {}): CifrasDeCarrera {
   const base = headlineStats(vuelos);
-  const apertura = openingTotals(libros);
+  // `alumno` se pasa siempre desde el inicio: el que ya rindió la PPA deja afuera sus horas
+  // de alumno, como sus vuelos (`vuelosDesdeLaPpa`).
+  const apertura = openingTotals(libros, opciones);
   const hace30 = new Date(Date.parse(`${todayIso}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
   return {
     total: base.totalHours + apertura.totalHours,

@@ -108,7 +108,9 @@ Actividad.
    código (`docs/normativa/`). El plan 08 se escribió de memoria y tenía seis errores.
 7. **La versión vive en `package.json`** y un test obliga a que `CHANGELOG[0]` de
    `src/lib/changelog.ts` sea la misma. Novedades = sólo lo que el piloto ve.
-   `CHANGELOG.md` se genera con `npm run build:changelog`.
+   `CHANGELOG.md` se genera con `npm run build:changelog`. La excepción: un parche que no
+   se anuncia (Federico decide) va en `VERSIONES_SIN_NOVEDADES`, con su motivo. Sube sólo
+   el último dígito y la tarjeta sigue mostrando `CHANGELOG[0]`.
 8. **Después de escribir, revalidar cada pantalla que muestra ese dato** (`revalidatePath`).
    `apiFetch` cachea los GET 20 s: una pantalla que falte en la lista muestra el dato
    viejo. Y los `catch` de las acciones dejan pasar el `redirect` de Next con
@@ -228,7 +230,14 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     decisión de Federico sobre la práctica; la RAAC no la dice así (ver `licencias.ts`).
 - **El alta es obligatoria y retomable** (Federico, 2026-09-24): tapa el dashboard hasta
   terminarla y vuelve al primer paso sin hacer (`GET /onboarding/estado`, `pasoDelAlta`):
-  licencia y CMA, avión, @, tus vuelos.
+  licencia y CMA, avión, @, tus horas.
+  - **El último paso arranca con los totales** (2026-10-20, 2.26.1 sin anuncio): de 16 cuentas
+    una sola había cargado vuelos.
+    - El piloto copia la fila de totales de su libro de papel (`OpeningBalanceFields`, con
+      los casilleros del papel, en `opening_*`).
+    - El alumno carga sus horas con el desglose de la PPA (`lib/apertura-alumno.ts`,
+    `logbooks.apertura_ppa`, migración 028), que el tracker reparte requisito por requisito
+    y que dejan de contar al rendir la PPA. Se corrigen en el Hangar ("Tus horas de antes").
   Sólo el importador del PDF queda sin tapar. La cookie `vector_alta` con el id de la cuenta
   evita preguntar en cada pantalla. El recordatorio del día siguiente
   (`/api/cron/primer-vuelo`) corre desde el crontab del VPS a las 10:00 ART. Mandar el PDF

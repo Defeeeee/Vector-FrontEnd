@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { CHANGELOG, NOVEDADES_EN_TARJETA, VERSION_ACTUAL, claveDescarte } from "./changelog";
+import { CHANGELOG, NOVEDADES_EN_TARJETA, VERSIONES_SIN_NOVEDADES, VERSION_ACTUAL, claveDescarte, esParcheDe } from "./changelog";
 
 /**
  * Estos tests existen por un motivo concreto: **la tarjeta de novedades ya mintió una
@@ -25,6 +25,24 @@ describe("la versión", () => {
       antes.
     */
     expect(VERSION_ACTUAL).toBe(paquete.version);
+  });
+
+  it("una versión sin novedades es un parche de la última publicada, y no se repite", () => {
+    /*
+      La salida para no anunciar un cambio (Federico, 2026-10-20) sin abrir la puerta a
+      subir la versión y olvidarse las novedades: sólo vale el último dígito, sobre la
+      última versión publicada, y con el motivo escrito.
+    */
+    const publicadas = new Set(CHANGELOG.map((v) => v.version));
+    for (const v of VERSIONES_SIN_NOVEDADES) {
+      expect(v.version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(publicadas.has(v.version)).toBe(false);
+      expect(v.motivo.length).toBeGreaterThan(10);
+    }
+    if (VERSION_ACTUAL !== CHANGELOG[0].version) expect(esParcheDe(VERSION_ACTUAL, CHANGELOG[0].version)).toBe(true);
+    expect(esParcheDe("2.26.1", "2.26.0")).toBe(true);
+    expect(esParcheDe("2.27.0", "2.26.0")).toBe(false);
+    expect(esParcheDe("2.26.0", "2.26.0")).toBe(false);
   });
 
   it("va de la más nueva a la más vieja", () => {

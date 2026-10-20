@@ -196,6 +196,7 @@ export default async function Dashboard() {
         flights={vuelosDesdeLaPpa(flights as Flight[], alumno ? null : profile?.fecha_ppa)}
         logbooks={logbooks as Logbook[]}
         todayIso={todayIso}
+        alumno={alumno}
       />
 
       {/* 1. ¿Puedo volar hoy? — las cuatro condiciones de RAAC 61.060(a)(1), y
@@ -247,6 +248,7 @@ export default async function Dashboard() {
           aeronaves: disponible("aircraft") ? aircraft.length : null,
           vuelos: disponible("flights") ? flights.length : null,
         })}
+        alumno={alumno}
       />
 
       {/* Las novedades hablan del libro, la PCA y demás: al alumno no le aplican. */}
@@ -303,8 +305,8 @@ export default async function Dashboard() {
  * Una cuenta nueva no tiene nada que contar todavía, y de eso ya se ocupa
  * `PrimerosPasos`: un cero grande acá sería ruido.
  */
-function HorasDeCarrera({ flights, logbooks, todayIso }: { flights: Flight[]; logbooks: Logbook[]; todayIso: string }) {
-  const c = cifrasDeCarrera(flights, logbooks, todayIso);
+function HorasDeCarrera({ flights, logbooks, todayIso, alumno }: { flights: Flight[]; logbooks: Logbook[]; todayIso: string; alumno: boolean }) {
+  const c = cifrasDeCarrera(flights, logbooks, todayIso, { alumno });
   if (c.total === 0) return null;
   const h = (n: number) => n.toFixed(1);
   return (

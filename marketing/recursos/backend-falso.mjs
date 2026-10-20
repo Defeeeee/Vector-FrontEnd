@@ -4,7 +4,10 @@ import { readFileSync, existsSync } from "node:fs";
 const DIR = new URL(".", import.meta.url).pathname;
 const hoy = new Date("2026-10-06T12:00:00Z");
 const dia = (n) => new Date(hoy.getTime() - n * 86400000).toISOString().slice(0, 10);
-const perfil = { id: "u1", first_name: "Lucía", last_name: "Ferrari", license_type: "PPA", tracking_mode: "packs", whatsapp_phone: "5491100000000", licencia_numero: "12345678", fecha_ppa: null };
+// `ALTA=4` arranca con el alta en el paso de las horas, sin vuelos ni libro; `LICENCIA` cambia
+// la licencia (por ejemplo, "ALUMNO" para el alumno piloto).
+const SIN_VUELOS = process.env.ALTA === "4";
+const perfil = { id: "u1", first_name: "Lucía", last_name: "Ferrari", license_type: process.env.LICENCIA || "PPA", tracking_mode: "packs", whatsapp_phone: "5491100000000", licencia_numero: "12345678", fecha_ppa: null };
 const aviones = [
   { id: "a1", user_id: "u1", registration: "LV-ABC", icao: "C152", type: "Cessna 152", type_acft: "MONT-T", is_simulator: false,
     cruise_tas_kt: 95, fuel_burn_lph: 24, fuel_capacity_l: 92,
@@ -29,7 +32,7 @@ for (let d = 420; d >= 2; d -= 5 + (n % 3)) {
   vuelos.push(f);
 }
 const dashboard = {
-  profile: perfil, aircraft: aviones, flights: vuelos, session: { active: false },
+  profile: perfil, aircraft: aviones, flights: SIN_VUELOS ? [] : vuelos, session: { active: false },
   packs: [{ id: "p1", user_id: "u1", name: "Pack 10 h · Aeroclub", total_hours: 10, remaining_hours: 6.5, created_at: dia(30), start_date: dia(30), is_active: true, aircraft_ids: ["a1"] }],
   documents: [
     { id: "d1", user_id: "u1", kind: "cma", blocking: "bloquea", name: "CMA Clase 2", expiry_date: "2027-05-10" },
@@ -39,13 +42,15 @@ const dashboard = {
   transactions: [], balance: 0, unavailable: [],
   audit_summary: { critical: 0, warning: 0, suppressed: 0, open_total: 0 },
 };
+// Los libros, en memoria: el alta crea "Mi libro" con las horas de antes.
+const libros = [];
 const rutasFijas = {
   "/api/profiles": [perfil],
   "/api/dashboard": dashboard,
-  "/api/logbooks": [],
+  "/api/logbooks": libros,
   "/api/planned-flights": [],
   "/api/aircraft": aviones,
-  "/api/onboarding/estado": { licencia: true, cma: true, aeronave: true, libro: true, vuelos: true, whatsapp: true, arroba: true },
+  "/api/onboarding/estado": () => ({ licencia: true, cma: true, aeronave: true, libro: libros.length > 0, vuelos: !SIN_VUELOS, whatsapp: true, arroba: true }),
   "/api/audit/summary": { critical: 0, warning: 0, suppressed: 0, open_total: 0 },
   "/api/social/resumen": { handle: "lucia.vuela", solicitudes: 0, actividad_nueva: 0, avatar_url: null },
 };
@@ -102,6 +107,20 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     res.writeHead(r === undefined ? 404 : 200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(r ?? { detail: "No existe" }));
   }
+  if (ruta.startsWith("/api/logbooks") && (req.method === "POST" || req.method === "PATCH")) {
+    const vacio = { opening_landings: 0, opening_pic_day_loc: 0, opening_pic_day_tra: 0, opening_pic_night_loc: 0, opening_pic_night_tra: 0, opening_sic_day_loc: 0, opening_sic_day_tra: 0, opening_sic_night_loc: 0, opening_sic_night_tra: 0, opening_imc_pil: 0, opening_imc_cop: 0, opening_capota: 0 };
+    const deApertura = Object.fromEntries(Object.entries(json.opening ?? {}).map(([k, v]) => [`opening_${k}`, v ?? 0]));
+    let l;
+    if (req.method === "POST") {
+      l = { id: `l${libros.length + 1}`, user_id: "u1", name: json.name, is_default: libros.length === 0, created_at: new Date().toISOString(), ...vacio, ...deApertura, apertura_ppa: json.apertura_ppa ?? null, renglones_por_hoja: 15 };
+      libros.push(l);
+    } else {
+      l = libros.find((x) => x.id === ruta.split("/").pop());
+      if (l) Object.assign(l, deApertura, "apertura_ppa" in json ? { apertura_ppa: json.apertura_ppa } : {}, json.name ? { name: json.name } : {});
+    }
+    res.writeHead(l ? 200 : 404, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(l ?? {}));
+  }
   if (req.method === "POST" && ruta === "/api/flights") {
     const f = { id: `f${++n}`, user_id: "u1", ...json };
     vuelos.push(f);
@@ -114,7 +133,7 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     res.writeHead(a ? 200 : 404, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(a ?? {}));
   }
-  let cuerpo = rutasFijas[ruta];
+  let cuerpo = typeof rutasFijas[ruta] === "function" ? rutasFijas[ruta]() : rutasFijas[ruta];
   if (ruta === "/api/admin/estadisticas" && existsSync(DIR + "admin-estadisticas.json")) cuerpo = JSON.parse(readFileSync(DIR + "admin-estadisticas.json", "utf8"));
   if (cuerpo === undefined) cuerpo = ruta.endsWith("s") ? [] : {};
   res.writeHead(200, { "Content-Type": "application/json" });

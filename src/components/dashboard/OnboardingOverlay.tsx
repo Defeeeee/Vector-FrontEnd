@@ -5,7 +5,7 @@ import { conectarWhatsapp, updateProfile } from "@/actions/profile";
 import { upsertCmaDocument } from "@/actions/document";
 import { addAircraft } from "@/actions/flight";
 import { createLogbook, OpeningBalanceInput } from "@/actions/logbook";
-import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check, AtSign } from "lucide-react";
+import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check, AtSign, Calculator } from "lucide-react";
 import Link from "next/link";
 import { linkCopiloto } from "@/lib/copiloto";
 import { mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
@@ -16,6 +16,9 @@ import { OPCIONES_LICENCIA, esAlumno } from "@/lib/licencias";
 import CrearHandleRapido from "@/components/social/CrearHandleRapido";
 import { motion, AnimatePresence } from "framer-motion";
 import OpeningBalanceFields, { openingTotal } from "./OpeningBalanceFields";
+import AperturaAlumnoFields from "./AperturaAlumnoFields";
+import { APERTURA_PPA_VACIA, horasDeAperturaPPA, revisarAperturaPPA } from "@/lib/apertura-alumno";
+import type { AperturaPPA } from "@/types";
 
 /**
  * El arranque, en tres pasos, **obligatorio** y **retomable**.
@@ -80,6 +83,7 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState<OpeningBalanceInput>({});
   const [mostrarSaldo, setMostrarSaldo] = useState(false);
+  const [aperturaAlumno, setAperturaAlumno] = useState<AperturaPPA>(APERTURA_PPA_VACIA);
   const [whatsapp, setWhatsapp] = useState("");
   const [whatsappGuardado, setWhatsappGuardado] = useState<string | null>(profile?.whatsapp_phone || null);
 
@@ -161,7 +165,21 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
     startTransition(async () => {
       // El primer libro que crea un usuario queda como default en el backend, así
       // que esto no compite con el "Mi libro" que se auto-crea al cargar un vuelo.
-      const r = await createLogbook({ name: "Mi libro", opening });
+      // El piloto copia los totales de su libro; el alumno, sus horas con el desglose de la
+      // PPA (`lib/apertura-alumno.ts`). Ninguna de las dos es obligatoria.
+      const conHorasDeAlumno = alumno && horasDeAperturaPPA(aperturaAlumno) > 0;
+      if (conHorasDeAlumno) {
+        const malo = revisarAperturaPPA(aperturaAlumno);
+        if (malo) {
+          setError(malo);
+          return;
+        }
+      }
+      const r = await createLogbook({
+        name: "Mi libro",
+        opening: alumno ? {} : opening,
+        ...(conHorasDeAlumno ? { apertura_ppa: aperturaAlumno } : {}),
+      });
       if (r?.error) {
         setError(r.error);
         return;
@@ -176,8 +194,8 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
     2: { icono: Plane, titulo: "Tu primera aeronave", bajada: "Un vuelo se anota contra una aeronave. Cargá la que usás y ya podés registrar vuelos." },
     3: { icono: AtSign, titulo: "Tu @ en la red", bajada: "Con tu @ tus compañeros de la escuela te encuentran. Arranca privado: vos decidís quién ve tus horas." },
     4: alumno
-      ? { icono: BookOpen, titulo: "Tus vuelos", bajada: "Cargalos acá o mandale un audio al copiloto por WhatsApp al bajar del avión." }
-      : { icono: BookOpen, titulo: "Tus vuelos", bajada: "Tres formas de traer lo que volás. Elegí la que te quede más cómoda: podés usar todas." },
+      ? { icono: BookOpen, titulo: "Tus horas", bajada: "Si ya volaste, cargá tus horas y te mostramos cuánto te falta para la PPA. Lo que vueles después, con un audio o a mano." }
+      : { icono: BookOpen, titulo: "Tus horas", bajada: "Lo más rápido: copiá los totales de tu libro. Después, cada vuelo nuevo se suma." },
   } as const;
 
   const { icono: Icono, titulo, bajada } = titulos[paso];
@@ -326,8 +344,48 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                 un botón, y nadie lo usaba: el 2026-09-23 entraron cuatro pilotos y ninguno
                 cargó un vuelo ni volvió. Ahora ofrece las tres formas de tener vuelos en
                 Vector, empezando por la más barata: dejar el número y escribirle al
-                copiloto. Ninguna es obligatoria (ver el encabezado del archivo).
+                copiloto. Ninguna es obligatoria (ver el encabezado del archivo). Desde el
+                2026-10-20 va primero arrancar con los totales (abajo).
               */}
+              {/*
+                Primero, arrancar con los totales (Federico, 2026-10-20): de 16 cuentas, una sola
+                había cargado vuelos, y nadie abría el saldo inicial, que estaba al final, detrás
+                de un botón y con 11 siglas. Ahora va arriba y se copia como se lee en el papel
+                (`OpeningBalanceFields`); el alumno, con el desglose de la PPA.
+              */}
+              <div className="rounded-2xl border-2 border-zinc-900 dark:border-white/40 p-5 space-y-4">
+                <div className="flex gap-4">
+                  <span className="w-10 h-10 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center shrink-0">
+                    <Calculator className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-zinc-900 dark:text-white">
+                      {alumno ? "¿Ya volaste con instructor? Cargá tus horas" : "Copiá los totales de tu libro"}
+                    </p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      {alumno
+                        ? "Con tu instructor o la planilla de la escuela al lado. Vector te muestra cuánto te falta para la PPA, requisito por requisito."
+                        : "Los de la última hoja, sin cargar vuelo por vuelo. En un minuto ves tus horas y cuánto te falta para la próxima licencia."}
+                    </p>
+                  </div>
+                </div>
+                {mostrarSaldo ? (
+                  alumno ? (
+                    <AperturaAlumnoFields valor={aperturaAlumno} onChange={setAperturaAlumno} />
+                  ) : (
+                    <OpeningBalanceFields opening={opening} setField={setField} compacto />
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSaldo(true)}
+                    className="w-full rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-4"
+                  >
+                    {alumno ? "Cargar mis horas" : "Copiar mis totales"}
+                  </button>
+                )}
+              </div>
+
               <div className="rounded-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
                 <div className="flex gap-4">
                   <span className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -402,26 +460,6 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                 <ArrowRight className="w-4 h-4 text-zinc-400 self-center" />
               </Link>}
 
-              {/*
-                El saldo inicial sigue acá, colapsado a propósito: son 12 campos numéricos
-                en el primer minuto de uso. El que no trae horas de antes ve un botón.
-              */}
-              {alumno ? null : mostrarSaldo ? (
-                <OpeningBalanceFields
-                  opening={opening}
-                  setField={setField}
-                  descripcion="Va por categoría y no como un total suelto: es lo que permite que el desglose ANAC y el seguimiento de licencia sigan siendo correctos."
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setMostrarSaldo(true)}
-                  className="w-full border border-dashed border-zinc-200 dark:border-white/10 rounded-2xl py-5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
-                >
-                  Traigo horas de antes: cargar el saldo inicial
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={paso3}
@@ -430,7 +468,7 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
               >
                 {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                   <>
-                    <span>{openingTotal(opening) > 0 ? "Guardar y empezar" : "Empezar"}</span>
+                    <span>{(alumno ? horasDeAperturaPPA(aperturaAlumno) : openingTotal(opening)) > 0 ? "Guardar y empezar" : "Empezar"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

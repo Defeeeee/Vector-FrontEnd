@@ -17,6 +17,7 @@
  *
  * Puro, sin fechas del sistema ni `toLocaleString`: el mes y "hoy" entran como texto.
  */
+import { aperturaDelAlumno, horasDeAperturaPPA } from "@/lib/apertura-alumno";
 import type { Aircraft, Flight, FlightPack, Logbook, Transaction } from "@/types";
 import { esAlumno, vuelosDesdeLaPpa } from "@/lib/licencias";
 import { horasQueFaltan, requisitosLicencia } from "@/lib/pca-progress";
@@ -170,7 +171,11 @@ export function calcularResumen(e: EntradaResumen): Resumen {
     horasMesAnterior: suma(delAnterior, (f) => f.duration),
     // Como en el inicio: con PPA rendida, desde la fecha de la PPA (`vuelosDesdeLaPpa`).
     // El alumno no lleva libro, así que no tiene horas de apertura.
-    horasTotales: suma(acumulados, (f) => f.duration) + (alumno ? 0 : openingTotals(e.logbooks).totalHours),
+    // El alumno no lleva libro: de los libros, sólo sus horas de antes (`apertura_ppa`).
+    // Quien ya no es alumno deja esas afuera, como sus vuelos de alumno.
+    horasTotales:
+      suma(acumulados, (f) => f.duration) +
+      (alumno ? horasDeAperturaPPA(aperturaDelAlumno(e.logbooks)) : openingTotals(e.logbooks, { alumno: false }).totalHours),
     progreso,
     gasto: conSaldo && gasto > 0 ? gasto : null,
     // El mismo saldo del inicio: la suma de los movimientos (`balance` en `/dashboard`).

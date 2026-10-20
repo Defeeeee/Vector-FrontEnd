@@ -648,8 +648,35 @@ export const CHANGELOG: VersionPublicada[] = [
   },
 ];
 
-/** La versión que se está mostrando. Tiene que coincidir con `package.json`. */
-export const VERSION_ACTUAL = CHANGELOG[0].version;
+/**
+ * Las versiones que no se anuncian: suben sólo el último dígito y no tocan la tarjeta, que
+ * sigue mostrando `CHANGELOG[0]` (y quien ya la cerró no la vuelve a ver). Son para un
+ * cambio que Federico decide no anunciar o para un arreglo de adentro. Van de la más nueva
+ * a la más vieja; sólo cuentan las que son parche de la última publicada.
+ *
+ * Datos puros, como `CHANGELOG`: los lee `scripts/build-changelog.mjs` sin compilar.
+ */
+export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
+  {
+    version: "2.26.1",
+    fecha: "2026-10-20",
+    motivo: "El alta ofrece arrancar con los totales del libro, y el alumno con sus horas de antes. Sin anuncio (Federico).",
+  },
+];
+
+/** Si `v` es un parche de `base`: misma versión mayor y menor, y un último dígito más alto. */
+export function esParcheDe(v: string, base: string): boolean {
+  const [a, b, c] = v.split(".").map(Number);
+  const [x, y, z] = base.split(".").map(Number);
+  return a === x && b === y && c > z;
+}
+
+/**
+ * La versión de la app: el último parche sin novedades de la última publicada, o esa misma.
+ * Tiene que coincidir con `package.json`.
+ */
+export const VERSION_ACTUAL =
+  VERSIONES_SIN_NOVEDADES.find((v) => esParcheDe(v.version, CHANGELOG[0].version))?.version ?? CHANGELOG[0].version;
 
 /**
  * Cuántas novedades entran en la tarjeta del dashboard.

@@ -338,6 +338,25 @@ export interface Logbook {
   opening_capota: number;
   /** Renglones por hoja del libro de papel (15 en la hoja del Adjunto A). */
   renglones_por_hoja?: number;
+  /** Las horas de antes de un alumno, con el desglose de la PPA (migración 028). */
+  apertura_ppa?: AperturaPPA | null;
+}
+
+/**
+ * Las horas de antes de un alumno piloto, contra RAAC 61.520(a). Espejo de `AperturaPPA`
+ * de `src/models/logbook.py`. Ver `lib/apertura-alumno.ts`.
+ */
+export interface AperturaPPA {
+  doble_mando: number;
+  /** Vuelo solo, de día. */
+  solo: number;
+  /** De las de vuelo solo, las de travesía. */
+  solo_travesia: number;
+  /** De las de doble mando, las de noche. */
+  instruccion_nocturna: number;
+  aterrizajes_nocturnos: number;
+  /** Ya hizo la travesía de 150 NM con dos aterrizajes. */
+  travesia_larga: boolean;
 }
 
 /**

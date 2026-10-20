@@ -9,6 +9,7 @@ import AircraftForm from "@/components/dashboard/AircraftForm";
 import FlightPackForm from "@/components/dashboard/FlightPackForm";
 import DocumentsManager from "@/components/dashboard/DocumentsManager";
 import LogbooksManager from "@/components/dashboard/LogbooksManager";
+import HorasDeAntesAlumno from "@/components/dashboard/HorasDeAntesAlumno";
 import { esAlumno } from "@/lib/licencias";
 import WhatsAppMissingNotice from "@/components/dashboard/WhatsAppMissingNotice";
 import PageHeader from "@/components/dashboard/PageHeader";
@@ -79,7 +80,7 @@ export default async function SettingsPage() {
       {/* Logbooks — above aircraft and packs because a flight has to land in a
           book before anything else about it matters. */}
       {/* El alumno piloto no lleva libro de vuelo (ver `lib/licencias.ts`): sin la sección. */}
-      {!esAlumno(profile?.license_type) && <section className="space-y-4 md:space-y-6">
+      {!esAlumno(profile?.license_type) && <section id="libros" className="space-y-4 md:space-y-6 scroll-mt-24">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
             <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
@@ -87,6 +88,17 @@ export default async function SettingsPage() {
           <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Libros de vuelo</h3>
         </div>
         <LogbooksManager logbooks={logbooks} />
+      </section>}
+
+      {/* El alumno no ve los libros, pero sí sus horas de antes (`lib/apertura-alumno.ts`). */}
+      {esAlumno(profile?.license_type) && <section id="horas-de-antes" className="space-y-4 md:space-y-6 scroll-mt-24">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
+            <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-white dark:text-zinc-900" />
+          </div>
+          <h3 className="text-lg md:text-xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Tus horas de antes</h3>
+        </div>
+        <HorasDeAntesAlumno logbooks={logbooks} />
       </section>}
 
       {/* Profile Section */}

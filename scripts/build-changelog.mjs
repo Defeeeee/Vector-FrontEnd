@@ -28,9 +28,9 @@ const SALIDA = path.join(RAIZ, "CHANGELOG.md");
  * literal y evaluarlo. Si algún día deja de ser datos puros, esto falla ruidosamente en
  * vez de generar un `.md` incompleto.
  */
-function leerChangelog(codigo) {
-  const inicio = codigo.indexOf("export const CHANGELOG");
-  if (inicio === -1) throw new Error("No encontré `export const CHANGELOG` en changelog.ts");
+function leerChangelog(codigo, nombre = "CHANGELOG") {
+  const inicio = codigo.indexOf(`export const ${nombre}`);
+  if (inicio === -1) throw new Error(`No encontré \`export const ${nombre}\` en changelog.ts`);
 
   // Ojo: hay que buscar después del `=`, no después del nombre. El primer `[` que
   // aparece es el de la anotación de tipo `VersionPublicada[]`, no el del array.
@@ -45,17 +45,20 @@ function leerChangelog(codigo) {
       if (nivel === 0) { cierra = i; break; }
     }
   }
-  if (cierra === -1) throw new Error("El array CHANGELOG no cierra");
+  if (cierra === -1) throw new Error(`El array ${nombre} no cierra`);
 
   return JSON.parse(
     JSON.stringify(eval(`(${codigo.slice(abre, cierra + 1)})`))
   );
 }
 
-const versiones = leerChangelog(fs.readFileSync(FUENTE, "utf8"));
+const codigo = fs.readFileSync(FUENTE, "utf8");
+const versiones = leerChangelog(codigo);
+// Las que suben sólo el último dígito sin anunciarse (ver `VERSIONES_SIN_NOVEDADES`).
+const sinNovedades = leerChangelog(codigo, "VERSIONES_SIN_NOVEDADES").map((v) => v.version);
 const paquete = JSON.parse(fs.readFileSync(path.join(RAIZ, "package.json"), "utf8"));
 
-if (versiones[0].version !== paquete.version) {
+if (versiones[0].version !== paquete.version && !sinNovedades.includes(paquete.version)) {
   console.error(
     `La versión del changelog (${versiones[0].version}) no coincide con package.json (${paquete.version}).`
   );

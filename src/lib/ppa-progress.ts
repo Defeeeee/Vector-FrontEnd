@@ -33,6 +33,7 @@ import type { Aircraft, Flight, Logbook } from "@/types";
 import type { Requisito } from "@/lib/pca-progress";
 import { nightLandingsOf } from "@/lib/landings";
 import { idsDeSimuladores, separarSimuladores } from "@/lib/simulador";
+import { aperturaDelAlumno, horasDeAperturaPPA } from "@/lib/apertura-alumno";
 
 export const HORAS_PPA = 40;
 export const HORAS_PPA_CURSO_INTEGRADO = 35;
@@ -71,39 +72,41 @@ export function requisitosPPA(
     0
   );
   const simulador = Math.min(suma(simulados, (f) => f.duration || 0), TOPE_SIMULADOR_PPA);
+  // Las horas de antes del alumno, cada una en su requisito (`lib/apertura-alumno.ts`).
+  const antes = aperturaDelAlumno(logbooks);
 
   return [
     {
       clave: "total", label: "Instrucción y vuelo solo", grupo: "pca", unidad: "hs", esHoras: true,
       nota: `${HORAS_PPA_CURSO_INTEGRADO} con curso integrado · simulador hasta ${TOPE_SIMULADOR_PPA} h`,
-      actual: redondear(suma(volados, (f) => f.duration || 0) + simulador + apertura), objetivo: HORAS_PPA,
+      actual: redondear(suma(volados, (f) => f.duration || 0) + simulador + apertura + horasDeAperturaPPA(antes)), objetivo: HORAS_PPA,
     },
     {
       clave: "dobleMando", label: "Doble mando", grupo: "pca", unidad: "hs", esHoras: true,
       nota: "vuelos con instructor",
-      actual: redondear(suma(dobleMando, (f) => f.duration || 0)), objetivo: 20,
+      actual: redondear(suma(dobleMando, (f) => f.duration || 0) + antes.doble_mando), objetivo: 20,
     },
     {
       clave: "soloDiurno", label: "Vuelo solo diurno", grupo: "pca", unidad: "hs", esHoras: true,
-      actual: redondear(suma(solo, dia)), objetivo: 10,
+      actual: redondear(suma(solo, dia) + antes.solo), objetivo: 10,
     },
     {
       clave: "soloTravesia", label: "Solo de travesía", grupo: "pca", unidad: "hs", esHoras: true,
-      actual: redondear(suma(solo, travesiaDiurna)), objetivo: 5,
+      actual: redondear(suma(solo, travesiaDiurna) + antes.solo_travesia), objetivo: 5,
     },
     {
       clave: "travesiaLarga", label: "Travesía de 150 NM", grupo: "pca", unidad: "vuelo", esHoras: false,
       nota: "2 aterrizajes en 2 aeródromos distintos",
-      actual: volados.some(travesiaLarga) ? 1 : 0, objetivo: 1,
+      actual: antes.travesia_larga || volados.some(travesiaLarga) ? 1 : 0, objetivo: 1,
     },
     {
       clave: "nocturnoInstruccion", label: "Instrucción nocturna", grupo: "pca", unidad: "hs", esHoras: true,
-      actual: redondear(suma(dobleMando, noche)), objetivo: 3,
+      actual: redondear(suma(dobleMando, noche) + antes.instruccion_nocturna), objetivo: 3,
     },
     {
       clave: "aterrizajesNocturnos", label: "Aterrizajes nocturnos", grupo: "pca", unidad: "atrr", esHoras: false,
       nota: "en instrucción nocturna",
-      actual: suma(dobleMando, nightLandingsOf), objetivo: 10,
+      actual: suma(dobleMando, nightLandingsOf) + antes.aterrizajes_nocturnos, objetivo: 10,
     },
   ];
 }

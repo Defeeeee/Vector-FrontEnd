@@ -1,3 +1,4 @@
+import { celdasDeAperturaPPA } from "@/lib/apertura-alumno";
 import { Flight, Aircraft, Logbook } from "@/types";
 
 // Vive en lib/route.ts. Se reexporta para no tocar a todos los que la
@@ -70,13 +71,31 @@ export interface HeadlineStats {
  * is "todo"** — an opening balance has no date, so counting it inside "last 28
  * days" would be inventing recent flying that never happened.
  */
-export function openingTotals(logbooks: Logbook[]) {
+export function openingTotals(logbooks: Logbook[], opciones: { alumno?: boolean } = {}) {
+  /*
+    Las horas de antes de un alumno (`apertura_ppa`, `lib/apertura-alumno.ts`) suman en las
+    columnas de piloto, como sus vuelos. **Salvo que quien llama sepa que ya no es alumno**
+    (`alumno: false`): esas horas no cuentan una vez rendida la PPA, como sus vuelos
+    (`vuelosDesdeLaPpa`). Sin el dato, cuentan, igual que los vuelos en las pantallas que
+    no aplican esa regla.
+  */
+  const conAlumno = opciones.alumno !== false;
+  const delAlumno = (l: Logbook) => (conAlumno && l.apertura_ppa ? celdasDeAperturaPPA(l.apertura_ppa) : null);
   const add = (pick: (l: Logbook) => number) =>
     logbooks.reduce((acc, l) => acc + n(pick(l)), 0);
+  const addAlumno = (pick: (c: ReturnType<typeof celdasDeAperturaPPA>) => number) =>
+    logbooks.reduce((acc, l) => {
+      const c = delAlumno(l);
+      return acc + (c ? n(pick(c)) : 0);
+    }, 0);
 
+  const alumnoDiaLoc = addAlumno((c) => c.pic_day_loc);
+  const alumnoDiaTra = addAlumno((c) => c.pic_day_tra);
+  const alumnoNoche = addAlumno((c) => c.pic_night_loc);
   const pic =
     add((l) => l.opening_pic_day_loc) + add((l) => l.opening_pic_day_tra) +
-    add((l) => l.opening_pic_night_loc) + add((l) => l.opening_pic_night_tra);
+    add((l) => l.opening_pic_night_loc) + add((l) => l.opening_pic_night_tra) +
+    alumnoDiaLoc + alumnoDiaTra + alumnoNoche;
   const sic =
     add((l) => l.opening_sic_day_loc) + add((l) => l.opening_sic_day_tra) +
     add((l) => l.opening_sic_night_loc) + add((l) => l.opening_sic_night_tra);
@@ -89,18 +108,18 @@ export function openingTotals(logbooks: Logbook[]) {
     imc: add((l) => l.opening_imc_pil) + add((l) => l.opening_imc_cop),
     night:
       add((l) => l.opening_pic_night_loc) + add((l) => l.opening_pic_night_tra) +
-      add((l) => l.opening_sic_night_loc) + add((l) => l.opening_sic_night_tra),
+      add((l) => l.opening_sic_night_loc) + add((l) => l.opening_sic_night_tra) + alumnoNoche,
     hood: add((l) => l.opening_capota),
     landings: add((l) => l.opening_landings),
     cells: {
       local: [
-        add((l) => l.opening_pic_day_loc),
+        add((l) => l.opening_pic_day_loc) + alumnoDiaLoc,
         add((l) => l.opening_sic_day_loc),
-        add((l) => l.opening_pic_night_loc),
+        add((l) => l.opening_pic_night_loc) + alumnoNoche,
         add((l) => l.opening_sic_night_loc),
       ],
       travesia: [
-        add((l) => l.opening_pic_day_tra),
+        add((l) => l.opening_pic_day_tra) + alumnoDiaTra,
         add((l) => l.opening_sic_day_tra),
         add((l) => l.opening_pic_night_tra),
         add((l) => l.opening_sic_night_tra),
