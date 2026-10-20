@@ -86,7 +86,7 @@ export const CHANGELOG: VersionPublicada[] = [
         icono: "brujula",
         titulo: "Mandá el plan a la oficina ARO/AIS",
         texto:
-          "Con el plan completo y firmado, Vector lo manda en PDF a la oficina, con la matrícula en el asunto y copia a vos; las respuestas te llegan a tu mail. Antes podés mandarte una prueba. Después, igual llamá para confirmar.",
+          "Con el plan completo y firmado, Vector lo manda en PDF a la oficina, con la matrícula en el asunto y copia a vos; las respuestas te llegan a tu mail. Después, igual llamá para confirmar.",
         href: "/dashboard/plan-de-vuelo",
         cta: "Ver Plan de vuelo",
       },

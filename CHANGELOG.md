@@ -10,7 +10,7 @@ la bitácora de `docs/bitacora/`.
 
 _20 de octubre de 2026_
 
-- **Mandá el plan a la oficina ARO/AIS** — Con el plan completo y firmado, Vector lo manda en PDF a la oficina, con la matrícula en el asunto y copia a vos; las respuestas te llegan a tu mail. Antes podés mandarte una prueba. Después, igual llamá para confirmar.
+- **Mandá el plan a la oficina ARO/AIS** — Con el plan completo y firmado, Vector lo manda en PDF a la oficina, con la matrícula en el asunto y copia a vos; las respuestas te llegan a tu mail. Después, igual llamá para confirmar.
 - **La demora, también por mail** — Escribí la nueva hora en UTC y la demora (DLA) sale firmada a la misma oficina. Para elegir la oficina te sugerimos las tres más cercanas a tu salida, con la distancia y si atienden a esa hora.
 
 ## v2.24.2 — La hora del plan, en UTC
