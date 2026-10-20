@@ -168,8 +168,8 @@ function envioAroActivo(): boolean {
  * Manda el plan por mail con el PDF firmado: de prueba al piloto, o a la oficina ARO/AIS
  * con copia al piloto (`lib/plan-de-vuelo-mail.ts`).
  *
- * **El envío a la oficina se prende con `PLAN_DE_VUELO_ENVIO_ARO=1`**: hasta que Federico
- * lo pruebe con su mail y lo apruebe (2026-10-19), sólo sale la prueba.
+ * **El envío a la oficina se prende con `PLAN_DE_VUELO_ENVIO_ARO=1`**: Federico lo aprobó
+ * el 2026-10-20, después de recibir la prueba. Sin la variable sólo sale la prueba.
  *
  * Todo se rearma en el server con lo guardado —el plan, la firma, la oficina—, no con lo
  * que mande el navegador: el mail sólo puede ir al piloto o a una oficina de la AIC.
@@ -220,6 +220,7 @@ export async function enviarPlan(id: string, modo: ModoEnvio) {
       html: mail.html,
       adjuntos: [{ nombre: nombreDelArchivo(r.plan), base64: Buffer.from(pdf).toString("base64") }],
       nombreRemitente: piloto.nombre ? `${piloto.nombre} vía Vector` : undefined,
+      casilla: "plandevuelo",
     });
     if (!enviado.enviado) return { error: `No se pudo mandar el mail: ${enviado.motivo ?? "error desconocido"}` };
 

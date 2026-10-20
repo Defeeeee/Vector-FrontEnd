@@ -262,10 +262,12 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Imitar lo aceptado:** las convenciones salen de planes que EANA le aceptó a Federico
     en FPL.AR. El mail que se abre usa su formato (`LVS100-SRDL(1815)SADM_171026`).
   - **El envío por mail desde Vector** (2026-10-20, `enviarPlan`): el PDF firmado va a la
-    oficina con copia al piloto, y las respuestas van al piloto. **Por ahora sólo sale la
-    prueba al piloto**; el envío a la oficina se prende con `PLAN_DE_VUELO_ENVIO_ARO=1` en el
-    `.env` del VPS cuando Federico lo apruebe. El mail del piloto sale del token, después de
-    que el backend lo aceptó. Sigue estando el camino de bajar el PDF y mandarlo a mano.
+    oficina con copia al piloto, y las respuestas van al piloto. Antes conviene **la prueba
+    al piloto**, que dice a dónde iría. El envío a la oficina está prendido desde el
+    2026-10-20 (Federico, después de recibir la prueba) con `PLAN_DE_VUELO_ENVIO_ARO=1` en
+    el `.env` del VPS. Sale de `plandevuelo@vector.fdiaznem.com.ar` como "<nombre del
+    piloto> vía Vector". El mail del piloto sale del token, después de que el backend lo
+    aceptó. Sigue estando el camino de bajar el PDF y mandarlo a mano.
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
   - **Falta:** CHG y CNL, y que el editor ande sin señal (el planificador sí anda).

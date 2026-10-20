@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { remitente } from "./mailer";
+import { direccionDeEnvio, remitente } from "./mailer";
 
 /**
  * El remitente del briefing.
@@ -49,5 +49,29 @@ describe("remitente", () => {
   it("vacío o en blanco es lo mismo que no configurado", () => {
     process.env.RESEND_FROM = "   ";
     expect(remitente()).toEqual({ from: "Vector <onboarding@resend.dev>" });
+  });
+});
+
+describe("direccionDeEnvio", () => {
+  const VECTOR = "Vector <briefing@vector.fdiaznem.com.ar>";
+
+  it("sin cambios, el remitente configurado tal cual", () => {
+    expect(direccionDeEnvio(VECTOR, {})).toBe(VECTOR);
+  });
+
+  it("el plan de vuelo: otra casilla del dominio verificado, con el nombre del piloto", () => {
+    expect(direccionDeEnvio(VECTOR, { casilla: "plandevuelo", nombreRemitente: "Lucía Ferrari vía Vector" })).toBe(
+      "Lucía Ferrari vía Vector <plandevuelo@vector.fdiaznem.com.ar>"
+    );
+    expect(direccionDeEnvio(VECTOR, { casilla: "plandevuelo" })).toBe("Vector <plandevuelo@vector.fdiaznem.com.ar>");
+    expect(direccionDeEnvio("briefing@vector.fdiaznem.com.ar", { casilla: "plandevuelo" })).toBe("plandevuelo@vector.fdiaznem.com.ar");
+  });
+
+  it("con el remitente de prueba de Resend no inventa una casilla", () => {
+    expect(direccionDeEnvio("Vector <onboarding@resend.dev>", { casilla: "plandevuelo" })).toBe("Vector <onboarding@resend.dev>");
+  });
+
+  it("el nombre no puede romper la dirección", () => {
+    expect(direccionDeEnvio(VECTOR, { nombreRemitente: 'X <a@b.c> "y"' })).toBe("X a@b.c y <briefing@vector.fdiaznem.com.ar>");
   });
 });

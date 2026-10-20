@@ -79,6 +79,25 @@ export interface Mail {
    * vuelo sale como "Lucía Ferrari vía Vector", para que la oficina sepa de quién es.
    */
   nombreRemitente?: string;
+  /**
+   * La casilla, sin el dominio, cuando no es la de `RESEND_FROM`: el plan sale de
+   * `plandevuelo@`. El dominio es siempre el de `RESEND_FROM`, que es el verificado.
+   */
+  casilla?: string;
+}
+
+/**
+ * El `from` de un mail: el de `RESEND_FROM`, con otro nombre o con otra casilla del mismo
+ * dominio. Con el remitente de prueba de Resend la casilla no se cambia: no es nuestro.
+ */
+export function direccionDeEnvio(configurado: string, mail: Pick<Mail, "nombreRemitente" | "casilla">): string {
+  const original = /<([^>]+)>/.exec(configurado)?.[1] ?? configurado;
+  const dominio = original.split("@")[1] ?? "";
+  const casilla = mail.casilla && dominio !== "resend.dev" ? `${mail.casilla}@${dominio}` : original;
+  if (mail.nombreRemitente) return `${mail.nombreRemitente.replace(/[<>"]/g, "")} <${casilla}>`;
+  if (casilla === original) return configurado;
+  const nombre = /^(.*?)\s*</.exec(configurado)?.[1];
+  return nombre ? `${nombre} <${casilla}>` : casilla;
 }
 
 export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
@@ -99,8 +118,7 @@ export async function enviarMail(mail: Mail): Promise<ResultadoEnvio> {
   }
 
   const { from: configurado, aviso } = remitente();
-  const casilla = /<([^>]+)>/.exec(configurado)?.[1] ?? configurado;
-  const from = mail.nombreRemitente ? `${mail.nombreRemitente.replace(/[<>"]/g, "")} <${casilla}>` : configurado;
+  const from = direccionDeEnvio(configurado, mail);
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
