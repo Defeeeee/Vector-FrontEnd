@@ -1,0 +1,280 @@
+<!doctype html>
+<!--
+  El carrusel del plan de vuelo para Instagram (2026-10-20), en 3:4 (1080×1440).
+
+  Misma estética que `piezas.html`. `marketing/render.mjs` abre este archivo con `?p=<placa>`
+  y la exporta a PNG en `marketing/salida/`.
+
+  Lo que se muestra es la app:
+  - los formularios los arma el código de Vector con un piloto inventado
+    (`recursos/plan-ejemplo.mjs`);
+  - el formulario de EANA va recortado desde la casilla 7, sin el logo de EANA: Vector no es
+    un servicio de EANA, y la pieza no tiene que sugerirlo;
+  - la meteo y los NOTAM son los de San Fernando del 20/10/2026, con el mismo texto que
+    muestra el editor (`MeteoDelVuelo.tsx`);
+  - las tres oficinas más cercanas a SADF y sus distancias salen de `oficinasCercanas`.
+
+  Todo lo que dicen las placas se verificó contra el código. No dicen "gratis" ni "oficial".
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #f6f6f7; --tinta: #18181b; --gris: #52525b; --gris2: #71717a; --gris3: #a1a1aa;
+    --borde: #e4e4e7; --azul: #2563eb; --cian: #38bdf8; --verde: #10b981; --ambar: #b45309;
+    --fuente: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--fondo); }
+  body { font-family: var(--fuente); color: var(--tinta); -webkit-font-smoothing: antialiased; }
+  .pieza { display: none; position: relative; overflow: hidden; background: var(--fondo); width: 1080px; height: 1440px; padding: 76px 80px 64px; gap: 40px; }
+  .pieza.activa { display: flex; flex-direction: column; }
+  .pieza::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 600px at 85% 8%, rgba(37, 99, 235, .10), transparent 60%),
+      radial-gradient(700px 500px at 0% 100%, rgba(56, 189, 248, .08), transparent 60%);
+  }
+  .pieza > * { position: relative; }
+
+  /* --- la marca, como en piezas.html --- */
+  .marca { display: flex; align-items: center; gap: 18px; }
+  .logo { width: 72px; height: 72px; border-radius: 20px; background: var(--tinta); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(24,24,27,.18); flex: none; }
+  .logo.grande { width: 150px; height: 150px; border-radius: 40px; }
+  .marca b { font-size: 40px; font-weight: 800; letter-spacing: -.02em; }
+  .pildora { display: inline-flex; align-items: center; gap: 12px; border: 2px solid var(--borde); background: rgba(255,255,255,.8); border-radius: 999px; padding: 12px 24px; font-size: 26px; color: var(--gris); font-weight: 600; }
+  .pildora i { width: 12px; height: 12px; border-radius: 50%; background: var(--azul); display: inline-block; }
+  h1 { font-size: 92px; line-height: 1.0; font-weight: 900; letter-spacing: -.035em; }
+  h1 span { color: var(--azul); }
+  .bajada { font-size: 34px; line-height: 1.4; color: var(--gris); font-weight: 600; }
+  .etiqueta { font-family: var(--mono); font-size: 22px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gris2); }
+  .pie { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  .dominio { font-family: var(--mono); font-size: 26px; color: var(--gris2); font-weight: 600; }
+  .boton { background: var(--tinta); color: #fff; border-radius: 22px; padding: 28px 40px; font-size: 34px; font-weight: 800; display: inline-flex; align-items: center; gap: 16px; }
+  .mono { font-family: var(--mono); }
+
+  /* --- tarjetas y piezas de la app --- */
+  .tarjeta { background: #fff; border: 2px solid var(--borde); border-radius: 40px; padding: 34px; box-shadow: 0 30px 80px rgba(24,24,27,.10); }
+  .mini { font-family: var(--mono); font-size: 18px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gris2); }
+  .papel { background: #fff; border-radius: 14px; box-shadow: 0 30px 70px rgba(24,24,27,.22); overflow: hidden; border: 2px solid #d4d4d8; }
+  .papel img { display: block; width: 100%; }
+  .chip { display: inline-flex; align-items: center; gap: 12px; border-radius: 999px; padding: 14px 24px; font-size: 24px; font-weight: 700; border: 2px solid var(--borde); background: #fff; color: var(--gris); }
+  .chip.negro { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+  .chip .punto { width: 12px; height: 12px; border-radius: 50%; background: var(--verde); }
+  .chip em { font-style: normal; font-family: var(--mono); font-weight: 600; opacity: .7; font-size: 20px; }
+
+  /* la ruta como nodos (EditorRuta) */
+  .ruta { display: flex; align-items: center; gap: 18px; }
+  .nodo { background: #fff; border: 2px solid var(--borde); border-radius: 22px; padding: 18px 24px; text-align: center; min-width: 170px; }
+  .nodo b { font-family: var(--mono); font-size: 36px; display: block; }
+  .nodo span { font-family: var(--mono); font-size: 15px; letter-spacing: .16em; color: var(--gris2); text-transform: uppercase; }
+  .tramo { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .tramo i { display: block; height: 3px; width: 100%; background: var(--gris3); position: relative; }
+  .tramo i::after { content: ""; position: absolute; right: -2px; top: -8px; border: 9px solid transparent; border-left: 14px solid var(--gris3); border-right: 0; }
+  .tramo span { font-family: var(--mono); font-size: 20px; color: var(--gris2); font-weight: 600; }
+  .campo { border: 2px solid var(--borde); border-radius: 22px; padding: 18px 24px; background: #fff; }
+  .campo .lab { font-size: 20px; color: var(--gris2); font-weight: 600; }
+  .campo .val { font-family: var(--mono); font-size: 40px; font-weight: 700; margin-top: 4px; }
+  .sugerido { display: flex; align-items: center; gap: 12px; margin-top: 12px; background: #eff6ff; border-radius: 16px; padding: 12px 16px; font-size: 21px; color: #1d4ed8; font-weight: 600; }
+  .sugerido b { font-family: var(--mono); }
+  .sugerido u { margin-left: auto; font-weight: 800; }
+
+  /* meteo y NOTAM (MeteoDelVuelo) */
+  .met .fila { display: flex; justify-content: space-between; align-items: baseline; }
+  .met .rol { font-size: 18px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gris2); }
+  .met .rol b { color: var(--tinta); font-family: var(--mono); font-size: 24px; letter-spacing: 0; }
+  .met h4 { font-size: 21px; color: var(--gris); font-weight: 700; margin-top: 22px; }
+  .met h4 small { font-weight: 600; color: var(--gris2); font-size: 19px; }
+  .met .crudo { font-family: var(--mono); font-size: 23px; line-height: 1.45; margin-top: 6px; }
+  .notam { background: #fffbeb; border-radius: 20px; padding: 16px 20px; margin-top: 12px; }
+  .notam p:first-child { font-size: 20px; color: var(--ambar); font-weight: 800; }
+  .notam p:first-child span { font-weight: 600; }
+  .notam p + p { font-size: 22px; margin-top: 4px; }
+  .notam .vig { font-family: var(--mono); font-size: 17px; color: var(--gris2); margin-top: 4px; }
+  .plegado { font-size: 20px; color: var(--gris2); margin-top: 12px; }
+
+  /* el mail */
+  .mail .cab { display: grid; grid-template-columns: 130px 1fr; row-gap: 10px; font-size: 23px; }
+  .mail .cab dt { color: var(--gris2); font-weight: 600; }
+  .mail .cab dd { font-weight: 700; }
+  .mail .cab dd.mono { font-size: 21px; }
+  .adjunto { display: flex; align-items: center; gap: 16px; margin-top: 22px; border: 2px solid var(--borde); border-radius: 20px; padding: 16px 20px; }
+  .adjunto .pdf { width: 54px; height: 64px; border-radius: 10px; background: #dc2626; color: #fff; font-weight: 900; font-size: 16px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; flex: none; }
+  .adjunto b { font-family: var(--mono); font-size: 20px; display: block; }
+  .adjunto span { font-size: 18px; color: var(--gris2); }
+
+  /* el "¿Ya volaste?" del inicio (PlanesParaRegistrar) */
+  .volaste .top { display: flex; gap: 20px; align-items: center; }
+  .icono { width: 64px; height: 64px; border-radius: 18px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; flex: none; }
+  .volaste h3 { font-size: 34px; font-weight: 800; }
+  .volaste .linea { border-top: 2px solid #f4f4f5; margin-top: 26px; padding-top: 26px; }
+  .volaste .r { font-family: var(--mono); font-size: 30px; font-weight: 700; }
+  .volaste .r small { color: var(--gris3); font-size: 24px; }
+  .volaste .q { font-size: 21px; color: var(--gris2); margin-top: 6px; }
+  .volaste .bots { display: flex; gap: 16px; align-items: center; margin-top: 24px; }
+  .volaste .azulb { background: var(--azul); color: #fff; border-radius: 999px; padding: 18px 32px; font-size: 25px; font-weight: 800; }
+  .volaste .gris { font-size: 25px; font-weight: 700; color: var(--gris2); padding: 18px 12px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · Portada -->
+<section class="pieza" id="plan-1">
+  <div class="marca">%%LOGO%%<b>Vector</b></div>
+  <div><span class="pildora"><i></i>Nuevo: plan de vuelo</span></div>
+  <h1 style="font-size:100px">Tu plan de vuelo,<br><span>de Vector a la oficina ARO.</span></h1>
+  <div style="position:relative;margin-top:14px;height:520px">
+    <div class="papel" style="position:absolute;left:-10px;right:-10px;top:0;transform:rotate(-2.2deg)"><img src="recursos/plan-ejemplo/plan-recorte.png" alt=""></div>
+    <div class="chip negro" style="position:absolute;right:20px;bottom:6px;font-size:26px;padding:18px 28px;box-shadow:0 20px 40px rgba(24,24,27,.3)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+      Mandado firmado, en PDF
+    </div>
+  </div>
+  <div class="pie">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<!-- 2 · Lo armás -->
+<section class="pieza" id="plan-2">
+  <span class="etiqueta">1 · Lo armás</span>
+  <h1 style="margin-top:auto;font-size:110px">Casi se llena<br><span>solo.</span></h1>
+  <p class="bajada">Tu avión guardado completa el equipo, el transponder y los colores. Escribís la ruta y Vector te sugiere la duración y la autonomía.</p>
+  <div class="tarjeta" style="display:flex;flex-direction:column;gap:30px;zoom:1.12;margin-top:6px">
+    <div>
+      <div class="mini" style="margin-bottom:16px">15 · Ruta</div>
+      <div class="ruta">
+        <div class="nodo"><b>SADF</b><span>Salida</span></div>
+        <div class="tramo"><span>DCT · 14 NM</span><i></i></div>
+        <div class="nodo"><b>SADM</b><span>Destino</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="campo"><div class="lab">16 · Duración (EET)</div><div class="val" style="color:#d4d4d8">0000</div>
+        <div class="sugerido">Sugerido <b>0009</b><u>usar</u></div>
+        <div style="font-size:18px;color:var(--gris2);margin-top:8px">14 NM a 95 kt, sin viento</div></div>
+      <div class="campo"><div class="lab">E/ · Autonomía</div><div class="val" style="color:#d4d4d8">0000</div>
+        <div class="sugerido">Sugerido <b>0350</b><u>usar</u></div>
+        <div style="font-size:18px;color:var(--gris2);margin-top:8px">92 L a 24 L/h, tanques llenos</div></div>
+    </div>
+  </div>
+  <p class="bajada" style="font-size:28px">Y queda guardado: el mismo vuelo otro día es duplicarlo.</p>
+  <div class="pie">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<!-- 3 · Meteo y NOTAM a tu hora -->
+<section class="pieza" id="plan-3">
+  <span class="etiqueta">2 · Antes de salir</span>
+  <h1 style="margin-top:auto;font-size:100px">Meteo y NOTAM<br><span>a la hora de<br>tu vuelo.</span></h1>
+  <div class="tarjeta met" style="zoom:1.12">
+    <div class="fila"><span class="rol">Salida · <b>SADF</b></span><span class="mono" style="font-size:22px;color:var(--gris2)">20/10 1830Z</span></div>
+    <h4>TAF a las 1830Z</h4>
+    <p class="crudo">07010KT CAVOK<br>BECMG 2017/2019 10015KT</p>
+    <h4>NOTAM</h4>
+    <div class="notam"><p>⚠ A4197/2026 <span>· en tu horario</span></p><p>PUESTO PRKG ACFT PSN 4B Y H4 CLSD</p><p class="vig">08/10 1528Z – 31/10 2200Z</p></div>
+    <div class="notam"><p>⚠ A4249/2026 <span>· en tu horario</span></p><p>TRANSMISOMETRO RVR RWY 05 U/S</p><p class="vig">12/10 1122Z – 11/11 1105Z</p></div>
+    <p class="plegado">▸ 1 vigente, pero no en tu horario</p>
+    <p class="plegado" style="margin-top:6px">▸ 3 permanentes (obstáculos, cambios al AIP)</p>
+  </div>
+  <p class="bajada" style="font-size:30px">Leemos el horario de cada NOTAM: el que rige a la madrugada no te salta en un vuelo a la tarde.</p>
+  <div class="pie">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<!-- 4 · Lo mandás -->
+<section class="pieza" id="plan-4">
+  <span class="etiqueta">3 · Lo mandás</span>
+  <h1 style="margin-top:auto;font-size:100px">Firmado, en PDF,<br><span>a la oficina<br>ARO/AIS.</span></h1>
+  <div>
+    <p class="mini" style="margin-bottom:16px">Las más cercanas a SADF</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <span class="chip negro"><span class="punto"></span>San Fernando <em>acá</em></span>
+      <span class="chip">El Palomar <em>9 NM</em></span>
+      <span class="chip">Buenos Aires <em>11 NM</em></span>
+    </div>
+  </div>
+  <div class="tarjeta mail" style="zoom:1.12">
+    <dl class="cab">
+      <dt>Para</dt><dd>acfdo@eana.com.ar</dd>
+      <dt>CC</dt><dd>vos</dd>
+      <dt>Asunto</dt><dd class="mono">LVABC-SADF(1830)SADM_241026</dd>
+    </dl>
+    <div class="adjunto"><span class="pdf">PDF</span><div><b>LVABC-SADF1830SADM_241026.pdf</b><span>El plan firmado</span></div></div>
+    <p style="font-size:22px;color:var(--gris);margin-top:22px;line-height:1.45">Las respuestas de la oficina te llegan a tu mail.</p>
+  </div>
+  <p class="bajada" style="font-size:28px">Como pide la AIC A 19/2026: firmado, en PDF y con la matrícula en el asunto. Después llamás para confirmar, como siempre.</p>
+  <div class="pie">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<!-- 5 · Si cambia el plan -->
+<section class="pieza" id="plan-5">
+  <span class="etiqueta">4 · Si cambia el plan</span>
+  <h1 style="margin-top:auto">¿Te demorás<br>o no salís?<br><span>Demora y cancelación.</span></h1>
+  <div style="position:relative;height:640px">
+    <div class="papel" style="position:absolute;left:0;top:30px;width:560px;transform:rotate(-4deg)"><img src="recursos/plan-ejemplo/demora-recorte.png" alt=""></div>
+    <div class="papel" style="position:absolute;right:0;top:110px;width:560px;transform:rotate(3deg)"><img src="recursos/plan-ejemplo/cancelacion-recorte.png" alt=""></div>
+  </div>
+  <p class="bajada" style="font-size:30px">Con los formularios de la AIP, firmados, a la misma oficina. La demora con la hora nueva en UTC, hasta tres por vuelo.</p>
+  <div class="pie">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<!-- 6 · Después del vuelo -->
+<section class="pieza" id="plan-6">
+  <span class="etiqueta">5 · Después del vuelo</span>
+  <h1 style="margin-top:auto;font-size:104px">¿Ya volaste?<br><span>Que quede en<br>tu bitácora.</span></h1>
+  <div class="tarjeta volaste" style="zoom:1.18;margin-top:10px">
+    <div class="top">
+      <span class="icono"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg></span>
+      <div><p class="mini">Plan de vuelo</p><h3>¿Ya volaste?</h3></div>
+    </div>
+    <div class="linea">
+      <p class="r">SADF → SADM <small>· LVABC</small></p>
+      <p class="q">Según el plan: 24/10, salida 15:30 y llegada 15:50, hora argentina</p>
+      <div class="bots"><span class="azulb">Registrar el vuelo</span><span class="gris">No lo volé</span></div>
+    </div>
+  </div>
+  <p class="bajada" style="font-size:30px">Cuando pasa tu hora de llegada, el inicio te pregunta y te deja el avión, la ruta y la fecha. Los horarios los ponés vos. Y si se te pasa, te avisamos por mail.</p>
+  <div class="pie">
+    <span class="dominio">vector.fdiaznem.com.ar</span>
+    <span class="etiqueta" style="color:var(--azul)">Deslizá →</span>
+  </div>
+</section>
+
+<!-- 7 · Cierre -->
+<section class="pieza" id="plan-7" style="gap:48px">
+  <div class="marca" style="margin-top:150px">%%LOGO_GRANDE%%</div>
+  <h1 style="font-size:112px">Del plan<br>de vuelo<br><span>a la bitácora.</span></h1>
+  <p class="bajada" style="font-size:38px">Para alumnos y pilotos en Argentina. Se instala en el teléfono como una app.</p>
+  <div><span class="boton" style="font-size:40px;padding:32px 48px">vector.fdiaznem.com.ar</span></div>
+  <span class="etiqueta" style="margin-top:auto">Link en la bio</span>
+</section>
+
+<script>
+  const COMPASS = (s) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+  for (const s of document.querySelectorAll(".pieza")) {
+    s.innerHTML = s.innerHTML
+      .replaceAll("%%LOGO_GRANDE%%", `<span class="logo grande">${COMPASS(84)}</span>`)
+      .replaceAll("%%LOGO%%", `<span class="logo">${COMPASS(40)}</span>`);
+  }
+  const p = new URLSearchParams(location.search).get("p");
+  const pieza = document.getElementById(p) || document.querySelector(".pieza");
+  pieza.classList.add("activa");
+  document.body.style.width = "1080px";
+</script>
+</body>
+</html>

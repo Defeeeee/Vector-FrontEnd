@@ -123,6 +123,56 @@ Instagram y Facebook).
 
 ---
 
+## 3. El carrusel del plan de vuelo (2026-10-20) — "Tu plan de vuelo, de Vector a la oficina ARO"
+
+**Imágenes:** `marketing/salida/plan-1.png` a `plan-7.png` (1080×1440, 3:4), de
+`marketing/plan-de-vuelo.html`. Se exportan con `node marketing/render.mjs plan-1 … plan-7`.
+- Los formularios (plan, demora y cancelación) los arma el código de Vector con una piloto
+  inventada, Lucía Ferrari (`marketing/recursos/plan-ejemplo.mjs`).
+- El de EANA va recortado desde la casilla 7, **sin el logo de EANA**: Vector no es un
+  servicio de EANA y la pieza no tiene que sugerirlo.
+- La meteo y los NOTAM de la placa 2 son los de San Fernando del 20/10/2026, tal cual los
+  mostró el editor.
+
+### Pie de foto
+> Tu plan de vuelo, de Vector a la oficina ARO ✈️
+>
+> Lo armás con tu avión guardado (equipo, transponder y colores) y la ruta, y Vector te
+> sugiere la duración y la autonomía. Antes de salir ves el TAF a tu hora y los NOTAM que
+> caen en tu horario, no todos los vigentes.
+>
+> Lo mandás firmado, en PDF, a la oficina ARO/AIS, con copia a vos. Si te demorás o no salís,
+> la demora y la cancelación salen igual. Y cuando aterrizás, queda en tu bitácora.
+>
+> Después de mandarlo, llamás a la oficina para confirmar, como siempre.
+>
+> Para alumnos y pilotos en Argentina. Link en la bio.
+>
+> #planDeVuelo #piloto #pilotoprivado #alumnopiloto #aviacion #aviacionargentina #aeroclub #NOTAM
+
+### Texto alternativo
+"Siete placas. 1: un plan de vuelo lleno de SADF a SADM con el cartel 'Mandado firmado, en
+PDF'. 2: la ruta como nodos y la duración y la autonomía sugeridas. 3: el TAF a las 1830Z y
+dos NOTAM de San Fernando 'en tu horario'. 4: las tres oficinas más cercanas y el mail a la
+oficina con el PDF adjunto. 5: los formularios de demora y de cancelación. 6: la tarjeta
+'¿Ya volaste?' del inicio. 7: 'Del plan de vuelo a la bitácora' y el link."
+
+### Lo que dice, contra el código
+- **El avión completa equipo, transponder y colores:** el perfil del avión
+  (`aircraft.plan_vuelo`, `aplicarAvion`).
+- **Sugiere duración y autonomía:** `sugerirEetConocidos` y `sugerirAutonomia`. Los textos
+  de la placa 2 son los del editor.
+- **NOTAM en tu horario:** `lib/meteo-plan.ts`.
+- **Firmado, en PDF, a la oficina, con copia:** `enviarPlan` y `armarMailPlan`. Asunto y
+  archivo con el formato de `asuntoDelMail` y `nombreDelArchivo`.
+- **Las tres oficinas más cercanas a SADF y sus millas:** `oficinasCercanas`, las mismas que
+  muestra el editor.
+- **La demora "hasta tres por vuelo":** `MAXIMO_DEMORAS`, AIP ENR 1.10, 7.3.
+- **"¿Ya volaste?", sin horarios, y el mail:** `lib/plan-cierre.ts` y
+  `/api/cron/plan-por-registrar`.
+- **"Llamás para confirmar":** lo pide la AIC A 19/2026; Vector no lo reemplaza.
+- No dice "gratis" ni "oficial".
+
 ## Lo que se verificó contra el código
 
 | Lo que dice | Dónde está |

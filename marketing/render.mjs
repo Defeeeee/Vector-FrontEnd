@@ -19,6 +19,8 @@ const PIEZAS = {
   "carrusel-2": [1080, 1350],
   "carrusel-3": [1080, 1350],
   "carrusel-4": [1080, 1350],
+  // El carrusel del plan de vuelo para Instagram, en 3:4.
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((n) => [`plan-${n}`, [1080, 1440, "plan-de-vuelo.html"]])),
   // La publicación de una foto: su propio archivo.
   publicacion: [1080, 1350, "publicacion.html"],
 };
