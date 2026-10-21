@@ -11,6 +11,7 @@ import { calculateFlightDuration } from "@/lib/utils";
 import { splitRoute } from "@/lib/route";
 import { horasDeLaFila } from "@/lib/simulador";
 import { pesos } from "@/lib/costos";
+import { AUTORIDADES_CAD } from "@/lib/cad";
 
 const PURPOSE_OPTIONS = [
   { value: "ACR", label: "ACR – Acrobacia" },
@@ -166,6 +167,18 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
             <EditField label="Takeoff (UTC)"><input name="takeoff" type="time" value={takeoffTime} onChange={(e) => setTakeoffTime(e.target.value)} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none font-bold focus:border-zinc-900 dark:focus:border-white transition-colors [color-scheme:light] dark:[color-scheme:dark]" /></EditField>
             <EditField label="Landing (UTC)"><input name="landing" type="time" value={landingTime} onChange={(e) => setLandingTime(e.target.value)} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none font-bold focus:border-zinc-900 dark:focus:border-white transition-colors [color-scheme:light] dark:[color-scheme:dark]" /></EditField>
             <EditField label="Duration"><input name="duration" step="0.1" type="number" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none font-bold focus:border-zinc-900 dark:focus:border-white transition-colors" /></EditField>
+            {/* Quién certifica el vuelo en el CAD (opcional, migración 032). El alumno no declara en el CAD. */}
+            {!alumno && (
+              <>
+                <EditField label="Autoridad para el CAD">
+                  <select name="cad_autoridad_id" defaultValue={flight.cad_autoridad_id ? String(flight.cad_autoridad_id) : ""} className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-white transition-all font-bold">
+                    <option value="" className="dark:bg-zinc-900">Sin cargar</option>
+                    {AUTORIDADES_CAD.map((a) => <option key={a.id} value={a.id} className="dark:bg-zinc-900">{a.nombre.charAt(0) + a.nombre.slice(1).toLowerCase()}</option>)}
+                  </select>
+                </EditField>
+                <EditField label="Nombre y apellido (CAD)"><input name="cad_autoridad_nombre" maxLength={120} defaultValue={flight.cad_autoridad_nombre ?? ""} placeholder="Quien certifica el vuelo" className="w-full bg-transparent border-b border-zinc-300 dark:border-zinc-700 py-2 text-sm md:text-base text-zinc-900 dark:text-white outline-none font-bold focus:border-zinc-900 dark:focus:border-white transition-colors" /></EditField>
+              </>
+            )}
           </div>
 
           <div className="space-y-4 md:space-y-6 pt-4 border-t border-zinc-200 dark:border-white/10">

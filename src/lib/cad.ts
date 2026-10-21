@@ -91,6 +91,8 @@ export interface BorradorCad {
   discriminaciones: { tipoDiscriminacionID: number; horas: string }[];
   /** Por qué no se puede mandar, o `null`. */
   problema: string | null;
+  /** La autoridad que el piloto cargó en el vuelo, si la cargó: el panel la usa en vez de la memoria. */
+  autoridad?: { id: string; nombre: string } | null;
 }
 
 /** Lo que Vector sabe del vuelo (`Flight`) que hace falta acá. */
@@ -114,6 +116,9 @@ export interface VueloVector {
   imc_pil?: number | null;
   imc_cop?: number | null;
   capota?: number | null;
+  /** La autoridad certificante, si el piloto la cargó en el vuelo (migración 032). */
+  cad_autoridad_id?: number | null;
+  cad_autoridad_nombre?: string | null;
 }
 
 export interface AvionVector {
@@ -278,6 +283,8 @@ export function borradorCad(
     finalidad,
     discriminaciones,
     problema,
+    autoridad:
+      f.cad_autoridad_id && f.cad_autoridad_nombre?.trim() ? { id: String(f.cad_autoridad_id), nombre: f.cad_autoridad_nombre.trim().toUpperCase() } : null,
   };
 }
 
@@ -714,4 +721,60 @@ export function pendientesDelCad(
       !(f.aircraft_id && simuladores.has(f.aircraft_id))
     );
   }).length;
+}
+
+/* -------------------------------------------------------------------------- */
+/* La autoridad certificante, guardada en el vuelo                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * La lista de autoridades certificantes del CAD (`GetAutoridadesListItem`, pública, leída el
+ * 2026-10-21), para cargarla al registrar el vuelo sin estar en el CAD. El panel igual la
+ * compara con la lista viva: si ANAC cambia un id, ese vuelo pide elegirla de nuevo.
+ */
+export const AUTORIDADES_CAD: { id: number; nombre: string }[] = [
+  { id: 5, nombre: "INSTRUCTOR DE VUELO" },
+  { id: 6, nombre: "JEFE DE INSTRUCTORES" },
+  { id: 7, nombre: "DIRECTOR ESCUELA" },
+  { id: 2, nombre: "JEFE DE AERODROMO" },
+  { id: 3, nombre: "OFICINA DE PLAN DE VUELO" },
+  { id: 4, nombre: "OFICINA DE ARO/AIS" },
+  { id: 8, nombre: "PRESIDENTE INST. AERODEPORTIVA" },
+  { id: 9, nombre: "INSPECTORES DE VUELO" },
+  { id: 10, nombre: "INSPECTORES DE LINEA AEREA" },
+  { id: 11, nombre: "DIRECTOR DE AERONAUTICA PROVINCIAL" },
+  { id: 12, nombre: "JEFE DE OPERACIONES" },
+  { id: 13, nombre: "TITULAR EMPRESA" },
+  { id: 14, nombre: "JEFE DE PILOTOS" },
+  { id: 15, nombre: "GTE DE OPERACIONES" },
+  { id: 16, nombre: "JEFE DE FLOTA" },
+  { id: 17, nombre: "JEFE DE LINEA" },
+  { id: 18, nombre: "INSPECTORES RECONOCIDOS" },
+  { id: 19, nombre: "INSTRUCTOR DE SIMULADOR" },
+  { id: 1, nombre: "OTROS" },
+];
+
+/** La autoridad de un formulario, revisada: un id de la lista y un nombre, o nada. */
+export function autoridadDelFormulario(id: unknown, nombre: unknown): { cad_autoridad_id: number | null; cad_autoridad_nombre: string | null } {
+  const n = Number(id);
+  const valido = AUTORIDADES_CAD.some((a) => a.id === n);
+  const texto = typeof nombre === "string" ? nombre.trim().replace(/\s+/g, " ").slice(0, 120) : "";
+  return { cad_autoridad_id: valido ? n : null, cad_autoridad_nombre: texto || null };
+}
+
+/**
+ * La última autoridad usada en cada finalidad, de los vuelos (del más nuevo al más viejo):
+ * lo que el formulario propone. Un vuelo de instrucción lo certifica el instructor, y uno
+ * privado, otra persona (Federico, 2026-10-21).
+ */
+export function autoridadesPorFinalidad(
+  vuelos: { purpose?: string | null; cad_autoridad_id?: number | null; cad_autoridad_nombre?: string | null }[]
+): Record<string, { id: number; nombre: string }> {
+  const salida: Record<string, { id: number; nombre: string }> = {};
+  for (const f of vuelos) {
+    const p = (f.purpose ?? "").trim().toUpperCase();
+    if (!p || salida[p] || !f.cad_autoridad_id || !f.cad_autoridad_nombre?.trim()) continue;
+    salida[p] = { id: f.cad_autoridad_id, nombre: f.cad_autoridad_nombre.trim() };
+  }
+  return salida;
 }

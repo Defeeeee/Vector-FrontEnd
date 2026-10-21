@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AUTORIDADES_CAD } from "@/lib/cad";
 import { useRouter } from "next/navigation";
 import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
@@ -133,7 +134,16 @@ interface FlightLogFormProps {
   plannedId?: string;
   /** El plan de vuelo que se está registrando: `logFlight` lo une al vuelo. */
   planVueloId?: string;
+  /**
+   * La última autoridad certificante usada en cada finalidad (`autoridadesPorFinalidad`):
+   * la que el formulario propone para el CAD. Vacío, los campos arrancan vacíos.
+   */
+  autoridades?: Record<string, { id: number; nombre: string }>;
 }
+
+/** "INSTRUCTOR DE VUELO" → "Instructor de vuelo": la lista del CAD viene en mayúsculas. */
+const comoOracion = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
+const OPCIONES_AUTORIDAD = AUTORIDADES_CAD.map((a) => ({ value: String(a.id), label: comoOracion(a.nombre) }));
 
 /**
  * What actually gets stored for a typed code.
@@ -162,7 +172,7 @@ function isValidCode(code: string, airport: AirportRef | null): boolean {
   return cleaned.length === 4 && /^[A-Z0-9]+$/.test(cleaned);
 }
 
-export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, plannedId, planVueloId }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, plannedId, planVueloId, autoridades = {} }: FlightLogFormProps) {
   const router = useRouter();
   const { notificar } = useAvisos();
   const [isPending, setIsPending] = useState(false);
@@ -200,6 +210,15 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   const [remarks, setRemarks] = useState("");
+
+  /*
+    Quién certifica el vuelo en el CAD (opcional, migración 032). Propone la última usada
+    para la finalidad, y la sigue al cambiar de finalidad hasta que el piloto la toca.
+  */
+  const sugerida = (p: string) => autoridades[(p || "").toUpperCase()];
+  const [autoridadId, setAutoridadId] = useState(() => (sugerida(initialData?.purpose || "VP") ? String(sugerida(initialData?.purpose || "VP")!.id) : ""));
+  const [autoridadNombre, setAutoridadNombre] = useState(() => sugerida(initialData?.purpose || "VP")?.nombre ?? "");
+  const autoridadTocada = useRef(false);
   const [cierraHoja, setCierraHoja] = useState(false);
 
   /**
@@ -607,7 +626,14 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   required
                   searchable
                   value={purpose}
-                  onChange={setPurpose}
+                  onChange={(p) => {
+                    setPurpose(p);
+                    if (!autoridadTocada.current) {
+                      const a = sugerida(p);
+                      setAutoridadId(a ? String(a.id) : "");
+                      setAutoridadNombre(a?.nombre ?? "");
+                    }
+                  }}
                   placeholder="Seleccionar finalidad..."
                   options={PURPOSE_OPTIONS}
                 />
@@ -661,6 +687,44 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   className={`${ledgerInput} resize-none`}
                 />
               </LedgerField>
+
+              {/* La autoridad certificante para el CAD de ANAC: opcional. Si se carga acá, el
+                  panel de "Pasar al CAD" ya la tiene. Un simulador va al CAD a mano. */}
+              {!esSimulador && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+                    <LedgerField label="Autoridad para el CAD">
+                      <StyledSelect
+                        name="cad_autoridad_id"
+                        searchable
+                        value={autoridadId}
+                        onChange={(v) => {
+                          autoridadTocada.current = true;
+                          setAutoridadId(v);
+                        }}
+                        placeholder="Opcional"
+                        options={OPCIONES_AUTORIDAD}
+                      />
+                    </LedgerField>
+                    <LedgerField label="Nombre y apellido">
+                      <input
+                        name="cad_autoridad_nombre"
+                        value={autoridadNombre}
+                        maxLength={120}
+                        onChange={(e) => {
+                          autoridadTocada.current = true;
+                          setAutoridadNombre(e.target.value);
+                        }}
+                        placeholder="Opcional — quien certifica el vuelo"
+                        className={ledgerInput}
+                      />
+                    </LedgerField>
+                  </div>
+                  <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
+                    El CAD de ANAC la pide en cada vuelo. Si la cargás acá, la tenés lista para pasarlo.
+                  </p>
+                </div>
+              )}
 
               {/* En el libro de papel a veces se cierra la hoja antes de llenarla (para
                   foliar, para certificar): este vuelo pasa a ser su último renglón, y en el

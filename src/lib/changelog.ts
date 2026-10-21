@@ -681,6 +681,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.27.3",
+    fecha: "2026-10-21",
+    motivo: "La autoridad certificante para el CAD, opcional al registrar y al editar un vuelo, y el panel la usa. Es parte de lo anunciado en la 2.27.0, que recién se está viendo.",
+  },
+  {
     version: "2.27.2",
     fecha: "2026-10-21",
     motivo: "El copiloto manda el libro en PDF por WhatsApp, y la Bitácora y el resumen del mes cuentan lo que falta pasar al CAD. Sin anuncio hasta que Federico pruebe el PDF por WhatsApp.",

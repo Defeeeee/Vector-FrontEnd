@@ -127,6 +127,11 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     res.writeHead(f ? 200 : 404, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(f ?? {}));
   }
+  if (req.method === "GET" && ruta === "/api/flights/history") {
+    const items = [...(SIN_VUELOS ? [] : vuelos)].sort((x, y) => String(y.takeoff).localeCompare(String(x.takeoff)));
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ items: items.slice(0, 100), total: items.length }));
+  }
   if (req.method === "GET" && ruta === "/api/flights") {
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(SIN_VUELOS ? [] : vuelos));

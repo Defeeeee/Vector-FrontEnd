@@ -315,7 +315,7 @@ const ESTILOS = `
     return d ? Number(d.cambiados) || 0 : null;
   }
 
-  async function marcarEnVector(items: { vectorId: string; cadId: number }[]): Promise<number | null> {
+  async function marcarEnVector(items: { vectorId: string; cadId: number; autoridad?: AutoridadCad }[]): Promise<number | null> {
     if (items.length === 0) return 0;
     if (!ventana || ventana.closed) return null;
     const vuelve = esperar("vector-cad:marcados", 30_000);
@@ -431,7 +431,9 @@ const ESTILOS = `
     memoria: MemoriaAutoridades | null
   ): Fila {
     const anterior = !!corte && b.fechaHoraSalida.slice(0, 19) < corte.slice(0, 19);
-    const autoridad = autoridadSugerida(memoria, b.finalidad);
+    // La que el piloto cargó en el vuelo (migración 032), si sigue en la lista del CAD; si no, la memoria.
+    const autoridad =
+      b.autoridad && autoridades.some((a) => String(a.key) === b.autoridad!.id) ? { ...b.autoridad } : autoridadSugerida(memoria, b.finalidad);
     const base = { b, omitido: null, enElCad: null, ids: null, elegido: false, anterior, autoridad };
     if (b.problema) return { ...base, problema: b.problema };
     const id = yaEstaEnElCad(b, enElCad);
@@ -728,10 +730,15 @@ const ESTILOS = `
     guardarMemoria(recordarAutoridades(leerMemoria(), sel.filter((f) => f.resultado?.ok).map((f) => ({ finalidad: f.b.finalidad, autoridad: f.autoridad }))));
     // Los ids salen de la lista del CAD: el mismo criterio que para los que ya estaban.
     const enElCad = await vuelosDelCad().catch(() => [] as VueloEnElCad[]);
+    // Con la autoridad que se usó, para que el vuelo en Vector diga lo mismo que el CAD.
     const items = filas
       .map((f) => ({ f, id: f.enElCad ?? (f.resultado?.ok ? yaEstaEnElCad(f.b, enElCad) : null) }))
       .filter((x): x is { f: Fila; id: number } => !!x.id)
-      .map((x) => ({ vectorId: x.f.b.vectorId, cadId: x.id }));
+      .map((x) => ({
+        vectorId: x.f.b.vectorId,
+        cadId: x.id,
+        ...(x.f.resultado?.ok ? { autoridad: { id: x.f.autoridad.id, nombre: x.f.autoridad.nombre.trim().toUpperCase() } } : {}),
+      }));
     marcadosEnVector = await marcarEnVector(items);
     for (const f of sel) if (!f.resultado?.ok) f.elegido = false;
     paso = "listo";

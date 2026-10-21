@@ -1,6 +1,7 @@
 "use server";
 
 import { horariosDelVuelo } from "@/lib/horarios";
+import { autoridadDelFormulario } from "@/lib/cad";
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
@@ -97,6 +98,8 @@ export async function logFlight(
     purpose: (formData.get("purpose") as string) || "VP",
     // "Cerrar la hoja después de este vuelo": el último renglón de su hoja en el libro.
     cierra_hoja: formData.get("cierra_hoja") === "true",
+    // Quién certifica el vuelo en el CAD, si la cargó (migración 032; `lib/cad.ts`).
+    ...autoridadDelFormulario(formData.get("cad_autoridad_id"), formData.get("cad_autoridad_nombre")),
   };
 
   const response = await apiFetch("/flights", {
@@ -255,6 +258,8 @@ export async function updateFlight(formData: FormData) {
     discount_type: (formData.get("discount_type") as string) || null,
     discount_amount: getNumber(formData.get("discount_amount")),
     purpose: (formData.get("purpose") as string) || undefined,
+    // Sólo si el formulario la trae: un PATCH sin estos campos no la toca (migración 032).
+    ...(formData.has("cad_autoridad_id") ? autoridadDelFormulario(formData.get("cad_autoridad_id"), formData.get("cad_autoridad_nombre")) : {}),
   };
 
   try {

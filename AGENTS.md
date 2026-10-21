@@ -320,6 +320,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     031), con "Deshacer".
   - **"Traer a Vector"** (del CAD a la bitácora, `TRAER_DEL_CAD`): lee `Get?id=` de cada
     vuelo, exige el avión en el Hangar y crea con `traido_del_cad` (migración 030: no cobra).
+  - **La autoridad certificante se puede cargar en el vuelo** (opcional, migración 032,
+    `cad_autoridad_id` y `cad_autoridad_nombre`): el formulario propone la última de la
+    finalidad (`autoridadesPorFinalidad`), el panel la usa, y al cargar guarda la que se usó.
+    La lista es `AUTORIDADES_CAD` (la del CAD del 2026-10-21); el panel la compara con la viva.
   - **La ventanita la abre un toque:** Chrome bloquea la que abre el script del marcador, y
     entonces el panel arranca con "Conectar con Vector".
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo

@@ -45,7 +45,7 @@ export default function ConectorCad({
       if (e.origin !== origenCad || e.source !== cad) return;
       const d = e.data as {
         tipo?: string;
-        items?: { vectorId: string; cadId: number }[];
+        items?: { vectorId: string; cadId: number; autoridad?: { id: string; nombre: string } }[];
         omitir?: { vectorId: string; motivo: MotivoOmitido | null }[];
         vuelos?: unknown[];
       };

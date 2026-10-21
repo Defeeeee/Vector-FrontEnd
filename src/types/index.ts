@@ -35,6 +35,9 @@ export interface Flight {
   cad_vuelo_id?: number | null;
   /** Por qué no se pasa al CAD (migración 031): "foliado" o "ignorado". */
   cad_omitido?: "foliado" | "ignorado" | null;
+  /** Quién certifica el vuelo en el CAD (migración 032): id de la lista del CAD y nombre. */
+  cad_autoridad_id?: number | null;
+  cad_autoridad_nombre?: string | null;
   cad_cargado_at?: string | null;
 
   discount_type?: 'value' | 'percent';

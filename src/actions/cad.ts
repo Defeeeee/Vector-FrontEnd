@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { apiFetch } from "@/lib/api";
 import { getAirport } from "@/lib/airports";
-import { TRAER_DEL_CAD, matriculaCad, mismoVueloOtroDia, validarTraido } from "@/lib/cad";
+import { TRAER_DEL_CAD, autoridadDelFormulario, matriculaCad, mismoVueloOtroDia, validarTraido } from "@/lib/cad";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
 import type { Aircraft, Flight } from "@/types";
 
@@ -15,14 +15,20 @@ import type { Aircraft, Flight } from "@/types";
  * Sólo se aceptan ids con la forma de un vuelo de Vector y de un vuelo del CAD, y un tope
  * por pedido: lo que llega viene de otra pestaña.
  */
-export async function marcarEnElCad(items: { vectorId: string; cadId: number }[]) {
+export async function marcarEnElCad(items: { vectorId: string; cadId: number; autoridad?: { id: string; nombre: string } }[]) {
   const validos = (Array.isArray(items) ? items : [])
     .filter((i) => /^[0-9a-f-]{36}$/i.test(String(i?.vectorId)) && Number.isInteger(i?.cadId) && i.cadId > 0)
     .slice(0, 300);
   let marcados = 0;
   try {
     for (const i of validos) {
-      const r = await apiFetch(`/flights/${i.vectorId}`, { method: "PATCH", body: JSON.stringify({ cad_vuelo_id: i.cadId }) });
+      // Si se cargó recién, con la autoridad que se usó (migración 032). Un id que Vector no
+      // conoce no se guarda: la marca del CAD igual.
+      const autoridad = i.autoridad ? autoridadDelFormulario(i.autoridad.id, i.autoridad.nombre) : null;
+      const r = await apiFetch(`/flights/${i.vectorId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ cad_vuelo_id: i.cadId, ...(autoridad?.cad_autoridad_id && autoridad.cad_autoridad_nombre ? autoridad : {}) }),
+      });
       if (r.ok) marcados++;
     }
   } catch (e) {

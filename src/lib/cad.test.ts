@@ -20,6 +20,9 @@ import {
   mismoVueloOtroDia,
   fechaCortaCad,
   pendientesDelCad,
+  AUTORIDADES_CAD,
+  autoridadDelFormulario,
+  autoridadesPorFinalidad,
   type LugarParaCad,
   type VueloVector,
 } from "./cad";
@@ -477,5 +480,33 @@ describe("lo que falta pasar al CAD", () => {
   });
   it("hasta un día, para el resumen del mes", () => {
     expect(pendientesDelCad(vuelos, aviones, "2026-09-30")).toBe(2);
+  });
+});
+
+describe("la autoridad guardada en el vuelo", () => {
+  it("la lista tiene los ids del CAD, sin repetir", () => {
+    const ids = AUTORIDADES_CAD.map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(AUTORIDADES_CAD.find((a) => a.id === 5)?.nombre).toBe("INSTRUCTOR DE VUELO");
+  });
+  it("del formulario: sólo ids de la lista, el nombre sin espacios de más", () => {
+    expect(autoridadDelFormulario("5", "  Juan   Pérez ")).toEqual({ cad_autoridad_id: 5, cad_autoridad_nombre: "Juan Pérez" });
+    expect(autoridadDelFormulario("99", "")).toEqual({ cad_autoridad_id: null, cad_autoridad_nombre: null });
+    expect(autoridadDelFormulario(null, "x".repeat(200)).cad_autoridad_nombre).toHaveLength(120);
+  });
+  it("la última de cada finalidad, para proponerla", () => {
+    const m = autoridadesPorFinalidad([
+      { purpose: "INST", cad_autoridad_id: 5, cad_autoridad_nombre: "ANA GÓMEZ" },
+      { purpose: "INST", cad_autoridad_id: 6, cad_autoridad_nombre: "VIEJO" },
+      { purpose: "VP", cad_autoridad_id: 1, cad_autoridad_nombre: " " },
+      { purpose: "vp", cad_autoridad_id: 2, cad_autoridad_nombre: "JEFE" },
+    ]);
+    expect(m).toEqual({ INST: { id: 5, nombre: "ANA GÓMEZ" }, VP: { id: 2, nombre: "JEFE" } });
+  });
+  it("el borrador lleva la autoridad del vuelo, si tiene", () => {
+    const v: VueloVector = { id: "v", date: "2026-09-25", route: "SADF SADF", landings: 1, duration: 1, takeoff: "2026-09-25T13:00:00Z", landing: "2026-09-25T14:00:00Z", purpose: "INST", pic_day_loc: 1, cad_autoridad_id: 5, cad_autoridad_nombre: "Ana Gómez" };
+    const lugar0 = (c: string) => ({ codigo: c, candidatos: [c], nombre: null });
+    expect(borradorCad(v, { registration: "LVABC", type_acft: "MONT-T" }, lugar0).autoridad).toEqual({ id: "5", nombre: "ANA GÓMEZ" });
+    expect(borradorCad({ ...v, cad_autoridad_id: null }, { registration: "LVABC", type_acft: "MONT-T" }, lugar0).autoridad).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import { Aircraft, Profile } from "@/types";
+import { Aircraft, Flight, Profile } from "@/types";
 import { esAlumno } from "@/lib/licencias";
 import VueloAlumnoForm from "@/components/dashboard/VueloAlumnoForm";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import LiveSessionController from "@/components/dashboard/LiveSessionController"
 import SinAeronaves from "@/components/dashboard/SinAeronaves";
 import { parsePrefill } from "@/lib/prefill";
 import { ChevronLeft } from "lucide-react";
+import { autoridadesPorFinalidad } from "@/lib/cad";
 
 import { redirect } from "next/navigation";
 
@@ -15,12 +16,15 @@ async function getData() {
   // Order matters and has already bitten once: `/logbooks` was added in the
   // middle of this array without moving the names, so `logbooks` got the session
   // object and the page died on `logbooks.find is not a function`.
-  const [acRes, lbRes, sessionRes, perfilRes] = await Promise.all([
+  const [acRes, lbRes, sessionRes, perfilRes, recientesRes] = await Promise.all([
     apiFetch("/aircraft"),
     apiFetch("/logbooks"),
     apiFetch("/flight-helper/session"),
     // Al final, por lo de arriba: el alumno piloto ve un formulario más simple.
     apiFetch("/profiles"),
+    // Los últimos vuelos, del más nuevo al más viejo: de ahí sale la autoridad para el CAD
+    // que el formulario propone en cada finalidad (`autoridadesPorFinalidad`).
+    apiFetch("/flights/history?limit=100"),
   ]);
 
   if (acRes.status === 401 || sessionRes.status === 401) {
@@ -32,8 +36,9 @@ async function getData() {
   const logbooks = lbRes.ok ? await lbRes.json() : [];
   const session = sessionRes.ok ? await sessionRes.json() : { active: false };
   const perfiles: Profile[] = perfilRes.ok ? await perfilRes.json() : [];
+  const recientes = recientesRes.ok ? ((await recientesRes.json()) as { items?: Flight[] }).items ?? [] : [];
 
-  return { aircraft, session, logbooks, alumno: esAlumno(perfiles[0]?.license_type) };
+  return { aircraft, session, logbooks, alumno: esAlumno(perfiles[0]?.license_type), autoridades: autoridadesPorFinalidad(recientes) };
 }
 
 interface PageProps {
@@ -46,7 +51,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
   // de iOS. Ver `src/lib/prefill.ts`.
   const { initialData: prefillData, plannedId, planVueloId } = parsePrefill(resolvedParams);
 
-  const { aircraft, session, logbooks, alumno } = await getData();
+  const { aircraft, session, logbooks, alumno, autoridades } = await getData();
 
   return (
     <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full pb-20">
@@ -100,6 +105,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
             initialData={prefillData}
             plannedId={plannedId}
             planVueloId={planVueloId}
+            autoridades={autoridades}
             /*
               Antes de esto, `logFlight` redirigía sola con `push`, así que volver
               atrás desde `/dashboard/history` reabría este mismo formulario vacío.

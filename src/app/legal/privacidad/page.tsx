@@ -82,8 +82,10 @@ export default function PrivacidadPage() {
             cada vuelo, para no repetirlo. Si elegís &quot;Traer a Vector&quot;, el marcador lee de tu
             sesión del CAD los vuelos que ya declaraste y Vector guarda sólo los que tildás, con
             los datos del libro (fecha, horarios, aeródromos, matrícula, horas, aterrizajes y
-            finalidad). Vector no ve tu contraseña de ANAC, y la autoridad certificante que
-            figura en el CAD no se guarda en Vector.
+            finalidad). Vector no ve tu contraseña de ANAC. La autoridad certificante de un vuelo
+            (el cargo y el nombre y apellido de quien lo certifica, que el CAD pide) se guarda en
+            Vector sólo si la cargás vos, en el vuelo o al pasarlo al CAD; al traer vuelos del CAD
+            no se guarda. No se publica en tu perfil ni en la red.
           </li>
           <li>
             <strong>Saldo y paquetes de horas:</strong> si usás esa función, los
