@@ -30,6 +30,14 @@ export interface Guia {
 
 export const GUIAS: Guia[] = [
   {
+    slug: "examen-ppa",
+    corto: "Examen PPA",
+    titulo: "Preguntas del examen de Piloto Privado (PPA) de ANAC, para practicar",
+    descripcion:
+      "314 preguntas del banco de ANAC con su respuesta, por materia: aerodinámica, motor, instrumentos, meteorología, navegación, performance y reglamentación. Practicá y repasá las que fallás.",
+    actualizada: "2026-10-21",
+  },
+  {
     slug: "horas-centesimales",
     corto: "Horas centesimales",
     titulo: "Cuadro de horas centesimales: minutos a décimas de hora",
@@ -117,6 +125,10 @@ export const FUENTES = {
   paginaCad: {
     texto: "Registro electrónico de horas de vuelo, página de ANAC",
     url: "https://www.argentina.gob.ar/anac/personal-aeronautico/foliado-de-libro-de-vuelo",
+  },
+  bancoPpa: {
+    texto: "Preguntas de acuerdo RAAC 61.105, Conocimientos aeronáuticos (Res. ANAC 306/2014), página del examen de PPA de ANAC",
+    url: "https://www.argentina.gob.ar/anac/personal-aeronautico/examenes/ppa-piloto-privado-de-avion",
   },
   res147: {
     texto: "Resolución ANAC 147/2013 y su Adjunto A, la hoja del libro de vuelo de pilotos (derogada por la Res. 470/2025)",

@@ -707,6 +707,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.28.1",
+    fecha: "2026-10-21",
+    motivo: "La práctica del examen de PPA con el banco de ANAC (guía pública y tarjeta en Herramientas). Sin anuncio: la 2.28.0 salió el mismo día; va en la próxima con novedades.",
+  },
+  {
     version: "2.27.4",
     fecha: "2026-10-21",
     motivo: "El importador lee fotos de las hojas, y el copiloto manda el resumen de horas en PDF. Sin anuncio hasta que Federico pruebe las dos cosas en producción.",
