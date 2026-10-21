@@ -15,19 +15,27 @@ def limpiar(t):
     t = re.sub(r"\s+", " ", t).strip()
     if t.isupper(): t = t.capitalize()
     return t
+def sin_pie(t):
+    # El pie de la última página del PDF ("Powered by TCExam … TCPDF …") se pega al último texto.
+    return re.sub(r"\s*Powered by TC.*$", "", t)
 def opcion(t):
     t = re.sub(r"^\s*([a-cA-C][\)\.]|[a-c]\))\s*", "", t).strip().lstrip("-– ").strip()
     return re.sub(r"\s+", " ", t)
+# Las figuras recortadas del mismo banco (figuras.py y figuras-final.py): pregunta -> archivo.
+mapa = json.load(open(sys.argv[3])) if len(sys.argv) > 3 else {"pregunta_figura": {}, "dims": {}}
 salida, figuras = [], 0
 for q in b:
-    if re.search(r"figura|fig\.|ilustraci|gr[aá]fic|imagen", q["texto"], re.I):
+    figura = mapa["pregunta_figura"].get(str(q["n"]))
+    if re.search(r"figura|fig\.|ilustraci|gr[aá]fic|imagen", q["texto"], re.I) and not figura and q["n"] not in (167, 253):
         figuras += 1; continue
     materia = manual.get(q["n"]) or deANAC.get(q["materia"])
     assert materia, q["n"]
-    ops = [opcion(o["texto"]) for o in q["opciones"]]
+    ops = [sin_pie(opcion(o["texto"])) for o in q["opciones"]]
     assert all(ops), q["n"]
-    salida.append({"id": q["n"], "materia": materia, "pregunta": limpiar(q["texto"]), "opciones": ops, "correcta": [o["correcta"] for o in q["opciones"]].index(True)})
-print("con figura o gráfico (afuera):", figuras, "| quedan:", len(salida))
+    item = {"id": q["n"], "materia": materia, "pregunta": limpiar(q["texto"]), "opciones": ops, "correcta": [o["correcta"] for o in q["opciones"]].index(True)}
+    if figura: item["figura"] = {"src": figura, "ancho": mapa["dims"][figura][0], "alto": mapa["dims"][figura][1]}
+    salida.append(item)
+print("sin figura disponible (afuera):", figuras, "| quedan:", len(salida), "| con figura:", sum(1 for x in salida if "figura" in x))
 from collections import Counter; print(Counter(q["materia"] for q in salida))
 json.dump(salida, open(sys.argv[2], "w"), ensure_ascii=False, indent=1)
 for q in salida[:3] + [x for x in salida if x["id"] in (5,135,297,356,364)]: print(q["id"], q["materia"], "|", q["pregunta"][:80], "|", q["opciones"])

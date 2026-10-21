@@ -16,7 +16,7 @@ export default function GuiaExamenPpa() {
       <p>
         ANAC publica el banco de preguntas del curso teórico de Piloto Privado de Avión con sus respuestas, para
         alumnos e instructores. Acá están las <strong>{PREGUNTAS.length} preguntas</strong> de ese banco que tienen
-        una respuesta marcada y no dependen de una figura, ordenadas por materia, para que practiques.
+        una respuesta marcada, con sus figuras, ordenadas por materia, para que practiques.
       </p>
 
       <h2 id="practicar">Practicar</h2>
@@ -32,8 +32,12 @@ export default function GuiaExamenPpa() {
       </p>
       <ul>
         <li>
-          Las <strong>preguntas con figuras</strong> no están: necesitan el anexo de figuras, que se consulta en la página de
-          ANAC.
+          Las <strong>figuras</strong> son las que el mismo banco pone en cada pregunta (la tabla de altitud de densidad, el
+          VOR, el ADF, el gráfico de viento cruzado…). Tocalas para verlas enteras.
+        </li>
+        <li>
+          Quedan afuera <strong>6 preguntas</strong> en las que el documento no marca una única respuesta correcta: no
+          adivinamos respuestas.
         </li>
         <li>
           El banco es de 2014 y la <strong>RAAC 61 se reeditó en enero de 2026</strong>. En las preguntas de reglamentación

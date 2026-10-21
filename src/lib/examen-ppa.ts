@@ -2,7 +2,8 @@ import banco from "@/data/examen-ppa.json";
 
 /**
  * La práctica del examen de Piloto Privado (PPA) con el banco de preguntas de ANAC
- * (`docs/normativa/examen-ppa-anac.md`): 314 preguntas con su respuesta, en 8 materias.
+ * (`docs/normativa/examen-ppa-anac.md`): 379 preguntas con su respuesta, en 8 materias. 63
+ * llevan su figura, recortada del mismo banco (`public/examen-ppa/`).
  *
  * Puro: armar una tanda, corregir y llevar la cuenta de lo que se falló. La cuenta vive en
  * el navegador de quien practica (no hace falta cuenta en Vector).
@@ -15,6 +16,8 @@ export interface Pregunta {
   opciones: string[];
   /** El índice de la opción correcta, como la marca el banco. */
   correcta: number;
+  /** La figura que el banco pone en la pregunta, si tiene. */
+  figura?: { src: string; ancho: number; alto: number };
 }
 
 export const MATERIAS = [

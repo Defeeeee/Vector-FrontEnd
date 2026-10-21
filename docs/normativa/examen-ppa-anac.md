@@ -27,10 +27,16 @@ Los scripts están en `scripts/examen-ppa/`, en Python con `pypdf`:
 2. Se asignó la materia de dos maneras:
    - **235 preguntas**, cruzándolas por texto con los 8 capítulos del otro PDF;
    - **144 preguntas, a mano**, leyéndolas una por una. CRM, prevención de accidentes, factores humanos y mercancías peligrosas van en Generalidades, y "Regulaciones" se muestra como "Reglamentación".
-3. Se limpiaron los prefijos internos del banco ("001-", "24-10-13", "PPAMOT:", "CRM", "NAV:") y las mayúsculas sostenidas, sin tocar el contenido.
-   - **Las preguntas con figura, gráfico o imagen (65) quedan afuera.** El anexo trae algunas figuras como dibujo y no como imagen, y el banco cita figuras que el anexo no tiene (la 21, por ejemplo). Mostrarlas sin la figura no tendría sentido.
+3. Se limpiaron los prefijos internos del banco ("001-", "24-10-13", "PPAMOT:", "CRM", "NAV:"), las mayúsculas sostenidas y el pie de la última página ("Powered by TCExam…"), sin tocar el contenido.
+4. **Las figuras (2026-10-21, segunda tanda)** salen del mismo banco, no del anexo: el banco pone cada figura adentro del recuadro de su pregunta, entre el texto y las opciones.
+   - `4-recortar-figuras.py`, con PyMuPDF, busca las imágenes dibujadas entre el renglón de la pregunta y su primera opción (aunque caigan en otra página) y recorta esa caja a 170 dpi.
+   - `5-figuras-sin-repetir.py` las achica a 900 px en JPEG y junta las repetidas: la Figura 37 aparece en 9 preguntas y la 30 en 10. **63 preguntas, 27 figuras, ~2 MB**, en `public/examen-ppa/`.
+   - **Se revisaron las 63 una por una** en hojas de contacto: cada figura es la que el banco pone en esa pregunta.
+   - Dos preguntas que el filtro marcó no la necesitan: la 167 ("con**figura**ción") y la 253 (el modelo de Reason es "una representación gráfica").
+   - Una rareza del banco, que se respeta: la 266 y la 384 tienen el mismo texto ("La ilustración A indica que la aeronave se encuentra") con figuras y respuestas distintas, y lo mismo la 283 y la 385. Cada una va con la figura que el banco le pone.
+   - El anexo de figuras no se usó: algunas figuras son dibujos y no imágenes, y le faltan figuras que el banco cita (la 21).
 
-**Quedan 314 preguntas.** El test `src/lib/examen-ppa.test.ts` fija su forma.
+**Quedan 379 preguntas, 63 con figura.** El test `src/lib/examen-ppa.test.ts` fija su forma y que cada figura exista.
 
 ## Lo que hay que tener en cuenta
 

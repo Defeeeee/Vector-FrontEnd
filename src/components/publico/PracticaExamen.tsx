@@ -44,6 +44,24 @@ function guardar(h: Historial) {
 
 type Respuesta = { pregunta: Pregunta; elegida: number };
 
+/** La figura de la pregunta, como la pone el banco de ANAC. Sobre blanco aun en oscuro: son gráficos impresos. Tocándola, se abre entera. */
+function Figura({ p, chica = false }: { p: Pregunta; chica?: boolean }) {
+  if (!p.figura) return null;
+  return (
+    <a href={p.figura.src} target="_blank" rel="noopener" className="block rounded-2xl bg-white border border-zinc-200 dark:border-white/10 p-2" title="Ver la figura entera">
+      {/* eslint-disable-next-line @next/next/no-img-element -- imagen estática, ya en su tamaño */}
+      <img
+        src={p.figura.src}
+        width={p.figura.ancho}
+        height={p.figura.alto}
+        loading="lazy"
+        alt={`Figura de la pregunta ${p.id} del banco de ANAC`}
+        className={`w-full h-auto object-contain mx-auto ${chica ? "max-h-56" : "max-h-[460px]"}`}
+      />
+    </a>
+  );
+}
+
 export default function PracticaExamen() {
   const [historial, setHistorial] = useState<Historial>({});
   const [materia, setMateria] = useState<Materia | null>(null);
@@ -162,6 +180,7 @@ export default function PracticaExamen() {
             {mal.map(({ pregunta: p, elegida }) => (
               <div key={p.id} className="rounded-2xl bg-zinc-50 dark:bg-white/[0.03] p-4 space-y-1.5 text-sm">
                 <p className="font-semibold text-zinc-900 dark:text-white">{p.pregunta}</p>
+                <Figura p={p} chica />
                 <p className="text-red-600 dark:text-red-400">Elegiste: {p.opciones[elegida]}</p>
                 <p className="text-emerald-700 dark:text-emerald-400">Correcta: {p.opciones[p.correcta]}</p>
                 {p.materia === "Reglamentación" && <p className="text-xs text-amber-700 dark:text-amber-400">{NOTA_REGLAMENTACION}</p>}
@@ -196,6 +215,7 @@ export default function PracticaExamen() {
         <div className="h-full bg-zinc-900 dark:bg-white" style={{ width: `${(100 * actual) / tanda.length}%` }} />
       </div>
       <p className="text-lg font-bold text-zinc-900 dark:text-white leading-snug">{p.pregunta}</p>
+      <Figura p={p} />
       <div className="space-y-2.5">
         {p.opciones.map((o, i) => {
           const esCorrecta = i === p.correcta;

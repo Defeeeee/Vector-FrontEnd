@@ -34,7 +34,7 @@ export const GUIAS: Guia[] = [
     corto: "Examen PPA",
     titulo: "Preguntas del examen de Piloto Privado (PPA) de ANAC, para practicar",
     descripcion:
-      "314 preguntas del banco de ANAC con su respuesta, por materia: aerodinámica, motor, instrumentos, meteorología, navegación, performance y reglamentación. Practicá y repasá las que fallás.",
+      "379 preguntas del banco de ANAC con su respuesta y sus figuras, por materia: aerodinámica, motor, instrumentos, meteorología, navegación, performance y reglamentación.",
     actualizada: "2026-10-21",
   },
   {

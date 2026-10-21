@@ -1,11 +1,24 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { MATERIAS, PREGUNTAS, armarTanda, avance, falladas, registrar, resultado, type Historial } from "./examen-ppa";
 
 describe("el banco de preguntas del PPA", () => {
-  it("son las 314 del banco de ANAC que tienen respuesta y no tienen figura", () => {
-    // Ver docs/normativa/examen-ppa-anac.md: 385 en el banco, 6 sin una correcta legible, 65 con figura.
-    expect(PREGUNTAS).toHaveLength(314);
-    expect(new Set(PREGUNTAS.map((p) => p.id)).size).toBe(314);
+  it("son las 379 del banco de ANAC que tienen una respuesta legible", () => {
+    // Ver docs/normativa/examen-ppa-anac.md: 385 en el banco, 6 sin una correcta legible.
+    expect(PREGUNTAS).toHaveLength(379);
+    expect(new Set(PREGUNTAS.map((p) => p.id)).size).toBe(379);
+  });
+
+  it("las que nombran una figura la traen, y el archivo existe", () => {
+    const conFigura = PREGUNTAS.filter((p) => p.figura);
+    expect(conFigura).toHaveLength(63);
+    for (const p of conFigura) {
+      expect(existsSync(`public${p.figura!.src}`), `figura de ${p.id}`).toBe(true);
+      expect(p.figura!.ancho).toBeGreaterThan(100);
+    }
+    // Palabra entera: "configuración" no es una figura (la 167).
+    for (const p of PREGUNTAS.filter((x) => /\bfigura\b|ilustraci|siguiente (imagen|gr[aá]fico)/i.test(x.pregunta)))
+      expect(p.figura, `la ${p.id} nombra una figura`).toBeDefined();
   });
 
   it("cada una con 2 o 3 opciones, una correcta y una materia de las 8", () => {
@@ -16,9 +29,9 @@ describe("el banco de preguntas del PPA", () => {
       expect(p.correcta).toBeGreaterThanOrEqual(0);
       expect(p.correcta).toBeLessThan(p.opciones.length);
       expect(MATERIAS).toContain(p.materia);
-      // Sin los prefijos internos del banco ni referencias a figuras que no se muestran.
+      // Sin los prefijos internos del banco ni el pie del PDF.
       expect(p.pregunta, `prefijo en ${p.id}`).not.toMatch(/^(\d|24-10-13|PPA|CRM|NAV)/);
-      expect(p.pregunta, `figura en ${p.id}`).not.toMatch(/figura|ilustraci/i);
+      expect(p.opciones.join(" "), `pie del PDF en ${p.id}`).not.toMatch(/Powered by/);
     }
   });
 

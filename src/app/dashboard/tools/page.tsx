@@ -23,7 +23,7 @@ export default function ToolsPage() {
         </span>
         <span className="flex-1">
           <span className="block font-semibold text-zinc-900 dark:text-white">Practicá el examen de Piloto Privado</span>
-          <span className="block text-sm text-zinc-500 dark:text-zinc-400">{PREGUNTAS.length} preguntas del banco de ANAC, por materia, con su respuesta.</span>
+          <span className="block text-sm text-zinc-500 dark:text-zinc-400">{PREGUNTAS.length} preguntas del banco de ANAC, por materia, con su respuesta y sus figuras.</span>
         </span>
         <ArrowRight className="w-4 h-4 text-zinc-400" />
       </Link>
