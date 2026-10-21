@@ -299,7 +299,7 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
   - **Falta:** CHG, y que el editor ande sin señal (el planificador sí anda).
-- **Pasar al CAD de ANAC** (2026-10-21, 2.26.2 a 2.26.5 sin anuncio; Bitácora → Vuelos → "Pasar al CAD"):
+- **Pasar al CAD de ANAC y Traer a Vector** (2026-10-21, anunciado en la 2.27.0; Bitácora → Vuelos → "Pasar al CAD"):
   - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
     "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la
     contraseña de ANAC en Vector.
@@ -318,9 +318,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     queda para revisar (`mismoVueloOtroDia`). Pasó con 4 vuelos reales de Federico.
   - **"Ignorar" y "Ya foliado"** sacan un vuelo de la lista (`flights.cad_omitido`, migración
     031), con "Deshacer".
-  - **"Traer a Vector"** (del CAD a la bitácora) está hecho y **apagado** (`TRAER_DEL_CAD`).
-    El backend (030, `traido_del_cad`: no cobra) y la forma de `Get?id=` ya están
-    confirmados: falta decidir prenderlo.
+  - **"Traer a Vector"** (del CAD a la bitácora, `TRAER_DEL_CAD`): lee `Get?id=` de cada
+    vuelo, exige el avión en el Hangar y crea con `traido_del_cad` (migración 030: no cobra).
+  - **La ventanita la abre un toque:** Chrome bloquea la que abre el script del marcador, y
+    entonces el panel arranca con "Conectar con Vector".
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

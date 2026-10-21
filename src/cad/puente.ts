@@ -253,13 +253,33 @@ const ESTILOS = `
     });
   }
 
+  function abrirVentana() {
+    ventana = window.open(`${VECTOR}/cad/conector`, "vector-cad", "popup,width=420,height=560");
+  }
+
+  /**
+   * Chrome deja abrir una ventana sólo como respuesta a un toque, y este script termina de
+   * cargar un momento después del toque en el marcador: muchas veces la ventanita queda
+   * bloqueada. Entonces el panel pide el toque él (Federico, 2026-10-21: había que tocar
+   * "Abrir Vector de nuevo" después de un error).
+   */
+  function pedirToque() {
+    cuerpo.innerHTML = `<div class="vacio"><p><b>Conectá el CAD con Vector</b></p>
+      <p class="nota">Se abre una ventanita de Vector con tu sesión. Dejala abierta mientras cargás: podés minimizarla.</p></div>`;
+    pie.innerHTML = `<div class="bots"><button class="b neg" id="conectar">Conectar con Vector</button></div>`;
+    ($("conectar") as HTMLButtonElement).onclick = () => {
+      abrirVentana();
+      void empezar();
+    };
+  }
+
   async function pedirVuelos(): Promise<{
     borradores: BorradorCad[];
     omitidos: (BorradorCad & { motivo: MotivoOmitido })[];
     conocidos: VueloConocido[];
     matriculas: string[];
   } | null> {
-    if (!ventana || ventana.closed) ventana = window.open(`${VECTOR}/cad/conector`, "vector-cad", "popup,width=420,height=560");
+    if (!ventana || ventana.closed) abrirVentana();
     if (!ventana) return null;
     const llegan = esperar("vector-cad:vuelos", 30_000);
     // La ventanita puede tardar en cargar: se le pide hasta que conteste.
@@ -366,10 +386,17 @@ const ESTILOS = `
         lugares(),
       ]);
       if (!vector) {
-        cuerpo.innerHTML = `<div class="vacio"><p><b>No pudimos hablar con Vector.</b></p>
-          <p class="nota">Si el navegador bloqueó la ventanita, permití las ventanas emergentes de este sitio. Fijate también que tengas la sesión de Vector iniciada.</p></div>`;
-        pie.innerHTML = `<div class="bots"><button class="b neg" id="reintentar">Abrir Vector de nuevo</button></div>`;
-        ($("reintentar") as HTMLButtonElement).onclick = () => void empezar();
+        const bloqueada = !ventana || ventana.closed;
+        cuerpo.innerHTML = bloqueada
+          ? `<div class="vacio"><p><b>El navegador bloqueó la ventanita de Vector.</b></p>
+            <p class="nota">Permití las ventanas emergentes de este sitio (el ícono a la derecha de la barra de direcciones) y tocá de nuevo.</p></div>`
+          : `<div class="vacio"><p><b>La ventanita de Vector no contestó.</b></p>
+            <p class="nota">Fijate que en ella tengas la sesión de Vector iniciada, y tocá de nuevo.</p></div>`;
+        pie.innerHTML = `<div class="bots"><button class="b neg" id="reintentar">Conectar con Vector</button></div>`;
+        ($("reintentar") as HTMLButtonElement).onclick = () => {
+          abrirVentana();
+          void empezar();
+        };
         return;
       }
       autoridades = auts;
@@ -918,5 +945,8 @@ const ESTILOS = `
     dibujar();
   }
 
-  void empezar();
+  // Se prueba abrir la ventanita ya; si el navegador la bloquea, se pide el toque.
+  abrirVentana();
+  if (ventana) void empezar();
+  else pedirToque();
 })();

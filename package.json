@@ -1,6 +1,6 @@
 {
   "name": "FlightLog-FrontEnd",
-  "version": "2.26.5",
+  "version": "2.27.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {

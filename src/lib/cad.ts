@@ -418,10 +418,10 @@ export function faltaAutoridad(a: AutoridadCad | null | undefined): boolean {
 /* -------------------------------------------------------------------------- */
 
 /**
- * "Traer a Vector" prendido. Apagado hasta que el backend tenga `traido_del_cad`
- * (migración 030): sin esa columna, un vuelo traído se crearía cobrando el saldo.
+ * "Traer a Vector" prendido (2.27.0). Necesita el backend con `traido_del_cad` (migración
+ * 030): sin esa columna, un vuelo traído se crearía cobrando el saldo.
  */
-export const TRAER_DEL_CAD = false;
+export const TRAER_DEL_CAD = true;
 
 /**
  * Un vuelo de Vector, reducido a lo que hace falta para saber si un vuelo del CAD ya está:

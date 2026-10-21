@@ -78,6 +78,29 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.27.0",
+    fecha: "2026-10-21",
+    titulo: "Tus vuelos y el CAD de ANAC",
+    novedades: [
+      {
+        icono: "compartir",
+        titulo: "Pasá tus vuelos al CAD",
+        texto:
+          "Con un marcador en tu navegador, Vector carga en el CAD los vuelos que te faltan, cada uno con su autoridad certificante, sin repetir los que ya están. Vector no ve tu contraseña de ANAC, y la declaración jurada la seguís haciendo vos.",
+        href: "/dashboard/history/cad",
+        cta: "Ver cómo se hace",
+      },
+      {
+        icono: "libro",
+        titulo: "Traé lo que ya declaraste",
+        texto:
+          "Si tenés vuelos en el CAD que no están en Vector, desde el mismo marcador los pasás a tu bitácora con el desglose del libro. No se descuentan de tu saldo.",
+        href: "/dashboard/history/cad",
+        cta: "Ver cómo se hace",
+      },
+    ],
+  },
+  {
     version: "2.26.0",
     fecha: "2026-10-20",
     titulo: "Del plan de vuelo a la bitácora",

@@ -76,10 +76,14 @@ export default function PrivacidadPage() {
             la demora y la cancelación.
           </li>
           <li>
-            <strong>Pasar los vuelos al CAD de ANAC:</strong> si usás el marcador &quot;Vector →
-            CAD&quot;, tus vuelos van de Vector a tu sesión del CAD, en tu navegador, y se cargan
-            como si los escribieras vos; Vector guarda el número que el CAD le da a cada vuelo,
-            para no repetirlo. Vector no ve tu contraseña de ANAC ni guarda nada del CAD.
+            <strong>Pasar los vuelos al CAD de ANAC, y traerlos:</strong> si usás el marcador
+            &quot;Vector → CAD&quot;, tus vuelos van de Vector a tu sesión del CAD, en tu navegador,
+            y se cargan como si los escribieras vos; Vector guarda el número que el CAD le da a
+            cada vuelo, para no repetirlo. Si elegís &quot;Traer a Vector&quot;, el marcador lee de tu
+            sesión del CAD los vuelos que ya declaraste y Vector guarda sólo los que tildás, con
+            los datos del libro (fecha, horarios, aeródromos, matrícula, horas, aterrizajes y
+            finalidad). Vector no ve tu contraseña de ANAC, y la autoridad certificante que
+            figura en el CAD no se guarda en Vector.
           </li>
           <li>
             <strong>Saldo y paquetes de horas:</strong> si usás esa función, los

@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.27.0 — Tus vuelos y el CAD de ANAC
+
+_21 de octubre de 2026_
+
+- **Pasá tus vuelos al CAD** — Con un marcador en tu navegador, Vector carga en el CAD los vuelos que te faltan, cada uno con su autoridad certificante, sin repetir los que ya están. Vector no ve tu contraseña de ANAC, y la declaración jurada la seguís haciendo vos.
+- **Traé lo que ya declaraste** — Si tenés vuelos en el CAD que no están en Vector, desde el mismo marcador los pasás a tu bitácora con el desglose del libro. No se descuentan de tu saldo.
+
 ## v2.26.0 — Del plan de vuelo a la bitácora
 
 _20 de octubre de 2026_
