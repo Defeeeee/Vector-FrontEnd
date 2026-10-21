@@ -310,9 +310,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     panel propone la última usada para esa finalidad (`autoridadSugerida`, memoria en el
     `localStorage` del CAD) y no carga un vuelo al que le falte alguna de las dos.
   - "Corregir" lleva a `/dashboard/history?editar=<id>`, que abre ese vuelo en edición.
-  - **Las listas del CAD son públicas** (sin sesión). Los aeródromos vienen como
-    `SADF -  FDO -  FDO (SAN FERNANDO)` (clave: el designador ANAC) o ` MGI (…)`. El CAD no
-    manda CSP ni COOP. Falta ver contra el CAD real qué devuelve "Crear".
+  - **Probado contra el CAD real** (Federico, 2026-10-21): borró un vuelo en el CAD y lo
+    volvió a cargar desde el panel. Las listas del CAD son públicas (sin sesión). Los
+    aeródromos vienen como `SADF -  FDO -  FDO (SAN FERNANDO)` (clave: el designador ANAC) o
+    ` MGI (…)`. El CAD no manda CSP ni COOP.
   - **El mismo vuelo con un día de diferencia** (mismo avión y hora) no se manda ni se trae:
     queda para revisar (`mismoVueloOtroDia`). Pasó con 4 vuelos reales de Federico.
   - **"Ignorar" y "Ya foliado"** sacan un vuelo de la lista (`flights.cad_omitido`, migración
