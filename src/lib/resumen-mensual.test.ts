@@ -137,3 +137,21 @@ describe("armarMensajeResumen", () => {
     expect(armarMensajeResumen(r, links).html).not.toContain("<b>Fede</b>");
   });
 });
+
+describe("lo que falta pasar al CAD", () => {
+  const links = { appUrl: "https://vector.fdiaznem.com.ar", linkBaja: "https://vector.fdiaznem.com.ar/mail/baja" };
+  it("cuenta lo del mes y lo anterior sin pasar, y lleva a Pasar al CAD", () => {
+    const vuelos = [vuelo("2026-09-10", 1), vuelo("2026-08-10", 1, { cad_vuelo_id: 9 }), vuelo("2026-09-12", 1), vuelo("2026-10-02", 1)];
+    const r = calcularResumen(entrada({ flights: vuelos }));
+    expect(r.cadPendientes).toBe(2);
+    const m = armarMensajeResumen(r, links);
+    expect(m.texto).toContain("Te faltan pasar 2 vuelos al CAD de ANAC.");
+    expect(m.html).toContain("/dashboard/history/cad");
+  });
+  it("sin pendientes, o al alumno, no lo menciona", () => {
+    const pasados = [vuelo("2026-09-10", 1, { cad_vuelo_id: 3 })];
+    expect(armarMensajeResumen(calcularResumen(entrada({ flights: pasados })), links).texto).not.toContain("CAD");
+    const alumno = calcularResumen(entrada({ licencia: "ALUMNO", flights: [vuelo("2026-09-10", 1)] }));
+    expect(alumno.cadPendientes).toBe(0);
+  });
+});

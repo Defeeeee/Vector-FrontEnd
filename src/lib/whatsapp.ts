@@ -165,3 +165,62 @@ export async function sendWhatsAppTemplate(
     return RECHAZADO;
   }
 }
+
+/**
+ * Manda un archivo (el libro de vuelo en PDF) como documento de WhatsApp, en dos pasos de
+ * la Cloud API que Kapso expone tal cual: se sube a `/{phone_number_id}/media`, que devuelve
+ * un id, y se manda un mensaje `document` con ese id. Probado el 2026-10-21 que Kapso acepta
+ * la subida (200 con `id`).
+ *
+ * Es una respuesta del copiloto, dentro de las 24 h del último mensaje del piloto: por eso
+ * no va por plantilla. Devuelve si el mensaje salió.
+ */
+export async function sendWhatsAppDocument(
+  to: string,
+  archivo: { bytes: Uint8Array; nombre: string; tipo?: string },
+  caption: string,
+  dynamicPhoneId?: string
+): Promise<boolean> {
+  const apiKey = process.env.KAPSO_API_KEY;
+  const phoneNumberId = process.env.KAPSO_PHONE_NUMBER_ID || dynamicPhoneId;
+  if (!apiKey || !phoneNumberId) {
+    console.error("Missing Kapso API configuration (KAPSO_API_KEY or KAPSO_PHONE_NUMBER_ID)");
+    return false;
+  }
+  const base = `https://api.kapso.ai/meta/whatsapp/v24.0/${phoneNumberId}`;
+  const tipo = archivo.tipo ?? "application/pdf";
+  try {
+    const fd = new FormData();
+    fd.append("messaging_product", "whatsapp");
+    fd.append("type", tipo);
+    fd.append("file", new Blob([Buffer.from(archivo.bytes)], { type: tipo }), archivo.nombre);
+    const subida = await fetch(`${base}/media`, { method: "POST", headers: { "X-API-Key": apiKey }, body: fd });
+    if (!subida.ok) {
+      console.error("Error uploading WhatsApp media via Kapso:", await subida.text());
+      return false;
+    }
+    const { id } = (await subida.json()) as { id?: string };
+    if (!id) {
+      console.error("Kapso no devolvió el id del archivo subido.");
+      return false;
+    }
+    const res = await fetch(`${base}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "document",
+        document: { id, filename: archivo.nombre, caption },
+      }),
+    });
+    if (!res.ok) {
+      console.error("Error sending WhatsApp document via Kapso:", await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Failed to send WhatsApp document:", err);
+    return false;
+  }
+}

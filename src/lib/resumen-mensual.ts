@@ -20,6 +20,7 @@
 import { aperturaDelAlumno, horasDeAperturaPPA } from "@/lib/apertura-alumno";
 import type { Aircraft, Flight, FlightPack, Logbook, Transaction } from "@/types";
 import { esAlumno, vuelosDesdeLaPpa } from "@/lib/licencias";
+import { pendientesDelCad } from "@/lib/cad";
 import { horasQueFaltan, requisitosLicencia } from "@/lib/pca-progress";
 import { horasQueFaltanPPA, requisitosPPA } from "@/lib/ppa-progress";
 import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
@@ -104,6 +105,8 @@ export interface Resumen {
   packs: { nombre: string; quedan: number }[];
   /** El CMA, si vence en los próximos 60 días o ya venció. */
   cma: { vence: string; vencido: boolean } | null;
+  /** Vuelos sin pasar al CAD de ANAC al cierre del mes (`pendientesDelCad`). El alumno no declara en el CAD: 0. */
+  cadPendientes: number;
 }
 
 const DIAS_AVISO_CMA = 60;
@@ -182,6 +185,7 @@ export function calcularResumen(e: EntradaResumen): Resumen {
     saldo: conSaldo && e.transactions.length > 0 ? e.transactions.reduce((t, x) => t + (Number(x.amount) || 0), 0) : null,
     packs: conSaldo ? [] : e.packs.filter((p) => p.is_active !== false).map((p) => ({ nombre: p.name, quedan: p.remaining_hours ?? 0 })),
     cma,
+    cadPendientes: alumno ? 0 : pendientesDelCad(e.flights, e.aircraft, finDelMes),
   };
 }
 
@@ -194,8 +198,8 @@ export interface MensajeResumen {
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 /** Las líneas del mail, en el orden de las tres preguntas. Las comparten texto y HTML. */
-function secciones(r: Resumen): { titulo: string; filas: string[] }[] {
-  const salida: { titulo: string; filas: string[] }[] = [];
+function secciones(r: Resumen, appUrl = ""): { titulo: string; filas: string[]; link?: { texto: string; url: string } }[] {
+  const salida: { titulo: string; filas: string[]; link?: { texto: string; url: string } }[] = [];
 
   const volado: string[] = [];
   if (r.vuelos > 0) {
@@ -251,6 +255,15 @@ function secciones(r: Resumen): { titulo: string; filas: string[] }[] {
   for (const p of r.packs) queda.push(`${p.nombre}: te ${p.quedan === 1 ? "queda" : "quedan"} ${horas(p.quedan)} h.`);
   if (queda.length) salida.push({ titulo: "Lo que te queda", filas: queda });
 
+  // Lo que falta declarar (Res. ANAC 470/2025): con los vuelos del mes cargados, el paso siguiente.
+  if (r.cadPendientes > 0) {
+    salida.push({
+      titulo: "Para el CAD",
+      filas: [`Te ${r.cadPendientes === 1 ? "falta pasar 1 vuelo" : `faltan pasar ${r.cadPendientes} vuelos`} al CAD de ANAC.`],
+      link: { texto: "Pasarlos al CAD", url: `${appUrl}/dashboard/history/cad` },
+    });
+  }
+
   if (r.cma) {
     salida.push({
       titulo: "Atención",
@@ -268,7 +281,7 @@ export function armarMensajeResumen(r: Resumen, d: { appUrl: string; linkBaja: s
       : `Tu ${mes} en Vector`;
   const saludo = r.nombre ? `Hola ${r.nombre}:` : "Hola:";
   const intro = `Tu resumen de ${r.nombreMes}.`;
-  const partes = secciones(r);
+  const partes = secciones(r, d.appUrl);
   const boton = r.vuelos > 0 ? { texto: "Ver tu bitácora", link: `${d.appUrl}/dashboard` } : { texto: "Cargar un vuelo", link: `${d.appUrl}/dashboard/log-flight` };
   const pie = "Te llega el primer día de cada mes.";
 
@@ -276,7 +289,7 @@ export function armarMensajeResumen(r: Resumen, d: { appUrl: string; linkBaja: s
     saludo,
     "",
     intro,
-    ...partes.flatMap((s) => ["", s.titulo.toUpperCase(), ...s.filas.map((f) => `- ${f}`)]),
+    ...partes.flatMap((s) => ["", s.titulo.toUpperCase(), ...s.filas.map((f) => `- ${f}`), ...(s.link ? [`  ${s.link.url}`] : [])]),
     "",
     `${boton.texto}: ${boton.link}`,
     "",
@@ -286,7 +299,15 @@ export function armarMensajeResumen(r: Resumen, d: { appUrl: string; linkBaja: s
   ].join("\n");
 
   const icono = (titulo: string): Icono =>
-    titulo === "Lo que volaste" ? "plane" : titulo === "Lo que te queda" ? "wallet" : titulo === "Atención" ? "triangle-alert" : "target";
+    titulo === "Lo que volaste"
+      ? "plane"
+      : titulo === "Lo que te queda"
+        ? "wallet"
+        : titulo === "Atención"
+          ? "triangle-alert"
+          : titulo === "Para el CAD"
+            ? "pencil-line"
+            : "target";
   const html = plantillaMail({
     appUrl: d.appUrl,
     preencabezado:
@@ -306,7 +327,7 @@ export function armarMensajeResumen(r: Resumen, d: { appUrl: string; linkBaja: s
             detalle: `${plural(r.vuelos, "vuelo", "vuelos")} · ${plural(r.aterrizajes, "aterrizaje", "aterrizajes")}`,
           })
         : "",
-      ...partes.map((s) => bloque(d.appUrl, { icono: icono(s.titulo), titulo: s.titulo, filas: s.filas, alerta: s.titulo === "Atención" })),
+      ...partes.map((s) => bloque(d.appUrl, { icono: icono(s.titulo), titulo: s.titulo, filas: s.filas, link: s.link, alerta: s.titulo === "Atención" })),
       `<div style="height:8px;line-height:8px">&nbsp;</div>`,
       botonMail(boton.texto, boton.link),
     ].join("\n"),

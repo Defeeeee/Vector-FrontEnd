@@ -19,6 +19,7 @@ import {
   validarTraido,
   mismoVueloOtroDia,
   fechaCortaCad,
+  pendientesDelCad,
   type LugarParaCad,
   type VueloVector,
 } from "./cad";
@@ -456,5 +457,25 @@ describe("el mismo vuelo, con otra fecha", () => {
   });
   it("la fecha para el aviso", () => {
     expect(fechaCortaCad("2026-09-05T18:20")).toBe("05/09 18:20");
+  });
+});
+
+describe("lo que falta pasar al CAD", () => {
+  const aviones = [{ id: "a1" }, { id: "sim", is_simulator: true }];
+  const vuelos = [
+    { date: "2025-10-31", aircraft_id: "a1" }, // antes del CAD: va en papel
+    { date: "2025-11-01", aircraft_id: "a1" }, // el primer día cuenta
+    { date: "2026-03-01", aircraft_id: "a1", cad_vuelo_id: 5 }, // ya está
+    { date: "2026-03-02", aircraft_id: "a1", cad_omitido: "foliado" },
+    { date: "2026-03-03", aircraft_id: "a1", cad_omitido: "ignorado" },
+    { date: "2026-03-04", aircraft_id: "sim" }, // simulador: a mano
+    { date: "2026-09-30", aircraft_id: "a1" },
+    { date: "2026-10-05", aircraft_id: null },
+  ];
+  it("cuenta desde el 1/11/2025, sin lo pasado, lo omitido ni los simuladores", () => {
+    expect(pendientesDelCad(vuelos, aviones)).toBe(3);
+  });
+  it("hasta un día, para el resumen del mes", () => {
+    expect(pendientesDelCad(vuelos, aviones, "2026-09-30")).toBe(2);
   });
 });

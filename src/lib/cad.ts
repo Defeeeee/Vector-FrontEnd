@@ -681,3 +681,37 @@ export function fechaCortaCad(salida: string): string {
 
 /** Por qué un vuelo de Vector no se pasa al CAD (migración 031 del backend). */
 export type MotivoOmitido = "foliado" | "ignorado";
+
+/* -------------------------------------------------------------------------- */
+/* Lo que falta pasar                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Desde cuándo cada vuelo se declara en el CAD: el 1/11/2025, obligatorio para la RAAC 91
+ * (Res. ANAC 470/2025, `docs/normativa/libro-de-vuelo-anac.md`). Lo anterior va en el libro
+ * de papel y no cuenta como pendiente.
+ */
+export const INICIO_CAD = "2025-11-01";
+
+/**
+ * Cuántos vuelos de Vector faltan pasar al CAD: desde `INICIO_CAD` (y hasta `hasta`, si se
+ * da), sin el id del CAD, no omitidos ("ya foliado" o "ignorado") y sin simuladores, que
+ * van a mano. Es la cuenta de la Bitácora y del resumen del mes.
+ */
+export function pendientesDelCad(
+  vuelos: { date?: string | null; aircraft_id?: string | null; cad_vuelo_id?: number | null; cad_omitido?: string | null }[],
+  aviones: { id: string; is_simulator?: boolean | null }[],
+  hasta?: string
+): number {
+  const simuladores = new Set(aviones.filter((a) => a.is_simulator).map((a) => a.id));
+  return vuelos.filter((f) => {
+    const fecha = (f.date ?? "").slice(0, 10);
+    return (
+      fecha >= INICIO_CAD &&
+      (!hasta || fecha <= hasta) &&
+      !f.cad_vuelo_id &&
+      !f.cad_omitido &&
+      !(f.aircraft_id && simuladores.has(f.aircraft_id))
+    );
+  }).length;
+}

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type, type GenerateContentConfig } from "@google/genai";
 import { chatConRespaldo } from "@/lib/gemini";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
-import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { sendWhatsAppDocument, sendWhatsAppMessage } from "@/lib/whatsapp";
+import { armarPdfDelLibro } from "@/lib/libro-anac-armar";
 import { timingSafeEqual } from "crypto";
 import { anacIndicator } from "@/lib/madhel-reference";
 import { componerFicha, datosAip } from "@/lib/aip";
@@ -803,6 +804,8 @@ Los datos de aeródromo, pistas, frecuencias y teléfonos que devuelven tus herr
 4. Al recibir los datos de 'get_airport_info', preséntale al piloto la ficha técnica en formato claro y organizado, incluyendo los NOTAMs si los hay.
 5. CRÍTICO: La herramienta 'get_airport_info' acepta TANTO códigos OACI de 4 letras (SADF, SAEZ, SAAK) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE, PAL, PTA). NUNCA inventes ni modifiques el código: si el usuario dice 'MGI' llama a la herramienta con 'MGI', si dice 'info FDO' usa 'FDO', si dice 'SADF' usa 'SADF'. No le agregues ni quites letras.
 
+## EL LIBRO DE VUELO EN PDF:
+Si el piloto pide su libro de vuelo, la bitácora en PDF, "las hojas del libro" o algo parecido, usá la herramienta 'send_logbook_pdf': se lo manda como archivo por este chat, con la hoja del libro de ANAC. Si lleva más de un libro en Vector y nombra uno, pasá ese nombre. Después confirmale en una línea que se lo mandaste. No lo llames "oficial": es el libro en papel que convive con el CAD de ANAC.
 
 ## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
 Para determinar la duración de un vuelo o validarla, resta la hora de despegue de la de aterrizaje para obtener horas y minutos. Los minutos deben convertirse a decimales con precisión según la siguiente tabla exacta:
@@ -942,6 +945,16 @@ ${flightContext}`;
                   icao_code: { type: Type.STRING, description: "El código del aeródromo. Acepta TANTO códigos OACI de 4 letras (SADF, SAAK, SAEZ) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE). NUNCA modifiques ni le agregues letras al código que te pasa el usuario: si dice MGI usa MGI, si dice SAAK usa SAAK." }
                 },
                 required: ["icao_code"]
+              }
+            },
+            {
+              name: "send_logbook_pdf",
+              description: "Le manda al piloto, por este chat, su libro de vuelo en PDF con la hoja del libro de ANAC. Úsala cuando pida su libro, su bitácora en PDF o las hojas del libro.",
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  logbook_name: { type: Type.STRING, description: "Nombre del libro, sólo si el piloto lleva más de uno y nombra cuál. Omitir para el principal." }
+                }
               }
             }
           ]
@@ -1242,6 +1255,26 @@ ${flightContext}`;
                 response: { error: `Error consultando clima: ${(err as any).message}` }
               });
             }
+          } else if (call.name === "send_logbook_pdf") {
+            // El mismo libro que se baja de la web (`lib/libro-anac-armar.ts`), leído con la
+            // clave del piloto. Se manda como documento antes de que el modelo conteste, así
+            // la confirmación llega después del archivo.
+            const libro = await armarPdfDelLibro(
+              (ruta) => fetch(`${API_URL}${ruta}`, { headers: { "X-API-Key": userApiKey }, cache: "no-store" }),
+              { libroNombre: typeof args.logbook_name === "string" ? args.logbook_name : null }
+            );
+            if (!libro.ok) {
+              toolResults.push({ name: call.name, response: { error: libro.error } });
+              continue;
+            }
+            const caption = `Tu libro de vuelo${libro.libro ? ` (${libro.libro})` : ""}: ${libro.vuelos} ${libro.vuelos === 1 ? "vuelo" : "vuelos"}.`;
+            const enviado = await sendWhatsAppDocument(fromNumber, { bytes: libro.bytes, nombre: libro.archivo }, caption, payloadPhoneNumberId);
+            toolResults.push({
+              name: call.name,
+              response: enviado
+                ? { result: `Se le mandó el PDF (${libro.archivo}, ${libro.vuelos} vuelos).` }
+                : { error: "No se pudo mandar el archivo por WhatsApp. Que lo baje desde la web: Bitácora, botón de descarga." },
+            });
           } else if (call.name === "get_airport_info") {
             const icao = args.icao_code?.trim().toUpperCase();
             if (!icao) {
