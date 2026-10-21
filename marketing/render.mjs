@@ -24,6 +24,8 @@ const PIEZAS = {
   // "Pasar al CAD" para Instagram: el carrusel en 3:4 y las historias en 9:16.
   ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((n) => [`cad-${n}`, [1080, 1440, "cad.html"]])),
   ...Object.fromEntries([1, 2, 3].map((n) => [`cad-historia-${n}`, [1080, 1920, "cad.html"]])),
+  // "Pasar al CAD" paso a paso, vertical, para mandar por WhatsApp.
+  "cad-pasos": [1080, 1920, "cad-pasos.html"],
   // El flyer de una sola imagen para grupos.
   promo: [1080, 1350, "promo.html"],
   // La publicación de una foto: su propio archivo.

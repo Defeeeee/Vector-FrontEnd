@@ -1,0 +1,96 @@
+<!doctype html>
+<!--
+  "Pasar al CAD" paso a paso, en una imagen vertical para mandar por WhatsApp (1080×1920),
+  2026-10-21. `marketing/render.mjs cad-pasos` la exporta a `marketing/salida/cad-pasos.png`.
+
+  Los pasos son los de la pantalla "Pasar al CAD" (`history/cad/page.tsx`) y del panel
+  (`src/cad/puente.ts`, 2.28.0): el marcador se arrastra en la computadora; si el navegador
+  bloquea la ventanita, el panel pide "Conectar con Vector"; la autoridad se propone por
+  finalidad; la DDJJ la hace el piloto. Sin logo de ANAC. No dice "gratis" ni "oficial".
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --fondo: #f6f6f7; --tinta: #18181b; --gris: #52525b; --gris2: #71717a; --borde: #e4e4e7; --azul: #2563eb; --verde: #10b981;
+    --fuente: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--fuente); color: var(--tinta); -webkit-font-smoothing: antialiased; background: var(--fondo); }
+  .pieza { position: relative; overflow: hidden; width: 1080px; height: 1920px; padding: 80px 76px 70px; display: flex; flex-direction: column; gap: 30px; background: var(--fondo); }
+  .pieza::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(900px 700px at 90% 3%, rgba(37,99,235,.12), transparent 60%), radial-gradient(700px 600px at 0% 100%, rgba(56,189,248,.09), transparent 60%); }
+  .pieza > * { position: relative; }
+  .marca { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 66px; height: 66px; border-radius: 19px; background: var(--tinta); display: grid; place-items: center; }
+  .marca b { font-size: 38px; font-weight: 800; }
+  h1 { font-size: 90px; line-height: 1; font-weight: 900; letter-spacing: -.035em; margin-top: 10px; }
+  h1 em { font-style: normal; color: var(--azul); }
+  .bajada { font-size: 30px; line-height: 1.4; color: var(--gris); font-weight: 600; }
+  .pasos { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+  .paso { display: grid; grid-template-columns: 70px 1fr; gap: 22px; background: #fff; border: 2px solid var(--borde); border-radius: 30px; padding: 26px 28px; box-shadow: 0 14px 34px rgba(24,24,27,.06); }
+  .num { width: 64px; height: 64px; border-radius: 50%; background: var(--tinta); color: #fff; display: grid; place-items: center; font-family: var(--mono); font-size: 30px; font-weight: 700; }
+  .paso h3 { font-size: 33px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+  .paso p { font-size: 24px; color: var(--gris2); font-weight: 600; line-height: 1.4; margin-top: 6px; }
+  .paso p b { color: var(--tinta); }
+  .extra { margin-top: 14px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .marcador { display: inline-flex; align-items: center; gap: 12px; background: var(--tinta); color: #fff; border-radius: 999px; padding: 9px 22px 9px 9px; font-size: 24px; font-weight: 800; box-shadow: 0 0 0 7px rgba(37,99,235,.15); }
+  .marcador .c { width: 36px; height: 36px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+  .flecha { font-size: 26px; color: var(--gris2); font-weight: 700; }
+  .soltar { border: 3px dashed rgba(37,99,235,.55); color: var(--azul); border-radius: 999px; padding: 7px 20px; font-weight: 800; font-size: 21px; }
+  .chip { display: inline-flex; border: 2px solid var(--borde); border-radius: 14px; padding: 8px 16px; font-size: 21px; font-weight: 700; color: var(--gris); background: #fafafa; }
+  .boton { display: inline-flex; background: var(--tinta); color: #fff; border-radius: 999px; padding: 10px 22px; font-size: 21px; font-weight: 800; }
+  .nota { display: flex; gap: 16px; align-items: center; font-size: 24px; color: var(--gris); font-weight: 600; line-height: 1.4; }
+  .nota svg { flex: none; }
+  .pie { margin-top: auto; display: flex; align-items: center; justify-content: space-between; background: var(--tinta); color: #fff; border-radius: 30px; padding: 30px 36px; }
+  .pie b { font-family: var(--mono); font-size: 34px; }
+  .pie span { font-size: 22px; opacity: .75; font-weight: 700; text-align: right; line-height: 1.3; }
+</style>
+</head>
+<body>
+<section class="pieza" id="cad-pasos">
+  <div class="marca"><span class="logo" data-logo></span><b>Vector</b></div>
+  <h1>Tus vuelos al CAD,<br><em>en 5 pasos.</em></h1>
+  <p class="bajada">Antes, tus vuelos tienen que estar en Vector: a mano, con un audio al copiloto o con fotos de tu libro.</p>
+
+  <div class="pasos">
+    <div class="paso"><span class="num">1</span><div>
+      <h3>Poné el marcador, una sola vez</h3>
+      <p>En la compu, entrá a Vector → <b>Bitácora → Pasar al CAD</b> y arrastrá el botón a tu barra de favoritos.</p>
+      <div class="extra"><span class="marcador"><span class="c" data-brujula></span>Vector → CAD</span><span class="flecha">→</span><span class="soltar">Favoritos</span></div>
+    </div></div>
+
+    <div class="paso"><span class="num">2</span><div>
+      <h3>Entrá al CAD de ANAC</h3>
+      <p>Con tu cuenta de siempre, y abrí <b>"Registro horas vuelo"</b>.</p>
+    </div></div>
+
+    <div class="paso"><span class="num">3</span><div>
+      <h3>Tocá el marcador</h3>
+      <p>Se abre el panel de Vector adentro del CAD. Si te lo pide, tocá <b>"Conectar con Vector"</b>: se abre una ventanita que podés minimizar, pero no cerrar.</p>
+    </div></div>
+
+    <div class="paso"><span class="num">4</span><div>
+      <h3>Elegí los vuelos y cargalos</h3>
+      <p>Cada uno con su autoridad certificante y su nombre: Vector te propone la última que usaste. Lo que ya está en el CAD no se repite.</p>
+      <div class="extra"><span class="chip">Instructor de vuelo</span><span class="chip">MARTÍN SOSA</span><span class="boton">Cargar 6 vuelos</span></div>
+    </div></div>
+
+    <div class="paso"><span class="num">5</span><div>
+      <h3>Hacé la DDJJ en el CAD</h3>
+      <p>Los vuelos quedan <b>"Pendiente de DDJJ"</b>. La declaración jurada la hacés vos, como siempre.</p>
+    </div></div>
+  </div>
+
+  <div class="nota"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <span>Vector no ve tu contraseña de ANAC: carga desde tu sesión, en tu navegador. Y si ya tenés vuelos en el CAD, también los traés a Vector.</span></div>
+
+  <div class="pie"><b>vector.fdiaznem.com.ar</b><span>Bitácora →<br>Pasar al CAD</span></div>
+</section>
+<script>
+  const B = (s, c) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+  document.querySelectorAll("[data-logo]").forEach((e) => (e.innerHTML = B(36, "#fff")));
+  document.querySelectorAll("[data-brujula]").forEach((e) => (e.innerHTML = B(22, "#18181b")));
+</script>
+</body>
+</html>
