@@ -78,6 +78,32 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.28.0",
+    fecha: "2026-10-21",
+    titulo: "Tu libro, más fácil de cargar y de pedir",
+    novedades: [
+      {
+        icono: "camara",
+        titulo: "Tu libro de papel, con fotos",
+        texto: "Sacale una foto a cada hoja con el teléfono y Vector carga los vuelos. Los revisás antes de guardarlos.",
+        href: "/dashboard/log-flight/import",
+        cta: "Importar mi libro",
+      },
+      {
+        icono: "conversacion",
+        titulo: "Tu libro y tus horas, por WhatsApp",
+        texto: "Pedile al copiloto tu libro de vuelo en PDF, o el resumen de tus horas de un mes o del año, y te lo manda por el chat.",
+      },
+      {
+        icono: "libro",
+        titulo: "La autoridad, al registrar el vuelo",
+        texto: "El CAD pide quién certifica cada vuelo. Cargalo al registrarlo, con la última que usaste para esa finalidad ya propuesta, y al pasarlo al CAD ya está.",
+        href: "/dashboard/log-flight",
+        cta: "Registrar un vuelo",
+      },
+    ],
+  },
+  {
     version: "2.27.0",
     fecha: "2026-10-21",
     titulo: "Tus vuelos y el CAD de ANAC",

@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.28.0 — Tu libro, más fácil de cargar y de pedir
+
+_21 de octubre de 2026_
+
+- **Tu libro de papel, con fotos** — Sacale una foto a cada hoja con el teléfono y Vector carga los vuelos. Los revisás antes de guardarlos.
+- **Tu libro y tus horas, por WhatsApp** — Pedile al copiloto tu libro de vuelo en PDF, o el resumen de tus horas de un mes o del año, y te lo manda por el chat.
+- **La autoridad, al registrar el vuelo** — El CAD pide quién certifica cada vuelo. Cargalo al registrarlo, con la última que usaste para esa finalidad ya propuesta, y al pasarlo al CAD ya está.
+
 ## v2.27.0 — Tus vuelos y el CAD de ANAC
 
 _21 de octubre de 2026_
