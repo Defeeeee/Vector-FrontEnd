@@ -26,6 +26,8 @@ import {
   autoridadSugerida,
   estaEnVector,
   faltaAutoridad,
+  fechaCortaCad,
+  mismoVueloOtroDia,
   payloadCad,
   recordarAutoridades,
   resolverFinalidad,
@@ -37,6 +39,7 @@ import {
   type FilaTraida,
   type ItemCad,
   type MemoriaAutoridades,
+  type MotivoOmitido,
   type VueloConocido,
   type VueloEnElCad,
 } from "../lib/cad";
@@ -45,6 +48,8 @@ declare const __CAD_ORIGEN__: string;
 
 interface Fila {
   b: BorradorCad;
+  /** Sacado de la lista por el piloto: ya foliado antes del CAD, o ignorado (se guarda en Vector). */
+  omitido: MotivoOmitido | null;
   enElCad: number | null;
   problema: string | null;
   ids: { finalidadID: string; origenID: string; destinoID: string } | null;
@@ -58,11 +63,14 @@ type Paso = "elegir" | "confirmar" | "cargando" | "listo";
 
 interface FilaTraer {
   t: FilaTraida;
+  /** Ignorado por el piloto: se recuerda en este navegador (`CLAVE_IGNORADOS`). */
+  ignorado: boolean;
   elegido: boolean;
 }
 
 const API = "/foliadoweb/api/VueloTripulante/";
 const CLAVE_MEMORIA = "vector-cad-autoridades";
+const CLAVE_IGNORADOS = "vector-cad-ignorados";
 const BRUJULA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
 
 const ESTILOS = `
@@ -78,7 +86,7 @@ const ESTILOS = `
   .cab .esp { flex: 1; }
   .ico { border: 0; background: none; width: 30px; height: 30px; border-radius: 9px; font-size: 18px; line-height: 1; color: #71717a; cursor: pointer; }
   .ico:hover { background: #f4f4f5; color: #18181b; }
-  .tabs { display: flex; gap: 4px; padding: 8px 16px 0; }
+  .tabs { display: flex; gap: 4px; padding: 8px 16px 0; } .tabs[hidden] { display: none; }
   .tab { flex: 1; border: 0; background: #f4f4f5; color: #52525b; border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
   .tab[aria-selected=true] { background: #18181b; color: #fff; }
   .tab .n { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 500; opacity: .7; margin-left: 4px; }
@@ -104,6 +112,9 @@ const ESTILOS = `
   .ruta { flex: 1; min-width: 0; }
   .ruta b { font-size: 13px; } .ruta div { font-size: 12px; color: #71717a; }
   .fecha { font-size: 12px; color: #52525b; flex: none; }
+  .acc { flex: none; display: flex; gap: 8px; }
+  .acc .enl { color: #52525b; }
+  .omit { color: #71717a; font-size: 12px; flex: none; }
   .motivo { font-size: 12px; color: #92400e; margin: 6px 0 0 26px; }
   .motivo a { color: #92400e; }
   .aut { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 0 26px; }
@@ -242,7 +253,12 @@ const ESTILOS = `
     });
   }
 
-  async function pedirVuelos(): Promise<{ borradores: BorradorCad[]; conocidos: VueloConocido[]; matriculas: string[] } | null> {
+  async function pedirVuelos(): Promise<{
+    borradores: BorradorCad[];
+    omitidos: (BorradorCad & { motivo: MotivoOmitido })[];
+    conocidos: VueloConocido[];
+    matriculas: string[];
+  } | null> {
     if (!ventana || ventana.closed) ventana = window.open(`${VECTOR}/cad/conector`, "vector-cad", "popup,width=420,height=560");
     if (!ventana) return null;
     const llegan = esperar("vector-cad:vuelos", 30_000);
@@ -254,6 +270,7 @@ const ESTILOS = `
     return d && Array.isArray(d.borradores)
       ? {
           borradores: d.borradores as BorradorCad[],
+          omitidos: Array.isArray(d.omitidos) ? (d.omitidos as (BorradorCad & { motivo: MotivoOmitido })[]) : [],
           conocidos: Array.isArray(d.conocidos) ? (d.conocidos as VueloConocido[]) : [],
           matriculas: Array.isArray(d.matriculas) ? (d.matriculas as string[]) : [],
         }
@@ -268,6 +285,14 @@ const ESTILOS = `
     return d
       ? { creados: Number(d.creados) || 0, yaEstaban: Number(d.yaEstaban) || 0, rechazados: Number(d.rechazados) || 0, error: typeof d.error === "string" ? d.error : undefined }
       : null;
+  }
+
+  async function omitirEnVector(items: { vectorId: string; motivo: MotivoOmitido | null }[]): Promise<number | null> {
+    if (!ventana || ventana.closed) return null;
+    const vuelve = esperar("vector-cad:omitidos", 30_000);
+    ventana.postMessage({ tipo: "vector-cad:omitir", omitir: items }, VECTOR);
+    const d = await vuelve;
+    return d ? Number(d.cambiados) || 0 : null;
   }
 
   async function marcarEnVector(items: { vectorId: string; cadId: number }[]): Promise<number | null> {
@@ -317,10 +342,11 @@ const ESTILOS = `
   let pasoTraer: Paso = "elegir";
   let resultadoTraer: { creados: number; yaEstaban: number; rechazados: number; error?: string } | null = null;
 
-  const porCargar = () => filas.filter((f) => f.ids && !f.enElCad && !f.resultado?.ok);
+  const porCargar = () => filas.filter((f) => !f.omitido && f.ids && !f.enElCad && !f.resultado?.ok);
   const elegidas = () => porCargar().filter((f) => f.elegido);
-  const yaEstan = () => filas.filter((f) => f.enElCad);
-  const paraRevisar = () => filas.filter((f) => f.problema);
+  const yaEstan = () => filas.filter((f) => !f.omitido && f.enElCad);
+  const paraRevisar = () => filas.filter((f) => !f.omitido && f.problema);
+  const omitidas = () => filas.filter((f) => f.omitido);
 
   function cargando(texto: string, detalle = "") {
     cuerpo.innerHTML = `<div class="vacio"><p><b>${esc(texto)}</b></p><p class="nota">${detalle}</p></div>`;
@@ -355,9 +381,10 @@ const ESTILOS = `
       const memoria = leerMemoria();
       // Lo anterior al primer vuelo que ya está en el CAD probablemente se folió en papel.
       const corte = enElCad.reduce<string | null>((min, v) => (!min || v.fechaSalida < min ? v.fechaSalida : min), null);
-      filas = vector.borradores.map((b) =>
-        armarFila(b, enElCad, finalidades, lugaresCad, corte, memoria)
-      );
+      filas = [
+        ...vector.borradores.map((b) => armarFila(b, enElCad, finalidades, lugaresCad, corte, memoria)),
+        ...vector.omitidos.map(({ motivo, ...b }) => ({ ...armarFila(b, enElCad, finalidades, lugaresCad, corte, memoria), omitido: motivo, elegido: false })),
+      ];
       paso = "elegir";
       dibujar();
     } catch (e) {
@@ -378,9 +405,17 @@ const ESTILOS = `
   ): Fila {
     const anterior = !!corte && b.fechaHoraSalida.slice(0, 19) < corte.slice(0, 19);
     const autoridad = autoridadSugerida(memoria, b.finalidad);
-    if (b.problema) return { b, enElCad: null, problema: b.problema, ids: null, elegido: false, anterior, autoridad };
+    const base = { b, omitido: null, enElCad: null, ids: null, elegido: false, anterior, autoridad };
+    if (b.problema) return { ...base, problema: b.problema };
     const id = yaEstaEnElCad(b, enElCad);
-    if (id) return { b, enElCad: id, problema: null, ids: null, elegido: false, anterior, autoridad };
+    if (id) return { ...base, enElCad: id, problema: null };
+    // El mismo vuelo con un día de diferencia: mandarlo lo duplicaría en el CAD.
+    const otro = mismoVueloOtroDia(b.fechaHoraSalida, b.matricula, enElCad.map((v) => ({ salida: v.fechaSalida, matricula: v.matricula ?? "" })));
+    if (otro)
+      return {
+        ...base,
+        problema: `En el CAD figura el ${fechaCortaCad(otro)}, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta? Corregí la que esté mal para no duplicarlo.`,
+      };
     const finalidadID = resolverFinalidad(b.finalidad, finalidades);
     const origenID = resolverLugar(b.origen, lista);
     const destinoID = b.tipoVueloID === 1 ? origenID : resolverLugar(b.destino, lista);
@@ -390,6 +425,7 @@ const ESTILOS = `
     else if (!destinoID) problema = `${b.destino.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
     return {
       b,
+      omitido: null,
       enElCad: null,
       problema,
       ids: problema ? null : { finalidadID: finalidadID!, origenID: origenID!, destinoID: destinoID! },
@@ -415,8 +451,16 @@ const ESTILOS = `
     if (marcarFalta) clases.push("falta");
     const caja = conCaja ? `<input type="checkbox" data-i="${i}" ${f.elegido ? "checked" : ""} aria-label="Cargar el vuelo del ${esc(f.b.fecha)}">` : "";
     const meta = `${esc(f.b.matricula)} · ${horas(f.b.horas)} h · ${esc(f.b.finalidad.toLowerCase())}`;
+    // Sacarlo de la lista: "Ignorar" lo que no se puede mandar, "Ya foliado" lo que se podría.
+    let acc = "";
+    if (paso === "elegir" && !f.resultado) {
+      if (f.omitido) acc = `<span class="omit">${f.omitido === "foliado" ? "Ya foliado" : "Ignorado"}</span><span class="acc"><button class="enl" data-omit="${i}" data-motivo="">Deshacer</button></span>`;
+      else if (f.problema) acc = `<span class="acc"><button class="enl" data-omit="${i}" data-motivo="ignorado">Ignorar</button></span>`;
+      else if (conCaja) acc = `<span class="acc"><button class="enl" data-omit="${i}" data-motivo="foliado" title="Ya está en un libro foliado antes del CAD">Ya foliado</button></span>`;
+    }
     let extra = "";
-    if (f.problema) extra = `<p class="motivo">${esc(f.problema)} <a href="${VECTOR}/dashboard/history?editar=${encodeURIComponent(f.b.vectorId)}" target="_blank" rel="noopener">Corregir en Vector</a></p>`;
+    if (f.omitido) extra = "";
+    else if (f.problema) extra = `<p class="motivo">${esc(f.problema)} <a href="${VECTOR}/dashboard/history?editar=${encodeURIComponent(f.b.vectorId)}" target="_blank" rel="noopener">Corregir en Vector</a></p>`;
     else if (f.resultado) extra = `<p class="estado ${f.resultado.ok ? "ok" : "err"}">${esc(f.resultado.texto)}</p>`;
     else if (conCaja && f.elegido)
       extra = `<div class="aut"><select data-aut="${i}" aria-label="Autoridad certificante">${opcionesAutoridad(f.autoridad.id)}</select>
@@ -424,7 +468,7 @@ const ESTILOS = `
         <button class="enl" data-rep="${i}" ${faltaAutoridad(f.autoridad) ? "hidden" : ""}>Repetir en los vacíos</button></div>`;
     else if (conCaja && f.anterior) extra = `<p class="nota" style="margin:6px 0 0 26px">Es anterior a tus vuelos en el CAD: ¿ya estaba foliado?</p>`;
     return `<div class="${clases.join(" ")}"><div class="linea">${caja}<span class="fecha m">${esc(f.b.fecha)}</span>
-      <span class="ruta"><b class="m">${esc(f.b.ruta)}</b><div>${meta}</div></span></div>${extra}</div>`;
+      <span class="ruta"><b class="m">${esc(f.b.ruta)}</b><div>${meta}</div></span>${acc}</div>${extra}</div>`;
   }
 
   const sinTraer = () => cadLista.filter((v) => !estaEnVector(v, conocidos));
@@ -433,7 +477,9 @@ const ESTILOS = `
     ($("tab-llevar") as HTMLButtonElement).setAttribute("aria-selected", String(modo === "llevar"));
     ($("tab-traer") as HTMLButtonElement).setAttribute("aria-selected", String(modo === "traer"));
     ($("n-llevar") as HTMLSpanElement).textContent = String(porCargar().length);
-    ($("n-traer") as HTMLSpanElement).textContent = String(traer ? traer.filter((x) => x.t.vuelo && !x.t.problema).length : sinTraer().length);
+    ($("n-traer") as HTMLSpanElement).textContent = String(
+      traer ? traer.filter((x) => x.t.vuelo && !x.ignorado).length : sinTraer().filter((v) => !ignoradosGuardados().includes(v.vueloTripulanteID)).length
+    );
   }
 
   function dibujar() {
@@ -443,11 +489,13 @@ const ESTILOS = `
     const estan = yaEstan();
     const revisar = paraRevisar();
     const cargados = filas.filter((f) => f.resultado?.ok);
-    const total = filas.length || 1;
+    const total = filas.length - omitidas().length || 1;
     const pct = (n: number) => `${(100 * n) / total}%`;
     ($("pilltxt") as HTMLSpanElement).textContent = cargar.length ? `Vector → CAD · ${cargar.length} por cargar` : "Vector → CAD";
 
-    if (filas.length === 0) {
+    const omit = omitidas();
+    const anteriores = cargar.filter((f) => f.anterior);
+    if (filas.length === omit.length && omit.length === 0) {
       cuerpo.innerHTML = `<div class="vacio"><p><b>Todos tus vuelos de Vector ya están en el CAD.</b></p><p class="nota">Cuando cargues uno nuevo, volvé a tocar el marcador.</p></div>`;
       pie.innerHTML = "";
       return;
@@ -468,7 +516,16 @@ const ESTILOS = `
         cargar.length || cargados.length
           ? `<div class="sec"><h3>Por cargar ${
               cargar.length > 1 && paso === "elegir" ? `<span><button class="enl" id="todos">Tildar todos</button> · <button class="enl" id="ninguno">Ninguno</button></span>` : ""
-            }</h3>${[...cargados, ...cargar].map((f) => filaHtml(f, filas.indexOf(f), paso === "elegir" && !f.resultado?.ok)).join("")}</div>`
+            }</h3>${
+              anteriores.length && paso === "elegir"
+                ? `<p class="nota" style="margin:0 0 8px">${anteriores.length === 1 ? "1 es anterior" : `${anteriores.length} son anteriores`} a tu primer vuelo en el CAD. <button class="enl" id="foliar">${anteriores.length === 1 ? "Marcarlo" : "Marcarlos"} como ya foliado${anteriores.length === 1 ? "" : "s"}</button></p>`
+                : ""
+            }${[...cargados, ...cargar].map((f) => filaHtml(f, filas.indexOf(f), paso === "elegir" && !f.resultado?.ok)).join("")}</div>`
+          : ""
+      }
+      ${
+        omit.length
+          ? `<details><summary>Fuera de la lista <span>(${omit.length}: ya foliados o ignorados)</span></summary>${omit.map((f) => filaHtml(f, filas.indexOf(f), false)).join("")}</details>`
           : ""
       }
       ${
@@ -550,6 +607,10 @@ const ESTILOS = `
       dibujar();
     });
     $("anotar")?.addEventListener("click", () => void anotarLosQueEstan());
+    raiz.querySelectorAll<HTMLButtonElement>("button[data-omit]").forEach((btn) => {
+      btn.onclick = () => void omitir([filas[Number(btn.dataset.omit)]], (btn.dataset.motivo || null) as MotivoOmitido | null);
+    });
+    $("foliar")?.addEventListener("click", () => void omitir(porCargar().filter((f) => f.anterior), "foliado"));
     $("cargar")?.addEventListener("click", () => pedirConfirmacion());
     $("probar")?.addEventListener("click", () => mostrarVistaPrevia());
     $("volver")?.addEventListener("click", () => {
@@ -562,6 +623,27 @@ const ESTILOS = `
       paso = "elegir";
       dibujar();
     });
+  }
+
+  /** Saca vuelos de la lista (o los devuelve) y lo guarda en Vector. Si Vector no contesta, vuelve atrás. */
+  async function omitir(sel: Fila[], motivo: MotivoOmitido | null) {
+    if (!sel.length) return;
+    const antes = sel.map((f) => [f, f.omitido, f.elegido] as const);
+    for (const f of sel) {
+      f.omitido = motivo;
+      f.elegido = false;
+    }
+    aviso = "";
+    dibujar();
+    const n = await omitirEnVector(sel.map((f) => ({ vectorId: f.b.vectorId, motivo })));
+    if (n === null || n < sel.length) {
+      for (const [f, o, e] of antes) {
+        f.omitido = o;
+        f.elegido = e;
+      }
+      aviso = "No pudimos guardarlo en Vector: fijate que la ventanita siga abierta y probá de nuevo.";
+      dibujar();
+    }
   }
 
   function validar(): boolean {
@@ -668,8 +750,15 @@ const ESTILOS = `
           const k = siguiente++;
           const v = faltan[k];
           const detalle = await detalleDelCad(v.vueloTripulanteID);
-          const t = vueloDesdeCad({ ...(v as unknown as Record<string, unknown>), ...detalle }, listasCad, matriculas);
-          filasNuevas[k] = { t, elegido: !t.problema };
+          let t = vueloDesdeCad({ ...(v as unknown as Record<string, unknown>), ...detalle }, listasCad, matriculas);
+          const otro = t.vuelo ? mismoVueloOtroDia(t.vuelo.takeoff, t.vuelo.matricula, conocidos) : null;
+          if (otro)
+            t = {
+              ...t,
+              vuelo: null,
+              problema: `En Vector figura el ${fechaCortaCad(otro)}, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta? Corregí la que esté mal para no duplicarlo.`,
+            };
+          filasNuevas[k] = { t, elegido: !t.problema, ignorado: ignoradosGuardados().includes(t.cadId) };
           leyendo.hechos++;
           if (modo === "traer") dibujarTraer();
         }
@@ -679,13 +768,37 @@ const ESTILOS = `
     dibujar();
   }
 
+  function ignoradosGuardados(): number[] {
+    try {
+      const v = JSON.parse(localStorage.getItem(CLAVE_IGNORADOS) ?? "[]");
+      return Array.isArray(v) ? v.filter((x) => Number.isInteger(x)) : [];
+    } catch {
+      return [];
+    }
+  }
+  function guardarIgnorados() {
+    try {
+      localStorage.setItem(CLAVE_IGNORADOS, JSON.stringify((traer ?? []).filter((x) => x.ignorado).map((x) => x.t.cadId)));
+    } catch {
+      /* sin almacenamiento, vuelven a aparecer la próxima vez */
+    }
+  }
+
   function filaTraerHtml(x: FilaTraer, i: number, conCaja: boolean) {
     const t = x.t;
+    const acc =
+      pasoTraer !== "elegir"
+        ? ""
+        : x.ignorado
+          ? `<span class="omit">Ignorado</span><span class="acc"><button class="enl" data-ign="${i}" data-si="">Deshacer</button></span>`
+          : t.problema
+            ? `<span class="acc"><button class="enl" data-ign="${i}" data-si="1">Ignorar</button></span>`
+            : "";
     const caja = conCaja ? `<input type="checkbox" data-t="${i}" ${x.elegido ? "checked" : ""} aria-label="Traer el vuelo del ${esc(t.fecha)}">` : "";
     const meta = [t.matricula, `${horas(t.horas)} h`, t.finalidad.toLowerCase()].filter(Boolean).map(esc).join(" · ");
     return `<div class="fila ${t.problema ? "rev" : ""}"><div class="linea">${caja}<span class="fecha m">${esc(t.fecha || "¿?")}</span>
-      <span class="ruta"><b class="m">${esc(t.ruta || "Sin ruta")}</b><div>${meta}</div></span></div>
-      ${t.problema ? `<p class="motivo">${esc(t.problema)}</p>` : ""}</div>`;
+      <span class="ruta"><b class="m">${esc(t.ruta || "Sin ruta")}</b><div>${meta}</div></span>${acc}</div>
+      ${t.problema && !x.ignorado ? `<p class="motivo">${esc(t.problema)}</p>` : ""}</div>`;
   }
 
   function dibujarTraer() {
@@ -697,8 +810,9 @@ const ESTILOS = `
       pie.innerHTML = "";
       return;
     }
-    const listos = traer.filter((x) => x.t.vuelo);
-    const revisar = traer.filter((x) => x.t.problema);
+    const listos = traer.filter((x) => x.t.vuelo && !x.ignorado);
+    const revisar = traer.filter((x) => x.t.problema && !x.ignorado);
+    const ignorados = traer.filter((x) => x.ignorado);
     if (traer.length === 0) {
       cuerpo.innerHTML = `<div class="vacio"><p><b>Todos tus vuelos del CAD ya están en Vector.</b></p></div>`;
       if (pasoTraer === "listo") dibujarPieTraer();
@@ -724,6 +838,11 @@ const ESTILOS = `
               listos.length > 1 && editable ? `<span><button class="enl" id="t-todos">Tildar todos</button> · <button class="enl" id="t-ninguno">Ninguno</button></span>` : ""
             }</h3>${listos.map((x) => filaTraerHtml(x, traer!.indexOf(x), editable)).join("")}</div>`
           : ""
+      }
+      ${
+        ignorados.length
+          ? `<details><summary>Ignorados <span>(${ignorados.length})</span></summary>${ignorados.map((x) => filaTraerHtml(x, traer!.indexOf(x), false)).join("")}</details>`
+          : ""
       }`;
     dibujarPieTraer();
     raiz.querySelectorAll<HTMLInputElement>("input[data-t]").forEach((cb) => {
@@ -736,6 +855,15 @@ const ESTILOS = `
       for (const x of listos) x.elegido = si;
       dibujarTraer();
     };
+    raiz.querySelectorAll<HTMLButtonElement>("button[data-ign]").forEach((btn) => {
+      btn.onclick = () => {
+        const x = traer![Number(btn.dataset.ign)];
+        x.ignorado = !!btn.dataset.si;
+        x.elegido = false;
+        guardarIgnorados();
+        dibujar();
+      };
+    });
     $("t-todos")?.addEventListener("click", tildar(true));
     $("t-ninguno")?.addEventListener("click", tildar(false));
   }

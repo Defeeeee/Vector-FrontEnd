@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Compass } from "lucide-react";
-import { marcarEnElCad, traerDelCad } from "@/actions/cad";
+import { marcarEnElCad, omitirEnElCad, traerDelCad } from "@/actions/cad";
 import { CLAVE_MARCADOR_USADO } from "@/components/dashboard/MarcadorCad";
-import type { BorradorCad, VueloConocido } from "@/lib/cad";
+import type { BorradorCad, MotivoOmitido, VueloConocido } from "@/lib/cad";
 
 /**
  * La mitad de Vector de la conversación con el CAD (la otra es `src/cad/puente.ts`).
@@ -16,12 +16,14 @@ import type { BorradorCad, VueloConocido } from "@/lib/cad";
 export default function ConectorCad({
   borradores,
   pasados,
+  omitidos,
   conocidos,
   matriculas,
   origenCad,
 }: {
   borradores: BorradorCad[];
   pasados: number;
+  omitidos: (BorradorCad & { motivo: MotivoOmitido })[];
   conocidos: VueloConocido[];
   matriculas: string[];
   origenCad: string;
@@ -38,10 +40,15 @@ export default function ConectorCad({
       setEstado("sin-cad");
       return;
     }
-    const enviar = () => cad.postMessage({ tipo: "vector-cad:vuelos", version: 2, borradores, pasados, conocidos, matriculas }, origenCad);
+    const enviar = () => cad.postMessage({ tipo: "vector-cad:vuelos", version: 3, borradores, pasados, omitidos, conocidos, matriculas }, origenCad);
     const alRecibir = async (e: MessageEvent) => {
       if (e.origin !== origenCad || e.source !== cad) return;
-      const d = e.data as { tipo?: string; items?: { vectorId: string; cadId: number }[]; vuelos?: unknown[] };
+      const d = e.data as {
+        tipo?: string;
+        items?: { vectorId: string; cadId: number }[];
+        omitir?: { vectorId: string; motivo: MotivoOmitido | null }[];
+        vuelos?: unknown[];
+      };
       if (d?.tipo === "vector-cad:listo") {
         enviar();
       } else if (d?.tipo === "vector-cad:recibido") {
@@ -56,6 +63,9 @@ export default function ConectorCad({
         const r = await marcarEnElCad(d.items ?? []);
         setMarcados((m) => m + r.marcados);
         cad.postMessage({ tipo: "vector-cad:marcados", marcados: r.marcados }, origenCad);
+      } else if (d?.tipo === "vector-cad:omitir") {
+        const r = await omitirEnElCad(d.omitir ?? []);
+        cad.postMessage({ tipo: "vector-cad:omitidos", cambiados: r.cambiados }, origenCad);
       } else if (d?.tipo === "vector-cad:traer") {
         const r = await traerDelCad(Array.isArray(d.vuelos) ? d.vuelos : []);
         setTraidos((t) => t + r.creados);
@@ -69,7 +79,7 @@ export default function ConectorCad({
       // Si la ventana que la abrió no es el CAD, el navegador no deja mandar: se espera.
     }
     return () => window.removeEventListener("message", alRecibir);
-  }, [borradores, pasados, conocidos, matriculas, origenCad]);
+  }, [borradores, pasados, omitidos, conocidos, matriculas, origenCad]);
 
   const listos = borradores.filter((b) => !b.problema).length;
 

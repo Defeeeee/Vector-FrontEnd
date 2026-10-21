@@ -33,6 +33,8 @@ export interface Flight {
   cierra_hoja?: boolean;
   /** El id del vuelo en el CAD de ANAC, si ya se pasó, y cuándo (migración 029). */
   cad_vuelo_id?: number | null;
+  /** Por qué no se pasa al CAD (migración 031): "foliado" o "ignorado". */
+  cad_omitido?: "foliado" | "ignorado" | null;
   cad_cargado_at?: string | null;
 
   discount_type?: 'value' | 'percent';

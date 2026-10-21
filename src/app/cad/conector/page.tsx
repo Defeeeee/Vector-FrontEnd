@@ -48,6 +48,7 @@ export default async function ConectorPage() {
           <ConectorCad
             borradores={datos.borradores}
             pasados={datos.pasados}
+            omitidos={datos.omitidos}
             conocidos={datos.conocidos}
             matriculas={datos.matriculas}
             origenCad={process.env.NEXT_PUBLIC_CAD_ORIGEN || "https://cad.anac.gob.ar"} />

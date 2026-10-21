@@ -523,8 +523,10 @@ export function vueloDesdeCad(
   matriculasEnVector: string[]
 ): FilaTraida {
   const cadId = Number(campo(d, "vueloTripulanteID", "id")) || 0;
-  const salida = salidaUtc(campo(d, "fechaHoraSalida", "fechaSalida"));
-  const llegada = salidaUtc(campo(d, "fechaHoraLlegada", "fechaLlegada"));
+  // La lista trae `fechaHoraSalida` para mostrar ("17/10/2026 18:00") y `fechaSalida` en ISO;
+  // el detalle trae `fechaHoraSalida` en ISO. Vale la primera que se entienda.
+  const salida = salidaUtc(d.fechaHoraSalida) ?? salidaUtc(d.fechaSalida);
+  const llegada = salidaUtc(d.fechaHoraLlegada) ?? salidaUtc(d.fechaLlegada);
   const tipo = Number(campo(d, "tipoVueloID", "tipoVueloId"));
   const cargo = Number(campo(d, "cargoID", "cargoId"));
   const horasDia = unDecimal(n(campo(d, "horasDia")));
@@ -540,8 +542,21 @@ export function vueloDesdeCad(
   const origen = lugar("origen");
   const destino = lugar("destino") || origen;
 
-  const discs = (campo(d, "Discriminaciones", "discriminaciones") as { tipoDiscriminacionID?: unknown; horas?: unknown }[] | undefined) ?? [];
-  const disc = (id: number) => unDecimal(discs.filter((x) => Number(x?.tipoDiscriminacionID) === id).reduce((t, x) => t + n(String(x?.horas ?? "").replace(",", ".")), 0));
+  // El detalle: `discriminaciones: [{tipoDiscriminacionID: 7, nombre, horas: 0.7}]`. Si no
+  // vino, la lista trae las mismas horas como texto ("0.7 hs").
+  // "Crear" manda `Discriminaciones` con datos y `discriminaciones` vacía: vale la que tenga.
+  const discs = ([d.discriminaciones, d.Discriminaciones].find((x) => Array.isArray(x) && x.length) ?? []) as { tipoDiscriminacionID?: unknown; horas?: unknown }[];
+  const deLaLista: Record<number, unknown> = {
+    [DISCRIMINACION_CAD.instrumentoReal]: d.tiempoVueloPorInstrumentoReal,
+    [DISCRIMINACION_CAD.capota]: d.tiempoVueloPorInstrumentoCapota,
+  };
+  const aHoras = (v: unknown) => n(String(v ?? "").replace(",", ".").replace(/\s*hs?$/i, ""));
+  const disc = (id: number) =>
+    unDecimal(
+      discs.length
+        ? discs.filter((x) => Number(x?.tipoDiscriminacionID) === id).reduce((t, x) => t + aHoras(x?.horas), 0)
+        : aHoras(deLaLista[id])
+    );
 
   const horas = salida && llegada ? horasCentesimalesCad(salida, llegada) : null;
   const duration = unDecimal(horasDia + horasNoche);
@@ -628,3 +643,41 @@ export function validarTraido(x: unknown): VueloTraido | null {
     ["cadId", "date", "takeoff", "landing", "origen", "destino", "matricula", "landings", "purpose", ...horas].map((k) => [k, v[k]])
   ) as unknown as VueloTraido;
 }
+
+/* -------------------------------------------------------------------------- */
+/* El mismo vuelo, con otra fecha                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Si en la otra punta hay un vuelo en el mismo avión, a la misma hora, un día antes o
+ * después: casi seguro el mismo vuelo, con la fecha mal en uno de los dos lados. Pasó con
+ * los vuelos de Federico (el CAD decía 05/09 18:20 y Vector 06/09 18:20). Mandarlo
+ * duplicaría el vuelo; se marca para revisar y el piloto decide qué fecha es la correcta.
+ *
+ * `salida` es "AAAA-MM-DDTHH:MM" (UTC). Devuelve la salida del otro, o `null`.
+ */
+export function mismoVueloOtroDia(
+  salida: string,
+  matricula: string,
+  otros: { salida: string; matricula: string }[]
+): string | null {
+  const t = Date.parse(`${salida.slice(0, 16)}:00Z`);
+  if (!Number.isFinite(t)) return null;
+  const m = matriculaCad(matricula);
+  if (!m) return null;
+  const otro = otros.find((o) => {
+    const u = Date.parse(`${(o.salida ?? "").slice(0, 16)}:00Z`);
+    return Number.isFinite(u) && Math.abs(u - t) === 86_400_000 && matriculaCad(o.matricula ?? "") === m;
+  });
+  return otro ? otro.salida.slice(0, 16) : null;
+}
+
+/** "2026-09-05T18:20" → "05/09 18:20", para el aviso. */
+export function fechaCortaCad(salida: string): string {
+  const [f, h] = salida.slice(0, 16).split("T");
+  const [, m, d] = (f ?? "").split("-");
+  return d && m && h ? `${d}/${m} ${h}` : salida;
+}
+
+/** Por qué un vuelo de Vector no se pasa al CAD (migración 031 del backend). */
+export type MotivoOmitido = "foliado" | "ignorado";

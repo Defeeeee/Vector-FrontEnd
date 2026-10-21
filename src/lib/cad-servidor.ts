@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import { getAirport } from "@/lib/airports";
-import { borradorCad, matriculaCad, type BorradorCad, type LugarParaCad, type VueloConocido } from "@/lib/cad";
+import { borradorCad, matriculaCad, type BorradorCad, type LugarParaCad, type MotivoOmitido, type VueloConocido } from "@/lib/cad";
 import { esAlumno } from "@/lib/licencias";
 import type { Aircraft, Flight, Profile } from "@/types";
 
@@ -26,6 +26,8 @@ export interface VuelosParaElCad {
   borradores: BorradorCad[];
   /** Cuántos ya están marcados como pasados. */
   pasados: number;
+  /** Los que el piloto sacó de la lista: ya foliados antes del CAD, o ignorados. */
+  omitidos: (BorradorCad & { motivo: MotivoOmitido })[];
   /** Todos los vuelos de Vector, reducidos: para no traer del CAD uno que ya está. */
   conocidos: VueloConocido[];
   /** Las matrículas del Hangar (sin simuladores): un vuelo del CAD sólo se trae si su avión está. */
@@ -37,17 +39,20 @@ export async function vuelosParaElCad(): Promise<VuelosParaElCad | null> {
   try {
     const [vr, ar, pr] = await Promise.all([apiFetch("/flights", FRESCO), apiFetch("/aircraft", FRESCO), apiFetch("/profiles", FRESCO)]);
     if (!vr.ok || !ar.ok) return null;
-    const vuelos = (await vr.json()) as (Flight & { cad_vuelo_id?: number | null })[];
+    const vuelos = (await vr.json()) as Flight[];
     const aviones = (await ar.json()) as Aircraft[];
     const perfiles = pr.ok ? ((await pr.json()) as Profile[]) : [];
     const porId = new Map(aviones.map((a) => [a.id, a]));
-    const faltan = vuelos
+    const sinPasar = vuelos
       .filter((f) => !f.cad_vuelo_id)
       .sort((a, b) => (b.takeoff || b.date || "").localeCompare(a.takeoff || a.date || ""));
+    const faltan = sinPasar.filter((f) => !f.cad_omitido);
+    const armar = (f: Flight) => borradorCad(f, (f.aircraft_id && porId.get(f.aircraft_id)) || null, lugarParaCad);
     return {
       alumno: esAlumno(perfiles[0]?.license_type),
-      borradores: faltan.map((f) => borradorCad(f, (f.aircraft_id && porId.get(f.aircraft_id)) || null, lugarParaCad)),
-      pasados: vuelos.length - faltan.length,
+      borradores: faltan.map(armar),
+      pasados: vuelos.length - sinPasar.length,
+      omitidos: sinPasar.filter((f) => f.cad_omitido).map((f) => ({ ...armar(f), motivo: f.cad_omitido as MotivoOmitido })),
       conocidos: vuelos.map((f) => ({
         cadId: f.cad_vuelo_id ?? null,
         salida: (f.takeoff ?? "").slice(0, 16),

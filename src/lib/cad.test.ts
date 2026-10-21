@@ -17,6 +17,8 @@ import {
   propositoDesdeCad,
   vueloDesdeCad,
   validarTraido,
+  mismoVueloOtroDia,
+  fechaCortaCad,
   type LugarParaCad,
   type VueloVector,
 } from "./cad";
@@ -407,5 +409,52 @@ describe("del CAD a Vector", () => {
     expect(validarTraido({ ...bueno, date: "2026-09-24" })).toBeNull();
     expect(validarTraido({ ...bueno, capota: "0.5" })).toBeNull();
     expect(validarTraido(null)).toBeNull();
+  });
+
+  it("con la forma real del CAD: la fila de la lista con el detalle encima", () => {
+    // Leídos del CAD real el 2026-10-21 (sin la autoridad), con otros datos.
+    const fila = {
+      vueloTripulanteID: 769075, cargoDesc: "PILOTO", origenDesc: "LJN", destinoDesc: "LJN", finalidad: "ENTRENAMIENTO",
+      fechaSalida: "2026-09-27T11:45:00", fechaLlegada: "2026-09-27T12:45:00",
+      fechaHoraSalida: "27/09/2026 11:45", fechaHoraLlegada: "27/09/2026 12:45",
+      tipoVueloDesc: "LOCAL", matricula: "LV-ABC", tiempoTotal: "1.0 hs", tiempoVueloPorInstrumentoCapota: "0.7 hs",
+    };
+    const detalle = {
+      vueloTripulanteID: 769075, cargoID: 1, finalidadID: 63, origenID: "LJN", destinoID: "LJN", origenPersonalizado: null,
+      destinoPersonalizado: null, fechaHoraSalida: "2026-09-27T11:45:00", fechaHoraLlegada: "2026-09-27T12:45:00", tipoVueloID: 1,
+      aterrizajes: 4, potencia: 100, clase: "MONT-T", horasDia: 1, horasNoche: 0, matriculaAvion: "LV-ABC", simulador: null,
+      discriminaciones: [{ tipoDiscriminacionID: 7, nombre: "VUELO X INSTRUMENTO CAPOTA", horas: 0.7 }],
+    };
+    const lugares = [...listas.lugares, { key: "LJN", value: " LJN (LUJAN)" }];
+    const fins = [...listas.finalidades, { key: "63", value: "ENTRENAMIENTO" }];
+    const conDetalle = vueloDesdeCad({ ...fila, ...detalle }, { finalidades: fins, lugares }, ["LV-ABC"]);
+    expect(conDetalle.problema).toBeNull();
+    expect(conDetalle.vuelo).toMatchObject({ takeoff: "2026-09-27T11:45:00Z", origen: "LJN", destino: "LJN", purpose: "ENT", pic_day_loc: 1, capota: 0.7, landings: 4 });
+    // Si el detalle no llegó, la lista sola no alcanza (no dice día y noche): queda para revisar.
+    expect(vueloDesdeCad(fila, { finalidades: fins, lugares }, ["LV-ABC"]).problema).not.toBeNull();
+    // La capota de la lista, si el detalle no trae discriminaciones.
+    expect(vueloDesdeCad({ ...fila, ...detalle, discriminaciones: [] }, { finalidades: fins, lugares }, ["LV-ABC"]).vuelo?.capota).toBe(0.7);
+  });
+});
+
+describe("el mismo vuelo, con otra fecha", () => {
+  // El caso real: el CAD tenía 05/09 18:20 y Vector 06/09 18:20, en LV-S114.
+  const otros = [
+    { salida: "2026-09-05T18:20", matricula: "LV-S114" },
+    { salida: "2026-08-26T20:10", matricula: "LV-S114" },
+  ];
+  it("un día antes o después, a la misma hora y en el mismo avión", () => {
+    expect(mismoVueloOtroDia("2026-09-06T18:20", "LVS114", otros)).toBe("2026-09-05T18:20");
+    expect(mismoVueloOtroDia("2026-08-25T20:10:00Z", "LV-S114", otros)).toBe("2026-08-26T20:10");
+  });
+  it("no: otro avión, otra hora, el mismo día o dos días", () => {
+    expect(mismoVueloOtroDia("2026-09-06T18:20", "LV-S024", otros)).toBeNull();
+    expect(mismoVueloOtroDia("2026-09-06T18:21", "LV-S114", otros)).toBeNull();
+    expect(mismoVueloOtroDia("2026-09-05T18:20", "LV-S114", otros)).toBeNull();
+    expect(mismoVueloOtroDia("2026-09-07T18:20", "LV-S114", otros)).toBeNull();
+    expect(mismoVueloOtroDia("", "LV-S114", otros)).toBeNull();
+  });
+  it("la fecha para el aviso", () => {
+    expect(fechaCortaCad("2026-09-05T18:20")).toBe("05/09 18:20");
   });
 });

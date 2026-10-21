@@ -39,6 +39,8 @@ if (!process.env.SIN_SEMILLA) {
   const base = { autoridadCertificanteID: "2", observaciones: "JUAN PEREZ", potencia: 110, clase: "MONT-T", origenPersonalizado: "", destinoPersonalizado: "" };
   sembrar({ ...base, tipoVueloID: "2", cargoID: "1", fechaHoraSalida: "2025-12-10T14:00:00Z", fechaHoraLlegada: "2025-12-10T15:30:00Z", horasDia: 1.5, horasNoche: 0, aterrizajes: 2, finalidadID: "63", origenID: "101", destinoID: "102", matriculaAvion: "LV-ABC", Discriminaciones: [{ tipoDiscriminacionID: 7, horas: "0.3" }] });
   sembrar({ ...base, tipoVueloID: "1", cargoID: "1", fechaHoraSalida: "2025-11-20T22:10:00Z", fechaHoraLlegada: "2025-11-20T23:10:00Z", horasDia: 0, horasNoche: 1, aterrizajes: 5, finalidadID: "68", origenID: "107", destinoID: "107", matriculaAvion: "LV-XYZ", Discriminaciones: [] });
+  // El mismo vuelo que Vector tiene el 30/09 a las 12:30, con la fecha un día antes (pasó de verdad).
+  sembrar({ ...base, tipoVueloID: "1", cargoID: "1", fechaHoraSalida: "2026-09-29T12:30:00Z", fechaHoraLlegada: "2026-09-29T14:24:00Z", horasDia: 1.9, horasNoche: 0, aterrizajes: 3, finalidadID: "71", origenID: "101", destinoID: "101", matriculaAvion: "LV-ABC", Discriminaciones: [] });
   sembrar({ ...base, tipoVueloID: "2", cargoID: "1", fechaHoraSalida: "2025-11-05T13:00:00Z", fechaHoraLlegada: "2025-11-05T14:12:00Z", horasDia: 1.2, horasNoche: 0, aterrizajes: 2, finalidadID: "71", origenID: "101", destinoID: "104", matriculaAvion: "LV-QQQ", Discriminaciones: [] });
 }
 

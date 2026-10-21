@@ -76,6 +76,7 @@ export default async function PasarAlCadPage() {
   const listos = datos.borradores.filter((b) => !b.problema);
   const revisar = datos.borradores.filter((b) => b.problema);
   const total = datos.pasados + datos.borradores.length;
+  const omitidos = datos.omitidos.length;
   const horasListas = listos.reduce((t, b) => t + b.horas, 0);
   const pct = (n: number) => `${total ? (100 * n) / total : 0}%`;
 
@@ -114,6 +115,11 @@ export default async function PasarAlCadPage() {
               {revisar.length > 0 && (
                 <li className="inline-flex items-center gap-1.5">
                   <i className="w-2 h-2 rounded-full bg-amber-400" /> <span className="data font-bold text-zinc-900 dark:text-white">{revisar.length}</span> para corregir
+                </li>
+              )}
+              {omitidos > 0 && (
+                <li className="inline-flex items-center gap-1.5">
+                  <span className="data font-bold text-zinc-900 dark:text-white">{omitidos}</span> fuera de la lista (ya foliados o ignorados; se deshace desde el panel)
                 </li>
               )}
             </ul>

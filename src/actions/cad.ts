@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { apiFetch } from "@/lib/api";
 import { getAirport } from "@/lib/airports";
-import { TRAER_DEL_CAD, matriculaCad, validarTraido } from "@/lib/cad";
+import { TRAER_DEL_CAD, matriculaCad, mismoVueloOtroDia, validarTraido } from "@/lib/cad";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
 import type { Aircraft, Flight } from "@/types";
 
@@ -62,12 +62,13 @@ export async function traerDelCad(items: unknown[]) {
     const [ar, fr] = await Promise.all([apiFetch("/aircraft", { next: { revalidate: 0 } }), apiFetch("/flights", { next: { revalidate: 0 } })]);
     if (!ar.ok || !fr.ok) return { ...resultado, error: "No pudimos leer tu bitácora. Probá de nuevo." };
     const aviones = ((await ar.json()) as Aircraft[]).filter((a) => !a.is_simulator);
-    const existentes = (await fr.json()) as (Flight & { cad_vuelo_id?: number | null })[];
+    const existentes = (await fr.json()) as Flight[];
     const avionPorMatricula = new Map(aviones.map((a) => [matriculaCad(a.registration), a]));
     const matriculaDe = new Map(aviones.map((a) => [a.id, matriculaCad(a.registration)]));
     const yaCad = new Set(existentes.map((f) => f.cad_vuelo_id).filter(Boolean));
     const yaSalida = new Set(existentes.map((f) => `${(f.takeoff ?? "").slice(0, 16)}|${f.aircraft_id ? matriculaDe.get(f.aircraft_id) : ""}`));
     const oaci = (codigo: string) => getAirport(codigo)?.icao?.toUpperCase() || codigo;
+    const salidas = existentes.map((f) => ({ salida: (f.takeoff ?? "").slice(0, 16), matricula: (f.aircraft_id && matriculaDe.get(f.aircraft_id)) || "" }));
 
     for (const v of vuelos) {
       if (!v) continue;
@@ -76,7 +77,8 @@ export async function traerDelCad(items: unknown[]) {
         resultado.rechazados++;
         continue;
       }
-      if (yaCad.has(v.cadId) || yaSalida.has(`${v.takeoff.slice(0, 16)}|${matriculaCad(v.matricula)}`)) {
+      // El mismo vuelo con un día de diferencia tampoco se crea: sería un duplicado (`mismoVueloOtroDia`).
+      if (yaCad.has(v.cadId) || yaSalida.has(`${v.takeoff.slice(0, 16)}|${matriculaCad(v.matricula)}`) || mismoVueloOtroDia(v.takeoff, v.matricula, salidas)) {
         resultado.yaEstaban++;
         continue;
       }
@@ -118,4 +120,26 @@ export async function traerDelCad(items: unknown[]) {
     if (resultado.creados > 0) revalidarVuelosNuevos();
   }
   return resultado;
+}
+
+/**
+ * Saca vuelos de la lista de "Pasar al CAD", o los devuelve (migración 031): "foliado" si ya
+ * están en un libro foliado antes del CAD, "ignorado" si el piloto no los pasa (un simulador,
+ * uno que carga a mano). `null` lo devuelve. Es una marca del libro: no toca el cobro.
+ */
+export async function omitirEnElCad(items: { vectorId: string; motivo: "foliado" | "ignorado" | null }[]) {
+  const validos = (Array.isArray(items) ? items : [])
+    .filter((i) => /^[0-9a-f-]{36}$/i.test(String(i?.vectorId)) && (i.motivo === "foliado" || i.motivo === "ignorado" || i.motivo === null))
+    .slice(0, 300);
+  let cambiados = 0;
+  try {
+    for (const i of validos) {
+      const r = await apiFetch(`/flights/${i.vectorId}`, { method: "PATCH", body: JSON.stringify({ cad_omitido: i.motivo }) });
+      if (r.ok) cambiados++;
+    }
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+  }
+  if (cambiados > 0) revalidatePath("/dashboard/history/cad");
+  return { cambiados };
 }
