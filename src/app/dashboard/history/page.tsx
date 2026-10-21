@@ -88,6 +88,14 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         action={
           <>
             <ExportarBitacora flights={sortedFlights} aircraft={aircraft} libros={libros} alumno={esAlumno(profile?.license_type)} />
+            {!esAlumno(profile?.license_type) && (
+              <Link
+                href="/dashboard/history/cad"
+                className="border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                Pasar al CAD
+              </Link>
+            )}
             <Link href="/dashboard/log-flight" className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm px-6 py-3.5 rounded-xl shadow-cal-highlight dark:shadow-none transition-all hover:bg-zinc-800 dark:hover:bg-zinc-200 flex items-center justify-center gap-2">
               <span>Nuevo registro</span>
               <Plus className="w-4 h-4" />

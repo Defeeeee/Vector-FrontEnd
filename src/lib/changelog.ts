@@ -658,6 +658,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.26.2",
+    fecha: "2026-10-21",
+    motivo: "Pasar los vuelos al CAD de ANAC con un marcador. Sin anuncio hasta probarlo contra el CAD real, que hoy no responde.",
+  },
+  {
     version: "2.26.1",
     fecha: "2026-10-20",
     motivo: "El alta ofrece arrancar con los totales del libro, y el alumno con sus horas de antes. Sin anuncio (Federico).",

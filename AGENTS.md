@@ -41,6 +41,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/app/page.tsx`, `src/app/guias/`, `src/components/publico/`, `src/lib/sitio.ts` | Lo público: la landing (Server Component, estática), las guías con sus fuentes, `robots.ts`, `sitemap.ts` y las imágenes para compartir. Una guía nueva se agrega en `GUIAS` y aparece en el sitemap, el índice y el pie. **Todo lo que promete la landing se verifica contra el código**; lo regulatorio de las guías, contra la norma (invariante 6). |
 | `src/lib/libro-anac.ts`, `src/lib/libro-anac-pdf.ts`, `src/app/api/bitacora/libro-anac/` | El libro de vuelo en PDF: qué va en cada casillero y las hojas (puro, testeado), el dibujo con pdf-lib y la ruta. Fuentes en `docs/normativa/libro-de-vuelo-anac.md`. |
 | `src/app/dashboard/plan-de-vuelo/`, `src/components/dashboard/plan-de-vuelo/`, `src/lib/formulario-plan.ts`, `src/lib/plan-de-vuelo.ts`, `src/lib/demora-plan.ts`, `src/lib/plan-de-vuelo-pdf.ts`, `src/lib/oficinas-aro.ts`, `src/actions/plan-de-vuelo.ts` | El plan de vuelo para EANA: los planes guardados (`/planes-de-vuelo` del backend, migración 024) y su editor. El formulario se revisa casilla por casilla (puro, testeado). El PDF es el **formulario de EANA** (`plan-de-vuelo-eana.jpg`, de un plan que EANA aceptó) y la demora el del Apéndice 4 de la ENR 1.10, armados con pdf-lib **en el navegador**. También están las 49 oficinas ARO/AIS de la AIC A 19/2026 y su horario de la AIP AD 2.3 (`npm run build:horarios-aro`), testeados contra su fuente. Fuentes en `docs/normativa/plan-de-vuelo-eana.md`. |
+| `src/lib/cad.ts`, `src/lib/cad-servidor.ts`, `src/cad/puente.ts`, `src/app/cad/conector/`, `src/app/dashboard/history/cad/` | Pasar los vuelos al **CAD de ANAC** desde el navegador del piloto. Un marcador corre `puente.ts` (compilado por `scripts/build-puente.mjs` a `public/cad/puente.js`) en la pestaña del CAD; la ventanita `/cad/conector` le pasa los vuelos por `postMessage`, y el puente los crea con la API interna del CAD. **Vector nunca ve la contraseña de ANAC.** La traducción (horas, finalidad, aeródromos, discriminación) es pura y testeada. `flights.cad_vuelo_id` (migración 029) marca los pasados. Para probar: `marketing/recursos/cad-falso.mjs`. |
 | `src/lib/mail-plantilla.ts`, `src/lib/mail-envio.ts`, `src/lib/mail-seguimiento.ts`, `src/app/api/mail/`, `src/app/api/cron/` | Los mails: la plantilla con la estética de la landing, el envío **con seguimiento propio** (aperturas y clics, firmados) y los barridos que los mandan. Las imágenes viven en `public/hotlink-ok/correo/` (Cloudflare bloquea el hotlinking fuera de esa carpeta). Todo mail sale por `enviarConSeguimiento`; las métricas se ven en el panel de administración. **La excepción es el plan de vuelo** (`lib/plan-de-vuelo-mail.ts`): va a una oficina del Estado, sin imagen de apertura ni links medidos. |
 | `src/lib/` | Lógica pura, **con sus tests al lado** (`*.test.ts`). Es lo único testeable: vitest corre en `environment: "node"`, sin DOM. |
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
@@ -298,6 +299,19 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
   - **Falta:** CHG, y que el editor ande sin señal (el planificador sí anda).
+- **Pasar al CAD de ANAC** (2026-10-21, 2.26.2 sin anuncio; Bitácora → Vuelos → "Pasar al CAD"):
+  - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
+    "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la
+    contraseña de ANAC en Vector.
+  - **Qué se valida:** lo que el CAD rechazaría (día más noche distinto de la duración
+    centesimal, sin horas, sin clase, piloto y copiloto mezclados, simulador) se marca
+    "revisar" y no se manda. Lo que ya está (misma salida y matrícula) se anota sin repetir.
+  - **Falta verificar contra el CAD real**, que el 2026-10-21 no respondía:
+    - la forma de la lista de aeródromos (`AER`, `LAD`) y la de autoridades certificantes;
+    - que la página deje cargar el script (CSP) y abrir la ventanita (COOP);
+    - qué devuelve "Crear".
+
+    Se probó entero contra `cad-falso.mjs`. Primero "Ver lo que se manda", y un solo vuelo.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

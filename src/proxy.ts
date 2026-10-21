@@ -184,6 +184,9 @@ export const config = {
     `/u/:path*` es el perfil público. No se protege —se abre sin cuenta—, pero sí se
     renueva la sesión de quien la tenga: sin eso, con el token vencido, el perfil lo
     vería como anónimo y el botón le diría "Creá tu cuenta" a un piloto logueado.
+
+    `/cad/conector` es la ventanita que habla con el CAD de ANAC (`lib/cad.ts`): tampoco se
+    protege (avisa ella si falta la sesión), pero se renueva, por la misma razón.
   */
-  matcher: ["/", "/dashboard/:path*", "/u/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/u/:path*", "/cad/conector"],
 };

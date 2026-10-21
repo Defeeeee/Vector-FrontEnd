@@ -31,6 +31,9 @@ export interface Flight {
    * antes de llenarse y lo que quedó en blanco se tacha. Lo usa el PDF del libro.
    */
   cierra_hoja?: boolean;
+  /** El id del vuelo en el CAD de ANAC, si ya se pasó, y cuándo (migración 029). */
+  cad_vuelo_id?: number | null;
+  cad_cargado_at?: string | null;
 
   discount_type?: 'value' | 'percent';
   discount_amount?: number;

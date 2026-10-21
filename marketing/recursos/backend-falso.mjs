@@ -25,7 +25,7 @@ for (let d = 420; d >= 2; d -= 5 + (n % 3)) {
   const travesia = !ruta.startsWith("SADF SADF");
   const noche = d % 23 === 0;
   const dur = Math.round((1.0 + (d % 7) * 0.15 + (travesia ? 0.7 : 0)) * 10) / 10;
-  const f = { id: `f${++n}`, user_id: "u1", aircraft_id: d % 4 === 0 ? "a2" : "a1", date: dia(d), route: ruta, landings: travesia ? 2 : 3, duration: dur,
+  const f = { id: `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`, user_id: "u1", aircraft_id: d % 4 === 0 ? "a2" : "a1", date: dia(d), route: ruta, landings: travesia ? 2 : 3, duration: dur,
     takeoff: `${dia(d)}T${hhmm(salida(d))}:00Z`, landing: `${dia(d)}T${hhmm(salida(d) + dur * 60)}:00Z`, purpose: "VP" };
   f[noche ? (travesia ? "pic_night_tra" : "pic_night_loc") : (travesia ? "pic_day_tra" : "pic_day_loc")] = dur;
   if (d % 9 === 0) f.capota = 0.5;
@@ -120,6 +120,16 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     }
     res.writeHead(l ? 200 : 404, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(l ?? {}));
+  }
+  if (req.method === "PATCH" && /^\/api\/flights\/[^/]+$/.test(ruta)) {
+    const f = vuelos.find((x) => x.id === ruta.split("/").pop());
+    if (f) Object.assign(f, json, json.cad_vuelo_id ? { cad_cargado_at: new Date().toISOString() } : {});
+    res.writeHead(f ? 200 : 404, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(f ?? {}));
+  }
+  if (req.method === "GET" && ruta === "/api/flights") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(SIN_VUELOS ? [] : vuelos));
   }
   if (req.method === "POST" && ruta === "/api/flights") {
     const f = { id: `f${++n}`, user_id: "u1", ...json };
