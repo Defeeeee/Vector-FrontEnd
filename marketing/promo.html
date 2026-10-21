@@ -1,0 +1,76 @@
+<!doctype html>
+<!--
+  El flyer de una sola imagen para grupos (WhatsApp, Facebook, foros), 4:5 (1080×1350),
+  2026-10-21. `marketing/render.mjs promo` lo exporta a `marketing/salida/promo.png`.
+
+  Todo lo que promete se verificó contra el código (2.28.0):
+  - "¿Puedo volar hoy?" según la RAAC 61, y lo que falta para la PPA o la PCA (inicio);
+  - un vuelo con un audio al copiloto de WhatsApp;
+  - pasar los vuelos al CAD y traerlos (`cad/puente.ts`);
+  - el plan de vuelo de EANA firmado y mandado a la oficina ARO/AIS (`enviarPlan`);
+  - el libro en PDF, también por WhatsApp;
+  - importar el libro de papel con fotos.
+  No dice "gratis" ni "oficial", ni usa logos de ANAC o EANA.
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #f6f6f7; --tinta: #18181b; --gris: #52525b; --gris2: #71717a; --borde: #e4e4e7; --azul: #2563eb;
+    --fuente: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--fuente); color: var(--tinta); -webkit-font-smoothing: antialiased; background: var(--fondo); }
+  .pieza { position: relative; overflow: hidden; width: 1080px; height: 1350px; padding: 70px 76px 60px; display: flex; flex-direction: column; gap: 34px; background: var(--fondo); }
+  .pieza::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(900px 600px at 88% 4%, rgba(37,99,235,.12), transparent 60%), radial-gradient(700px 500px at 0% 100%, rgba(56,189,248,.09), transparent 60%); }
+  .pieza > * { position: relative; }
+  .marca { display: flex; align-items: center; gap: 18px; }
+  .logo { width: 76px; height: 76px; border-radius: 22px; background: var(--tinta); display: grid; place-items: center; box-shadow: 0 10px 30px rgba(24,24,27,.18); }
+  .marca b { font-size: 44px; font-weight: 800; letter-spacing: -.02em; }
+  .marca .lema { margin-left: auto; font-size: 24px; font-weight: 700; color: var(--gris); border: 2px solid var(--borde); background: rgba(255,255,255,.8); border-radius: 999px; padding: 10px 22px; }
+  h1 { font-size: 92px; line-height: 1; font-weight: 900; letter-spacing: -.035em; }
+  h1 em { font-style: normal; color: var(--azul); }
+  .bajada { font-size: 31px; line-height: 1.4; color: var(--gris); font-weight: 600; margin-top: -8px; }
+  .grilla { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .item { background: #fff; border: 2px solid var(--borde); border-radius: 30px; padding: 32px 28px 32px; display: flex; gap: 18px; align-items: flex-start; box-shadow: 0 16px 40px rgba(24,24,27,.06); }
+  .ic { width: 58px; height: 58px; border-radius: 17px; background: #eff6ff; display: grid; place-items: center; flex: none; }
+  .item h3 { font-size: 30px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+  .item p { font-size: 23px; color: var(--gris2); font-weight: 600; line-height: 1.35; margin-top: 6px; }
+  .pie { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; background: var(--tinta); color: #fff; border-radius: 30px; padding: 30px 36px; }
+  .pie b { font-family: var(--mono); font-size: 34px; font-weight: 700; }
+  .pie span { font-size: 23px; font-weight: 700; opacity: .75; text-align: right; line-height: 1.3; }
+</style>
+</head>
+<body>
+<section class="pieza" id="promo">
+  <div class="marca"><span class="logo" id="logo"></span><b>Vector</b><span class="lema">Para pilotos en Argentina</span></div>
+  <h1>Tu bitácora de vuelo,<br><em>siempre al día.</em></h1>
+  <p class="bajada">Del alumno que va a la PPA al piloto que va a la PCA: menos papeles y más vuelo.</p>
+  <div class="grilla">
+    <div class="item"><span class="ic" data-i="check"></span><div><h3>¿Puedo volar hoy?</h3><p>Según la RAAC 61, y cuánto te falta para la próxima licencia.</p></div></div>
+    <div class="item"><span class="ic" data-i="mic"></span><div><h3>Un vuelo, un audio</h3><p>Se lo contás al copiloto por WhatsApp y queda cargado.</p></div></div>
+    <div class="item"><span class="ic" data-i="cad"></span><div><h3>Tus vuelos al CAD</h3><p>Sin tipearlos de nuevo, cada uno con su autoridad certificante.</p></div></div>
+    <div class="item"><span class="ic" data-i="plan"></span><div><h3>Plan de vuelo</h3><p>Firmado y enviado a la oficina ARO/AIS, en PDF.</p></div></div>
+    <div class="item"><span class="ic" data-i="libro"></span><div><h3>Tu libro en PDF</h3><p>Con la hoja de siempre. También te lo manda el copiloto.</p></div></div>
+    <div class="item"><span class="ic" data-i="foto"></span><div><h3>Traé tu libro de papel</h3><p>Una foto por hoja y Vector carga los vuelos.</p></div></div>
+  </div>
+  <div class="pie"><b>vector.fdiaznem.com.ar</b><span>Se instala en el<br>teléfono como una app</span></div>
+</section>
+<script>
+  const s = (d) => `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const I = {
+    check: s('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
+    mic: s('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/>'),
+    cad: s('<path d="M3 21h18"/><path d="M5 21V10"/><path d="M19 21V10"/><path d="M9 21v-7"/><path d="M15 21v-7"/><path d="m2 10 10-6 10 6"/>'),
+    plan: s('<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>'),
+    libro: s('<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>'),
+    foto: s('<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>'),
+  };
+  document.querySelectorAll(".ic").forEach((e) => (e.innerHTML = I[e.dataset.i]));
+  document.getElementById("logo").innerHTML = `<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+</script>
+</body>
+</html>
