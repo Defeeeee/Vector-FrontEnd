@@ -1,0 +1,290 @@
+<!doctype html>
+<!--
+  "Pasar al CAD" para Instagram (2026-10-21): un carrusel en 3:4 (1080×1440, `cad-1` a
+  `cad-7`) y tres historias en 9:16 (1080×1920, `cad-historia-1` a `-3`).
+
+  Misma estética que `plan-de-vuelo.html`. `marketing/render.mjs` abre este archivo con
+  `?p=<placa>` y la exporta a PNG en `marketing/salida/`.
+
+  Lo que se muestra es la app, redibujada con los mismos estilos:
+  - el panel "Vector → CAD" es el de `src/cad/puente.ts` (sus colores, filas y textos);
+  - la barra de favoritos es la de `PasoMarcador` (`MarcadorCad.tsx`);
+  - los datos son inventados: Lucía Ferrari, LV-ABC y LV-XYZ, y los instructores. Nada de
+    Federico ni de su CAD;
+  - no lleva el logo de ANAC: Vector no es un servicio de ANAC, y la pieza no tiene que
+    sugerirlo. "CAD de ANAC" va como texto, para decir de qué se trata.
+
+  Todo lo que dicen las placas se verificó contra el código (2.27.3):
+  - el marcador anda en la computadora;
+  - cada vuelo lleva su autoridad, y se puede cargar al registrarlo;
+  - no repite lo que ya está y avisa si una fecha no coincide;
+  - "Ya foliado" e "Ignorar";
+  - "Traer a Vector";
+  - la DDJJ la hace el piloto;
+  - Vector no ve la contraseña de ANAC.
+  No dicen "gratis" ni "oficial".
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #f6f6f7; --tinta: #18181b; --gris: #52525b; --gris2: #71717a; --gris3: #a1a1aa;
+    --borde: #e4e4e7; --azul: #2563eb; --cian: #38bdf8; --verde: #10b981; --ambar: #b45309;
+    --fuente: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--fondo); }
+  body { font-family: var(--fuente); color: var(--tinta); -webkit-font-smoothing: antialiased; }
+  .pieza { display: none; position: relative; overflow: hidden; background: var(--fondo); width: 1080px; height: 1440px; padding: 76px 80px 64px; gap: 40px; }
+  .pieza.historia { height: 1920px; padding: 260px 80px 270px; gap: 48px; }
+  .pieza.activa { display: flex; flex-direction: column; }
+  .pieza::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 600px at 85% 8%, rgba(37, 99, 235, .10), transparent 60%),
+      radial-gradient(700px 500px at 0% 100%, rgba(56, 189, 248, .08), transparent 60%);
+  }
+  .pieza > * { position: relative; }
+
+  .marca { display: flex; align-items: center; gap: 18px; }
+  .logo { width: 72px; height: 72px; border-radius: 20px; background: var(--tinta); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(24,24,27,.18); flex: none; }
+  .logo.grande { width: 150px; height: 150px; border-radius: 40px; }
+  .marca b { font-size: 40px; font-weight: 800; letter-spacing: -.02em; }
+  .pildora { display: inline-flex; align-items: center; gap: 12px; border: 2px solid var(--borde); background: rgba(255,255,255,.8); border-radius: 999px; padding: 12px 24px; font-size: 26px; color: var(--gris); font-weight: 600; }
+  .pildora i { width: 12px; height: 12px; border-radius: 50%; background: var(--azul); display: inline-block; }
+  h1 { font-size: 92px; line-height: 1.0; font-weight: 900; letter-spacing: -.035em; }
+  h1 span { color: var(--azul); }
+  .bajada { font-size: 34px; line-height: 1.4; color: var(--gris); font-weight: 600; }
+  .etiqueta { font-family: var(--mono); font-size: 22px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gris2); }
+  .pie { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  .dominio { font-family: var(--mono); font-size: 26px; color: var(--gris2); font-weight: 600; }
+  .boton { background: var(--tinta); color: #fff; border-radius: 22px; padding: 28px 40px; font-size: 34px; font-weight: 800; display: inline-flex; align-items: center; gap: 16px; }
+
+  /* --- el panel del CAD, como en src/cad/puente.ts, a escala --- */
+  .panel { background: #fff; border: 2px solid var(--borde); border-radius: 40px; box-shadow: 0 30px 80px rgba(24,24,27,.14); overflow: hidden; }
+  .panel .cab { display: flex; align-items: center; gap: 18px; padding: 26px 30px; border-bottom: 2px solid #f4f4f5; }
+  .panel .cab .lg { width: 56px; height: 56px; border-radius: 16px; background: var(--tinta); display: grid; place-items: center; flex: none; }
+  .panel .cab h3 { font-size: 30px; font-weight: 800; }
+  .panel .cab p { font-size: 22px; color: var(--gris2); }
+  .panel .cab .x { margin-left: auto; font-size: 34px; color: var(--gris3); letter-spacing: 18px; }
+  .panel .tabs { display: flex; gap: 8px; padding: 16px 30px 0; }
+  .panel .tab { flex: 1; background: #f4f4f5; color: var(--gris); border-radius: 16px; padding: 16px; font-size: 24px; font-weight: 700; text-align: center; }
+  .panel .tab.on { background: var(--tinta); color: #fff; }
+  .panel .tab em { font-family: var(--mono); font-style: normal; font-weight: 500; opacity: .7; margin-left: 8px; }
+  .panel .cuerpo { padding: 24px 30px 10px; }
+  .barra { display: flex; height: 14px; border-radius: 99px; overflow: hidden; background: #f4f4f5; margin-bottom: 14px; }
+  .barra i { display: block; height: 100%; }
+  .resumen { font-size: 24px; color: #3f3f46; } .resumen b { color: var(--tinta); }
+  .sec { margin-top: 24px; }
+  .sec h4 { display: flex; justify-content: space-between; font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+  .sec h4 span { font-weight: 600; color: var(--gris2); font-size: 20px; }
+  .fila { border: 2px solid #f4f4f5; border-radius: 24px; padding: 18px 22px; margin-bottom: 12px; }
+  .fila.rev { border-color: #fde68a; background: #fffbeb; }
+  .fila.ok { border-color: #a7f3d0; background: #ecfdf5; }
+  .linea { display: flex; align-items: center; gap: 18px; }
+  .caja { width: 30px; height: 30px; border-radius: 8px; background: var(--tinta); flex: none; display: grid; place-items: center; }
+  .caja.no { background: #fff; border: 2px solid #a1a1aa; }
+  .fecha { font-family: var(--mono); font-size: 22px; color: var(--gris); flex: none; }
+  .ruta { flex: 1; } .ruta b { font-family: var(--mono); font-size: 25px; } .ruta div { font-size: 20px; color: var(--gris2); }
+  .acc { font-size: 20px; color: var(--gris); text-decoration: underline; text-underline-offset: 4px; flex: none; }
+  .motivo { font-size: 20px; color: #92400e; margin: 10px 0 0 48px; line-height: 1.4; }
+  .estado { font-size: 20px; color: #047857; margin: 8px 0 0 48px; font-weight: 600; }
+  .aut { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 0 48px; }
+  .aut div { border: 2px solid #d4d4d8; border-radius: 16px; padding: 12px 16px; font-size: 21px; display: flex; justify-content: space-between; }
+  .pp { border-top: 2px solid #f4f4f5; padding: 22px 30px 26px; display: flex; gap: 12px; }
+  .bn { background: var(--tinta); color: #fff; border-radius: 999px; padding: 18px 28px; font-size: 24px; font-weight: 700; }
+  .bg { background: #f4f4f5; border-radius: 999px; padding: 18px 28px; font-size: 24px; font-weight: 700; }
+
+  /* la barra de favoritos de PasoMarcador */
+  .nav { background: #ececee; border: 2px solid var(--borde); border-radius: 32px; overflow: hidden; }
+  .nav .url { display: flex; align-items: center; gap: 14px; padding: 18px 24px; }
+  .nav .url i { width: 18px; height: 18px; border-radius: 50%; background: #d4d4d8; display: inline-block; }
+  .nav .url span { flex: 1; background: #fff; border-radius: 999px; padding: 12px 22px; font-family: var(--mono); font-size: 22px; color: var(--gris2); }
+  .nav .favs { display: flex; align-items: center; gap: 16px; padding: 4px 24px 22px; font-size: 21px; color: var(--gris3); }
+  .nav .favs s { display: inline-block; width: 110px; height: 22px; border-radius: 8px; background: #dcdce0; }
+  .marcador { display: inline-flex; align-items: center; gap: 14px; background: var(--tinta); color: #fff; border-radius: 999px; padding: 12px 28px 12px 12px; font-size: 30px; font-weight: 800; box-shadow: 0 14px 36px rgba(24,24,27,.3), 0 0 0 10px rgba(37,99,235,.15); }
+  .marcador .c { width: 46px; height: 46px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+  .soltar { border: 3px dashed rgba(37,99,235,.55); color: var(--azul); border-radius: 999px; padding: 10px 26px; font-weight: 800; font-size: 22px; }
+</style>
+</head>
+<body>
+
+<!-- 1 · Portada -->
+<section class="pieza" id="cad-1">
+  <div class="marca">%%LOGO%%<b>Vector</b></div>
+  <div><span class="pildora"><i></i>Nuevo: Vector → CAD</span></div>
+  <h1 style="font-size:100px">Tus vuelos,<br>al CAD de ANAC.<br><span>Sin tipearlos<br>de nuevo.</span></h1>
+  <div class="panel" style="zoom:.92;margin-top:10px">
+    %%CAB%%
+    <div class="cuerpo">
+      <div class="barra"><i style="width:62%;background:var(--verde)"></i><i style="width:32%;background:var(--azul)"></i><i style="width:6%;background:#f59e0b"></i></div>
+      <p class="resumen"><b>6</b> por cargar, <b>12</b> ya están y <b>1</b> para revisar.</p>
+      <div class="sec"><h4>Por cargar</h4>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">18/10/2026</span><span class="ruta"><b>SADF → SADM</b><div>LV-ABC · 0,9 h · instrucción</div></span></div></div>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">11/10/2026</span><span class="ruta"><b>SADF (local)</b><div>LV-ABC · 1,2 h · entrenamiento</div></span></div></div>
+      </div>
+    </div>
+    <div class="pp"><span class="bn">Cargar 6 vuelos · 7,4 h</span><span class="bg">Ver lo que se manda</span></div>
+  </div>
+  <div class="pie"><span class="dominio">vector.fdiaznem.com.ar</span><span class="etiqueta" style="color:var(--azul)">Deslizá →</span></div>
+</section>
+
+<!-- 2 · Un marcador -->
+<section class="pieza" id="cad-2">
+  <span class="etiqueta">1 · Un marcador</span>
+  <h1 style="margin-top:auto;font-size:104px">Lo arrastrás<br>una vez.<br><span>Y listo.</span></h1>
+  <p class="bajada">Desde Vector, en la computadora, arrastrás el botón a la barra de favoritos. Después lo tocás en el CAD, con tu sesión iniciada.</p>
+  <div class="nav" style="margin-top:6px;zoom:1.22">
+    <div class="url"><i></i><i></i><i></i><span>cad.anac.gob.ar</span></div>
+    <div class="favs">☆ Favoritos <s></s><s style="width:80px"></s><span class="soltar">Soltalo acá</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:26px;margin-top:-6px;zoom:1.18">
+    <span class="marcador"><span class="c">%%BRUJULA_N%%</span>Vector → CAD</span>
+    <span style="font-size:26px;color:var(--gris2);font-weight:600">Bitácora → Pasar al CAD</span>
+  </div>
+  <div class="pie"><span class="dominio">vector.fdiaznem.com.ar</span><span class="etiqueta" style="color:var(--azul)">Deslizá →</span></div>
+</section>
+
+<!-- 3 · La autoridad de cada vuelo -->
+<section class="pieza" id="cad-3">
+  <span class="etiqueta">2 · Cada vuelo, su autoridad</span>
+  <h1 style="margin-top:auto;font-size:96px">El CAD pide quién<br>certifica.<br><span>Vector ya lo sabe.</span></h1>
+  <p class="bajada">La cargás al registrar el vuelo, o Vector te propone la última que usaste para esa finalidad: tu instructor en los de instrucción.</p>
+  <div class="panel" style="zoom:1.12">
+    <div class="cuerpo" style="padding-bottom:20px">
+      <div class="sec" style="margin-top:4px"><h4>Por cargar</h4>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">18/10/2026</span><span class="ruta"><b>SADF → SADM</b><div>LV-ABC · 0,9 h · instrucción</div></span><span class="acc">Ya foliado</span></div>
+          <div class="aut"><div>Instructor de vuelo <span>⌄</span></div><div>MARTÍN SOSA</div></div></div>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">11/10/2026</span><span class="ruta"><b>SADF (local)</b><div>LV-ABC · 1,2 h · entrenamiento</div></span><span class="acc">Ya foliado</span></div>
+          <div class="aut"><div>Jefe de aeródromo <span>⌄</span></div><div>CARLA RÍOS</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span class="dominio">vector.fdiaznem.com.ar</span><span class="etiqueta" style="color:var(--azul)">Deslizá →</span></div>
+</section>
+
+<!-- 4 · Sin duplicar -->
+<section class="pieza" id="cad-4">
+  <span class="etiqueta">3 · Sin duplicar</span>
+  <h1 style="margin-top:auto;font-size:100px">Lo que ya está,<br><span>no se manda<br>dos veces.</span></h1>
+  <div class="panel" style="zoom:1.1">
+    <div class="cuerpo" style="padding-bottom:20px">
+      <div class="sec" style="margin-top:4px"><h4>Para revisar <span>No se mandan</span></h4>
+        <div class="fila rev"><div class="linea"><span class="fecha">06/09/2026</span><span class="ruta"><b>SADF → SADL</b><div>LV-XYZ · 0,7 h · vuelo privado</div></span><span class="acc">Ignorar</span></div>
+          <p class="motivo">En el CAD figura el 05/09 18:20, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta?</p></div>
+      </div>
+      <div class="sec"><h4>Ya están en el CAD <span>12</span></h4>
+        <div class="fila ok"><div class="linea"><span class="fecha">27/09/2026</span><span class="ruta"><b>SADF (local)</b><div>LV-ABC · 1,0 h · entrenamiento</div></span></div><p class="estado">En el CAD</p></div>
+      </div>
+    </div>
+  </div>
+  <p class="bajada" style="font-size:30px">Y lo de antes del CAD, que ya está en tu libro foliado, lo marcás como "Ya foliado" y sale de la lista.</p>
+  <div class="pie"><span class="dominio">vector.fdiaznem.com.ar</span><span class="etiqueta" style="color:var(--azul)">Deslizá →</span></div>
+</section>
+
+<!-- 5 · Al revés también -->
+<section class="pieza" id="cad-5">
+  <span class="etiqueta">4 · Al revés también</span>
+  <h1 style="margin-top:auto;font-size:100px">¿Ya los tenés<br>en el CAD?<br><span>Traelos a Vector.</span></h1>
+  <p class="bajada">Los vuelos que declaraste en el CAD pasan a tu bitácora con el desglose del libro: día y noche, local y travesía, capota. Y no se descuentan de tu saldo.</p>
+  <div class="panel" style="zoom:.95">
+    <div class="tabs"><span class="tab">Pasar al CAD<em>0</em></span><span class="tab on">Traer a Vector<em>9</em></span></div>
+    <div class="cuerpo" style="padding-bottom:12px">
+      <p class="resumen"><b>9</b> vuelos del CAD no están en Vector.</p>
+      <div class="sec" style="margin-top:16px">
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">03/03/2026</span><span class="ruta"><b>SADF → SAAR</b><div>LV-ABC · 2,1 h · entrenamiento</div></span></div></div>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">22/02/2026</span><span class="ruta"><b>SADF (local)</b><div>LV-XYZ · 1,1 h · instrucción</div></span></div></div>
+      </div>
+    </div>
+    <div class="pp"><span class="bn">Traer 9 vuelos · 12,6 h</span></div>
+  </div>
+  <div class="pie"><span class="dominio">vector.fdiaznem.com.ar</span><span class="etiqueta" style="color:var(--azul)">Deslizá →</span></div>
+</section>
+
+<!-- 6 · La DDJJ la hacés vos -->
+<section class="pieza" id="cad-6">
+  <span class="etiqueta">5 · Tu cuenta, tu firma</span>
+  <h1 style="margin-top:auto;font-size:100px">La declaración<br>jurada<br><span>la hacés vos.</span></h1>
+  <div class="panel" style="zoom:1.18">
+    <div class="cuerpo" style="padding:28px 30px">
+      <div class="fila ok"><div class="linea"><span class="fecha">18/10/2026</span><span class="ruta"><b>SADF → SADM</b><div>LV-ABC · 0,9 h · instrucción</div></span></div><p class="estado">Cargado en el CAD</p></div>
+    </div>
+    <div class="pp" style="flex-direction:column;gap:6px"><p style="font-size:26px;font-weight:800">Cargaste 6 vuelos en el CAD.</p><p style="font-size:22px;color:var(--gris2)">Ahora hacé la declaración en "DDJJ de Horas de vuelo".</p></div>
+  </div>
+  <p class="bajada" style="font-size:31px">Los vuelos quedan "Pendiente de DDJJ" y la firmás vos, como siempre. Vector no ve tu contraseña de ANAC: carga desde tu sesión, en tu navegador.</p>
+  <div class="pie"><span class="dominio">vector.fdiaznem.com.ar</span><span class="etiqueta" style="color:var(--azul)">Deslizá →</span></div>
+</section>
+
+<!-- 7 · Cierre -->
+<section class="pieza" id="cad-7" style="gap:48px">
+  <div class="marca" style="margin-top:150px">%%LOGO_GRANDE%%</div>
+  <h1 style="font-size:112px">Cargás una vez.<br><span>Vector lo pasa<br>al CAD.</span></h1>
+  <p class="bajada" style="font-size:38px">Para pilotos en Argentina. En Vector: Bitácora → Pasar al CAD.</p>
+  <div><span class="boton" style="font-size:40px;padding:32px 48px">vector.fdiaznem.com.ar</span></div>
+  <span class="etiqueta" style="margin-top:auto">Link en la bio</span>
+</section>
+
+<!-- Historia 1 · El gancho -->
+<section class="pieza historia" id="cad-historia-1">
+  <div class="marca">%%LOGO%%<b>Vector</b></div>
+  <h1 style="font-size:118px;margin-top:auto">¿Cargás cada<br>vuelo dos veces?</h1>
+  <p class="bajada" style="font-size:44px">Una en tu bitácora, otra en el CAD de ANAC.</p>
+  <div style="margin-top:60px;display:flex;flex-direction:column;gap:28px">
+    <span class="pildora" style="font-size:36px;padding:20px 34px;align-self:flex-start"><i></i>Ahora, una sola</span>
+    <h1 style="font-size:118px"><span>Vector lo pasa<br>al CAD por vos.</span></h1>
+  </div>
+  <span class="etiqueta" style="margin-top:auto;font-size:28px">Tocá para ver cómo →</span>
+</section>
+
+<!-- Historia 2 · El panel -->
+<section class="pieza historia" id="cad-historia-2">
+  <span class="etiqueta" style="font-size:28px">Adentro del CAD</span>
+  <h1 style="font-size:100px">Un marcador.<br>Tus vuelos.<br><span>Su autoridad.</span></h1>
+  <div class="panel" style="zoom:1.02;margin-top:10px;flex:none">
+    %%CAB%%
+    <div class="cuerpo">
+      <div class="barra"><i style="width:62%;background:var(--verde)"></i><i style="width:32%;background:var(--azul)"></i><i style="width:6%;background:#f59e0b"></i></div>
+      <p class="resumen"><b>6</b> por cargar, <b>12</b> ya están y <b>1</b> para revisar.</p>
+      <div class="sec"><h4>Por cargar</h4>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">18/10/2026</span><span class="ruta"><b>SADF → SADM</b><div>LV-ABC · 0,9 h · instrucción</div></span></div>
+          <div class="aut"><div>Instructor de vuelo <span>⌄</span></div><div>MARTÍN SOSA</div></div></div>
+        <div class="fila"><div class="linea">%%TILDE%%<span class="fecha">11/10/2026</span><span class="ruta"><b>SADF (local)</b><div>LV-ABC · 1,2 h · entrenamiento</div></span></div>
+          <div class="aut"><div>Jefe de aeródromo <span>⌄</span></div><div>CARLA RÍOS</div></div></div>
+      </div>
+    </div>
+    <div class="pp"><span class="bn">Cargar 6 vuelos · 7,4 h</span></div>
+  </div>
+  <p class="bajada" style="font-size:40px;margin-top:auto">Sin repetir lo que ya está. La DDJJ la seguís haciendo vos.</p>
+</section>
+
+<!-- Historia 3 · Cierre -->
+<section class="pieza historia" id="cad-historia-3" style="gap:56px">
+  <div class="marca" style="margin-top:220px">%%LOGO_GRANDE%%</div>
+  <h1 style="font-size:124px">Cargás una vez.<br><span>Vector lo pasa<br>al CAD.</span></h1>
+  <p class="bajada" style="font-size:44px">En Vector: Bitácora → Pasar al CAD. Desde la computadora.</p>
+  <div><span class="boton" style="font-size:44px;padding:36px 52px">vector.fdiaznem.com.ar</span></div>
+  <span class="etiqueta" style="margin-top:auto;font-size:28px">Link en la bio</span>
+</section>
+
+<script>
+  const BRUJULA = (s, c = "#fff") => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+  const CAB = `<div class="cab"><span class="lg">${BRUJULA(30)}</span><div><h3>Vector → CAD</h3><p>Tus vuelos de Vector, en tu CAD</p></div><span class="x">– ×</span></div>`;
+  const TILDE = `<span class="caja"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>`;
+  for (const s of document.querySelectorAll(".pieza")) {
+    s.innerHTML = s.innerHTML
+      .replaceAll("%%LOGO_GRANDE%%", `<span class="logo grande">${BRUJULA(84)}</span>`)
+      .replaceAll("%%LOGO%%", `<span class="logo">${BRUJULA(40)}</span>`)
+      .replaceAll("%%BRUJULA_N%%", BRUJULA(28, "#18181b"))
+      .replaceAll("%%CAB%%", CAB)
+      .replaceAll("%%TILDE%%", TILDE);
+  }
+  const p = new URLSearchParams(location.search).get("p");
+  const pieza = document.getElementById(p) || document.querySelector(".pieza");
+  pieza.classList.add("activa");
+  document.body.style.width = "1080px";
+</script>
+</body>
+</html>
