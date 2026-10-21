@@ -16,6 +16,8 @@ interface FlightListClientProps {
   costos?: Map<string, number>;
   alumno?: boolean;
   fechaPpa?: string | null;
+  /** El id de un vuelo para abrir en edición (`?editar=`, desde Pasar al CAD). */
+  editar?: string;
 }
 
 const MONTH_NAMES = [
@@ -23,7 +25,7 @@ const MONTH_NAMES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
-export default function FlightListClient({ flights, aircraft, costos = new Map(), alumno = false, fechaPpa = null }: FlightListClientProps) {
+export default function FlightListClient({ flights, aircraft, costos = new Map(), alumno = false, fechaPpa = null, editar }: FlightListClientProps) {
   const [filtros, setFiltros] = useState<FiltrosVuelo>({});
   const [abierto, setAbierto] = useState(false);
 
@@ -48,7 +50,8 @@ export default function FlightListClient({ flights, aircraft, costos = new Map()
 
   const filtrado = hayFiltros(filtros);
 
-  const [limit, setLimit] = useState(30);
+  // Si hay que abrir uno en edición, la lista llega por lo menos hasta él.
+  const [limit, setLimit] = useState(() => Math.max(30, editar ? flights.findIndex((f) => f.id === editar) + 1 : 0));
 
   // Group into ledger pages by calendar month, but ONLY for the visible ones
   const visibleFlights = useMemo(() => filteredFlights.slice(0, limit), [filteredFlights, limit]);
@@ -194,6 +197,7 @@ export default function FlightListClient({ flights, aircraft, costos = new Map()
                         costo={costos.get(flight.id) ?? null}
                         alumno={alumno}
                         fechaPpa={fechaPpa}
+                        editarAlAbrir={flight.id === editar}
                       />
                     ))}
                   </div>

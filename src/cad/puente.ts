@@ -5,10 +5,12 @@
  * 1. Abre una ventanita de Vector (`/cad/conector`), que tiene la sesión de Vector y le
  *    pasa los vuelos que faltan, ya armados (`lib/cad.ts`), por `postMessage`.
  * 2. Lee del CAD las listas (finalidades, aeródromos, autoridades) y los vuelos que ya
- *    tiene, y muestra un panel con cada vuelo: nuevo, ya está, o para revisar.
- * 3. Al confirmar, crea cada vuelo con la misma API que usa el formulario del CAD. Quedan
+ *    tiene, y muestra un panel con cada vuelo: por cargar, ya está, o para revisar.
+ * 3. Cada vuelo lleva **su** autoridad certificante y su nombre (Federico, 2026-10-21): el
+ *    panel propone la última usada para esa finalidad (`autoridadSugerida`).
+ * 4. Al confirmar, crea cada vuelo con la misma API que usa el formulario del CAD. Quedan
  *    "Pendiente de DDJJ": **la declaración jurada la hace el piloto**, en otra pantalla.
- * 4. Le avisa a la ventanita cuáles quedaron, para marcarlos en Vector.
+ * 5. Le avisa a la ventanita cuáles quedaron, para marcarlos en Vector.
  *
  * Vector nunca ve la contraseña de ANAC, y el CAD nunca ve la sesión de Vector. Los
  * mensajes sólo se aceptan de la ventanita que abrió este script, desde el origen de Vector.
@@ -16,12 +18,17 @@
  * Lo compila `scripts/build-puente.mjs` a `public/cad/puente.js`.
  */
 import {
+  autoridadSugerida,
+  faltaAutoridad,
   payloadCad,
+  recordarAutoridades,
   resolverFinalidad,
   resolverLugar,
   yaEstaEnElCad,
+  type AutoridadCad,
   type BorradorCad,
   type ItemCad,
+  type MemoriaAutoridades,
   type VueloEnElCad,
 } from "../lib/cad";
 
@@ -34,11 +41,79 @@ interface Fila {
   ids: { finalidadID: string; origenID: string; destinoID: string } | null;
   elegido: boolean;
   anterior: boolean;
+  autoridad: AutoridadCad;
   resultado?: { ok: boolean; texto: string };
 }
 
+type Paso = "elegir" | "confirmar" | "cargando" | "listo";
+
 const API = "/foliadoweb/api/VueloTripulante/";
-const CLAVE_AUTORIDAD = "vector-cad-autoridad";
+const CLAVE_MEMORIA = "vector-cad-autoridades";
+const BRUJULA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+
+const ESTILOS = `
+  :host { all: initial; }
+  * { box-sizing: border-box; }
+  .p { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px); display: flex; flex-direction: column; background: #fff; color: #18181b;
+    border: 1px solid #e4e4e7; border-radius: 22px; box-shadow: 0 24px 64px rgba(24,24,27,.28); overflow: hidden;
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .m { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .cab { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #f4f4f5; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; background: #18181b; display: grid; place-items: center; flex: none; }
+  .cab h2 { margin: 0; font-size: 15px; font-weight: 700; } .cab p { margin: 0; font-size: 12px; color: #71717a; }
+  .cab .esp { flex: 1; }
+  .ico { border: 0; background: none; width: 30px; height: 30px; border-radius: 9px; font-size: 18px; line-height: 1; color: #71717a; cursor: pointer; }
+  .ico:hover { background: #f4f4f5; color: #18181b; }
+  .cuerpo { overflow: auto; padding: 14px 16px 6px; flex: 1; }
+  .barra { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: #f4f4f5; margin: 2px 0 8px; }
+  .barra i { display: block; height: 100%; }
+  .v-esta { background: #10b981; } .v-nuevo { background: #2563eb; } .v-rev { background: #f59e0b; }
+  .resumen { font-size: 13px; color: #3f3f46; margin: 0 0 4px; }
+  .resumen b { color: #18181b; }
+  .nota { font-size: 12px; color: #71717a; margin: 0; }
+  .sec { margin-top: 16px; }
+  .sec > h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+  .sec > h3 span { font-weight: 500; color: #71717a; font-size: 12px; }
+  .enl { background: none; border: 0; padding: 0; color: #2563eb; font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .fila { border: 1px solid #f4f4f5; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+  .fila.rev { border-color: #fde68a; background: #fffbeb; }
+  .fila.falta { border-color: #fca5a5; }
+  .fila.ok { border-color: #a7f3d0; background: #ecfdf5; }
+  .fila.err { border-color: #fecaca; background: #fef2f2; }
+  .linea { display: flex; align-items: center; gap: 10px; }
+  .linea input[type=checkbox] { width: 16px; height: 16px; accent-color: #18181b; flex: none; }
+  .ruta { flex: 1; min-width: 0; }
+  .ruta b { font-size: 13px; } .ruta div { font-size: 12px; color: #71717a; }
+  .fecha { font-size: 12px; color: #52525b; flex: none; }
+  .motivo { font-size: 12px; color: #92400e; margin: 6px 0 0 26px; }
+  .motivo a { color: #92400e; }
+  .aut { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 0 26px; }
+  .aut select, .aut input { width: 100%; padding: 7px 9px; border: 1px solid #d4d4d8; border-radius: 9px; font: inherit; font-size: 12px; background: #fff; color: #18181b; }
+  .aut select:focus, .aut input:focus { outline: 2px solid #2563eb; outline-offset: 0; border-color: transparent; }
+  .aut .enl { grid-column: 1 / -1; justify-self: start; } .aut .enl[hidden] { display: none; }
+  .estado { font-size: 12px; margin: 6px 0 0 26px; }
+  .estado.ok { color: #047857; } .estado.err { color: #b91c1c; }
+  details { margin-top: 16px; } summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+  summary span { font-weight: 500; color: #71717a; font-size: 12px; }
+  .pie { border-top: 1px solid #f4f4f5; padding: 12px 16px 14px; background: #fff; }
+  .pie p { margin: 0 0 10px; font-size: 13px; }
+  .pie .err { color: #b91c1c; }
+  .bots { display: flex; gap: 8px; flex-wrap: wrap; }
+  .b { border: 0; border-radius: 999px; padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .b:focus-visible, .ico:focus-visible, .enl:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  .neg { background: #18181b; color: #fff; } .sec2 { background: #f4f4f5; color: #18181b; }
+  .b:disabled { opacity: .4; cursor: default; }
+  .prog { height: 6px; border-radius: 99px; background: #f4f4f5; overflow: hidden; margin-bottom: 8px; }
+  .prog i { display: block; height: 100%; background: #2563eb; transition: width .3s; }
+  pre { background: #f4f4f5; border-radius: 12px; padding: 10px; font-size: 11px; overflow: auto; max-height: 300px; margin: 8px 0 0; }
+  .vacio { text-align: center; padding: 18px 8px; color: #52525b; }
+  .pill { display: none; align-items: center; gap: 8px; padding: 8px 14px 8px 8px; border-radius: 999px; background: #18181b; color: #fff; border: 0; cursor: pointer;
+    font: 600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; box-shadow: 0 12px 32px rgba(24,24,27,.35); }
+  .pill .logo { width: 24px; height: 24px; border-radius: 999px; background: #fff; }
+  .pill .logo svg { stroke: #18181b; }
+  .min .p { display: none; } .min .pill { display: inline-flex; }
+  @media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
+`;
 
 (function () {
   const script = document.currentScript as HTMLScriptElement | null;
@@ -46,7 +121,7 @@ const CLAVE_AUTORIDAD = "vector-cad-autoridad";
   const w = window as unknown as { __vectorCad?: { mostrar: () => void } };
 
   if (location.origin !== __CAD_ORIGEN__) {
-    alert(`Tocá el marcador de Vector en la pestaña del CAD (${__CAD_ORIGEN__.replace("https://", "")}), adentro de "Registro horas vuelo".`);
+    alert(`Tocá el marcador de Vector en la pestaña del CAD (${__CAD_ORIGEN__.replace(/^https?:\/\//, "")}), adentro de "Registro horas vuelo".`);
     return;
   }
   if (w.__vectorCad) {
@@ -60,27 +135,31 @@ const CLAVE_AUTORIDAD = "vector-cad-autoridad";
   host.style.cssText = "position:fixed;top:12px;right:12px;z-index:2147483647";
   const raiz = host.attachShadow({ mode: "open" });
   document.body.appendChild(host);
-  raiz.innerHTML = `<style>
-    :host { all: initial; }
-    .p { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; background: #fff; color: #18181b;
-      border: 1px solid #e4e4e7; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.25); font: 14px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
-    .cab { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #f4f4f5; position: sticky; top: 0; background: #fff; }
-    .cab b { font-size: 15px; } .x { border: 0; background: none; font-size: 20px; cursor: pointer; color: #71717a; }
-    .c { padding: 14px 18px; } .gris { color: #71717a; font-size: 12px; } .err { color: #b91c1c; } .ok { color: #047857; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; } td { padding: 7px 4px; border-top: 1px solid #f4f4f5; vertical-align: top; }
-    .m { font-family: ui-monospace, Menlo, monospace; } .chip { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-    .nuevo { background: #eff6ff; color: #1d4ed8; } .esta { background: #ecfdf5; color: #047857; } .rev { background: #fffbeb; color: #b45309; }
-    label { display: block; font-size: 12px; font-weight: 600; margin: 10px 0 4px; } select, input[type=text] { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #d4d4d8; border-radius: 10px; font: inherit; }
-    .bots { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; } button.b { border: 0; border-radius: 999px; padding: 10px 16px; font: 600 13px inherit; cursor: pointer; }
-    .neg { background: #18181b; color: #fff; } .sec { background: #f4f4f5; color: #18181b; } button.b:disabled { opacity: .4; cursor: default; }
-    pre { background: #f4f4f5; border-radius: 10px; padding: 10px; font-size: 11px; overflow: auto; max-height: 260px; }
-  </style><div class="p"><div class="cab"><b>Vector → CAD</b><button class="x" title="Cerrar">×</button></div><div class="c" id="c"></div></div>`;
-  const c = raiz.getElementById("c") as HTMLDivElement;
-  (raiz.querySelector(".x") as HTMLButtonElement).onclick = () => (host.style.display = "none");
-  w.__vectorCad = { mostrar: () => (host.style.display = "") };
+  raiz.innerHTML = `<style>${ESTILOS}</style><div id="marco">
+    <div class="p" role="dialog" aria-label="Vector → CAD">
+      <div class="cab"><span class="logo">${BRUJULA}</span><div class="esp"><h2>Vector → CAD</h2><p>Tus vuelos de Vector, en tu CAD</p></div>
+        <button class="ico" id="minimizar" title="Minimizar" aria-label="Minimizar">–</button><button class="ico" id="cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
+      <div class="cuerpo" id="cuerpo"></div>
+      <div class="pie" id="pie"></div>
+    </div>
+    <button class="pill" id="pill"><span class="logo">${BRUJULA}</span><span id="pilltxt">Vector → CAD</span></button>
+  </div>`;
+  const marco = raiz.getElementById("marco") as HTMLDivElement;
+  const cuerpo = raiz.getElementById("cuerpo") as HTMLDivElement;
+  const pie = raiz.getElementById("pie") as HTMLDivElement;
+  const $ = <T extends HTMLElement>(id: string) => raiz.getElementById(id) as T | null;
+  ($("cerrar") as HTMLButtonElement).onclick = () => (host.style.display = "none");
+  ($("minimizar") as HTMLButtonElement).onclick = () => marco.classList.add("min");
+  ($("pill") as HTMLButtonElement).onclick = () => marco.classList.remove("min");
+  w.__vectorCad = {
+    mostrar: () => {
+      host.style.display = "";
+      marco.classList.remove("min");
+    },
+  };
 
   const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
-  const mostrar = (html: string) => (c.innerHTML = html);
+  const horas = (n: number) => n.toFixed(1).replace(".", ",");
 
   /* ----------------------------------------------------------- el CAD ------- */
 
@@ -133,13 +212,8 @@ const CLAVE_AUTORIDAD = "vector-cad-autoridad";
     });
   }
 
-  function abrirVector() {
-    ventana = window.open(`${VECTOR}/cad/conector`, "vector-cad", "popup,width=460,height=620");
-    return ventana;
-  }
-
   async function pedirVuelos(): Promise<{ borradores: BorradorCad[] } | null> {
-    if (!ventana || ventana.closed) abrirVector();
+    if (!ventana || ventana.closed) ventana = window.open(`${VECTOR}/cad/conector`, "vector-cad", "popup,width=420,height=560");
     if (!ventana) return null;
     const llegan = esperar("vector-cad:vuelos", 30_000);
     // La ventanita puede tardar en cargar: se le pide hasta que conteste.
@@ -159,17 +233,45 @@ const CLAVE_AUTORIDAD = "vector-cad-autoridad";
     return d ? Number(d.marcados) || 0 : null;
   }
 
+  /* ---------------------------------------------------------- la memoria ---- */
+
+  function leerMemoria(): MemoriaAutoridades | null {
+    try {
+      return JSON.parse(localStorage.getItem(CLAVE_MEMORIA) ?? "null") as MemoriaAutoridades | null;
+    } catch {
+      return null;
+    }
+  }
+  function guardarMemoria(m: MemoriaAutoridades) {
+    try {
+      localStorage.setItem(CLAVE_MEMORIA, JSON.stringify(m));
+    } catch {
+      /* sin almacenamiento, la próxima vez se propone vacía */
+    }
+  }
+
   /* -------------------------------------------------------------- el flujo -- */
 
   let filas: Fila[] = [];
   let autoridades: ItemCad[] = [];
-  // Lo que el piloto eligió en el panel: sobrevive a cada redibujo.
-  let autoridad = autoridadGuardada();
+  let paso: Paso = "elegir";
+  let aviso = "";
+  let vistaPrevia = "";
+  let progreso = { hechos: 0, total: 0 };
+  let marcadosEnVector: number | null = 0;
+
+  const porCargar = () => filas.filter((f) => f.ids && !f.enElCad && !f.resultado?.ok);
+  const elegidas = () => porCargar().filter((f) => f.elegido);
+  const yaEstan = () => filas.filter((f) => f.enElCad);
+  const paraRevisar = () => filas.filter((f) => f.problema);
+
+  function cargando(texto: string, detalle = "") {
+    cuerpo.innerHTML = `<div class="vacio"><p><b>${esc(texto)}</b></p><p class="nota">${detalle}</p></div>`;
+    pie.innerHTML = "";
+  }
 
   async function empezar() {
-    mostrar(`<p>Buscando tus vuelos en Vector…</p><p class="gris">Se abre una ventanita de Vector: dejala abierta. Si no aparece, permití las ventanas emergentes de este sitio.</p>
-      <div class="bots"><button class="b sec" id="abrir">Abrir Vector</button></div>`);
-    (raiz.getElementById("abrir") as HTMLButtonElement).onclick = () => void empezar();
+    cargando("Buscando tus vuelos en Vector…", "Se abre una ventanita de Vector: dejala abierta, podés minimizarla.");
     try {
       const [vector, finalidades, auts, enElCad, lugaresLocal, lugaresTravesia] = await Promise.all([
         pedirVuelos(),
@@ -180,35 +282,49 @@ const CLAVE_AUTORIDAD = "vector-cad-autoridad";
         lugares(2),
       ]);
       if (!vector) {
-        mostrar(`<p class="err">No pudimos hablar con Vector.</p><p class="gris">Fijate que la ventanita de Vector esté abierta y con tu sesión iniciada, y volvé a tocar el marcador.</p>
-          <div class="bots"><button class="b neg" id="abrir">Abrir Vector</button></div>`);
-        (raiz.getElementById("abrir") as HTMLButtonElement).onclick = () => void empezar();
+        cuerpo.innerHTML = `<div class="vacio"><p><b>No pudimos hablar con Vector.</b></p>
+          <p class="nota">Si el navegador bloqueó la ventanita, permití las ventanas emergentes de este sitio. Fijate también que tengas la sesión de Vector iniciada.</p></div>`;
+        pie.innerHTML = `<div class="bots"><button class="b neg" id="reintentar">Abrir Vector de nuevo</button></div>`;
+        ($("reintentar") as HTMLButtonElement).onclick = () => void empezar();
         return;
       }
       autoridades = auts;
+      const memoria = leerMemoria();
       // Lo anterior al primer vuelo que ya está en el CAD probablemente se folió en papel.
       const corte = enElCad.reduce<string | null>((min, v) => (!min || v.fechaSalida < min ? v.fechaSalida : min), null);
-      filas = vector.borradores.map((b) => armarFila(b, enElCad, finalidades, b.tipoVueloID === 1 ? lugaresLocal : lugaresTravesia, corte));
+      filas = vector.borradores.map((b) =>
+        armarFila(b, enElCad, finalidades, b.tipoVueloID === 1 ? lugaresLocal : lugaresTravesia, corte, memoria)
+      );
+      paso = "elegir";
       dibujar();
     } catch (e) {
       const sesion = e instanceof Error && e.message === "sesion";
-      mostrar(`<p class="err">${sesion ? "El CAD no tiene tu sesión iniciada." : esc(e instanceof Error ? e.message : e)}</p>
-        <p class="gris">Entrá al CAD, abrí "Registro horas vuelo" y volvé a tocar el marcador.</p>`);
+      cuerpo.innerHTML = `<div class="vacio"><p><b>${sesion ? "El CAD no tiene tu sesión iniciada." : esc(e instanceof Error ? e.message : e)}</b></p>
+        <p class="nota">Entrá al CAD, abrí "Registro horas vuelo" y volvé a tocar el marcador.</p></div>`;
+      pie.innerHTML = "";
     }
   }
 
-  function armarFila(b: BorradorCad, enElCad: VueloEnElCad[], finalidades: ItemCad[], lista: ItemCad[], corte: string | null): Fila {
+  function armarFila(
+    b: BorradorCad,
+    enElCad: VueloEnElCad[],
+    finalidades: ItemCad[],
+    lista: ItemCad[],
+    corte: string | null,
+    memoria: MemoriaAutoridades | null
+  ): Fila {
     const anterior = !!corte && b.fechaHoraSalida.slice(0, 19) < corte.slice(0, 19);
-    if (b.problema) return { b, enElCad: null, problema: b.problema, ids: null, elegido: false, anterior };
+    const autoridad = autoridadSugerida(memoria, b.finalidad);
+    if (b.problema) return { b, enElCad: null, problema: b.problema, ids: null, elegido: false, anterior, autoridad };
     const id = yaEstaEnElCad(b, enElCad);
-    if (id) return { b, enElCad: id, problema: null, ids: null, elegido: false, anterior };
+    if (id) return { b, enElCad: id, problema: null, ids: null, elegido: false, anterior, autoridad };
     const finalidadID = resolverFinalidad(b.finalidad, finalidades);
     const origenID = resolverLugar(b.origen, lista);
     const destinoID = b.tipoVueloID === 1 ? origenID : resolverLugar(b.destino, lista);
     let problema: string | null = null;
     if (!finalidadID) problema = `El CAD no tiene la finalidad "${b.finalidad}".`;
-    else if (!origenID) problema = `No encontramos ${b.origen.codigo} en la lista de aeródromos del CAD.`;
-    else if (!destinoID) problema = `No encontramos ${b.destino.codigo} en la lista de aeródromos del CAD.`;
+    else if (!origenID) problema = `${b.origen.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
+    else if (!destinoID) problema = `${b.destino.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
     return {
       b,
       enElCad: null,
@@ -216,143 +332,235 @@ const CLAVE_AUTORIDAD = "vector-cad-autoridad";
       ids: problema ? null : { finalidadID: finalidadID!, origenID: origenID!, destinoID: destinoID! },
       elegido: !problema && !anterior,
       anterior,
+      autoridad,
     };
   }
 
-  function autoridadGuardada(): { id: string; nombre: string } {
-    try {
-      const g = JSON.parse(localStorage.getItem(CLAVE_AUTORIDAD) ?? "") as { id?: string; nombre?: string };
-      return { id: g.id ?? "", nombre: g.nombre ?? "" };
-    } catch {
-      return { id: "", nombre: "" };
-    }
+  /* ------------------------------------------------------------ el dibujo --- */
+
+  function opcionesAutoridad(elegida: string) {
+    return `<option value="">Autoridad…</option>${autoridades
+      .map((a) => `<option value="${esc(a.key)}" ${a.key === elegida ? "selected" : ""}>${esc(a.value)}</option>`)
+      .join("")}`;
+  }
+
+  function filaHtml(f: Fila, i: number, conCaja: boolean) {
+    const clases = ["fila"];
+    if (f.problema) clases.push("rev");
+    if (f.resultado) clases.push(f.resultado.ok ? "ok" : "err");
+    const marcarFalta = paso === "elegir" && aviso && f.elegido && faltaAutoridad(f.autoridad);
+    if (marcarFalta) clases.push("falta");
+    const caja = conCaja ? `<input type="checkbox" data-i="${i}" ${f.elegido ? "checked" : ""} aria-label="Cargar el vuelo del ${esc(f.b.fecha)}">` : "";
+    const meta = `${esc(f.b.matricula)} · ${horas(f.b.horas)} h · ${esc(f.b.finalidad.toLowerCase())}`;
+    let extra = "";
+    if (f.problema) extra = `<p class="motivo">${esc(f.problema)} <a href="${VECTOR}/dashboard/history?editar=${encodeURIComponent(f.b.vectorId)}" target="_blank" rel="noopener">Corregir en Vector</a></p>`;
+    else if (f.resultado) extra = `<p class="estado ${f.resultado.ok ? "ok" : "err"}">${esc(f.resultado.texto)}</p>`;
+    else if (conCaja && f.elegido)
+      extra = `<div class="aut"><select data-aut="${i}" aria-label="Autoridad certificante">${opcionesAutoridad(f.autoridad.id)}</select>
+        <input type="text" data-nom="${i}" value="${esc(f.autoridad.nombre)}" placeholder="Nombre y apellido" aria-label="Nombre y apellido de la autoridad">
+        <button class="enl" data-rep="${i}" ${faltaAutoridad(f.autoridad) ? "hidden" : ""}>Repetir en los vacíos</button></div>`;
+    else if (conCaja && f.anterior) extra = `<p class="nota" style="margin:6px 0 0 26px">Es anterior a tus vuelos en el CAD: ¿ya estaba foliado?</p>`;
+    return `<div class="${clases.join(" ")}"><div class="linea">${caja}<span class="fecha m">${esc(f.b.fecha)}</span>
+      <span class="ruta"><b class="m">${esc(f.b.ruta)}</b><div>${meta}</div></span></div>${extra}</div>`;
   }
 
   function dibujar() {
-    const nuevos = filas.filter((f) => f.ids && !f.enElCad && !f.resultado?.ok);
+    const cargar = porCargar();
+    const estan = yaEstan();
+    const revisar = paraRevisar();
     const cargados = filas.filter((f) => f.resultado?.ok);
-    const estan = filas.filter((f) => f.enElCad);
-    const revisar = filas.filter((f) => f.problema);
-    const guardada = autoridad;
-    const filasHtml = filas
-      .map((f, i) => {
-        const estado = f.resultado
-          ? `<span class="${f.resultado.ok ? "ok" : "err"}">${esc(f.resultado.texto)}</span>`
-          : f.enElCad
-            ? `<span class="chip esta">Ya está</span>`
-            : f.problema
-              ? `<span class="chip rev">Revisar</span><div class="gris">${esc(f.problema)}</div>`
-              : `<span class="chip nuevo">Nuevo</span>${f.anterior ? `<div class="gris">Anterior a tus vuelos en el CAD: ¿ya estaba foliado?</div>` : ""}`;
-        const caja = f.ids && !f.enElCad && !f.resultado?.ok ? `<input type="checkbox" data-i="${i}" ${f.elegido ? "checked" : ""}>` : "";
-        return `<tr><td>${caja}</td><td class="m">${esc(f.b.fecha)}</td><td class="m">${esc(f.b.ruta)}<div class="gris">${esc(f.b.matricula)} · ${f.b.horas.toFixed(1)} h · ${esc(f.b.finalidad)}</div></td><td>${estado}</td></tr>`;
-      })
-      .join("");
-    const elegidos = filas.filter((f) => f.elegido && f.ids && !f.enElCad && !f.resultado?.ok).length;
-    mostrar(`
-      <p><b>${nuevos.length}</b> para cargar · <b>${estan.length + cargados.length}</b> ya están · <b>${revisar.length}</b> para revisar</p>
-      <p class="gris">Quedan "Pendiente de DDJJ". La declaración jurada la hacés vos, en "DDJJ de Horas de vuelo".</p>
-      <label>Autoridad certificante</label>
-      <select id="aut"><option value="">Elegí…</option>${autoridades
-        .map((a) => `<option value="${esc(a.key)}" ${a.key === guardada.id ? "selected" : ""}>${esc(a.value)}</option>`)
-        .join("")}</select>
-      <label>Nombre y apellido de la autoridad certificante</label>
-      <input type="text" id="autn" value="${esc(guardada.nombre)}" placeholder="Como lo cargás en el CAD">
-      <div class="bots">
-        <button class="b neg" id="cargar" ${elegidos ? "" : "disabled"}>Cargar ${elegidos} ${elegidos === 1 ? "vuelo" : "vuelos"}</button>
-        <button class="b sec" id="probar" ${elegidos ? "" : "disabled"}>Ver lo que se manda</button>
-        ${estan.length ? `<button class="b sec" id="anotar">Anotar en Vector ${estan.length === 1 ? "el que ya está" : `los ${estan.length} que ya están`}</button>` : ""}
+    const total = filas.length || 1;
+    const pct = (n: number) => `${(100 * n) / total}%`;
+    ($("pilltxt") as HTMLSpanElement).textContent = cargar.length ? `Vector → CAD · ${cargar.length} por cargar` : "Vector → CAD";
+
+    if (filas.length === 0) {
+      cuerpo.innerHTML = `<div class="vacio"><p><b>Todos tus vuelos de Vector ya están en el CAD.</b></p><p class="nota">Cuando cargues uno nuevo, volvé a tocar el marcador.</p></div>`;
+      pie.innerHTML = "";
+      return;
+    }
+
+    cuerpo.innerHTML = `
+      <div class="barra" role="img" aria-label="${estan.length + cargados.length} ya están, ${cargar.length} por cargar, ${revisar.length} para revisar">
+        <i class="v-esta" style="width:${pct(estan.length + cargados.length)}"></i><i class="v-nuevo" style="width:${pct(cargar.length)}"></i><i class="v-rev" style="width:${pct(revisar.length)}"></i>
       </div>
-      ${nuevos.length > 1 ? `<p class="gris"><a href="#" id="todos">Tildar todos</a> · <a href="#" id="ninguno">Ninguno</a></p>` : ""}
-      <div id="salida"></div>
-      <table>${filasHtml}</table>`);
-    (raiz.getElementById("aut") as HTMLSelectElement).onchange = (e) => (autoridad = { ...autoridad, id: (e.target as HTMLSelectElement).value });
-    (raiz.getElementById("autn") as HTMLInputElement).oninput = (e) => (autoridad = { ...autoridad, nombre: (e.target as HTMLInputElement).value });
+      <p class="resumen"><b>${cargar.length}</b> por cargar, <b>${estan.length + cargados.length}</b> ya están y <b>${revisar.length}</b> para revisar.</p>
+      <p class="nota">Cada vuelo lleva su autoridad certificante. Quedan "Pendiente de DDJJ": la declaración la hacés vos.</p>
+      ${
+        revisar.length
+          ? `<div class="sec"><h3>Para revisar <span>No se mandan hasta corregirlos</span></h3>${revisar.map((f) => filaHtml(f, filas.indexOf(f), false)).join("")}</div>`
+          : ""
+      }
+      ${
+        cargar.length || cargados.length
+          ? `<div class="sec"><h3>Por cargar ${
+              cargar.length > 1 && paso === "elegir" ? `<span><button class="enl" id="todos">Tildar todos</button> · <button class="enl" id="ninguno">Ninguno</button></span>` : ""
+            }</h3>${[...cargados, ...cargar].map((f) => filaHtml(f, filas.indexOf(f), paso === "elegir" && !f.resultado?.ok)).join("")}</div>`
+          : ""
+      }
+      ${
+        estan.length
+          ? `<details><summary>Ya están en el CAD <span>(${estan.length})</span></summary>${estan.map((f) => filaHtml(f, filas.indexOf(f), false)).join("")}
+             <div class="bots" style="margin-top:4px"><button class="b sec2" id="anotar">Anotarlos en Vector</button></div></details>`
+          : ""
+      }
+      ${vistaPrevia ? `<div class="sec"><h3>Lo que se mandaría <span><button class="enl" id="cerrarprev">Cerrar</button></span></h3><p class="nota">No se mandó nada.</p><pre>${esc(vistaPrevia)}</pre></div>` : ""}
+    `;
+    dibujarPie();
+    conectar();
+  }
+
+  function dibujarPie() {
+    const sel = elegidas();
+    const h = sel.reduce((t, f) => t + f.b.horas, 0);
+    const n = sel.length;
+    const vuelos = (k: number) => (k === 1 ? "1 vuelo" : `${k} vuelos`);
+    if (paso === "cargando") {
+      pie.innerHTML = `<div class="prog"><i style="width:${(100 * progreso.hechos) / (progreso.total || 1)}%"></i></div><p>Cargando ${progreso.hechos + 1 > progreso.total ? progreso.total : progreso.hechos + 1} de ${progreso.total}…</p>`;
+      return;
+    }
+    if (paso === "listo") {
+      const ok = filas.filter((f) => f.resultado?.ok).length;
+      const mal = filas.filter((f) => f.resultado && !f.resultado.ok).length;
+      pie.innerHTML = `<p><b>${ok === 1 ? "Cargaste 1 vuelo" : `Cargaste ${ok} vuelos`} en el CAD.</b>${mal ? ` <span class="err">${mal} no ${mal === 1 ? "entró" : "entraron"}: mirá el motivo arriba.</span>` : ""}</p>
+        <p class="nota" style="margin-bottom:10px">Ahora hacé la declaración en "DDJJ de Horas de vuelo".${marcadosEnVector === null ? " No pudimos avisarle a Vector: la próxima vez van a aparecer como ya cargados." : ""}</p>
+        <div class="bots"><button class="b neg" id="recargar">Ver en el CAD</button>${porCargar().length ? `<button class="b sec2" id="seguir">Seguir cargando</button>` : ""}</div>`;
+      return;
+    }
+    if (paso === "confirmar") {
+      pie.innerHTML = `<p>¿Cargar ${vuelos(n)} (${horas(h)} h) en el CAD? Quedan "Pendiente de DDJJ".</p>
+        <div class="bots"><button class="b neg" id="sicargar">Cargar en el CAD</button><button class="b sec2" id="volver">Volver</button></div>`;
+      return;
+    }
+    pie.innerHTML = `${aviso ? `<p class="err">${esc(aviso)}</p>` : ""}<div class="bots">
+      <button class="b neg" id="cargar" ${n ? "" : "disabled"}>${n ? `Cargar ${vuelos(n)} · ${horas(h)} h` : "Tildá los vuelos a cargar"}</button>
+      <button class="b sec2" id="probar" ${n ? "" : "disabled"}>Ver lo que se manda</button></div>`;
+  }
+
+  /** Los eventos de lo que se acaba de dibujar. Escribir no redibuja: no se pierde el foco. */
+  function conectar() {
     raiz.querySelectorAll<HTMLInputElement>("input[type=checkbox]").forEach((cb) => {
       cb.onchange = () => {
         filas[Number(cb.dataset.i)].elegido = cb.checked;
+        aviso = "";
         dibujar();
       };
     });
-    const tildar = (si: boolean) => (e: Event) => {
-      e.preventDefault();
-      for (const f of filas) if (f.ids && !f.enElCad && !f.resultado?.ok) f.elegido = si;
+    // "Repetir en los vacíos" se ofrece recién cuando ese vuelo tiene algo para repetir.
+    const alCambiar = (i: number, cambio: Partial<AutoridadCad>) => {
+      filas[i].autoridad = { ...filas[i].autoridad, ...cambio };
+      const rep = raiz.querySelector<HTMLButtonElement>(`button[data-rep="${i}"]`);
+      if (rep) rep.hidden = faltaAutoridad(filas[i].autoridad);
+    };
+    raiz.querySelectorAll<HTMLSelectElement>("select[data-aut]").forEach((s) => {
+      s.onchange = () => alCambiar(Number(s.dataset.aut), { id: s.value });
+    });
+    raiz.querySelectorAll<HTMLInputElement>("input[data-nom]").forEach((inp) => {
+      inp.oninput = () => alCambiar(Number(inp.dataset.nom), { nombre: inp.value });
+    });
+    raiz.querySelectorAll<HTMLButtonElement>("button[data-rep]").forEach((btn) => {
+      btn.onclick = () => {
+        const origen = filas[Number(btn.dataset.rep)].autoridad;
+        if (faltaAutoridad(origen)) return;
+        for (const f of elegidas()) if (faltaAutoridad(f.autoridad)) f.autoridad = { ...origen };
+        dibujar();
+      };
+    });
+    const tildar = (si: boolean) => () => {
+      for (const f of porCargar()) f.elegido = si;
       dibujar();
     };
-    raiz.getElementById("todos")?.addEventListener("click", tildar(true));
-    raiz.getElementById("ninguno")?.addEventListener("click", tildar(false));
-    (raiz.getElementById("cargar") as HTMLButtonElement | null)?.addEventListener("click", () => void cargar(false));
-    (raiz.getElementById("probar") as HTMLButtonElement | null)?.addEventListener("click", () => void cargar(true));
-    (raiz.getElementById("anotar") as HTMLButtonElement | null)?.addEventListener("click", () => void anotarLosQueEstan());
+    $("todos")?.addEventListener("click", tildar(true));
+    $("ninguno")?.addEventListener("click", tildar(false));
+    $("cerrarprev")?.addEventListener("click", () => {
+      vistaPrevia = "";
+      dibujar();
+    });
+    $("anotar")?.addEventListener("click", () => void anotarLosQueEstan());
+    $("cargar")?.addEventListener("click", () => pedirConfirmacion());
+    $("probar")?.addEventListener("click", () => mostrarVistaPrevia());
+    $("volver")?.addEventListener("click", () => {
+      paso = "elegir";
+      dibujar();
+    });
+    $("sicargar")?.addEventListener("click", () => void cargar());
+    $("recargar")?.addEventListener("click", () => location.reload());
+    $("seguir")?.addEventListener("click", () => {
+      paso = "elegir";
+      dibujar();
+    });
   }
 
-  function leerAutoridad(): { id: string; nombre: string } | null {
-    const id = (raiz.getElementById("aut") as HTMLSelectElement).value;
-    const nombre = (raiz.getElementById("autn") as HTMLInputElement).value.trim().toUpperCase();
-    const salida = raiz.getElementById("salida") as HTMLDivElement;
-    if (!id || !nombre) {
-      salida.innerHTML = `<p class="err">Elegí la autoridad certificante y escribí su nombre: el CAD los pide en cada vuelo.</p>`;
-      return null;
-    }
-    try {
-      localStorage.setItem(CLAVE_AUTORIDAD, JSON.stringify({ id, nombre }));
-    } catch {
-      /* sin almacenamiento, se pide de nuevo la próxima */
-    }
-    return { id, nombre };
+  function validar(): boolean {
+    const faltan = elegidas().filter((f) => faltaAutoridad(f.autoridad)).length;
+    aviso = faltan ? `A ${faltan === 1 ? "1 vuelo le falta" : `${faltan} vuelos les falta`} la autoridad o el nombre: el CAD los pide en cada vuelo.` : "";
+    return !faltan;
   }
 
-  async function cargar(soloProbar: boolean) {
-    const aut = leerAutoridad();
-    if (!aut) return;
-    const elegidas = filas.filter((f) => f.elegido && f.ids && !f.enElCad && !f.resultado?.ok);
-    const payloads = elegidas.map((f) => payloadCad(f.b, { ...f.ids!, autoridadID: aut.id, autoridadNombre: aut.nombre }));
-    const salida = raiz.getElementById("salida") as HTMLDivElement;
-    if (soloProbar) {
-      salida.innerHTML = `<p class="gris">Esto es lo que se mandaría a "Crear" del CAD (${payloads.length}). No se mandó nada.</p><pre>${esc(JSON.stringify(payloads.slice(0, 3), null, 2))}${payloads.length > 3 ? "\n…" : ""}</pre>`;
-      return;
-    }
-    if (!confirm(`Vas a cargar ${payloads.length} ${payloads.length === 1 ? "vuelo" : "vuelos"} en el CAD. Quedan "Pendiente de DDJJ": la declaración jurada la hacés vos después. ¿Seguimos?`)) return;
+  function payloads(sel: Fila[]) {
+    return sel.map((f) =>
+      payloadCad(f.b, { ...f.ids!, autoridadID: f.autoridad.id, autoridadNombre: f.autoridad.nombre.trim().toUpperCase() })
+    );
+  }
 
-    for (let k = 0; k < elegidas.length; k++) {
-      salida.innerHTML = `<p>Cargando ${k + 1} de ${elegidas.length}…</p>`;
+  function mostrarVistaPrevia() {
+    if (!validar()) return dibujar();
+    const p = payloads(elegidas());
+    vistaPrevia = JSON.stringify(p.slice(0, 3), null, 2) + (p.length > 3 ? `\n… y ${p.length - 3} más` : "");
+    dibujar();
+  }
+
+  function pedirConfirmacion() {
+    if (!validar()) return dibujar();
+    paso = "confirmar";
+    vistaPrevia = "";
+    dibujar();
+  }
+
+  async function cargar() {
+    const sel = elegidas();
+    const p = payloads(sel);
+    paso = "cargando";
+    progreso = { hechos: 0, total: sel.length };
+    dibujar();
+    for (let k = 0; k < sel.length; k++) {
       try {
         const r = await fetch(API + "Create", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(payloads[k]),
+          body: JSON.stringify(p[k]),
         });
-        if (r.ok) elegidas[k].resultado = { ok: true, texto: "Cargado" };
+        if (r.ok) sel[k].resultado = { ok: true, texto: "Cargado en el CAD" };
         else {
-          const cuerpo = await r.json().catch(() => ({}) as Record<string, string>);
-          elegidas[k].resultado = { ok: false, texto: `El CAD no lo aceptó: ${cuerpo.message || cuerpo.exceptionMessage || r.status}` };
+          const c = await r.json().catch(() => ({}) as Record<string, string>);
+          sel[k].resultado = { ok: false, texto: `El CAD no lo aceptó: ${c.message || c.exceptionMessage || `error ${r.status}`}` };
         }
       } catch (e) {
-        elegidas[k].resultado = { ok: false, texto: `No se pudo mandar: ${e instanceof Error ? e.message : e}` };
+        sel[k].resultado = { ok: false, texto: `No se pudo mandar: ${e instanceof Error ? e.message : e}` };
       }
+      progreso.hechos = k + 1;
+      dibujarPie();
     }
 
+    guardarMemoria(recordarAutoridades(leerMemoria(), sel.filter((f) => f.resultado?.ok).map((f) => ({ finalidad: f.b.finalidad, autoridad: f.autoridad }))));
     // Los ids salen de la lista del CAD: el mismo criterio que para los que ya estaban.
     const enElCad = await vuelosDelCad().catch(() => [] as VueloEnElCad[]);
     const items = filas
       .map((f) => ({ f, id: f.enElCad ?? (f.resultado?.ok ? yaEstaEnElCad(f.b, enElCad) : null) }))
       .filter((x): x is { f: Fila; id: number } => !!x.id)
       .map((x) => ({ vectorId: x.f.b.vectorId, cadId: x.id }));
-    const marcados = await marcarEnVector(items);
-    const cargados = elegidas.filter((f) => f.resultado?.ok).length;
+    marcadosEnVector = await marcarEnVector(items);
+    for (const f of sel) if (!f.resultado?.ok) f.elegido = false;
+    paso = "listo";
     dibujar();
-    (raiz.getElementById("salida") as HTMLDivElement).innerHTML =
-      `<p class="ok">Listo: ${cargados} de ${elegidas.length} cargados en el CAD.</p>` +
-      (marcados === null ? `<p class="err">No pudimos avisarle a Vector: la próxima vez van a aparecer como "Ya está".</p>` : "") +
-      `<p class="gris">Recargá la página del CAD para verlos en "Libro de vuelo".</p><div class="bots"><button class="b sec" id="recargar">Recargar el CAD</button></div>`;
-    (raiz.getElementById("recargar") as HTMLButtonElement).onclick = () => location.reload();
   }
 
   async function anotarLosQueEstan() {
-    const items = filas.filter((f) => f.enElCad).map((f) => ({ vectorId: f.b.vectorId, cadId: f.enElCad! }));
-    const marcados = await marcarEnVector(items);
-    (raiz.getElementById("salida") as HTMLDivElement).innerHTML =
-      marcados === null ? `<p class="err">No pudimos hablar con Vector.</p>` : `<p class="ok">Anotados en Vector: ${marcados}.</p>`;
+    const items = yaEstan().map((f) => ({ vectorId: f.b.vectorId, cadId: f.enElCad! }));
+    const n = await marcarEnVector(items);
+    aviso = n === null ? "No pudimos hablar con Vector." : "";
+    if (n !== null) filas = filas.filter((f) => !f.enElCad);
+    dibujar();
   }
 
   void empezar();

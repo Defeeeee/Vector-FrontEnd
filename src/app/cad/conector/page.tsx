@@ -21,8 +21,7 @@ export default async function ConectorPage() {
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 font-sans text-zinc-900 dark:text-white">
-      <div className="max-w-sm mx-auto space-y-4">
-        <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">Vector → CAD</p>
+      <div className="max-w-sm mx-auto space-y-5">
         {!sesion ? (
           <>
             <h1 className="text-xl font-bold">Entrá a Vector</h1>

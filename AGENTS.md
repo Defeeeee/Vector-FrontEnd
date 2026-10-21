@@ -299,13 +299,17 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
   - **Falta:** CHG, y que el editor ande sin señal (el planificador sí anda).
-- **Pasar al CAD de ANAC** (2026-10-21, 2.26.2 sin anuncio; Bitácora → Vuelos → "Pasar al CAD"):
+- **Pasar al CAD de ANAC** (2026-10-21, 2.26.2 y 2.26.3 sin anuncio; Bitácora → Vuelos → "Pasar al CAD"):
   - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
     "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la
     contraseña de ANAC en Vector.
   - **Qué se valida:** lo que el CAD rechazaría (día más noche distinto de la duración
     centesimal, sin horas, sin clase, piloto y copiloto mezclados, simulador) se marca
     "revisar" y no se manda. Lo que ya está (misma salida y matrícula) se anota sin repetir.
+  - **La autoridad certificante y su nombre son de cada vuelo** (Federico, 2026-10-21). El
+    panel propone la última usada para esa finalidad (`autoridadSugerida`, memoria en el
+    `localStorage` del CAD) y no carga un vuelo al que le falte alguna de las dos.
+  - "Corregir" lleva a `/dashboard/history?editar=<id>`, que abre ese vuelo en edición.
   - **Falta verificar contra el CAD real**, que el 2026-10-21 no respondía:
     - la forma de la lista de aeródromos (`AER`, `LAD`) y la de autoridades certificantes;
     - que la página deje cargar el script (CSP) y abrir la ventanita (COOP);

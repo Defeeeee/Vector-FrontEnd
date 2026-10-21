@@ -39,8 +39,8 @@ async function getHistoryData() {
   };
 }
 
-export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
-  const [{ flights, aircraft, transactions, profile }, resumen, librosRes, { nuevo }] = await Promise.all([
+export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ nuevo?: string; editar?: string }> }) {
+  const [{ flights, aircraft, transactions, profile }, resumen, librosRes, { nuevo, editar }] = await Promise.all([
     getHistoryData(),
     leerResumenSocial(),
     // Para el PDF (se arma de a un libro) y para el hito: la apertura suma al total.
@@ -117,7 +117,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
           hito={hito}
         />
       )}
-      <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} alumno={esAlumno(profile?.license_type)} fechaPpa={profile?.fecha_ppa ?? null} />
+      <FlightListClient flights={sortedFlights} aircraft={aircraft} costos={costos} alumno={esAlumno(profile?.license_type)} fechaPpa={profile?.fecha_ppa ?? null} editar={editar} />
     </div>
   );
 }

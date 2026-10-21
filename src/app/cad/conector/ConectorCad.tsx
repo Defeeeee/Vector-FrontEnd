@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Compass } from "lucide-react";
 import { marcarEnElCad } from "@/actions/cad";
+import { CLAVE_MARCADOR_USADO } from "@/components/dashboard/MarcadorCad";
 import type { BorradorCad } from "@/lib/cad";
 
 /**
@@ -31,6 +33,12 @@ export default function ConectorCad({ borradores, pasados, origenCad }: { borrad
         enviar();
       } else if (d?.tipo === "vector-cad:recibido") {
         setEstado("conectado");
+        // Para que "Pasar al CAD" muestre el paso del marcador ya hecho.
+        try {
+          localStorage.setItem(CLAVE_MARCADOR_USADO, "1");
+        } catch {
+          /* sin almacenamiento, el paso se sigue mostrando entero */
+        }
       } else if (d?.tipo === "vector-cad:marcar") {
         const r = await marcarEnElCad(d.items ?? []);
         setMarcados((m) => m + r.marcados);
@@ -60,21 +68,40 @@ export default function ConectorCad({ borradores, pasados, origenCad }: { borrad
     );
   }
 
+  const conectado = estado === "conectado";
   return (
     <>
-      <h1 className="text-xl font-bold">{estado === "conectado" ? "Conectado con el CAD" : "Conectando con el CAD…"}</h1>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Dejá esta ventana abierta mientras cargás. Seguí en el panel de Vector adentro del CAD.
+      <div className="flex items-center gap-3">
+        <span className="relative grid place-items-center w-11 h-11 rounded-2xl bg-zinc-900 dark:bg-white">
+          <Compass className="w-5 h-5 text-white dark:text-zinc-900" aria-hidden="true" />
+          <span
+            className={`absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full border-2 border-zinc-50 dark:border-zinc-950 ${
+              conectado ? "bg-emerald-500" : "bg-amber-400 animate-pulse"
+            }`}
+          />
+        </span>
+        <div>
+          <h1 className="text-lg font-bold leading-tight">{conectado ? "Conectado con el CAD" : "Conectando con el CAD…"}</h1>
+          <p className="text-xs text-zinc-500">Seguí en el panel de Vector, adentro del CAD.</p>
+        </div>
+      </div>
+
+      <p className="rounded-2xl bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 px-4 py-3 text-sm">
+        <b>Podés minimizar esta ventana, pero no la cierres</b> hasta terminar: por acá Vector anota los vuelos que el CAD recibió.
       </p>
-      <ul className="text-sm space-y-1">
-        <li>
-          <span className="font-mono font-bold">{borradores.length}</span> vuelos sin pasar al CAD, <span className="font-mono font-bold">{listos}</span>{" "}
-          listos para mandar
-        </li>
-        <li>
-          <span className="font-mono font-bold">{pasados + marcados}</span> ya anotados como pasados
-        </li>
-      </ul>
+
+      <dl className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <dt className="text-xs text-zinc-500">Sin pasar</dt>
+          <dd className="font-mono text-xl font-bold">{borradores.length}</dd>
+          <dd className="text-xs text-zinc-500">{listos} listos</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-zinc-500">En el CAD</dt>
+          <dd className="font-mono text-xl font-bold">{pasados + marcados}</dd>
+          {marcados > 0 && <dd className="text-xs text-emerald-600">{marcados} recién anotados</dd>}
+        </div>
+      </dl>
       <p className="text-xs text-zinc-500">Vector no ve tu contraseña de ANAC: carga desde tu sesión del CAD, en tu navegador.</p>
     </>
   );

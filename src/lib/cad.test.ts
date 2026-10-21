@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  autoridadSugerida,
   borradorCad,
+  faltaAutoridad,
+  recordarAutoridades,
   claseCad,
   horasCentesimalesCad,
   matriculaCad,
@@ -187,3 +190,37 @@ describe("matrícula y clase", () => {
     expect(claseCad(null)).toBeNull();
   });
 });
+
+describe("la autoridad certificante, por vuelo", () => {
+  it("propone la última usada para la misma finalidad, sin importar las tildes", () => {
+    const memoria = recordarAutoridades(null, [
+      { finalidad: "INSTRUCCIÓN", autoridad: { id: "2", nombre: "juan perez" } },
+      { finalidad: "VUELO PRIVADO", autoridad: { id: "1", nombre: "Lucia Ferrari" } },
+    ]);
+    expect(autoridadSugerida(memoria, "INSTRUCCION")).toEqual({ id: "2", nombre: "JUAN PEREZ" });
+    expect(autoridadSugerida(memoria, "VUELO PRIVADO")).toEqual({ id: "1", nombre: "LUCIA FERRARI" });
+  });
+
+  it("sin antecedentes para esa finalidad, vacía: no se inventa quién firma", () => {
+    expect(autoridadSugerida({ porFinalidad: {} }, "EXAMEN")).toEqual({ id: "", nombre: "" });
+    expect(autoridadSugerida(null, "EXAMEN")).toEqual({ id: "", nombre: "" });
+  });
+
+  it("la última carga pisa a la anterior, y una incompleta no se recuerda", () => {
+    let m = recordarAutoridades(null, [{ finalidad: "INSTRUCCIÓN", autoridad: { id: "2", nombre: "JUAN PEREZ" } }]);
+    m = recordarAutoridades(m, [
+      { finalidad: "INSTRUCCIÓN", autoridad: { id: "2", nombre: "ANA GOMEZ" } },
+      { finalidad: "EXAMEN", autoridad: { id: "3", nombre: "  " } },
+    ]);
+    expect(autoridadSugerida(m, "INSTRUCCIÓN").nombre).toBe("ANA GOMEZ");
+    expect(autoridadSugerida(m, "EXAMEN")).toEqual({ id: "", nombre: "" });
+  });
+
+  it("falta si no hay autoridad o no hay nombre", () => {
+    expect(faltaAutoridad({ id: "1", nombre: "X" })).toBe(false);
+    expect(faltaAutoridad({ id: "", nombre: "X" })).toBe(true);
+    expect(faltaAutoridad({ id: "1", nombre: " " })).toBe(true);
+    expect(faltaAutoridad(null)).toBe(true);
+  });
+});
+

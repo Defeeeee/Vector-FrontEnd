@@ -350,3 +350,42 @@ export function payloadCad(
     matriculaAvion: b.matricula,
   };
 }
+
+/* -------------------------------------------------------------------------- */
+/* La autoridad certificante, por vuelo                                        */
+/* -------------------------------------------------------------------------- */
+
+/** La autoridad certificante de un vuelo: el ID de la lista del CAD y el nombre y apellido. */
+export interface AutoridadCad {
+  id: string;
+  nombre: string;
+}
+
+/**
+ * Lo que el panel recuerda de cargas anteriores, en el navegador del piloto (en el CAD, no
+ * en Vector): la última autoridad usada para cada finalidad. Va **por vuelo** (Federico,
+ * 2026-10-21): un vuelo de instrucción la firma el instructor y uno privado, otra persona.
+ */
+export interface MemoriaAutoridades {
+  porFinalidad: Record<string, AutoridadCad>;
+}
+
+/** La que se propone para un vuelo: la última de su finalidad, o vacía. Se puede cambiar. */
+export function autoridadSugerida(memoria: MemoriaAutoridades | null | undefined, finalidad: string): AutoridadCad {
+  const a = memoria?.porFinalidad?.[normalizarCad(finalidad)];
+  return a && a.id && a.nombre ? { id: a.id, nombre: a.nombre } : { id: "", nombre: "" };
+}
+
+/** La memoria con lo que se acaba de cargar: cada finalidad, con la última autoridad usada. */
+export function recordarAutoridades(memoria: MemoriaAutoridades | null | undefined, cargas: { finalidad: string; autoridad: AutoridadCad }[]): MemoriaAutoridades {
+  const porFinalidad = { ...(memoria?.porFinalidad ?? {}) };
+  for (const c of cargas) {
+    if (c.autoridad.id && c.autoridad.nombre.trim()) porFinalidad[normalizarCad(c.finalidad)] = { id: c.autoridad.id, nombre: c.autoridad.nombre.trim().toUpperCase() };
+  }
+  return { porFinalidad };
+}
+
+/** Si a un vuelo le falta la autoridad o el nombre: el CAD pide los dos en cada vuelo. */
+export function faltaAutoridad(a: AutoridadCad | null | undefined): boolean {
+  return !a?.id || !a.nombre.trim();
+}

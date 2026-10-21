@@ -3,8 +3,8 @@
 import { esVueloDeAlumno } from "@/lib/licencias";
 import { Flight, Aircraft } from "@/types";
 import { updateFlight, deleteFlight, marcarCierreDeHoja } from "@/actions/flight";
-import { ArrowRight, BookOpenCheck, Edit2, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor, Share2 } from "lucide-react";
-import { useState, useTransition, useEffect } from "react";
+import { ArrowRight, BookOpenCheck, Edit2, Landmark, Trash2, X, Check, Loader2, User, Users, Cloud, Monitor, Share2 } from "lucide-react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { calculateFlightDuration } from "@/lib/utils";
@@ -53,11 +53,17 @@ interface FlightCardProps {
   alumno?: boolean;
   /** Cuándo rindió la PPA: los vuelos anteriores se marcan "de alumno". Ver `lib/licencias.ts`. */
   fechaPpa?: string | null;
+  /** Abrir ya en edición y traerlo a la vista: viene de "Corregir" en Pasar al CAD (`?editar=`). */
+  editarAlAbrir?: boolean;
 }
 
-export default function FlightCard({ flight, aircraft, allAircraft, costo = null, alumno = false, fechaPpa = null }: FlightCardProps) {
+export default function FlightCard({ flight, aircraft, allAircraft, costo = null, alumno = false, fechaPpa = null, editarAlAbrir = false }: FlightCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(editarAlAbrir);
+  const raiz = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (editarAlAbrir) raiz.current?.scrollIntoView({ block: "start" });
+  }, [editarAlAbrir]);
   const [isPending, startTransition] = useTransition();
   const [origin, dest] = splitRoute(flight.route, "???");
   // Un simulador no tiene dos extremos —su ruta es una palabra, `LOCAL`— y su tiempo
@@ -134,7 +140,7 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
 
   if (isEditing) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 md:p-10 space-y-8 md:space-y-10 bg-zinc-50 dark:bg-white/[0.03]">
+      <motion.div ref={raiz} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="scroll-mt-24 p-6 md:p-10 space-y-8 md:space-y-10 bg-zinc-50 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between">
           <h3 className="text-xl md:text-2xl font-bold font-display text-zinc-900 dark:text-white tracking-tight">Editar registro</h3>
           <button onClick={() => setIsEditing(false)} className="p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors shadow-sm"><X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" /></button>
@@ -227,6 +233,15 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
               >
                 <BookOpenCheck className="w-3 h-3" aria-hidden="true" />
                 Cierra hoja
+              </span>
+            )}
+            {!!flight.cad_vuelo_id && (
+              <span
+                title="Ya está cargado en el CAD de ANAC"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex-shrink-0"
+              >
+                <Landmark className="w-3 h-3" aria-hidden="true" />
+                En el CAD
               </span>
             )}
           </div>
