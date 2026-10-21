@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Compass } from "lucide-react";
-import { marcarEnElCad } from "@/actions/cad";
+import { marcarEnElCad, traerDelCad } from "@/actions/cad";
 import { CLAVE_MARCADOR_USADO } from "@/components/dashboard/MarcadorCad";
-import type { BorradorCad } from "@/lib/cad";
+import type { BorradorCad, VueloConocido } from "@/lib/cad";
 
 /**
  * La mitad de Vector de la conversación con el CAD (la otra es `src/cad/puente.ts`).
@@ -13,9 +13,22 @@ import type { BorradorCad } from "@/lib/cad";
  * vuelos se mandan con `postMessage` al origen del CAD, nunca a `*`, y los mensajes que
  * llegan de cualquier otro lado se ignoran.
  */
-export default function ConectorCad({ borradores, pasados, origenCad }: { borradores: BorradorCad[]; pasados: number; origenCad: string }) {
+export default function ConectorCad({
+  borradores,
+  pasados,
+  conocidos,
+  matriculas,
+  origenCad,
+}: {
+  borradores: BorradorCad[];
+  pasados: number;
+  conocidos: VueloConocido[];
+  matriculas: string[];
+  origenCad: string;
+}) {
   const [estado, setEstado] = useState<"esperando" | "conectado" | "sin-cad">("esperando");
   const [marcados, setMarcados] = useState(0);
+  const [traidos, setTraidos] = useState(0);
 
   useEffect(() => {
     // La ventana que la abrió (el marcador abre una ventanita), o la que la contiene, si la
@@ -25,10 +38,10 @@ export default function ConectorCad({ borradores, pasados, origenCad }: { borrad
       setEstado("sin-cad");
       return;
     }
-    const enviar = () => cad.postMessage({ tipo: "vector-cad:vuelos", version: 1, borradores, pasados }, origenCad);
+    const enviar = () => cad.postMessage({ tipo: "vector-cad:vuelos", version: 2, borradores, pasados, conocidos, matriculas }, origenCad);
     const alRecibir = async (e: MessageEvent) => {
       if (e.origin !== origenCad || e.source !== cad) return;
-      const d = e.data as { tipo?: string; items?: { vectorId: string; cadId: number }[] };
+      const d = e.data as { tipo?: string; items?: { vectorId: string; cadId: number }[]; vuelos?: unknown[] };
       if (d?.tipo === "vector-cad:listo") {
         enviar();
       } else if (d?.tipo === "vector-cad:recibido") {
@@ -43,6 +56,10 @@ export default function ConectorCad({ borradores, pasados, origenCad }: { borrad
         const r = await marcarEnElCad(d.items ?? []);
         setMarcados((m) => m + r.marcados);
         cad.postMessage({ tipo: "vector-cad:marcados", marcados: r.marcados }, origenCad);
+      } else if (d?.tipo === "vector-cad:traer") {
+        const r = await traerDelCad(Array.isArray(d.vuelos) ? d.vuelos : []);
+        setTraidos((t) => t + r.creados);
+        cad.postMessage({ tipo: "vector-cad:traidos", ...r }, origenCad);
       }
     };
     window.addEventListener("message", alRecibir);
@@ -52,7 +69,7 @@ export default function ConectorCad({ borradores, pasados, origenCad }: { borrad
       // Si la ventana que la abrió no es el CAD, el navegador no deja mandar: se espera.
     }
     return () => window.removeEventListener("message", alRecibir);
-  }, [borradores, pasados, origenCad]);
+  }, [borradores, pasados, conocidos, matriculas, origenCad]);
 
   const listos = borradores.filter((b) => !b.problema).length;
 
@@ -100,6 +117,7 @@ export default function ConectorCad({ borradores, pasados, origenCad }: { borrad
           <dt className="text-xs text-zinc-500">En el CAD</dt>
           <dd className="font-mono text-xl font-bold">{pasados + marcados}</dd>
           {marcados > 0 && <dd className="text-xs text-emerald-600">{marcados} recién anotados</dd>}
+          {traidos > 0 && <dd className="text-xs text-emerald-600">{traidos} traídos a Vector</dd>}
         </div>
       </dl>
       <p className="text-xs text-zinc-500">Vector no ve tu contraseña de ANAC: carga desde tu sesión del CAD, en tu navegador.</p>

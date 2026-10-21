@@ -143,10 +143,11 @@ export const FINALIDAD_CAD: Record<string, string> = {
   LP: "LANZAMIENTO DE PARACAIDISTAS",
   VP: "VUELO PRIVADO",
   READ: "READAPTACIÓN",
-  RP: "REMOLQUE DE PLANEADORES",
+  RP: "REMOLQUE DE PLANEADOR",
   SAN: "SANITARIO",
   TA: "TRABAJO AÉREO",
-  TAXI: "TAXI AÉREO",
+  N: "VUELO NO REGULAR",
+  LA: "LINEA AEREA",
   VO: "VUELO OFICIAL",
   PA: "PRUEBA DE AERONAVES",
 };
@@ -297,18 +298,40 @@ export function resolverFinalidad(nombre: string, lista: ItemCad[]): string | nu
 }
 
 /**
- * El ID del aeródromo en la lista del CAD (`GetLugarAterrizajeListItem`), cuyo texto es
- * " SADF (SAN FERNANDO)": el código va antes del paréntesis. Se prueba cada candidato
- * (OACI, designador ANAC) y sólo se acepta una coincidencia exacta de código: elegir otro
- * aeródromo por el nombre sería declarar un vuelo que no se hizo.
+ * Las partes del texto de un lugar del CAD (`GetLugarAterrizajeListItem`, leída el
+ * 2026-10-21). Un aeródromo con OACI viene como "SADF -  FDO -  FDO (SAN FERNANDO)" (OACI,
+ * IATA o designador, y el designador ANAC, que es la clave); uno sin OACI, como
+ * " LJN (LUJAN)" o " 2013 (VILLA JOSEFINA)".
+ */
+function partesDeLugarCad(texto: unknown): string[] {
+  return String(texto ?? "")
+    .split(" (")[0]
+    .split("-")
+    .map((x) => x.trim().toUpperCase())
+    .filter(Boolean);
+}
+
+/**
+ * El ID del aeródromo en la lista del CAD. Se prueba cada candidato (OACI, designador ANAC)
+ * contra el OACI de cada entrada y contra su clave, y sólo se acepta una coincidencia exacta
+ * de código: elegir otro aeródromo por el nombre sería declarar un vuelo que no se hizo. El
+ * código del medio (IATA) no se usa: puede ser el designador de otro aeródromo.
+ *
+ * La lista repite algunos: Ezeiza está como "SAEZ -  EZE -  EZE (…)" (clave EZE) y como
+ * " SAEZ (EZEIZA)" (clave SAEZ). Gana la entrada completa, la del designador ANAC.
  */
 export function resolverLugar(lugar: LugarParaCad, lista: ItemCad[]): string | null {
   const codigos = new Set(lugar.candidatos.map((c) => c.trim().toUpperCase()).filter(Boolean));
+  let mejor: { key: string; rango: number } | null = null;
   for (const item of lista) {
-    const codigo = (item.value ?? "").trim().split(/\s*\(/)[0].trim().toUpperCase();
-    if (codigos.has(codigo)) return item.key;
+    const partes = partesDeLugarCad(item.value);
+    const clave = String(item.key ?? "").trim().toUpperCase();
+    const rango =
+      partes.length > 1 && codigos.has(partes[0]) ? 3 : codigos.has(clave) ? 2 : partes.length === 1 && codigos.has(partes[0]) ? 1 : 0;
+    if (rango > (mejor?.rango ?? 0)) mejor = { key: item.key, rango };
+    if (rango === 3) break;
   }
-  return null;
+  return mejor?.key ?? null;
 }
 
 /**
@@ -388,4 +411,220 @@ export function recordarAutoridades(memoria: MemoriaAutoridades | null | undefin
 /** Si a un vuelo le falta la autoridad o el nombre: el CAD pide los dos en cada vuelo. */
 export function faltaAutoridad(a: AutoridadCad | null | undefined): boolean {
   return !a?.id || !a.nombre.trim();
+}
+
+/* -------------------------------------------------------------------------- */
+/* El camino inverso: del CAD a Vector                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * "Traer a Vector" prendido. Apagado hasta que el backend tenga `traido_del_cad`
+ * (migración 030): sin esa columna, un vuelo traído se crearía cobrando el saldo.
+ */
+export const TRAER_DEL_CAD = false;
+
+/**
+ * Un vuelo de Vector, reducido a lo que hace falta para saber si un vuelo del CAD ya está:
+ * el id del CAD si se marcó, y si no, la salida al minuto (UTC) y la matrícula.
+ */
+export interface VueloConocido {
+  cadId: number | null;
+  /** "2026-10-17T18:00", UTC. */
+  salida: string;
+  matricula: string;
+}
+
+/** Si un vuelo del CAD ya está en Vector: por su id, o por la misma salida y matrícula. */
+export function estaEnVector(v: Pick<VueloEnElCad, "vueloTripulanteID" | "fechaSalida" | "matricula">, conocidos: VueloConocido[]): boolean {
+  const salida = (v.fechaSalida ?? "").slice(0, 16);
+  const matricula = matriculaCad(v.matricula ?? "");
+  return conocidos.some((c) => c.cadId === v.vueloTripulanteID || (!!salida && c.salida === salida && matriculaCad(c.matricula) === matricula));
+}
+
+/** Lo que se le pide a Vector que cree: un vuelo con el desglose del libro, ya resuelto. */
+export interface VueloTraido {
+  cadId: number;
+  date: string;
+  /** ISO UTC, "2026-09-30T12:30:00Z". */
+  takeoff: string;
+  landing: string;
+  /** Los códigos del CAD; Vector los pasa a OACI si los conoce. */
+  origen: string;
+  destino: string;
+  matricula: string;
+  landings: number;
+  duration: number;
+  purpose: string;
+  pic_day_loc: number;
+  pic_day_tra: number;
+  pic_night_loc: number;
+  pic_night_tra: number;
+  sic_day_loc: number;
+  sic_day_tra: number;
+  sic_night_loc: number;
+  sic_night_tra: number;
+  imc_pil: number;
+  imc_cop: number;
+  capota: number;
+}
+
+/** Un vuelo del CAD para el panel: cómo se ve, y el vuelo para Vector o por qué no. */
+export interface FilaTraida {
+  cadId: number;
+  fecha: string;
+  ruta: string;
+  matricula: string;
+  horas: number;
+  finalidad: string;
+  vuelo: VueloTraido | null;
+  problema: string | null;
+}
+
+/** El primer campo que exista, de varios nombres posibles. */
+function campo(d: Record<string, unknown>, ...nombres: string[]): unknown {
+  for (const k of nombres) if (d[k] !== undefined && d[k] !== null && d[k] !== "") return d[k];
+  return undefined;
+}
+
+/** "2026-09-30T12:30:00", "…Z" o "…+00:00" → ISO UTC al minuto. Sin zona, es UTC (así guarda el CAD). */
+function salidaUtc(v: unknown): string | null {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) return null;
+  const conZona = /[zZ]|[+-]\d{2}:?\d{2}$/.test(v) ? v : `${v.slice(0, 19)}Z`;
+  return isoAlMinuto(conZona);
+}
+
+/** El código de un lugar del CAD: el OACI si lo tiene ("SADF -  FDO -  FDO (SAN FERNANDO)" → "SADF"), o el que tenga (" LJN (LUJAN)" → "LJN"). */
+export function codigoDeLugarCad(texto: unknown): string {
+  return partesDeLugarCad(texto)[0] ?? "";
+}
+
+/** La sigla de Vector para una finalidad del CAD, por nombre. `null` si no tiene par. */
+export function propositoDesdeCad(finalidad: string): string | null {
+  const buscado = normalizarCad(finalidad);
+  if (!buscado) return null;
+  return Object.entries(FINALIDAD_CAD).find(([, nombre]) => normalizarCad(nombre) === buscado)?.[0] ?? null;
+}
+
+/**
+ * Un vuelo del CAD, leído para traerlo a Vector.
+ *
+ * `d` es lo que devuelve el CAD (la fila de `GetPagedList` con el detalle de `Get` encima).
+ * **Su forma no se pudo leer del CAD real** (el 2026-10-21 no respondía): se aceptan los
+ * nombres del objeto de "Crear" y los de la lista, y lo que falte o no cierre no se
+ * adivina: queda en `problema` y no se trae.
+ *
+ * El desglose es el del libro: piloto o copiloto (cargo), sobre aeródromo o travesía
+ * (tipo de vuelo), de día o de noche; instrumentos real y capota salen de la
+ * discriminación.
+ */
+export function vueloDesdeCad(
+  d: Record<string, unknown>,
+  listas: { finalidades: ItemCad[]; lugares: ItemCad[] },
+  matriculasEnVector: string[]
+): FilaTraida {
+  const cadId = Number(campo(d, "vueloTripulanteID", "id")) || 0;
+  const salida = salidaUtc(campo(d, "fechaHoraSalida", "fechaSalida"));
+  const llegada = salidaUtc(campo(d, "fechaHoraLlegada", "fechaLlegada"));
+  const tipo = Number(campo(d, "tipoVueloID", "tipoVueloId"));
+  const cargo = Number(campo(d, "cargoID", "cargoId"));
+  const horasDia = unDecimal(n(campo(d, "horasDia")));
+  const horasNoche = unDecimal(n(campo(d, "horasNoche")));
+  const matricula = matriculaCad(String(campo(d, "matriculaAvion", "matricula") ?? ""));
+
+  const porKey = (lista: ItemCad[], id: unknown) => (id === undefined ? undefined : lista.find((i) => String(i.key) === String(id))?.value);
+  const finalidad = String(
+    porKey(listas.finalidades, campo(d, "finalidadID", "finalidadId")) ?? campo(d, "finalidadDesc", "finalidad") ?? ""
+  ).trim();
+  const lugar = (pre: "origen" | "destino") =>
+    codigoDeLugarCad(porKey(listas.lugares, campo(d, `${pre}ID`, `${pre}Id`)) ?? campo(d, `${pre}Desc`, `${pre}Personalizado`));
+  const origen = lugar("origen");
+  const destino = lugar("destino") || origen;
+
+  const discs = (campo(d, "Discriminaciones", "discriminaciones") as { tipoDiscriminacionID?: unknown; horas?: unknown }[] | undefined) ?? [];
+  const disc = (id: number) => unDecimal(discs.filter((x) => Number(x?.tipoDiscriminacionID) === id).reduce((t, x) => t + n(String(x?.horas ?? "").replace(",", ".")), 0));
+
+  const horas = salida && llegada ? horasCentesimalesCad(salida, llegada) : null;
+  const duration = unDecimal(horasDia + horasNoche);
+  const [y, m, dd] = (salida ?? "").slice(0, 10).split("-");
+  const base = {
+    cadId,
+    fecha: salida ? `${dd}/${m}/${y}` : "",
+    ruta: !origen ? "" : origen === destino ? `${origen} (local)` : `${origen} → ${destino}`,
+    matricula,
+    horas: duration,
+    finalidad,
+  };
+
+  const proposito = propositoDesdeCad(finalidad);
+  const enVector = new Set(matriculasEnVector.map(matriculaCad));
+  let problema: string | null = null;
+  if (!cadId) problema = "El CAD no devolvió el número del vuelo.";
+  else if (tipo === 3 || tipo === 4) problema = `Es un vuelo en ${tipo === 3 ? "simulador" : "planeador"}: cargalo a mano en Vector.`;
+  else if (tipo !== 1 && tipo !== 2) problema = "No se pudo leer si es local o travesía.";
+  else if (cargo !== 1 && cargo !== 2) problema = "No se pudo leer si fuiste piloto o copiloto.";
+  else if (!salida || !llegada) problema = "No se pudo leer la salida o la llegada.";
+  else if (horas === null || duration !== horas) problema = "Las horas de día y de noche no dan lo que va de la salida a la llegada.";
+  else if (!matricula) problema = "No se pudo leer la matrícula.";
+  else if (!enVector.has(matricula)) problema = `${matricula} no está en tu Hangar: agregalo en Vector y volvé a tocar el marcador.`;
+  else if (!proposito) problema = finalidad ? `La finalidad "${finalidad}" no tiene par en Vector.` : "No se pudo leer la finalidad.";
+  else if (!origen) problema = "No se pudo leer el aeródromo de salida.";
+  if (problema) return { ...base, vuelo: null, problema };
+
+  const pre = cargo === 1 ? "pic" : "sic";
+  const suf = tipo === 1 ? "loc" : "tra";
+  const desglose = {
+    pic_day_loc: 0, pic_day_tra: 0, pic_night_loc: 0, pic_night_tra: 0,
+    sic_day_loc: 0, sic_day_tra: 0, sic_night_loc: 0, sic_night_tra: 0,
+  };
+  desglose[`${pre}_day_${suf}`] = horasDia;
+  desglose[`${pre}_night_${suf}`] = horasNoche;
+  const imc = disc(DISCRIMINACION_CAD.instrumentoReal);
+
+  return {
+    ...base,
+    problema: null,
+    vuelo: {
+      cadId,
+      date: salida!.slice(0, 10),
+      takeoff: `${salida!.slice(0, 16)}:00Z`,
+      landing: `${llegada!.slice(0, 16)}:00Z`,
+      origen,
+      destino,
+      matricula,
+      landings: Math.max(0, Math.round(n(campo(d, "aterrizajes")))),
+      duration,
+      purpose: proposito!,
+      ...desglose,
+      imc_pil: cargo === 1 ? imc : 0,
+      imc_cop: cargo === 2 ? imc : 0,
+      capota: disc(DISCRIMINACION_CAD.capota),
+    },
+  };
+}
+
+/**
+ * Un vuelo traído, revisado de nuevo en el server antes de crearlo: llega de otra pestaña
+ * (el CAD), así que se valida la forma entera y que las horas cierren. `null` si no sirve.
+ */
+export function validarTraido(x: unknown): VueloTraido | null {
+  if (!x || typeof x !== "object") return null;
+  const v = x as Record<string, unknown>;
+  const num = (k: string) => (typeof v[k] === "number" && Number.isFinite(v[k]) && (v[k] as number) >= 0 && (v[k] as number) <= 48 ? (v[k] as number) : null);
+  const horas = ["pic_day_loc", "pic_day_tra", "pic_night_loc", "pic_night_tra", "sic_day_loc", "sic_day_tra", "sic_night_loc", "sic_night_tra", "imc_pil", "imc_cop", "capota", "duration"] as const;
+  if (horas.some((k) => num(k) === null)) return null;
+  const cadId = v.cadId;
+  if (!Number.isInteger(cadId) || (cadId as number) <= 0) return null;
+  const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00Z$/;
+  if (typeof v.takeoff !== "string" || !iso.test(v.takeoff) || typeof v.landing !== "string" || !iso.test(v.landing)) return null;
+  if (v.date !== v.takeoff.slice(0, 10)) return null;
+  const lugar = /^[A-Z0-9]{2,5}$/;
+  if (typeof v.origen !== "string" || !lugar.test(v.origen) || typeof v.destino !== "string" || !lugar.test(v.destino)) return null;
+  if (typeof v.matricula !== "string" || !/^[A-Z0-9-]{3,10}$/.test(v.matricula)) return null;
+  if (typeof v.purpose !== "string" || !(v.purpose in FINALIDAD_CAD)) return null;
+  if (!Number.isInteger(v.landings) || (v.landings as number) < 0 || (v.landings as number) > 99) return null;
+  const tiempos = unDecimal(horas.slice(0, 8).reduce((t, k) => t + (v[k] as number), 0));
+  if (tiempos !== v.duration || horasCentesimalesCad(v.takeoff, v.landing) !== v.duration) return null;
+  return Object.fromEntries(
+    ["cadId", "date", "takeoff", "landing", "origen", "destino", "matricula", "landings", "purpose", ...horas].map((k) => [k, v[k]])
+  ) as unknown as VueloTraido;
 }

@@ -658,6 +658,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.26.4",
+    fecha: "2026-10-21",
+    motivo: "Pasar al CAD: los aeródromos con OACI (SADF y otros) no se encontraban en la lista del CAD, que los escribe \"SADF -  FDO -  FDO (…)\". Arreglo, sin anuncio.",
+  },
+  {
     version: "2.26.3",
     fecha: "2026-10-21",
     motivo: "Pasar al CAD rediseñado: la autoridad certificante y su nombre por vuelo, el panel por secciones y \"Corregir\" que abre el vuelo. Sigue sin anuncio hasta probarlo contra el CAD real.",

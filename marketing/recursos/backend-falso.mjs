@@ -132,7 +132,8 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     return res.end(JSON.stringify(SIN_VUELOS ? [] : vuelos));
   }
   if (req.method === "POST" && ruta === "/api/flights") {
-    const f = { id: `f${++n}`, user_id: "u1", ...json };
+    const { "IMC Pil": imc_pil, "IMC Cop": imc_cop, Capota: capota, ...resto } = json;
+    const f = { id: `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`, user_id: "u1", ...resto, imc_pil, imc_cop, capota };
     vuelos.push(f);
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(f));

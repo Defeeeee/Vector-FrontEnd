@@ -8,8 +8,9 @@ const finalidades = [
   ["46", "ADAPTACIÓN"], ["63", "ENTRENAMIENTO"], ["64", "EXAMEN"], ["67", "INSTRUCTOR"], ["68", "INSTRUCCIÓN"], ["71", "VUELO PRIVADO"],
 ].map(([key, value]) => ({ key, value, valueSearch: null }));
 const autoridades = [["1", "PILOTO AL MANDO (FALSO)"], ["2", "INSTRUCTOR DE VUELO (FALSO)"]].map(([key, value]) => ({ key, value, valueSearch: null }));
-const lugares = [["101", "SADF", "SAN FERNANDO"], ["102", "SADM", "MORON"], ["103", "SADL", "LA PLATA"], ["104", "SAAK", "MARTIN GARCIA"], ["105", "SAZS", "BARILOCHE"], ["106", "SADP", "EL PALOMAR"], ["107", "LJN", "LUJAN"]]
-  .map(([key, cod, nom]) => ({ key, value: ` ${cod} (${nom})`, valueSearch: `${cod} ${nom}` }));
+// Con el formato real (2026-10-21): "OACI -  IATA -  ANAC (NOMBRE)" con la clave ANAC, o " ANAC (NOMBRE)".
+const lugares = [["101", "SADF -  FDO -  FDO", "SAN FERNANDO"], ["102", "SADM -  MOR", "MORON"], ["103", "SADL -  LPG -  PTA", "LA PLATA"], ["104", " MGI", "ISLA MARTIN GARCIA"], ["105", "SAZS -  BRC -  BAR", "SAN CARLOS DE BARILOCHE"], ["106", "SADP -  EPA -  PAL", "EL PALOMAR"], ["107", " LJN", "LUJAN"]]
+  .map(([key, cod, nom]) => ({ key, value: `${cod} (${nom})`, valueSearch: `${cod} ${nom}` }));
 const porKey = new Map(lugares.map((l) => [l.key, l.value.trim().split(" ")[0]]));
 const vuelos = []; // los del CAD
 let proximo = 900000;
@@ -22,6 +23,23 @@ function centesimal(a, b) {
   const t = [[3, 8, .1], [9, 14, .2], [15, 20, .3], [21, 26, .4], [27, 33, .5], [34, 39, .6], [40, 45, .7], [46, 51, .8], [52, 57, .9]];
   let d = 0; for (const [x, y, v] of t) if (m >= x && m <= y) d = v; if (m >= 58) h++;
   return Math.round((dias * 24 + h + d) * 10) / 10;
+}
+
+// Tres vuelos que ya están en el CAD y no en Vector, para "Traer a Vector". El último va en
+// un avión que el backend falso no tiene en el Hangar.
+function sembrar(recibido) {
+  const horas = centesimal(recibido.fechaHoraSalida, recibido.fechaHoraLlegada);
+  vuelos.push({
+    vueloTripulanteID: ++proximo, fechaSalida: recibido.fechaHoraSalida.slice(0, 19), fechaLlegada: recibido.fechaHoraLlegada.slice(0, 19),
+    matricula: recibido.matriculaAvion, origenDesc: porKey.get(recibido.origenID), destinoDesc: porKey.get(recibido.destinoID), tiempoTotal: `${horas.toFixed(1)} hs`,
+    estadoDesc: "DECLARADO", recibido,
+  });
+}
+if (!process.env.SIN_SEMILLA) {
+  const base = { autoridadCertificanteID: "2", observaciones: "JUAN PEREZ", potencia: 110, clase: "MONT-T", origenPersonalizado: "", destinoPersonalizado: "" };
+  sembrar({ ...base, tipoVueloID: "2", cargoID: "1", fechaHoraSalida: "2025-12-10T14:00:00Z", fechaHoraLlegada: "2025-12-10T15:30:00Z", horasDia: 1.5, horasNoche: 0, aterrizajes: 2, finalidadID: "63", origenID: "101", destinoID: "102", matriculaAvion: "LV-ABC", Discriminaciones: [{ tipoDiscriminacionID: 7, horas: "0.3" }] });
+  sembrar({ ...base, tipoVueloID: "1", cargoID: "1", fechaHoraSalida: "2025-11-20T22:10:00Z", fechaHoraLlegada: "2025-11-20T23:10:00Z", horasDia: 0, horasNoche: 1, aterrizajes: 5, finalidadID: "68", origenID: "107", destinoID: "107", matriculaAvion: "LV-XYZ", Discriminaciones: [] });
+  sembrar({ ...base, tipoVueloID: "2", cargoID: "1", fechaHoraSalida: "2025-11-05T13:00:00Z", fechaHoraLlegada: "2025-11-05T14:12:00Z", horasDia: 1.2, horasNoche: 0, aterrizajes: 2, finalidadID: "71", origenID: "101", destinoID: "104", matriculaAvion: "LV-QQQ", Discriminaciones: [] });
 }
 
 createServer(async (req, res) => {
@@ -37,6 +55,11 @@ createServer(async (req, res) => {
   if (api === "GetAutoridadesListItem") return json(200, autoridades);
   if (api === "GetLugarAterrizajeListItem") return json(200, url.searchParams.get("tipoLugar") === "AER" ? lugares : []);
   if (api === "GetPagedList") return json(200, { totalRows: vuelos.length, dataSource: [...vuelos].sort((a, b) => b.fechaSalida.localeCompare(a.fechaSalida)) });
+  // El detalle: se supone con los campos de "Crear" (la forma real no se pudo leer todavía).
+  if (api === "Get") {
+    const v = vuelos.find((x) => String(x.vueloTripulanteID) === url.searchParams.get("id"));
+    return v ? json(200, { vueloTripulanteID: v.vueloTripulanteID, ...v.recibido }) : json(404, { message: "No existe" });
+  }
   if (api === "Create" && req.method === "POST") {
     const v = JSON.parse(crudo || "{}");
     const horas = centesimal(v.fechaHoraSalida, v.fechaHoraLlegada);

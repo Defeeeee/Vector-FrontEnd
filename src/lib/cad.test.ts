@@ -10,7 +10,13 @@ import {
   payloadCad,
   resolverFinalidad,
   resolverLugar,
+  FINALIDAD_CAD,
   yaEstaEnElCad,
+  codigoDeLugarCad,
+  estaEnVector,
+  propositoDesdeCad,
+  vueloDesdeCad,
+  validarTraido,
   type LugarParaCad,
   type VueloVector,
 } from "./cad";
@@ -123,11 +129,16 @@ describe("lo que se resuelve con las listas del CAD", () => {
     { key: "63", value: "ENTRENAMIENTO" },
     { key: "68", value: "INSTRUCCIÓN" },
   ];
+  // Copiadas de `GetLugarAterrizajeListItem?tipoLugar=AER` del CAD real (2026-10-21).
   const aerodromos = [
-    { key: "101", value: " SADF (SAN FERNANDO)" },
-    { key: "102", value: " SADM (MORÓN)" },
-    { key: "103", value: " LJN (LUJÁN)" },
-    { key: "104", value: " SADFX (OTRO)" },
+    { key: "FDO", value: "SADF -  FDO -  FDO (SAN FERNANDO)" },
+    { key: "MOR", value: "SADM -  MOR (MORON)" },
+    { key: "LJN", value: " LJN (LUJAN)" },
+    { key: "LJNM", value: " LJNM (NOVO MESTO)" },
+    { key: "SAEZ", value: " SAEZ (EZEIZA)" },
+    { key: "EZE", value: "SAEZ -  EZE -  EZE (EZEIZA/MINISTRO PISTARINI)" },
+    { key: "BAR", value: "SAZS -  BRC -  BAR (SAN CARLOS DE BARILOCHE)" },
+    { key: "2013", value: " 2013 (VILLA JOSEFINA)" },
   ];
 
   it("la finalidad, por nombre, sin importar las tildes", () => {
@@ -137,9 +148,30 @@ describe("lo que se resuelve con las listas del CAD", () => {
   });
 
   it("el aeródromo, sólo por código exacto: OACI o designador ANAC", () => {
-    expect(resolverLugar(lugar("SADF"), aerodromos)).toBe("101");
-    expect(resolverLugar(lugar("SRDL"), aerodromos)).toBe("103");
-    expect(resolverLugar(lugar("SAZS"), aerodromos)).toBeNull();
+    expect(resolverLugar(lugar("SADF"), aerodromos)).toBe("FDO");
+    expect(resolverLugar(lugar("SADM"), aerodromos)).toBe("MOR");
+    expect(resolverLugar(lugar("SRDL"), aerodromos)).toBe("LJN");
+    expect(resolverLugar(lugar("SAZS"), aerodromos)).toBe("BAR");
+    expect(resolverLugar(lugar("SADL"), aerodromos)).toBeNull();
+    // Ni el código del medio (IATA) ni un prefijo.
+    expect(resolverLugar(lugar("BRC"), aerodromos)).toBeNull();
+    expect(resolverLugar(lugar("SAD"), aerodromos)).toBeNull();
+  });
+
+  it("si la lista repite un aeródromo, gana la entrada completa", () => {
+    expect(resolverLugar(lugar("SAEZ"), aerodromos)).toBe("EZE");
+    expect(resolverLugar(lugar("SAEZ"), [...aerodromos].reverse())).toBe("EZE");
+  });
+
+  it("cada finalidad de Vector existe, con ese nombre, en la lista del CAD", () => {
+    // `GetFinalidadListItem?tcp=false` del CAD real (2026-10-21).
+    const delCad = [
+      "ACROBACIA", "ADAPTACIÓN", "AEROPLICADOR", "COMBATE CONTRA INCENDIOS DE BOSQUES Y CAMPOS", "ENTRENAMIENTO", "EXAMEN",
+      "VUELO EN FORMACIÓN", "FOTOGRAFÍA", "INSTRUCTOR", "INSTRUCCIÓN", "INSPECTOR", "LANZAMIENTO DE PARACAIDISTAS", "VUELO NO REGULAR",
+      "PRUEBA DE AERONAVES", "READAPTACIÓN", "REMOLQUE DE PLANEADOR", "SANITARIO", "TRABAJO AÉREO", "VUELO OFICIAL", "VUELO PRIVADO",
+      "LINEA AEREA", "INSPECTOR (TCP)", "TRIPULANTE DE CABINA DE PASAJEROS EN INSTRUCCION",
+    ].map((value, i) => ({ key: String(i), value }));
+    for (const nombre of Object.values(FINALIDAD_CAD)) expect(resolverFinalidad(nombre, delCad), nombre).not.toBeNull();
   });
 
   it("un vuelo que ya está: misma salida al minuto y misma matrícula", () => {
@@ -224,3 +256,156 @@ describe("la autoridad certificante, por vuelo", () => {
   });
 });
 
+
+
+describe("del CAD a Vector", () => {
+  const listas = {
+    finalidades: [
+      { key: "71", value: "VUELO PRIVADO" },
+      { key: "68", value: "INSTRUCCIÓN" },
+      { key: "99", value: "BAUTISMO" },
+    ],
+    lugares: [
+      { key: "10", value: "SADF -  FDO -  FDO (SAN FERNANDO)" },
+      { key: "11", value: "SAZS -  BRC -  BAR (SAN CARLOS DE BARILOCHE)" },
+      { key: "12", value: " LJN (LUJAN)" },
+    ],
+  };
+  const crear = {
+    vueloTripulanteID: 900123,
+    tipoVueloID: "2",
+    cargoID: "1",
+    fechaHoraSalida: "2026-09-25T13:45:00",
+    fechaHoraLlegada: "2026-09-25T16:03:00",
+    horasDia: 2.3,
+    horasNoche: 0,
+    aterrizajes: 2,
+    finalidadID: "71",
+    origenID: "10",
+    destinoID: "11",
+    matriculaAvion: "LV-ABC",
+    Discriminaciones: [
+      { tipoDiscriminacionID: 7, horas: "0.5" },
+      { tipoDiscriminacionID: 6, horas: "0,3" },
+    ],
+  };
+
+  it("arma el desglose del libro: piloto, travesía, día, capota e instrumentos", () => {
+    const f = vueloDesdeCad(crear, listas, ["LVABC"]);
+    expect(f.problema).toBeNull();
+    expect(f.ruta).toBe("SADF → SAZS");
+    expect(f.fecha).toBe("25/09/2026");
+    expect(f.vuelo).toMatchObject({
+      cadId: 900123,
+      date: "2026-09-25",
+      takeoff: "2026-09-25T13:45:00Z",
+      landing: "2026-09-25T16:03:00Z",
+      origen: "SADF",
+      destino: "SAZS",
+      landings: 2,
+      duration: 2.3,
+      purpose: "VP",
+      pic_day_tra: 2.3,
+      pic_day_loc: 0,
+      sic_day_tra: 0,
+      capota: 0.5,
+      imc_pil: 0.3,
+      imc_cop: 0,
+    });
+  });
+
+  it("copiloto, local y de noche; con los nombres de la lista en vez de los IDs", () => {
+    const f = vueloDesdeCad(
+      {
+        vueloTripulanteID: 5,
+        tipoVueloID: 1,
+        cargoID: 2,
+        fechaSalida: "2026-07-01T22:00:00",
+        fechaLlegada: "2026-07-01T23:00:00",
+        horasDia: 0,
+        horasNoche: 1,
+        aterrizajes: 6,
+        finalidadDesc: "Instrucción",
+        origenDesc: " LJN (LUJAN)",
+        matricula: "LV-XYZ",
+        Discriminaciones: [{ tipoDiscriminacionID: 6, horas: "0.4" }],
+      },
+      listas,
+      ["LV-XYZ"]
+    );
+    expect(f.problema).toBeNull();
+    expect(f.ruta).toBe("LJN (local)");
+    expect(f.vuelo).toMatchObject({ origen: "LJN", destino: "LJN", purpose: "INST", sic_night_loc: 1, pic_night_loc: 0, imc_cop: 0.4, imc_pil: 0 });
+  });
+
+  it("no adivina: lo que no cierra queda para revisar", () => {
+    const con = (cambio: Record<string, unknown>, matriculas = ["LV-ABC"]) => vueloDesdeCad({ ...crear, ...cambio }, listas, matriculas).problema;
+    expect(con({ tipoVueloID: 3 })).toMatch(/simulador/);
+    expect(con({ tipoVueloID: undefined })).toMatch(/local o travesía/);
+    expect(con({ cargoID: 7 })).toMatch(/piloto o copiloto/);
+    expect(con({ fechaHoraSalida: "ayer" })).toMatch(/salida o la llegada/);
+    expect(con({ horasDia: 2.0 })).toMatch(/no dan/);
+    expect(con({}, ["LV-OTR"])).toMatch(/LV-ABC no está en tu Hangar/);
+    expect(con({ finalidadID: "99" })).toMatch(/BAUTISMO/);
+    expect(con({ origenID: "404", destinoID: "404" })).toMatch(/aeródromo/);
+    expect(con({ vueloTripulanteID: undefined })).toMatch(/número/);
+    expect(vueloDesdeCad({ ...crear, tipoVueloID: 3 }, listas, ["LV-ABC"]).vuelo).toBeNull();
+  });
+
+  it("una salida con zona se pasa a UTC", () => {
+    const f = vueloDesdeCad({ ...crear, fechaHoraSalida: "2026-09-25T10:45:00-03:00", fechaHoraLlegada: "2026-09-25T13:03:00-03:00" }, listas, ["LV-ABC"]);
+    expect(f.vuelo?.takeoff).toBe("2026-09-25T13:45:00Z");
+  });
+
+  it("de Vector al CAD y de vuelta da el mismo vuelo", () => {
+    const v: VueloVector = {
+      id: "v1",
+      date: "2026-09-25",
+      route: "SADF SAZS",
+      landings: 2,
+      duration: 2.3,
+      takeoff: "2026-09-25T13:45:00Z",
+      landing: "2026-09-25T16:03:00Z",
+      purpose: "VP",
+      pic_day_tra: 2.3,
+      capota: 0.5,
+    };
+    const b = borradorCad(v, { registration: "LVABC", type_acft: "MONT-T" }, (c) => ({ codigo: c, candidatos: [c], nombre: null }));
+    const p = payloadCad(b, { finalidadID: "71", origenID: "10", destinoID: "11", autoridadID: "1", autoridadNombre: "X" });
+    const f = vueloDesdeCad({ ...p, vueloTripulanteID: 1 }, listas, ["LV-ABC"]);
+    expect(f.vuelo).toMatchObject({ date: v.date, takeoff: v.takeoff, landing: v.landing, duration: 2.3, pic_day_tra: 2.3, capota: 0.5, purpose: "VP", landings: 2 });
+  });
+
+  it("sabe si un vuelo del CAD ya está en Vector", () => {
+    const conocidos = [
+      { cadId: 77, salida: "2026-01-01T10:00", matricula: "LV-AAA" },
+      { cadId: null, salida: "2026-09-25T13:45", matricula: "LVABC" },
+    ];
+    expect(estaEnVector({ vueloTripulanteID: 77, fechaSalida: "2020-01-01T00:00:00", matricula: "X" }, conocidos)).toBe(true);
+    expect(estaEnVector({ vueloTripulanteID: 1, fechaSalida: "2026-09-25T13:45:00", matricula: "LV-ABC" }, conocidos)).toBe(true);
+    expect(estaEnVector({ vueloTripulanteID: 1, fechaSalida: "2026-09-25T13:46:00", matricula: "LV-ABC" }, conocidos)).toBe(false);
+  });
+
+  it("los nombres de lugares y finalidades", () => {
+    expect(codigoDeLugarCad("SADF -  FDO -  FDO (SAN FERNANDO)")).toBe("SADF");
+    expect(codigoDeLugarCad(" LJN (LUJAN)")).toBe("LJN");
+    expect(codigoDeLugarCad(undefined)).toBe("");
+    expect(propositoDesdeCad("Instrucción")).toBe("INST");
+    expect(propositoDesdeCad("ENTRENAMIENTO")).toBe("ENT");
+    expect(propositoDesdeCad("")).toBeNull();
+  });
+
+  it("el server revisa de nuevo lo que llega del CAD", () => {
+    const bueno = vueloDesdeCad(crear, listas, ["LV-ABC"]).vuelo!;
+    expect(validarTraido(bueno)).toEqual(bueno);
+    expect(validarTraido({ ...bueno, extra: "x" })).toEqual(bueno);
+    expect(validarTraido({ ...bueno, pic_day_tra: 2.2 })).toBeNull();
+    expect(validarTraido({ ...bueno, duration: 2.2, pic_day_tra: 2.2 })).toBeNull();
+    expect(validarTraido({ ...bueno, cadId: -1 })).toBeNull();
+    expect(validarTraido({ ...bueno, purpose: "XX" })).toBeNull();
+    expect(validarTraido({ ...bueno, origen: "<script>" })).toBeNull();
+    expect(validarTraido({ ...bueno, date: "2026-09-24" })).toBeNull();
+    expect(validarTraido({ ...bueno, capota: "0.5" })).toBeNull();
+    expect(validarTraido(null)).toBeNull();
+  });
+});

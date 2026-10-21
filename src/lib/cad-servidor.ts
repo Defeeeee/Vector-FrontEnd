@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import { getAirport } from "@/lib/airports";
-import { borradorCad, type BorradorCad, type LugarParaCad } from "@/lib/cad";
+import { borradorCad, matriculaCad, type BorradorCad, type LugarParaCad, type VueloConocido } from "@/lib/cad";
 import { esAlumno } from "@/lib/licencias";
 import type { Aircraft, Flight, Profile } from "@/types";
 
@@ -26,6 +26,10 @@ export interface VuelosParaElCad {
   borradores: BorradorCad[];
   /** Cuántos ya están marcados como pasados. */
   pasados: number;
+  /** Todos los vuelos de Vector, reducidos: para no traer del CAD uno que ya está. */
+  conocidos: VueloConocido[];
+  /** Las matrículas del Hangar (sin simuladores): un vuelo del CAD sólo se trae si su avión está. */
+  matriculas: string[];
 }
 
 /** `null` si no se pudo leer (invariante 2: no es lo mismo que "no hay"). */
@@ -44,6 +48,12 @@ export async function vuelosParaElCad(): Promise<VuelosParaElCad | null> {
       alumno: esAlumno(perfiles[0]?.license_type),
       borradores: faltan.map((f) => borradorCad(f, (f.aircraft_id && porId.get(f.aircraft_id)) || null, lugarParaCad)),
       pasados: vuelos.length - faltan.length,
+      conocidos: vuelos.map((f) => ({
+        cadId: f.cad_vuelo_id ?? null,
+        salida: (f.takeoff ?? "").slice(0, 16),
+        matricula: matriculaCad((f.aircraft_id && porId.get(f.aircraft_id)?.registration) || ""),
+      })),
+      matriculas: aviones.filter((a) => !a.is_simulator).map((a) => matriculaCad(a.registration)),
     };
   } catch {
     return null;

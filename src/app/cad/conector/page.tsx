@@ -45,7 +45,12 @@ export default async function ConectorPage() {
             </p>
           </>
         ) : (
-          <ConectorCad borradores={datos.borradores} pasados={datos.pasados} origenCad={process.env.NEXT_PUBLIC_CAD_ORIGEN || "https://cad.anac.gob.ar"} />
+          <ConectorCad
+            borradores={datos.borradores}
+            pasados={datos.pasados}
+            conocidos={datos.conocidos}
+            matriculas={datos.matriculas}
+            origenCad={process.env.NEXT_PUBLIC_CAD_ORIGEN || "https://cad.anac.gob.ar"} />
         )}
       </div>
     </main>

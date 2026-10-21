@@ -3,7 +3,7 @@ import { ChevronDown, ExternalLink } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
 import PasoMarcador from "@/components/dashboard/MarcadorCad";
 import { vuelosParaElCad } from "@/lib/cad-servidor";
-import type { BorradorCad } from "@/lib/cad";
+import { TRAER_DEL_CAD, type BorradorCad } from "@/lib/cad";
 
 export const dynamic = "force-dynamic";
 
@@ -81,7 +81,7 @@ export default async function PasarAlCadPage() {
 
   const frase =
     total === 0
-      ? "Todavía no cargaste vuelos en Vector."
+      ? `Todavía no cargaste vuelos en Vector.${TRAER_DEL_CAD ? " Si ya los declaraste en el CAD, traelos con el marcador." : ""}`
       : datos.borradores.length === 0
         ? `Tus ${vuelos(total)} ya están en el CAD.`
         : `Te faltan pasar ${vuelos(datos.borradores.length)} al CAD.${revisar.length ? ` Hay ${revisar.length} para corregir antes.` : ""}`;
@@ -141,6 +141,12 @@ export default async function PasarAlCadPage() {
             ponés su autoridad certificante y su nombre; Vector te propone la última que usaste para esa finalidad. Antes de cargar podés ver
             exactamente lo que se manda.
           </p>
+          {TRAER_DEL_CAD && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+            ¿Ya declaraste vuelos en el CAD que no están en Vector? En la pestaña <b className="font-semibold text-zinc-900 dark:text-white">Traer a Vector</b>{" "}
+            los pasás a tu bitácora, con el desglose del libro. No se descuentan de tu saldo.
+          </p>
+          )}
         </Paso>
         <Paso n={4} titulo="Hacé la declaración jurada en el CAD">
           <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">

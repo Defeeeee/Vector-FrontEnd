@@ -299,7 +299,7 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
   - **Falta:** CHG, y que el editor ande sin señal (el planificador sí anda).
-- **Pasar al CAD de ANAC** (2026-10-21, 2.26.2 y 2.26.3 sin anuncio; Bitácora → Vuelos → "Pasar al CAD"):
+- **Pasar al CAD de ANAC** (2026-10-21, 2.26.2 a 2.26.4 sin anuncio; Bitácora → Vuelos → "Pasar al CAD"):
   - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
     "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la
     contraseña de ANAC en Vector.
@@ -310,12 +310,12 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     panel propone la última usada para esa finalidad (`autoridadSugerida`, memoria en el
     `localStorage` del CAD) y no carga un vuelo al que le falte alguna de las dos.
   - "Corregir" lleva a `/dashboard/history?editar=<id>`, que abre ese vuelo en edición.
-  - **Falta verificar contra el CAD real**, que el 2026-10-21 no respondía:
-    - la forma de la lista de aeródromos (`AER`, `LAD`) y la de autoridades certificantes;
-    - que la página deje cargar el script (CSP) y abrir la ventanita (COOP);
-    - qué devuelve "Crear".
-
-    Se probó entero contra `cad-falso.mjs`. Primero "Ver lo que se manda", y un solo vuelo.
+  - **Las listas del CAD son públicas** (sin sesión). Los aeródromos vienen como
+    `SADF -  FDO -  FDO (SAN FERNANDO)` (clave: el designador ANAC) o ` MGI (…)`. El CAD no
+    manda CSP ni COOP. Falta ver contra el CAD real qué devuelve "Crear".
+  - **"Traer a Vector"** (del CAD a la bitácora) está hecho y **apagado**
+    (`TRAER_DEL_CAD`): espera la migración 030 del backend (`traido_del_cad`, no cobra) y
+    confirmar la forma de `Get` en el CAD real.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

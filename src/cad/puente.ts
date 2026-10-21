@@ -12,23 +12,32 @@
  *    "Pendiente de DDJJ": **la declaración jurada la hace el piloto**, en otra pantalla.
  * 5. Le avisa a la ventanita cuáles quedaron, para marcarlos en Vector.
  *
+ * Y el camino inverso, en la pestaña "Traer a Vector": los vuelos que el piloto ya declaró
+ * en el CAD y no están en Vector se leen de a uno (`Get`), se traducen al libro
+ * (`vueloDesdeCad`) y la ventanita los crea en Vector (`traerDelCad`).
+ *
  * Vector nunca ve la contraseña de ANAC, y el CAD nunca ve la sesión de Vector. Los
  * mensajes sólo se aceptan de la ventanita que abrió este script, desde el origen de Vector.
  *
  * Lo compila `scripts/build-puente.mjs` a `public/cad/puente.js`.
  */
 import {
+  TRAER_DEL_CAD,
   autoridadSugerida,
+  estaEnVector,
   faltaAutoridad,
   payloadCad,
   recordarAutoridades,
   resolverFinalidad,
   resolverLugar,
+  vueloDesdeCad,
   yaEstaEnElCad,
   type AutoridadCad,
   type BorradorCad,
+  type FilaTraida,
   type ItemCad,
   type MemoriaAutoridades,
+  type VueloConocido,
   type VueloEnElCad,
 } from "../lib/cad";
 
@@ -47,6 +56,11 @@ interface Fila {
 
 type Paso = "elegir" | "confirmar" | "cargando" | "listo";
 
+interface FilaTraer {
+  t: FilaTraida;
+  elegido: boolean;
+}
+
 const API = "/foliadoweb/api/VueloTripulante/";
 const CLAVE_MEMORIA = "vector-cad-autoridades";
 const BRUJULA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
@@ -64,6 +78,11 @@ const ESTILOS = `
   .cab .esp { flex: 1; }
   .ico { border: 0; background: none; width: 30px; height: 30px; border-radius: 9px; font-size: 18px; line-height: 1; color: #71717a; cursor: pointer; }
   .ico:hover { background: #f4f4f5; color: #18181b; }
+  .tabs { display: flex; gap: 4px; padding: 8px 16px 0; }
+  .tab { flex: 1; border: 0; background: #f4f4f5; color: #52525b; border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .tab[aria-selected=true] { background: #18181b; color: #fff; }
+  .tab .n { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 500; opacity: .7; margin-left: 4px; }
+  .tab:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
   .cuerpo { overflow: auto; padding: 14px 16px 6px; flex: 1; }
   .barra { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: #f4f4f5; margin: 2px 0 8px; }
   .barra i { display: block; height: 100%; }
@@ -139,6 +158,10 @@ const ESTILOS = `
     <div class="p" role="dialog" aria-label="Vector → CAD">
       <div class="cab"><span class="logo">${BRUJULA}</span><div class="esp"><h2>Vector → CAD</h2><p>Tus vuelos de Vector, en tu CAD</p></div>
         <button class="ico" id="minimizar" title="Minimizar" aria-label="Minimizar">–</button><button class="ico" id="cerrar" title="Cerrar" aria-label="Cerrar">×</button></div>
+      <div class="tabs" role="tablist" id="tabs" hidden>
+        <button class="tab" role="tab" id="tab-llevar" aria-selected="true">Pasar al CAD<span class="n" id="n-llevar"></span></button>
+        <button class="tab" role="tab" id="tab-traer" aria-selected="false">Traer a Vector<span class="n" id="n-traer"></span></button>
+      </div>
       <div class="cuerpo" id="cuerpo"></div>
       <div class="pie" id="pie"></div>
     </div>
@@ -158,6 +181,16 @@ const ESTILOS = `
     },
   };
 
+  ($("tab-llevar") as HTMLButtonElement).onclick = () => {
+    modo = "llevar";
+    dibujar();
+  };
+  ($("tab-traer") as HTMLButtonElement).onclick = () => {
+    modo = "traer";
+    if (!traer) void leerParaTraer();
+    else dibujar();
+  };
+
   const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
   const horas = (n: number) => n.toFixed(1).replace(".", ",");
 
@@ -175,13 +208,10 @@ const ESTILOS = `
     return r.dataSource ?? [];
   }
 
-  async function lugares(tipoVuelo: number): Promise<ItemCad[]> {
-    const [aer, lad] = await Promise.all([
-      getCad<ItemCad[]>(`GetLugarAterrizajeListItem?tipoLugar=AER&tipoVuelo=${tipoVuelo}`).catch(() => [] as ItemCad[]),
-      getCad<ItemCad[]>(`GetLugarAterrizajeListItem?tipoLugar=LAD&tipoVuelo=${tipoVuelo}`).catch(() => [] as ItemCad[]),
-    ]);
-    return [...aer, ...lad];
+  async function lugares(): Promise<ItemCad[]> {
+    return getCad<ItemCad[]>("GetLugarAterrizajeListItem?tipoLugar=AER&tipoVuelo=2").catch(() => [] as ItemCad[]);
   }
+
 
   /* ------------------------------------------------------- la ventanita ----- */
 
@@ -212,7 +242,7 @@ const ESTILOS = `
     });
   }
 
-  async function pedirVuelos(): Promise<{ borradores: BorradorCad[] } | null> {
+  async function pedirVuelos(): Promise<{ borradores: BorradorCad[]; conocidos: VueloConocido[]; matriculas: string[] } | null> {
     if (!ventana || ventana.closed) ventana = window.open(`${VECTOR}/cad/conector`, "vector-cad", "popup,width=420,height=560");
     if (!ventana) return null;
     const llegan = esperar("vector-cad:vuelos", 30_000);
@@ -221,7 +251,23 @@ const ESTILOS = `
     const d = await llegan;
     clearInterval(insistir);
     if (d) ventana?.postMessage({ tipo: "vector-cad:recibido" }, VECTOR);
-    return d && Array.isArray(d.borradores) ? { borradores: d.borradores as BorradorCad[] } : null;
+    return d && Array.isArray(d.borradores)
+      ? {
+          borradores: d.borradores as BorradorCad[],
+          conocidos: Array.isArray(d.conocidos) ? (d.conocidos as VueloConocido[]) : [],
+          matriculas: Array.isArray(d.matriculas) ? (d.matriculas as string[]) : [],
+        }
+      : null;
+  }
+
+  async function traerAVector(vuelos: unknown[]): Promise<{ creados: number; yaEstaban: number; rechazados: number; error?: string } | null> {
+    if (!ventana || ventana.closed) return null;
+    const vuelve = esperar("vector-cad:traidos", 120_000);
+    ventana.postMessage({ tipo: "vector-cad:traer", vuelos }, VECTOR);
+    const d = await vuelve;
+    return d
+      ? { creados: Number(d.creados) || 0, yaEstaban: Number(d.yaEstaban) || 0, rechazados: Number(d.rechazados) || 0, error: typeof d.error === "string" ? d.error : undefined }
+      : null;
   }
 
   async function marcarEnVector(items: { vectorId: string; cadId: number }[]): Promise<number | null> {
@@ -260,6 +306,17 @@ const ESTILOS = `
   let progreso = { hechos: 0, total: 0 };
   let marcadosEnVector: number | null = 0;
 
+  // Lo que se leyó del CAD y de Vector al empezar, para la pestaña "Traer a Vector".
+  let modo: "llevar" | "traer" = "llevar";
+  let cadLista: VueloEnElCad[] = [];
+  let listasCad: { finalidades: ItemCad[]; lugares: ItemCad[] } = { finalidades: [], lugares: [] };
+  let conocidos: VueloConocido[] = [];
+  let matriculas: string[] = [];
+  let traer: FilaTraer[] | null = null;
+  let leyendo = { hechos: 0, total: 0 };
+  let pasoTraer: Paso = "elegir";
+  let resultadoTraer: { creados: number; yaEstaban: number; rechazados: number; error?: string } | null = null;
+
   const porCargar = () => filas.filter((f) => f.ids && !f.enElCad && !f.resultado?.ok);
   const elegidas = () => porCargar().filter((f) => f.elegido);
   const yaEstan = () => filas.filter((f) => f.enElCad);
@@ -273,13 +330,14 @@ const ESTILOS = `
   async function empezar() {
     cargando("Buscando tus vuelos en Vector…", "Se abre una ventanita de Vector: dejala abierta, podés minimizarla.");
     try {
-      const [vector, finalidades, auts, enElCad, lugaresLocal, lugaresTravesia] = await Promise.all([
+      // Una sola lista de aeródromos: la AER es igual para local y travesía, y trae adentro a
+      // la LAD (leído del CAD real el 2026-10-21). Pesa 1,2 MB.
+      const [vector, finalidades, auts, enElCad, lugaresCad] = await Promise.all([
         pedirVuelos(),
         getCad<ItemCad[]>("GetFinalidadListItem?tcp=false"),
         getCad<ItemCad[]>("GetAutoridadesListItem"),
         vuelosDelCad(),
-        lugares(1),
-        lugares(2),
+        lugares(),
       ]);
       if (!vector) {
         cuerpo.innerHTML = `<div class="vacio"><p><b>No pudimos hablar con Vector.</b></p>
@@ -289,11 +347,16 @@ const ESTILOS = `
         return;
       }
       autoridades = auts;
+      cadLista = enElCad;
+      listasCad = { finalidades, lugares: lugaresCad };
+      conocidos = vector.conocidos;
+      matriculas = vector.matriculas;
+      ($("tabs") as HTMLDivElement).hidden = !TRAER_DEL_CAD;
       const memoria = leerMemoria();
       // Lo anterior al primer vuelo que ya está en el CAD probablemente se folió en papel.
       const corte = enElCad.reduce<string | null>((min, v) => (!min || v.fechaSalida < min ? v.fechaSalida : min), null);
       filas = vector.borradores.map((b) =>
-        armarFila(b, enElCad, finalidades, b.tipoVueloID === 1 ? lugaresLocal : lugaresTravesia, corte, memoria)
+        armarFila(b, enElCad, finalidades, lugaresCad, corte, memoria)
       );
       paso = "elegir";
       dibujar();
@@ -364,7 +427,18 @@ const ESTILOS = `
       <span class="ruta"><b class="m">${esc(f.b.ruta)}</b><div>${meta}</div></span></div>${extra}</div>`;
   }
 
+  const sinTraer = () => cadLista.filter((v) => !estaEnVector(v, conocidos));
+
+  function pestañas() {
+    ($("tab-llevar") as HTMLButtonElement).setAttribute("aria-selected", String(modo === "llevar"));
+    ($("tab-traer") as HTMLButtonElement).setAttribute("aria-selected", String(modo === "traer"));
+    ($("n-llevar") as HTMLSpanElement).textContent = String(porCargar().length);
+    ($("n-traer") as HTMLSpanElement).textContent = String(traer ? traer.filter((x) => x.t.vuelo && !x.t.problema).length : sinTraer().length);
+  }
+
   function dibujar() {
+    pestañas();
+    if (modo === "traer") return dibujarTraer();
     const cargar = porCargar();
     const estan = yaEstan();
     const revisar = paraRevisar();
@@ -560,6 +634,159 @@ const ESTILOS = `
     const n = await marcarEnVector(items);
     aviso = n === null ? "No pudimos hablar con Vector." : "";
     if (n !== null) filas = filas.filter((f) => !f.enElCad);
+    dibujar();
+  }
+
+  /* ------------------------------------------------- traer a Vector ------- */
+
+  /** El detalle de un vuelo del CAD. La forma de la ruta no se pudo confirmar: se prueban las dos. */
+  async function detalleDelCad(id: number): Promise<Record<string, unknown>> {
+    for (const ruta of [`Get?id=${id}`, `Get/${id}`]) {
+      try {
+        const d = await getCad<Record<string, unknown> | { data?: Record<string, unknown> }>(ruta);
+        if (d && typeof d === "object") return ("data" in d && d.data && typeof d.data === "object" ? d.data : d) as Record<string, unknown>;
+      } catch {
+        /* se prueba la otra */
+      }
+    }
+    return {};
+  }
+
+  async function leerParaTraer() {
+    const faltan = sinTraer();
+    traer = null;
+    leyendo = { hechos: 0, total: faltan.length };
+    pasoTraer = "elegir";
+    resultadoTraer = null;
+    dibujar();
+    const filasNuevas: FilaTraer[] = new Array(faltan.length);
+    let siguiente = 0;
+    // De a cuatro: el CAD es del Estado y no hace falta apurarlo más.
+    await Promise.all(
+      Array.from({ length: Math.min(4, faltan.length) }, async () => {
+        while (siguiente < faltan.length) {
+          const k = siguiente++;
+          const v = faltan[k];
+          const detalle = await detalleDelCad(v.vueloTripulanteID);
+          const t = vueloDesdeCad({ ...(v as unknown as Record<string, unknown>), ...detalle }, listasCad, matriculas);
+          filasNuevas[k] = { t, elegido: !t.problema };
+          leyendo.hechos++;
+          if (modo === "traer") dibujarTraer();
+        }
+      })
+    );
+    traer = filasNuevas;
+    dibujar();
+  }
+
+  function filaTraerHtml(x: FilaTraer, i: number, conCaja: boolean) {
+    const t = x.t;
+    const caja = conCaja ? `<input type="checkbox" data-t="${i}" ${x.elegido ? "checked" : ""} aria-label="Traer el vuelo del ${esc(t.fecha)}">` : "";
+    const meta = [t.matricula, `${horas(t.horas)} h`, t.finalidad.toLowerCase()].filter(Boolean).map(esc).join(" · ");
+    return `<div class="fila ${t.problema ? "rev" : ""}"><div class="linea">${caja}<span class="fecha m">${esc(t.fecha || "¿?")}</span>
+      <span class="ruta"><b class="m">${esc(t.ruta || "Sin ruta")}</b><div>${meta}</div></span></div>
+      ${t.problema ? `<p class="motivo">${esc(t.problema)}</p>` : ""}</div>`;
+  }
+
+  function dibujarTraer() {
+    if (!traer) {
+      const pct = leyendo.total ? (100 * leyendo.hechos) / leyendo.total : 0;
+      cuerpo.innerHTML = `<div class="vacio"><p><b>Leyendo tus vuelos del CAD…</b></p>
+        <div class="prog" style="max-width:240px;margin:10px auto"><i style="width:${pct}%"></i></div>
+        <p class="nota m">${leyendo.hechos} de ${leyendo.total}</p></div>`;
+      pie.innerHTML = "";
+      return;
+    }
+    const listos = traer.filter((x) => x.t.vuelo);
+    const revisar = traer.filter((x) => x.t.problema);
+    if (traer.length === 0) {
+      cuerpo.innerHTML = `<div class="vacio"><p><b>Todos tus vuelos del CAD ya están en Vector.</b></p></div>`;
+      if (pasoTraer === "listo") dibujarPieTraer();
+      else pie.innerHTML = "";
+      return;
+    }
+    const editable = pasoTraer === "elegir";
+    cuerpo.innerHTML = `
+      <p class="resumen">${
+        listos.length
+          ? `<b>${listos.length}</b> ${listos.length === 1 ? "vuelo del CAD no está" : "vuelos del CAD no están"} en Vector${revisar.length ? `, y <b>${revisar.length}</b> para revisar` : ""}.`
+          : `No queda nada para traer${revisar.length ? `: ${revisar.length === 1 ? "falta revisar 1 vuelo" : `faltan revisar ${revisar.length} vuelos`}` : ""}.`
+      }</p>
+      <p class="nota">Se agregan a tu bitácora con el desglose del libro, marcados como "En el CAD". No se descuentan de tu saldo.</p>
+      ${
+        revisar.length
+          ? `<div class="sec"><h3>Para revisar <span>No se traen</span></h3>${revisar.map((x) => filaTraerHtml(x, traer!.indexOf(x), false)).join("")}</div>`
+          : ""
+      }
+      ${
+        listos.length
+          ? `<div class="sec"><h3>Para traer ${
+              listos.length > 1 && editable ? `<span><button class="enl" id="t-todos">Tildar todos</button> · <button class="enl" id="t-ninguno">Ninguno</button></span>` : ""
+            }</h3>${listos.map((x) => filaTraerHtml(x, traer!.indexOf(x), editable)).join("")}</div>`
+          : ""
+      }`;
+    dibujarPieTraer();
+    raiz.querySelectorAll<HTMLInputElement>("input[data-t]").forEach((cb) => {
+      cb.onchange = () => {
+        traer![Number(cb.dataset.t)].elegido = cb.checked;
+        dibujarPieTraer();
+      };
+    });
+    const tildar = (si: boolean) => () => {
+      for (const x of listos) x.elegido = si;
+      dibujarTraer();
+    };
+    $("t-todos")?.addEventListener("click", tildar(true));
+    $("t-ninguno")?.addEventListener("click", tildar(false));
+  }
+
+  function dibujarPieTraer() {
+    const sel = (traer ?? []).filter((x) => x.elegido && x.t.vuelo);
+    const n = sel.length;
+    const h = sel.reduce((t, x) => t + x.t.horas, 0);
+    const vuelos = (k: number) => (k === 1 ? "1 vuelo" : `${k} vuelos`);
+    if (pasoTraer === "cargando") {
+      pie.innerHTML = `<p>Guardando ${vuelos(n)} en Vector…</p>`;
+      return;
+    }
+    if (pasoTraer === "listo" && resultadoTraer) {
+      const r = resultadoTraer;
+      pie.innerHTML = `<p><b>${r.creados === 1 ? "Trajiste 1 vuelo" : `Trajiste ${r.creados} vuelos`} a Vector.</b>${r.yaEstaban ? ` ${r.yaEstaban} ya estaban.` : ""}${
+        r.rechazados ? ` <span class="err">${r.rechazados} no ${r.rechazados === 1 ? "entró" : "entraron"}.</span>` : ""
+      }</p>${r.error ? `<p class="err">${esc(r.error)}</p>` : ""}
+        <div class="bots"><a class="b neg" href="${VECTOR}/dashboard/history" target="_blank" rel="noopener" style="text-decoration:none">Ver mi bitácora</a></div>`;
+      return;
+    }
+    if (pasoTraer === "confirmar") {
+      pie.innerHTML = `<p>¿Traer ${vuelos(n)} (${horas(h)} h) a tu bitácora de Vector?</p>
+        <div class="bots"><button class="b neg" id="t-si">Traer a Vector</button><button class="b sec2" id="t-volver">Volver</button></div>`;
+      ($("t-si") as HTMLButtonElement).onclick = () => void traerSeleccion();
+      ($("t-volver") as HTMLButtonElement).onclick = () => {
+        pasoTraer = "elegir";
+        dibujarTraer();
+      };
+      return;
+    }
+    pie.innerHTML = `<div class="bots"><button class="b neg" id="t-traer" ${n ? "" : "disabled"}>${n ? `Traer ${vuelos(n)} · ${horas(h)} h` : "Tildá los vuelos a traer"}</button></div>`;
+    ($("t-traer") as HTMLButtonElement).onclick = () => {
+      pasoTraer = "confirmar";
+      dibujarTraer();
+    };
+  }
+
+  async function traerSeleccion() {
+    const sel = (traer ?? []).filter((x) => x.elegido && x.t.vuelo);
+    pasoTraer = "cargando";
+    dibujarTraer();
+    const r = await traerAVector(sel.map((x) => x.t.vuelo));
+    resultadoTraer = r ?? { creados: 0, yaEstaban: 0, rechazados: sel.length, error: "No pudimos hablar con Vector: fijate que la ventanita siga abierta." };
+    if (r && r.creados + r.yaEstaban > 0) {
+      // Ya están en Vector: salen de la lista, y la cuenta de la pestaña baja.
+      const ids = new Set(sel.map((x) => x.t.cadId));
+      conocidos = [...conocidos, ...cadLista.filter((v) => ids.has(v.vueloTripulanteID)).map((v) => ({ cadId: v.vueloTripulanteID, salida: "", matricula: "" }))];
+      traer = (traer ?? []).filter((x) => !ids.has(x.t.cadId));
+    }
+    pasoTraer = "listo";
     dibujar();
   }
 
