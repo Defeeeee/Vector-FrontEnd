@@ -4,6 +4,11 @@ import { chatConRespaldo } from "@/lib/gemini";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 import { sendWhatsAppDocument, sendWhatsAppMessage } from "@/lib/whatsapp";
 import { armarPdfDelLibro } from "@/lib/libro-anac-armar";
+import { nombreDelPeriodo, resumenDeHoras } from "@/lib/resumen-horas";
+import { pdfDelResumen } from "@/lib/resumen-horas-pdf";
+import type { Flight, Profile } from "@/types";
+import { apellidoYNombre, fechaDeGeneracion } from "@/lib/libro-anac";
+import { esAlumno, vuelosDesdeLaPpa } from "@/lib/licencias";
 import { timingSafeEqual } from "crypto";
 import { anacIndicator } from "@/lib/madhel-reference";
 import { componerFicha, datosAip } from "@/lib/aip";
@@ -807,6 +812,9 @@ Los datos de aeródromo, pistas, frecuencias y teléfonos que devuelven tus herr
 ## EL LIBRO DE VUELO EN PDF:
 Si el piloto pide su libro de vuelo, la bitácora en PDF, "las hojas del libro" o algo parecido, usá la herramienta 'send_logbook_pdf': se lo manda como archivo por este chat, con la hoja del libro de ANAC. Si lleva más de un libro en Vector y nombra uno, pasá ese nombre. Después confirmale en una línea que se lo mandaste. No lo llames "oficial": es el libro en papel que convive con el CAD de ANAC.
 
+## EL RESUMEN DE HORAS EN PDF:
+Si el piloto pide que le mandes un resumen o un certificado de sus horas, o "mis horas del año / del mes / de septiembre" como archivo, usá 'send_hours_pdf' con el período en fechas YYYY-MM-DD (hoy es ${currentLocalDate}): "este año" es del 1 de enero a hoy; "septiembre", del 1 al 30 de septiembre; sin período, toda la bitácora (sin 'desde' ni 'hasta'). Si sólo pregunta un número ("¿cuántas horas tengo?"), contestale con texto, sin PDF. Después confirmale en una línea qué le mandaste. No lo llames "certificado oficial": es un resumen hecho con su bitácora.
+
 ## CONVERSIÓN DE MINUTOS A DECIMALES AERONÁUTICOS:
 Para determinar la duración de un vuelo o validarla, resta la hora de despegue de la de aterrizaje para obtener horas y minutos. Los minutos deben convertirse a decimales con precisión según la siguiente tabla exacta:
 - 0 a 2 minutos: .0
@@ -945,6 +953,17 @@ ${flightContext}`;
                   icao_code: { type: Type.STRING, description: "El código del aeródromo. Acepta TANTO códigos OACI de 4 letras (SADF, SAAK, SAEZ) COMO indicadores locales ANAC de 3 letras (MGI, FDO, GEZ, AER, EZE). NUNCA modifiques ni le agregues letras al código que te pasa el usuario: si dice MGI usa MGI, si dice SAAK usa SAAK." }
                 },
                 required: ["icao_code"]
+              }
+            },
+            {
+              name: "send_hours_pdf",
+              description: "Le manda al piloto, por este chat, un PDF con el resumen de sus horas de un período: tiempos de vuelo como en el libro, aterrizajes, instrumentos, capota, simulador, por avión y por finalidad.",
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  desde: { type: Type.STRING, description: "Primer día del período, YYYY-MM-DD. Omitir para toda la bitácora." },
+                  hasta: { type: Type.STRING, description: "Último día del período, YYYY-MM-DD. Omitir para toda la bitácora o hasta hoy." }
+                }
               }
             },
             {
@@ -1255,6 +1274,42 @@ ${flightContext}`;
                 response: { error: `Error consultando clima: ${(err as any).message}` }
               });
             }
+          } else if (call.name === "send_hours_pdf") {
+            // El resumen de horas (`lib/resumen-horas.ts`), con los datos leídos con la clave del
+            // piloto, como el libro. Las horas de alumno no cuentan después de la PPA (`vuelosDesdeLaPpa`).
+            const fecha = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+            let desde = fecha(args.desde);
+            let hasta = fecha(args.hasta);
+            if (desde && hasta && desde > hasta) [desde, hasta] = [hasta, desde];
+            const leer = (ruta: string) => fetch(`${API_URL}${ruta}`, { headers: { "X-API-Key": userApiKey }, cache: "no-store" });
+            const [pr, vr, ar, lr] = await Promise.all([leer("/profiles"), leer("/flights"), leer("/aircraft"), leer("/logbooks")]);
+            if (![pr, vr, ar, lr].every((r) => r.ok)) {
+              toolResults.push({ name: call.name, response: { error: "No se pudieron leer sus datos para armar el resumen. Que pruebe en un rato." } });
+              continue;
+            }
+            const perfil = ((await pr.json()) as Profile[])[0] ?? null;
+            const alumno = esAlumno(perfil?.license_type);
+            const todos = (await vr.json()) as Flight[];
+            const resumen = resumenDeHoras(alumno ? todos : vuelosDesdeLaPpa(todos, perfil?.fecha_ppa), await ar.json(), await lr.json(), { desde, hasta }, { alumno });
+            const bytes = await pdfDelResumen(resumen, {
+              piloto: apellidoYNombre(perfil?.first_name, perfil?.last_name),
+              licencia: perfil?.license_type && perfil.license_type !== "-" ? perfil.license_type : "",
+              generado: fechaDeGeneracion(new Date()),
+            });
+            const total = resumen.horas + (resumen.apertura ?? 0);
+            const periodo = nombreDelPeriodo(resumen.desde, resumen.hasta);
+            const enviado = await sendWhatsAppDocument(
+              fromNumber,
+              { bytes, nombre: `resumen-de-horas-${resumen.desde ?? "inicio"}-a-${resumen.hasta ?? "hoy"}.pdf` },
+              `Resumen de horas · ${periodo}: ${total.toFixed(1).replace(".", ",")} h en ${resumen.vuelos} ${resumen.vuelos === 1 ? "vuelo" : "vuelos"}.`,
+              payloadPhoneNumberId
+            );
+            toolResults.push({
+              name: call.name,
+              response: enviado
+                ? { result: `Se le mandó el resumen (${periodo}): ${total.toFixed(1)} h en ${resumen.vuelos} vuelos.` }
+                : { error: "No se pudo mandar el archivo por WhatsApp." },
+            });
           } else if (call.name === "send_logbook_pdf") {
             // El mismo libro que se baja de la web (`lib/libro-anac-armar.ts`), leído con la
             // clave del piloto. Se manda como documento antes de que el modelo conteste, así

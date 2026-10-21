@@ -38,11 +38,11 @@ export default async function ImportLogbookPage() {
               <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
             </Link>
             <h2 className="text-4xl md:text-6xl font-display font-bold tracking-tighter text-zinc-900 dark:text-white leading-none">
-              Importar PDF
+              Importar tu libro
             </h2>
           </div>
           <p className="eyebrow ml-14 md:ml-16">
-            Libro de vuelo digital / escaneado
+            PDF o fotos de las hojas
           </p>
         </div>
       </div>

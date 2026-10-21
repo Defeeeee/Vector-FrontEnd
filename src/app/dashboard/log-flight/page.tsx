@@ -70,7 +70,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
           href="/dashboard/log-flight/import" 
           className="border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm px-5 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] self-start md:self-auto flex items-center space-x-2"
         >
-          <span>Importar desde PDF (Beta)</span>
+          <span>Importar tu libro (PDF o fotos)</span>
         </Link>}
       </div>
 

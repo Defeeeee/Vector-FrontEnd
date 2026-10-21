@@ -5,6 +5,10 @@ import { Upload, FileText, CheckCircle, AlertCircle, Trash2, Calendar, Plane, Ro
 import { Aircraft } from "@/types";
 import { bulkLogFlights } from "@/actions/flight";
 import { useRouter } from "next/navigation";
+import { comprimirImagen } from "@/lib/imagen-cliente";
+
+/** Hasta cuántas fotos de hojas por vez: las mismas que acepta `/api/parse-logbook`. */
+const MAX_FOTOS = 12;
 
 interface LogbookImportClientProps {
   aircraftList: Aircraft[];
@@ -40,6 +44,8 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
   const router = useRouter();
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  // O fotos de las hojas del libro de papel (2.28.0), en lugar del PDF.
+  const [fotos, setFotos] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -58,34 +64,38 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
     }
   };
 
+  /**
+   * Un PDF, o fotos de las hojas. Si viene un PDF, gana el PDF; si no, las fotos (hasta
+   * `MAX_FOTOS`). Del teléfono, el selector ofrece la cámara y la galería.
+   */
+  const elegir = (lista: FileList | null) => {
+    const archivos = Array.from(lista ?? []);
+    const pdf = archivos.find((f) => f.type === "application/pdf");
+    const imagenes = archivos.filter((f) => f.type.startsWith("image/"));
+    if (pdf) {
+      setFile(pdf);
+      setFotos([]);
+      setError(null);
+    } else if (imagenes.length) {
+      setFile(null);
+      setFotos(imagenes.slice(0, MAX_FOTOS));
+      setError(imagenes.length > MAX_FOTOS ? `Tomamos las primeras ${MAX_FOTOS} fotos: subí las demás después.` : null);
+    } else {
+      setError("Subí el libro en PDF, o fotos de las hojas.");
+    }
+  };
+
   // Handle drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type === "application/pdf") {
-        setFile(droppedFile);
-        setError(null);
-      } else {
-        setError("Por favor, sube únicamente archivos en formato PDF.");
-      }
-    }
+    elegir(e.dataTransfer.files);
   };
 
   // Handle file input select
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type === "application/pdf") {
-        setFile(selectedFile);
-        setError(null);
-      } else {
-        setError("Por favor, selecciona únicamente un archivo PDF.");
-      }
-    }
+    elegir(e.target.files);
   };
 
   const onButtonClick = () => {
@@ -94,17 +104,25 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
 
   // Parse the PDF logbook using Gemini
   const handleUploadAndParse = async () => {
-    if (!file) return;
+    if (!file && fotos.length === 0) return;
 
     setLoading(true);
     setError(null);
-    setLoadingStep("Subiendo archivo PDF...");
+    setLoadingStep(file ? "Subiendo el PDF..." : "Preparando las fotos...");
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      if (file) formData.append("file", file);
+      else {
+        // Achicadas en el navegador: una foto de teléfono pesa 4–8 MB. A 2400 px la letra a
+        // mano se sigue leyendo, y la ubicación GPS no sale del teléfono (el canvas no copia el EXIF).
+        for (const [k, f] of fotos.entries()) {
+          setLoadingStep(`Preparando la foto ${k + 1} de ${fotos.length}...`);
+          formData.append("fotos", await comprimirImagen(f, 2400, 0.85));
+        }
+      }
 
-      setLoadingStep("Gemini analizando páginas del libro de vuelo...");
+      setLoadingStep(file ? "Leyendo las páginas del libro..." : `Leyendo ${fotos.length === 1 ? "la hoja" : `las ${fotos.length} hojas`}...`);
       const res = await fetch("/api/parse-logbook", {
         method: "POST",
         body: formData
@@ -112,7 +130,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Error al procesar el archivo PDF");
+        throw new Error(errJson.error || "No se pudo leer el libro. Probá de nuevo.");
       }
 
       setLoadingStep("Estructurando lista de vuelos...");
@@ -243,7 +261,8 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
           <input 
             ref={fileInputRef}
             type="file" 
-            accept=".pdf"
+            accept=".pdf,application/pdf,image/*"
+            multiple
             onChange={handleFileChange}
             className="hidden"
           />
@@ -255,10 +274,10 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
 
             <div className="space-y-2">
               <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Cargar archivo de bitácora
+                Tu libro en PDF, o fotos de las hojas
               </h3>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
-                Arrastra y suelta tu PDF aquí, o haz clic en el botón para buscar en tu dispositivo.
+                Desde el teléfono, sacale una foto a cada hoja, de frente y con buena luz (hasta {MAX_FOTOS} por vez). O arrastrá el PDF escaneado acá.
               </p>
             </div>
 
@@ -268,6 +287,13 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                 <span className="text-xs font-mono font-bold truncate text-zinc-900 dark:text-white">{file.name}</span>
                 <span className="text-[10px] font-mono text-zinc-400">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
               </div>
+            ) : fotos.length > 0 ? (
+              <div className="flex items-center space-x-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 px-5 py-3.5 rounded-xl w-full justify-center">
+                <Layers className="w-5 h-5 text-zinc-400" />
+                <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                  {fotos.length === 1 ? "1 foto" : `${fotos.length} fotos`} de hojas
+                </span>
+              </div>
             ) : null}
 
             <div className="flex gap-4 w-full">
@@ -276,16 +302,16 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                 onClick={onButtonClick}
                 className="flex-1 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm py-4 rounded-2xl transition-all active:scale-[0.98]"
               >
-                Buscar archivo
+                {file || fotos.length ? "Cambiar" : "Elegir PDF o fotos"}
               </button>
 
-              {file && (
+              {(file || fotos.length > 0) && (
                 <button
                   type="button"
                   onClick={handleUploadAndParse}
                   className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 font-semibold text-sm py-4 rounded-2xl transition-all active:scale-[0.98]"
                 >
-                  Analizar con Gemini
+                  {file ? "Leer el PDF" : fotos.length === 1 ? "Leer la hoja" : "Leer las hojas"}
                 </button>
               )}
             </div>
@@ -337,6 +363,7 @@ export default function LogbookImportClient({ aircraftList }: LogbookImportClien
                 onClick={() => {
                   setParsedFlights([]);
                   setFile(null);
+                  setFotos([]);
                   setError(null);
                 }}
                 className="flex-1 md:flex-none border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white font-semibold text-sm px-6 py-3.5 rounded-xl transition-all active:scale-[0.98]"

@@ -27,7 +27,7 @@ describe("el mail del día siguiente al alta", () => {
   it("ofrece las tres formas, con sus links", () => {
     const { texto } = armarMensajePrimerVuelo(base);
     expect(texto).toContain("1. Con un audio");
-    expect(texto).toContain("2. Con tu libro en PDF");
+    expect(texto).toContain("2. Con tu libro de papel");
     expect(texto).toContain("https://vector.fdiaznem.com.ar/dashboard/log-flight/import");
     expect(texto).toContain("3. A mano");
   });

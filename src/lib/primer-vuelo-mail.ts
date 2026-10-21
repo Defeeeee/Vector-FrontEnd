@@ -56,7 +56,7 @@ export function armarMensajePrimerVuelo(d: DatosPrimerVuelo): MensajePrimerVuelo
 
   const opciones: { titulo: string; texto: string; link: string; boton: string; icono: Icono }[] = [
     { icono: "mic", titulo: "Con un audio", texto: whatsapp, link: d.tieneWhatsapp && d.linkCopiloto ? d.linkCopiloto : hangar, boton: d.tieneWhatsapp && d.linkCopiloto ? "Abrir WhatsApp" : "Ir al Hangar" },
-    { icono: "file-text", titulo: "Con tu libro en PDF", texto: "Subí las hojas escaneadas de tu libro de papel y Vector carga los vuelos.", link: importar, boton: "Importar el PDF" },
+    { icono: "file-text", titulo: "Con tu libro de papel", texto: "Sacale una foto a cada hoja, o subí el PDF escaneado, y Vector carga los vuelos.", link: importar, boton: "Importar mi libro" },
     { icono: "pencil-line", titulo: "A mano", texto: aMano, link: d.tieneAvion ? registrar : hangar, boton: d.tieneAvion ? "Registrar un vuelo" : "Cargar el avión" },
   ];
 
@@ -82,7 +82,7 @@ export function armarMensajePrimerVuelo(d: DatosPrimerVuelo): MensajePrimerVuelo
 
   const html = plantillaMail({
     appUrl: d.appUrl,
-    preencabezado: "Tres formas de cargar tu primer vuelo: un audio, tu libro en PDF o a mano.",
+    preencabezado: "Tres formas de cargar tu primer vuelo: un audio, fotos de tu libro o a mano.",
     pildora: "Tu cuenta en Vector",
     titulo: [nombre ? `${nombre}, tu bitácora está lista.` : "Tu bitácora está lista.", "Le falta tu primer vuelo."],
     cuerpo: [

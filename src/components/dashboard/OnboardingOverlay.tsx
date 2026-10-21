@@ -479,8 +479,8 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                   <FileUp className="w-5 h-5" />
                 </span>
                 <span className="flex-1">
-                  <span className="block font-semibold text-zinc-900 dark:text-white">Importá tu libro en PDF</span>
-                  <span className="block text-sm text-zinc-500 dark:text-zinc-400">Subí las hojas escaneadas de tu libro de papel y Vector carga los vuelos.</span>
+                  <span className="block font-semibold text-zinc-900 dark:text-white">Importá tu libro de papel</span>
+                  <span className="block text-sm text-zinc-500 dark:text-zinc-400">Sacale una foto a cada hoja, o subí el PDF escaneado, y Vector carga los vuelos.</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-zinc-400 self-center" />
               </Link>}

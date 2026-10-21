@@ -16,6 +16,13 @@ const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 const PDF_MAX_BYTES = 15 * 1024 * 1024;
 
 /**
+ * Las fotos de las hojas (2.28.0): llegan ya achicadas desde el navegador (`comprimirImagen`,
+ * a 2400 px), así que doce hojas entran en el mismo tope que el PDF.
+ */
+const MAX_FOTOS = 12;
+const TIPOS_FOTO = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+/**
  * Importar el libro de papel: el PDF va a Gemini, que devuelve los vuelos.
  *
  * **Pide sesión antes de tocar nada.** Hasta el 2026-09-23 no la pedía: `/api/*` no
@@ -47,18 +54,26 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get("file");
+    const fotos = formData.getAll("fotos").filter((f): f is File => typeof f !== "string");
 
-    if (!file || typeof file === "string") {
-      return NextResponse.json({ error: "No se subió ningún archivo PDF" }, { status: 400 });
+    // Un PDF, o fotos de las hojas: lo mismo para Gemini, una parte por archivo.
+    let partes: { inlineData: { data: string; mimeType: string } }[];
+    if (fotos.length > 0) {
+      if (fotos.length > MAX_FOTOS) return NextResponse.json({ error: `Subí hasta ${MAX_FOTOS} fotos por vez.` }, { status: 400 });
+      if (fotos.some((f) => !TIPOS_FOTO.has(f.type))) return NextResponse.json({ error: "Las fotos tienen que ser JPG, PNG o WebP." }, { status: 400 });
+      if (fotos.reduce((t, f) => t + f.size, 0) > PDF_MAX_BYTES) return NextResponse.json({ error: "Las fotos pesan demasiado (máximo 15 MB en total)." }, { status: 413 });
+      partes = await Promise.all(
+        fotos.map(async (f) => ({ inlineData: { data: Buffer.from(await f.arrayBuffer()).toString("base64"), mimeType: f.type } }))
+      );
+    } else {
+      if (!file || typeof file === "string") {
+        return NextResponse.json({ error: "No se subió ningún archivo." }, { status: 400 });
+      }
+      if (file.size > PDF_MAX_BYTES) {
+        return NextResponse.json({ error: "El PDF pesa demasiado (máximo 15 MB)." }, { status: 413 });
+      }
+      partes = [{ inlineData: { data: Buffer.from(await file.arrayBuffer()).toString("base64"), mimeType: "application/pdf" } }];
     }
-    if (file.size > PDF_MAX_BYTES) {
-      return NextResponse.json({ error: "El PDF pesa demasiado (máximo 15 MB)." }, { status: 413 });
-    }
-
-    // Convert file to base64 buffer for inline Gemini ingestion
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Data = buffer.toString("base64");
 
     // El modelo y su respaldo viven en lib/gemini.ts.
     const parametrosModelo: GenerateContentConfig = {
@@ -73,8 +88,8 @@ export async function POST(req: NextRequest) {
             aircraft_registration: { type: Type.STRING, description: "Matrícula de la aeronave (ej. LV-S153, N12345)" },
             route: { type: Type.STRING, description: "Ruta del vuelo (ej. SADF - SAAK o SADF/SAAK)" },
             duration: { type: Type.NUMBER, description: "Duración en horas decimales (ej. 1.2, 0.8, 1.5)" },
-            takeoff: { type: Type.STRING, description: "Hora de despegue local en formato HH:MM (ej. 14:30)" },
-            landing: { type: Type.STRING, description: "Hora de aterrizaje local en formato HH:MM (ej. 15:50)" },
+            takeoff: { type: Type.STRING, description: "Hora de salida como figura en el libro (UTC), formato HH:MM (ej. 14:30)" },
+            landing: { type: Type.STRING, description: "Hora de llegada como figura en el libro (UTC), formato HH:MM (ej. 15:50)" },
             landings: { type: Type.INTEGER, description: "Cantidad de aterrizajes. Por defecto poner 1 si no se especifica" },
             purpose: { type: Type.STRING, description: "Código de finalidad (ej. VP, ENT, INST, EXA). Por defecto 'VP'" },
             pic_day_loc: { type: Type.NUMBER, description: "Horas PIC Diurno Local (opcional)" },
@@ -96,28 +111,22 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    const prompt = `Analiza detalladamente este libro de vuelo (PDF de logbook de piloto).
-Extrae todos los vuelos que encuentres. Para cada vuelo, identifica y extrae:
-- Fecha (date) formateada a YYYY-MM-DD.
+    const prompt = `Analiza detalladamente este libro de vuelo de piloto (${fotos.length ? `${fotos.length === 1 ? "una foto de una hoja" : `${fotos.length} fotos de hojas`} del libro de papel` : "un PDF"}).
+Es, casi siempre, el libro de ANAC Argentina: cada renglón es un vuelo, con fecha (el año suele estar en el encabezado de la hoja), horas de salida y llegada en UTC, desde y hasta (un vuelo local lleva el mismo aeródromo en los dos), finalidad, aeronave (marca y modelo, matrícula), tiempos de vuelo sobre aeródromo o travesía, de día o de noche, como piloto o copiloto, aterrizajes y la discriminación (instrumentos, capota, simulador).
+${fotos.length ? "Las fotos pueden estar torcidas, con sombras o con letra a mano: leé con cuidado cada renglón. Si una hoja aparece en dos fotos, no repitas sus vuelos." : ""}
+Extrae todos los vuelos. Para cada uno:
+- Fecha (date) en YYYY-MM-DD.
 - Matrícula de la aeronave (aircraft_registration).
-- Ruta (route), por ejemplo 'SADF - SAAK'.
+- Ruta (route): desde y hasta, por ejemplo 'SADF SAAK'; un vuelo local, 'SADF SADF'.
 - Duración total en horas decimales (duration).
-- Horas de despegue (takeoff) y aterrizaje (landing) en formato HH:MM.
-- Cantidad de aterrizajes (landings). Si no se detalla, por defecto asigna 1.
-- Finalidad (purpose). Usa códigos comunes: 'VP' para vuelo privado/placer, 'INST' para instrucción/alumno, 'ENT' para entrenamiento, 'EXA' para examen. Si no está claro, asigna 'VP'.
-- Tiempos de desglose de vuelo (PIC, SIC, nocturnos, traslados, IMC, etc.) si están presentes y asocialos a su columna correspondiente en horas decimales.
+- Horas de salida (takeoff) y llegada (landing) en HH:MM, tal como figuran (UTC).
+- Aterrizajes (landings). Si no se detalla, 1.
+- Finalidad (purpose) con las siglas del libro: 'VP' vuelo privado, 'INST' instrucción recibida, 'I' instructor, 'ENT' entrenamiento, 'EXA' examen, 'ADAP' adaptación, 'ACR' acrobacia. Si no está claro, 'VP'.
+- Los tiempos del desglose (piloto o copiloto, día o noche, aeródromo o travesía, IMC, capota, simulador) en su columna, en horas decimales.
+No inventes vuelos ni completes datos que no se lean: si un campo no se lee, dejalo vacío o en 0. No cuentes como vuelos las filas de totales ("Totales a la página siguiente", "Totales página anterior").
+Procesá todas las páginas.`;
 
-Asegúrate de procesar todas las páginas del PDF.`;
-
-    const result = await generarConRespaldo(genAI, parametrosModelo, [
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: "application/pdf"
-        }
-      },
-      prompt
-    ], ESPERA_PDF_MS);
+    const result = await generarConRespaldo(genAI, parametrosModelo, [...partes, prompt], ESPERA_PDF_MS);
 
     const text = (result.text ?? "");
     const parsedFlights = JSON.parse(text);
