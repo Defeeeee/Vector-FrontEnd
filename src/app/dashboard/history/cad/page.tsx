@@ -150,7 +150,8 @@ export default async function PasarAlCadPage() {
           {TRAER_DEL_CAD && (
           <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
             ¿Ya declaraste vuelos en el CAD que no están en Vector? En la pestaña <b className="font-semibold text-zinc-900 dark:text-white">Traer a Vector</b>{" "}
-            los pasás a tu bitácora, con el desglose del libro. No se descuentan de tu saldo.
+            los pasás a tu bitácora, con el desglose del libro. No se descuentan de tu saldo. Si cargaste los totales de tu libro, traé sólo los
+            posteriores a esa hoja, para no contar dos veces las mismas horas.
           </p>
           )}
         </Paso>

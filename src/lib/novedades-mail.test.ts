@@ -11,10 +11,10 @@ const base: DatosNovedades = {
 
 describe("el mail de novedades", () => {
   it("saluda por el nombre, y sin nombre no deja un hueco", () => {
-    expect(armarMensajeNovedades(base).asunto).toBe("Lucía, esto es lo nuevo en Vector");
+    expect(armarMensajeNovedades(base).asunto).toBe("Lucía, tus vuelos al CAD desde Vector");
     const sin = armarMensajeNovedades({ ...base, nombre: " " });
-    expect(sin.asunto).toBe("Lo nuevo en Vector");
-    expect(sin.texto.startsWith("Desde que te hiciste la cuenta")).toBe(true);
+    expect(sin.asunto).toBe("Tus vuelos al CAD desde Vector");
+    expect(sin.texto.startsWith("Sumamos cosas")).toBe(true);
   });
 
   it("el botón del final depende de si ya cargó vuelos", () => {
@@ -24,18 +24,22 @@ describe("el mail de novedades", () => {
     expect(conVuelos.html).not.toContain("Cargar mi primer vuelo");
   });
 
-  it("sin link del copiloto, el audio manda al Hangar a dejar el número", () => {
-    const n = novedades({ ...base, linkCopiloto: null })[0];
-    expect(n.link?.url).toBe("https://vector.fdiaznem.com.ar/dashboard/settings");
-    expect(novedades(base)[0].link?.url).toContain("wa.me");
+  it("al alumno no le cuenta el CAD, que es para pilotos con licencia", () => {
+    const m = armarMensajeNovedades({ ...base, alumno: true });
+    expect(m.html).not.toContain("/dashboard/history/cad");
+    expect(m.texto).not.toContain("CAD");
+    expect(m.asunto).toBe("Lucía, el plan de vuelo ahora sale desde Vector");
+    expect(m.html).toContain("/dashboard/plan-de-vuelo");
+    expect(armarMensajeNovedades(base).html).toContain("/dashboard/history/cad");
   });
 
-  it("al alumno no le ofrece el importador del libro, y la PPA es su camino", () => {
-    const m = armarMensajeNovedades({ ...base, alumno: true });
-    expect(m.html).not.toContain("/dashboard/log-flight/import");
-    expect(m.texto).not.toContain("libro de papel");
-    expect(m.html).toContain("Tu camino a la PPA");
-    expect(armarMensajeNovedades(base).html).toContain("/dashboard/log-flight/import");
+  it("cada link lleva a una pantalla que existe", async () => {
+    const { existsSync } = await import("node:fs");
+    for (const n of [...novedades(base), ...novedades({ ...base, alumno: true })]) {
+      if (!n.link) continue;
+      const ruta = new URL(n.link.url).pathname;
+      expect(existsSync(`src/app${ruta}/page.tsx`), ruta).toBe(true);
+    }
   });
 
   it("lleva la baja en el texto y en el HTML", () => {

@@ -5,7 +5,7 @@ import { conectarWhatsapp, updateProfile } from "@/actions/profile";
 import { upsertCmaDocument } from "@/actions/document";
 import { addAircraft } from "@/actions/flight";
 import { createLogbook, OpeningBalanceInput } from "@/actions/logbook";
-import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check, AtSign, Calculator } from "lucide-react";
+import { Calendar, CreditCard, ArrowRight, Loader2, Compass, Plane, BookOpen, MessageCircle, FileUp, Check, AtSign, Calculator, Landmark } from "lucide-react";
 import Link from "next/link";
 import { linkCopiloto } from "@/lib/copiloto";
 import { mostrarWhatsapp, normalizarWhatsapp } from "@/lib/whatsapp-numero";
@@ -102,8 +102,9 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
   }, [pasoDelServer, profile?.id]);
 
   if (!isOpen) return null;
-  // El importador del PDF es una de las salidas del paso 3: ahí no se tapa.
-  if (pathname?.startsWith("/dashboard/log-flight/import")) return null;
+  // El importador del PDF y "Pasar al CAD" (para traer los vuelos) son salidas del último
+  // paso: ahí no se tapa.
+  if (pathname?.startsWith("/dashboard/log-flight/import") || pathname?.startsWith("/dashboard/history/cad")) return null;
 
   const setField = (key: keyof OpeningBalanceInput, raw: string) =>
     setOpening((prev) => ({ ...prev, [key]: raw === "" ? undefined : Number(raw) }));
@@ -385,6 +386,30 @@ export default function OnboardingOverlay({ profile, estado }: OnboardingOverlay
                   </button>
                 )}
               </div>
+
+              {/*
+                Traer los vuelos del CAD (2.27.0): desde el 1/11/2025 los pilotos con licencia
+                declaran cada vuelo ahí, así que muchos los tienen cargados en otro lado. Se hace
+                desde la computadora, con el marcador. Si además copia los totales, que sean los de
+                antes de esos vuelos: si no, las horas se cuentan dos veces.
+              */}
+              {!alumno && (
+                <Link
+                  href="/dashboard/history/cad"
+                  className="flex gap-4 rounded-2xl border border-zinc-200 dark:border-white/10 p-5 hover:bg-zinc-50 dark:hover:bg-white/[0.03] transition-colors"
+                >
+                  <span className="w-10 h-10 rounded-xl bg-aviation-blue/10 text-aviation-blue dark:text-aviation-cyan flex items-center justify-center shrink-0">
+                    <Landmark className="w-5 h-5" />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block font-semibold text-zinc-900 dark:text-white">¿Ya declarás en el CAD? Traé esos vuelos</span>
+                    <span className="block text-sm text-zinc-500 dark:text-zinc-400">
+                      Desde la computadora, con un marcador. Si también copiás los totales, que sean los de antes de esos vuelos.
+                    </span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-zinc-400 self-center" />
+                </Link>
+              )}
 
               <div className="rounded-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
                 <div className="flex gap-4">

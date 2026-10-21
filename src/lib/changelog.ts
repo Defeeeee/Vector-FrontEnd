@@ -681,6 +681,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.27.1",
+    fecha: "2026-10-21",
+    motivo: "El alta ofrece traer los vuelos del CAD, y el aviso de no contar dos veces las horas si también se copian los totales. Es parte de lo anunciado en la 2.27.0.",
+  },
+  {
     version: "2.26.5",
     fecha: "2026-10-21",
     motivo: "Pasar al CAD: el mismo vuelo con un día de diferencia ya no se duplica; \"Ignorar\" y \"Ya foliado\" sacan vuelos de la lista. Sin anuncio.",

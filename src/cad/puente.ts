@@ -853,7 +853,7 @@ const ESTILOS = `
           ? `<b>${listos.length}</b> ${listos.length === 1 ? "vuelo del CAD no está" : "vuelos del CAD no están"} en Vector${revisar.length ? `, y <b>${revisar.length}</b> para revisar` : ""}.`
           : `No queda nada para traer${revisar.length ? `: ${revisar.length === 1 ? "falta revisar 1 vuelo" : `faltan revisar ${revisar.length} vuelos`}` : ""}.`
       }</p>
-      <p class="nota">Se agregan a tu bitácora con el desglose del libro, marcados como "En el CAD". No se descuentan de tu saldo.</p>
+      <p class="nota">Se agregan a tu bitácora con el desglose del libro, marcados como "En el CAD". No se descuentan de tu saldo. Si en Vector cargaste los totales de tu libro, tildá sólo los posteriores a esa hoja.</p>
       ${
         revisar.length
           ? `<div class="sec"><h3>Para revisar <span>No se traen</span></h3>${revisar.map((x) => filaTraerHtml(x, traer!.indexOf(x), false)).join("")}</div>`

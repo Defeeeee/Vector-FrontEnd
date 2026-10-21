@@ -1,18 +1,18 @@
 /**
  * El mail de novedades: lo que cambió en Vector, para todas las cuentas.
  *
- * Federico lo pidió el 2026-10-02: había 14 cuentas y sólo la suya con vuelos, y los
- * pilotos que entraron en septiembre vieron una app distinta de la de hoy. Cuenta lo
- * nuevo en bloques cortos, cada uno con su link, y termina con un botón que depende de
- * la persona: cargar el primer vuelo, o abrir la bitácora si ya tiene.
+ * Federico lo pidió el 2026-10-02 (14 cuentas y sólo la suya con vuelos). Cada tanda cuenta
+ * lo nuevo en bloques cortos, cada uno con su link, y termina con un botón que depende de
+ * la persona: cargar el primer vuelo, o abrir la bitácora si ya tiene. La tanda anterior
+ * (2026-10, el audio al copiloto, el importador del PDF, la PPA) está en el historial de git.
  *
- * **Cada cosa que promete se verificó contra el código**, como la landing:
- * - el audio al copiloto (`api/webhooks/whatsapp`) y el número (`lib/copiloto.ts`);
- * - el importador del libro en PDF (`/dashboard/log-flight/import`);
- * - "Alumno piloto" y el camino a la PPA (`lib/licencias.ts`, `lib/ppa-progress.ts`);
- * - el resumen del mes (`lib/resumen-mensual.ts`);
- * - la base en São Paulo (migrada el 2026-09-24; la red pasó de ~150 ms a ~1 ms);
- * - instalable y sin señal (`app/manifest.ts`, `sw/sw.ts`).
+ * **Esta tanda (2026-10-21)**, verificada contra el código:
+ * - pasar los vuelos al CAD de ANAC y traerlos (`lib/cad.ts`, `cad/puente.ts`, 2.27.0); el
+ *   marcador anda en la computadora, y el CAD es para pilotos con licencia: al alumno no se
+ *   le cuenta (`history/cad/page.tsx`);
+ * - el plan de vuelo de EANA firmado y mandado a la oficina ARO/AIS
+ *   (`enviarPlan`, prendido con `PLAN_DE_VUELO_ENVIO_ARO`), la demora y la cancelación;
+ * - "¿Ya volaste?" después de la llegada estimada (`lib/plan-cierre.ts`).
  * No dice "gratis" ni "oficial": no son decisiones tomadas.
  *
  * Es un mail que no pidieron, así que lleva la baja propia (`lib/baja-mail.ts`, tipo
@@ -51,52 +51,38 @@ interface Novedad {
 }
 
 export function novedades(d: DatosNovedades): Novedad[] {
-  const hangar = `${d.appUrl}/dashboard/settings`;
-  const lista: Novedad[] = [
-    {
-      icono: "mic",
-      titulo: "Cargá un vuelo con un audio",
-      texto: "Mandale un audio al copiloto por WhatsApp contando el vuelo. Te muestra el resumen y lo carga cuando confirmás.",
-      link: d.linkCopiloto ? { texto: "Abrir WhatsApp", url: d.linkCopiloto } : { texto: "Dejar mi número en el Hangar", url: hangar },
-    },
-  ];
+  const cad = `${d.appUrl}/dashboard/history/cad`;
+  const plan = `${d.appUrl}/dashboard/plan-de-vuelo`;
+  const lista: Novedad[] = [];
   if (!d.alumno) {
-    lista.push({
-      icono: "file-text",
-      titulo: "Traé tu libro de papel",
-      texto: "Subí las hojas escaneadas en PDF y Vector carga los vuelos. Vos los revisás antes de guardarlos.",
-      link: { texto: "Importar el PDF", url: `${d.appUrl}/dashboard/log-flight/import` },
-    });
+    lista.push(
+      {
+        icono: "pencil-line",
+        titulo: "Pasá tus vuelos al CAD de ANAC",
+        texto:
+          "Con un marcador en el navegador de la computadora, Vector carga en el CAD los vuelos que te faltan, cada uno con su autoridad certificante y sin repetir los que ya están. La declaración jurada la seguís haciendo vos.",
+        link: { texto: "Ver cómo se hace", url: cad },
+      },
+      {
+        icono: "file-text",
+        titulo: "Traé lo que ya declaraste",
+        texto: "Si tus vuelos están en el CAD y no en Vector, desde el mismo marcador los pasás a tu bitácora con el desglose del libro.",
+        link: { texto: "Traer mis vuelos", url: cad },
+      }
+    );
   }
   lista.push(
-    d.alumno
-      ? {
-          icono: "target",
-          titulo: "Tu camino a la PPA",
-          texto: "En el inicio ves cuánto te falta de cada requisito: las horas totales, el doble mando, el vuelo solo y la travesía.",
-          link: { texto: "Ver mi camino a la PPA", url: `${d.appUrl}/dashboard` },
-        }
-      : {
-          icono: "target",
-          titulo: "Camino a la PPA, para alumnos",
-          texto: "Si estás haciendo el curso, elegí \"Alumno piloto\" como licencia: Vector te dice cuánto te falta de cada requisito.",
-          link: { texto: "Ir al Hangar", url: hangar },
-        },
     {
-      icono: "mail",
-      titulo: "Tu resumen del mes",
-      texto: "El día 1 te llega un mail con lo que volaste, lo que te falta para la próxima licencia y lo que te queda de saldo o de pack.",
+      icono: "plane",
+      titulo: "El plan de vuelo, armado y enviado",
+      texto:
+        "Completás el formulario de EANA, lo firmás y Vector lo manda en PDF a la oficina ARO/AIS, con copia a vos. Si te demorás o no volás, la demora y la cancelación salen igual.",
+      link: { texto: "Armar un plan", url: plan },
     },
     {
-      icono: "zap",
-      titulo: "Más rápida",
-      texto: "Mudamos la base de datos a São Paulo, al lado del servidor. Las pantallas cargan más rápido.",
-    },
-    {
-      icono: "smartphone",
-      titulo: "En tu teléfono, como una app",
-      texto: "Abrila en Safari o en Chrome y agregala a la pantalla de inicio: queda con su ícono y se puede consultar sin señal.",
-      link: { texto: "Abrir Vector", url: `${d.appUrl}/dashboard` },
+      icono: "target",
+      titulo: "Del plan a la bitácora",
+      texto: "Pasada la llegada estimada, el inicio te pregunta si volaste y te deja el vuelo listo con el avión, la ruta y la fecha. Los horarios los ponés vos.",
     }
   );
   return lista;
@@ -104,8 +90,14 @@ export function novedades(d: DatosNovedades): Novedad[] {
 
 export function armarMensajeNovedades(d: DatosNovedades): MensajeNovedades {
   const nombre = d.nombre?.trim() || null;
-  const asunto = nombre ? `${nombre}, esto es lo nuevo en Vector` : "Lo nuevo en Vector";
-  const intro = `${nombre ? `Hola ${nombre}. ` : ""}Desde que te hiciste la cuenta sumamos varias cosas. Te las contamos en un minuto.`;
+  const asunto = d.alumno
+    ? nombre
+      ? `${nombre}, el plan de vuelo ahora sale desde Vector`
+      : "El plan de vuelo ahora sale desde Vector"
+    : nombre
+      ? `${nombre}, tus vuelos al CAD desde Vector`
+      : "Tus vuelos al CAD desde Vector";
+  const intro = `${nombre ? `Hola ${nombre}. ` : ""}Sumamos cosas para los trámites de antes y de después de volar. Te las contamos en un minuto.`;
   const lista = novedades(d);
   const final = d.tieneVuelos
     ? { texto: "Abrir mi bitácora", link: `${d.appUrl}/dashboard` }
@@ -128,10 +120,10 @@ export function armarMensajeNovedades(d: DatosNovedades): MensajeNovedades {
   const html = plantillaMail({
     appUrl: d.appUrl,
     preencabezado: d.alumno
-      ? "Vuelos con un audio, tu camino a la PPA y una app más rápida."
-      : "Vuelos con un audio, tu libro en PDF, el camino a la PPA y una app más rápida.",
+      ? "El plan de vuelo firmado y enviado a la oficina ARO, y el vuelo listo para cargar después."
+      : "Pasá tus vuelos al CAD, traé los que ya declaraste y mandá el plan de vuelo desde Vector.",
     pildora: "Novedades de Vector",
-    titulo: ["Vector mejoró.", "Esto es lo nuevo."],
+    titulo: ["Menos trámites.", "Esto es lo nuevo."],
     cuerpo: [
       parrafo(intro),
       `<div style="height:6px;line-height:6px">&nbsp;</div>`,
