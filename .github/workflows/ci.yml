@@ -4,6 +4,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Lo dispara `aip.yml` después de commitear el AIP nuevo: un push con el token de Actions
+  # no dispara workflows.
+  workflow_dispatch:
 
 # Una sola corrida por rama: si empujás dos veces seguidas, la vieja se cancela.
 concurrency:

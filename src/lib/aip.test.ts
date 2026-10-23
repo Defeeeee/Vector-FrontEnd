@@ -312,7 +312,10 @@ describe("componerFicha", () => {
     expect(f.runways[0]).toContain("05/23");
     expect(f.fuel).toBe("AVGAS 100LL, JET A-1");
     expect(f.localization).toBe("2 km al SW de la ciudad de San Fernando");
-    expect(f.aip?.vigenteDesde).toBe("11-Jun-26");
+    // La fecha de la edición que se bajó, no una escrita acá: el AIP se actualiza solo
+    // (`.github/workflows/aip.yml`) y una fecha fija daría rojo en cada edición nueva.
+    expect(f.aip?.vigenteDesde).toBe(datosAip("SADF")!.fuente!.vigenteDesde);
+    expect(f.aip?.vigenteDesde).toMatch(/^\d{2}-[A-Za-z]{3}-\d{2}$/);
   });
 
   it("**MADHEL manda donde publica**, y ése era el bug", () => {

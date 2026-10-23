@@ -22,12 +22,13 @@ concurrency:
 
 jobs:
   desplegar:
-    # Sólo el CI de un push a `main` que terminó en verde. Un CI cancelado —porque
+    # Sólo el CI de `main` que terminó en verde: el de un push, o el que pide `aip.yml`
+    # después de commitear el AIP nuevo. Un CI cancelado —porque
     # llegó otro push y lo reemplazó— no despliega: lo hace la corrida nueva.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
+       (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') &&
        github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:

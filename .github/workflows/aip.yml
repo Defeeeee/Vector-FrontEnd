@@ -1,0 +1,134 @@
+name: AIP
+
+# **El AIP se actualiza solo** (2026-10-23).
+#
+# Una vez por semana vuelve a bajar del sitio de ANAC lo que Vector toma del AIP —las fichas
+# AD 2 de los aeródromos controlados, sus cartas, los puntos de ENR 4.4, las aerovías de ENR
+# 3.1 y 3.2 y el horario de las oficinas ARO— con los mismos scripts de siempre. El AIP se
+# enmienda cada 28 días y antes esto se corría a mano, cuando alguien se acordaba: un dato de
+# pista viejo en un plan de vuelo es lo peor que le puede pasar a Vector.
+#
+# - Sin cambios (lo normal): no hace nada.
+# - Con cambios y los tests en verde: lo commitea en `main` con su entrada en la bitácora y
+#   dispara el CI, que despliega si pasa. Los tests contrastan cada dato contra el texto del
+#   PDF que se acaba de bajar, en las dos direcciones (invariante 12).
+# - Con cambios y los tests en rojo: abre un PR para revisar a mano, sin tocar `main`.
+# - Si ANAC no contesta: avisa y lo intenta la semana siguiente.
+#
+# Cada caso avisa por ntfy (secreto `NTFY_TOPIC`).
+on:
+  schedule:
+    # Martes 12:00 UTC (09:00 en Argentina).
+    - cron: "0 12 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: aip
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Bajar el AIP
+        id: bajar
+        run: |
+          npm run build:aip
+          npm run build:horarios-aro
+          npm run build:fixes
+          npm run build:aerovias
+
+      - name: ¿Cambió algo?
+        id: cambios
+        run: |
+          if git diff --quiet -- src/data && [ -z "$(git ls-files --others --exclude-standard src/data)" ]; then
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+            echo "El AIP sigue igual."
+          else
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+            # La edición que rige ahora, de la ficha de San Fernando (todas cambian juntas).
+            echo "edicion=$(awk -F'\t' '$1=="SADF" {print $3" del "$4}' src/data/aip-fuentes.tsv)" >> "$GITHUB_OUTPUT"
+            git diff --stat -- src/data | tail -20
+          fi
+
+      - name: Tipos y tests
+        id: tests
+        if: steps.cambios.outputs.hay == 'si'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          { npx tsc --noEmit && npm test; } 2>&1 | tee /tmp/tests.log
+
+      - name: Commitear en main
+        if: steps.cambios.outputs.hay == 'si' && steps.tests.outcome == 'success'
+        env:
+          EDICION: ${{ steps.cambios.outputs.edicion }}
+        run: |
+          mes=$(date -u +%Y-%m)
+          ahora=$(date -u "+%Y-%m-%d %H:%M")
+          resumen=$(git diff --stat -- src/data | tail -1)
+          {
+            echo
+            echo "### $ahora UTC — GitHub Actions (aip.yml) — El AIP, edición $EDICION"
+            echo
+            echo "**Qué cambié:** \`src/data/\` con los scripts del AIP (\`build:aip\`, \`build:horarios-aro\`, \`build:fixes\`, \`build:aerovias\`): $resumen."
+            echo "**Por qué:** ANAC publicó datos nuevos en el AIP. Lo hace solo el workflow semanal."
+            echo "**Estado:** terminado; se despliega si pasa el CI."
+            echo "**Verificación:** \`tsc\` y \`npm test\` en verde, con cada dato contrastado contra el PDF recién bajado."
+          } >> "docs/bitacora/$mes.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data "docs/bitacora/$mes.md"
+          git commit -q -m "AIP: edición $EDICION (actualización automática)"
+          git push -q origin HEAD:main
+          # Un push con este token no dispara el CI: se lo pide a mano. El deploy sale del CI.
+          gh workflow run ci.yml --ref main
+          [ -n "$NTFY_TOPIC" ] && curl -s -H "Title: Vector: AIP actualizado" -d "Edición $EDICION. $resumen. Se despliega si pasa el CI." "https://ntfy.sh/$NTFY_TOPIC" > /dev/null || true
+
+      - name: Abrir un PR para revisar
+        if: steps.cambios.outputs.hay == 'si' && steps.tests.outcome != 'success'
+        env:
+          EDICION: ${{ steps.cambios.outputs.edicion }}
+        run: |
+          rama="aip-$(date -u +%Y-%m-%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b "$rama"
+          git add src/data
+          git commit -q -m "AIP: edición $EDICION (para revisar: tests en rojo)"
+          git push -q origin "$rama"
+          {
+            echo "ANAC publicó datos nuevos en el AIP (edición $EDICION) y **los tests dan rojo** con ellos."
+            echo
+            echo "Puede ser un dato que cambió de verdad (un test fija, por ejemplo, el largo de una pista) o un cambio de formato que el parser no entiende. Revisar contra el PDF antes de mergear."
+            echo
+            echo '```'
+            grep -E "FAIL|✗|×|AssertionError|Expected|Received|error TS" /tmp/tests.log | head -60
+            echo '```'
+          } > /tmp/pr.md
+          url=$(gh pr create --base main --head "$rama" --title "AIP: edición $EDICION, para revisar" --body-file /tmp/pr.md)
+          [ -n "$NTFY_TOPIC" ] && curl -s -H "Title: Vector: AIP nuevo, revisar" -H "Click: $url" -d "Edición $EDICION: los tests dan rojo. PR: $url" "https://ntfy.sh/$NTFY_TOPIC" > /dev/null || true
+
+      - name: Avisar si ANAC no contestó
+        if: failure() && steps.bajar.outcome == 'failure'
+        run: |
+          [ -n "$NTFY_TOPIC" ] && curl -s -H "Title: Vector: no pude bajar el AIP" -d "El sitio de ANAC no contestó. Se reintenta el martes que viene, o a mano desde Actions." "https://ntfy.sh/$NTFY_TOPIC" > /dev/null || true

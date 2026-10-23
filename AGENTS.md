@@ -48,7 +48,7 @@ si puede volar, cuánto le falta y cuánto le queda.
 | `src/actions/` | Server actions. Escriben contra el backend y revalidan las pantallas afectadas. |
 | `src/lib/api.ts` | `apiFetch`: único camino al backend, con el token de la cookie. Cachea los GET 20 s. |
 | `src/proxy.ts` | Protege `/dashboard` y renueva la sesión (el JWT de Supabase dura una hora). |
-| `src/data/` | Aeródromos, pistas, AIP, aerovías, fixes y radioayudas en TSV **commiteados**: la app no depende de red en build ni en runtime. Se regeneran con `npm run build:*`. |
+| `src/data/` | Aeródromos, pistas, AIP, aerovías, fixes y radioayudas en TSV **commiteados**: la app no depende de red en build ni en runtime. Se regeneran con `npm run build:*`. **Lo del AIP se actualiza solo** (`.github/workflows/aip.yml`, los martes): commitea en `main` si los tests pasan, abre un PR si no, y avisa por ntfy. |
 | `src/sw/sw.ts` | El service worker (PWA). Lo compila `scripts/build-sw.mjs` después de `next build`. |
 | `docs/normativa/` | Las secciones de la RAAC 61 que cita el código, las fuentes del libro de vuelo (RAAC 61.120 y Res. ANAC 470/2025) y las del plan de vuelo (AIP ENR 1.10 y AIC A 19/2026). **La VI edición de la RAAC 61 (enero 2026) renumeró**: el libro de vuelo ya no es la 61.51. |
 | `docs/brief/` | Los planes 01–11, tal como se escribieron. Son historia, no backlog: verificá contra el código antes de dar algo de ahí por pendiente. |
