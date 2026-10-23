@@ -335,6 +335,12 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     La lista es `AUTORIDADES_CAD` (la del CAD del 2026-10-21); el panel la compara con la viva.
   - **La ventanita la abre un toque:** Chrome bloquea la que abre el script del marcador, y
     entonces el panel arranca con "Conectar con Vector".
+- **Los recorridos ADS-B** (2026-10-23, etapa 1, migración 034 del backend): el proceso
+  `grabador-adsb` del VPS graba en vivo, de adsb.lol (ODbL), las posiciones de los aviones que
+  están en algún Hangar. Los reconoce por el indicativo, que en los livianos es la matrícula
+  (`LVS114`). **Todavía no se muestra nada.** Hacia el 2026-10-30 hay que medir si los vuelos
+  de Federico quedaron enteros. Si sirven, viene la etapa 2: la sugerencia de horarios en
+  Registrar vuelo, el mapa del vuelo y la sección en la política de privacidad.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas
