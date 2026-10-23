@@ -188,5 +188,8 @@ export const config = {
     `/cad/conector` es la ventanita que habla con el CAD de ANAC (`lib/cad.ts`): tampoco se
     protege (avisa ella si falta la sesión), pero se renueva, por la misma razón.
   */
-  matcher: ["/", "/dashboard/:path*", "/u/:path*", "/cad/conector"],
+  // `/q/…` y la hoja de pegatinas, para que la sesión llegue renovada: el QR se escanea con
+  // el teléfono, quizás horas después de la última entrada, y sin renovar el admin no se
+  // reconoce y no puede asignar la pegatina.
+  matcher: ["/", "/dashboard/:path*", "/u/:path*", "/cad/conector", "/q/:path*", "/api/admin/:path*"],
 };

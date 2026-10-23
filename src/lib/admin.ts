@@ -195,3 +195,18 @@ export function seriesDelPanel(e: EstadisticasAdmin) {
     cohortes: e.cohortes.map((c) => ({ ...c, etiqueta: `semana del ${diaCorto(c.semana)}` })),
   };
 }
+
+/** Una pegatina con QR en el panel (`GET /admin/qr`, migración 033 del backend). */
+export interface PegatinaAdmin {
+  codigo: string;
+  /** Dónde se pegó; `null` hasta que se asigna. */
+  etiqueta: string | null;
+  lote: string | null;
+  creado_at: string | null;
+  asignado_at: string | null;
+  escaneos: number;
+  escaneos_sin_sesion: number;
+  ultimo_escaneo: string | null;
+  /** Cuentas nuevas que salieron de esta pegatina (dentro de los 30 días del escaneo). */
+  cuentas: number;
+}

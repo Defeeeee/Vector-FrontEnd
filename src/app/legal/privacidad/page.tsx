@@ -298,6 +298,26 @@ export default function PrivacidadPage() {
         <CambiarConsentimientoMeta />
       </section>
 
+      <section id="pegatinas">
+        <h2>Pegatinas con QR</h2>
+        <p>
+          Vector reparte pegatinas con un código QR, cada una con su propio código, para saber
+          desde qué lugar llega la gente.
+        </p>
+        <ul>
+          <li>
+            <strong>Al escanear una:</strong> anotamos que esa pegatina se escaneó, cuándo y si
+            ya tenías sesión en Vector. No anotamos tu dirección IP, tu teléfono ni tu ubicación.
+          </li>
+          <li>
+            <strong>Si no tenías cuenta:</strong> te dejamos una cookie propia de Vector con el
+            código de la pegatina y la hora del escaneo, que dura 30 días. Si en ese tiempo creás
+            una cuenta, anotamos en ella de qué pegatina viniste, y la cookie se borra. No se
+            comparte con nadie.
+          </li>
+        </ul>
+      </section>
+
       <section>
         <h2>Tus derechos</h2>
         <p>

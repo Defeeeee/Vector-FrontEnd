@@ -19,6 +19,8 @@ import { AvisosProvider } from "@/components/dashboard/Avisos";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { COOKIE_ALTA, type EstadoAlta } from "@/lib/onboarding";
+import { COOKIE_QR } from "@/lib/pegatinas";
+import AnotarOrigenQr from "@/components/dashboard/AnotarOrigenQr";
 
 /**
  * El perfil, y si se pudo preguntar por él.
@@ -86,7 +88,10 @@ async function leerEstadoAlta(): Promise<EstadoAlta | null> {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Quien ya terminó el alta en este navegador tiene la cookie con su id: no se le
   // pregunta al backend en cada pantalla. El resto, sí (el alta es obligatoria).
-  const altaHecha = (await cookies()).get(COOKIE_ALTA)?.value ?? null;
+  const almacen = await cookies();
+  const altaHecha = almacen.get(COOKIE_ALTA)?.value ?? null;
+  // Llegó por una pegatina con QR: se anota desde el navegador (`AnotarOrigenQr`).
+  const vinoPorQr = Boolean(almacen.get(COOKIE_QR)?.value);
   const [{ profile, disponible }, auditCount, social, estadoPrevio] = await Promise.all([
     getProfile(),
     getAuditCount(),
@@ -246,6 +251,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* AI Chat Widget */}
       <ChatWidget />
+      {vinoPorQr && <AnotarOrigenQr />}
     </div>
     </AvisosProvider>
   );

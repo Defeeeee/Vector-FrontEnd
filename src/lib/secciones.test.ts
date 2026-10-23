@@ -24,6 +24,8 @@ const FUERA_DE_LA_BARRA: Record<string, string> = {
   "/dashboard/log-flight": "es una acción: el botón + del rail y de la píldora del teléfono",
   "/dashboard/log-flight/import": "se abre desde Registrar vuelo",
   "/dashboard/admin": "el panel de administración: sin link a propósito, se llega por URL y es 404 para quien no es admin",
+  "/dashboard/admin/pegatinas": "las pegatinas con QR: desde el panel de administración, y 404 para quien no es admin",
+  "/dashboard/admin/pegatinas/[codigo]": "una pegatina: a donde lleva su QR cuando lo escanea el admin, o tocarla en la lista",
 };
 
 /**

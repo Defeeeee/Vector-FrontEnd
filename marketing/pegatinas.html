@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  Las pegatinas con QR (demo, 2026-10-23). **La de un lugar ya no sale de acá**: es la de
+  `src/lib/pegatinas-hoja.ts`, que imprime el panel (`node marketing/pegatinas.mjs` para la
+  demo). Queda la del avión, que todavía no se imprime (Federico, 2026-10-23). `marketing/render.mjs pegatina-avion pegatina-vector`
+  exporta los PNG; la hoja A4 para imprimir al 100 % sale con `?p=hoja` e "Imprimir a PDF".
+
+  - La del avión (80 × 50 mm) va en el tablero, como las placas de la cabina: negra, para que no
+    refleje. El QR lleva a `/avion/<matrícula>`: el camino mismo dice de qué avión vino.
+
+  Los QR se generan con segno (`marketing/qr/`), con corrección de errores Q: aguantan un rayón.
+  No dice "gratis" ni "oficial".
+-->
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=IBM+Plex+Mono:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #f6f6f7; --tinta: #18181b; --gris: #52525b; --gris2: #71717a; --borde: #e4e4e7; --azul: #2563eb;
+    --fuente: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--fuente); color: var(--tinta); -webkit-font-smoothing: antialiased; background: #fff; }
+  .pieza { display: none; }
+  body[data-p="avion"] #avion { display: flex; }
+  body[data-p="hoja"] #hoja { display: grid; }
+  .qr { display: block; width: 100%; height: 100%; }
+
+  /* La del avión: una placa de cabina. */
+  .avion { width: 80mm; height: 50mm; border-radius: 3.5mm; background: var(--tinta); color: #fff; padding: 4.2mm; gap: 4mm; align-items: stretch; }
+  .avion .izq { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .avion .marca { display: flex; align-items: center; gap: 1.6mm; font-size: 3.4mm; font-weight: 800; letter-spacing: -.01em; }
+  .avion .marca .logo { width: 5mm; height: 5mm; border-radius: 1.4mm; background: #fff; display: grid; place-items: center; }
+  .avion .matricula { font-family: var(--mono); font-weight: 700; font-size: 8.4mm; line-height: 1; letter-spacing: -.02em; margin-top: auto; }
+  .avion .accion { font-size: 3.6mm; font-weight: 800; line-height: 1.15; margin-top: 2.2mm; }
+  .avion .ayuda { font-size: 2.5mm; font-weight: 700; color: #a1a1aa; line-height: 1.3; margin-top: 1.4mm; }
+  .avion .der { width: 32mm; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4mm; }
+  .avion .baldosa { width: 32mm; height: 32mm; background: #fff; border-radius: 2.4mm; padding: 2.6mm; }
+  .avion .url { font-family: var(--mono); font-size: 2.1mm; font-weight: 600; color: #a1a1aa; }
+
+  /* La hoja A4: imprimir al 100 %, sin márgenes. */
+  @page { size: A4; margin: 0; }
+  .hoja { width: 210mm; height: 297mm; padding: 16mm 14mm; grid-template-columns: 1fr 1fr; align-content: start; justify-items: center; gap: 10mm 8mm; }
+  .hoja h2 { grid-column: 1 / -1; justify-self: start; font-size: 4mm; font-weight: 800; color: var(--gris); }
+  .hoja .corte { outline: .25mm dashed #a1a1aa; outline-offset: 1.5mm; }
+  .hoja .pieza { display: flex; }
+</style>
+</head>
+<body>
+<template id="t-avion">
+  <section class="pieza avion">
+    <div class="izq">
+      <div class="marca"><span class="logo" data-logo="#18181b" data-tam="3.2"></span>Vector</div>
+      <div class="matricula">LV-ABC</div>
+      <div class="accion">Registrá el vuelo<br>en tu bitácora</div>
+      <div class="ayuda">Escaneá con la cámara al apagar el motor.</div>
+    </div>
+    <div class="der">
+      <div class="baldosa"><img class="qr" src="qr/qr-avion.svg" alt="QR"></div>
+      <div class="url">vector.fdiaznem.com.ar</div>
+    </div>
+  </section>
+</template>
+
+<div id="avion-slot"></div>
+<section class="pieza hoja" id="hoja">
+  <h2>Pegatinas de Vector · imprimir al 100 %, sin ajustar a la página, y recortar por la línea</h2>
+</section>
+
+<script>
+  const p = new URLSearchParams(location.search).get("p") || "hoja";
+  document.body.dataset.p = p.replace(/^pegatina-/, "");
+  const clonar = (id) => document.getElementById(id).content.firstElementChild.cloneNode(true);
+  const avion = clonar("t-avion"); avion.id = "avion"; document.getElementById("avion-slot").replaceWith(avion);
+  const hoja = document.getElementById("hoja");
+  for (const t of Array(8).fill("t-avion")) {
+    const e = clonar(t); e.classList.add("corte"); hoja.appendChild(e);
+  }
+  // La brújula de la app (lucide `compass`), como en el resto de las piezas.
+  document.querySelectorAll("[data-logo]").forEach((e) => {
+    e.innerHTML = `<svg viewBox="0 0 24 24" style="width:${e.dataset.tam}mm;height:${e.dataset.tam}mm" fill="none" stroke="${e.dataset.logo}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
+  });
+</script>
+</body>
+</html>

@@ -733,6 +733,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.29.1",
+    fecha: "2026-10-23",
+    motivo: "Las pegatinas con QR: cada una con su código, asignadas escaneándolas, y su panel de administración. Es para el admin, así que no va en Novedades.",
+  },
+  {
     version: "2.28.2",
     fecha: "2026-10-21",
     motivo: "La práctica del examen de PPA suma las 65 preguntas con figura: 379 en total. Sin anuncio, como la 2.28.1.",

@@ -229,12 +229,20 @@ export default async function PanelAdmin({ searchParams }: { searchParams: Promi
         eyebrow="Administración"
         title="Panel"
         action={
-          <Link
-            href={incluirAdmins ? "/dashboard/admin" : "/dashboard/admin?todos=1"}
-            className="text-sm font-semibold px-4 py-2 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
-          >
-            {incluirAdmins ? "Sin contarme" : "Contarme también"}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/admin/pegatinas"
+              className="text-sm font-semibold px-4 py-2 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
+            >
+              Pegatinas con QR
+            </Link>
+            <Link
+              href={incluirAdmins ? "/dashboard/admin" : "/dashboard/admin?todos=1"}
+              className="text-sm font-semibold px-4 py-2 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
+            >
+              {incluirAdmins ? "Sin contarme" : "Contarme también"}
+            </Link>
+          </div>
         }
       >
         <p className="text-sm text-zinc-500 dark:text-zinc-400">

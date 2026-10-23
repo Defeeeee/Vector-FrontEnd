@@ -97,11 +97,47 @@ function planesDeVuelo(req, ruta, json) {
   }
   return p;
 }
+// Las pegatinas con QR (migración 033), en memoria. `ADMIN=0` hace que el falso no sea admin.
+const pegatinas = new Map([["K7P2", { codigo: "K7P2", etiqueta: null, lote: "Prueba", creado_at: new Date().toISOString(), asignado_at: null }]]);
+const escaneosQr = [];
+let origenQr = null;
+const filaPegatina = (p) => {
+  const es = escaneosQr.filter((e) => e.codigo === p.codigo);
+  return { ...p, escaneos: es.length, escaneos_sin_sesion: es.filter((e) => !e.con_sesion).length, ultimo_escaneo: es.at(-1)?.creado_at ?? null, cuentas: origenQr === p.codigo ? 1 : 0 };
+};
+function pegatinasQr(req, ruta, json) {
+  if (ruta === "/api/qr/escaneos") {
+    const p = pegatinas.get(json.codigo);
+    if (p) escaneosQr.push({ codigo: json.codigo, con_sesion: json.con_sesion, creado_at: new Date().toISOString() });
+    return { existe: !!p, etiqueta: p?.etiqueta ?? null };
+  }
+  if (ruta === "/api/qr/origen") {
+    const ok = !origenQr && pegatinas.has(json.codigo);
+    if (ok) origenQr = json.codigo;
+    return { anotado: ok };
+  }
+  if (process.env.ADMIN === "0") return undefined;
+  if (ruta === "/api/admin/qr" && req.method === "POST") {
+    const codigos = Array.from({ length: json.cantidad }, () => Math.random().toString(36).slice(2, 6).toUpperCase().replace(/[^A-Z0-9]/g, "X"));
+    for (const c of codigos) pegatinas.set(c, { codigo: c, etiqueta: null, lote: json.lote, creado_at: new Date().toISOString(), asignado_at: null });
+    return { codigos };
+  }
+  if (ruta === "/api/admin/qr") return { pegatinas: [...pegatinas.values()].map(filaPegatina) };
+  const p = pegatinas.get(ruta.split("/").pop());
+  if (!p) return undefined;
+  if (req.method === "PATCH") Object.assign(p, { etiqueta: json.etiqueta, asignado_at: json.etiqueta ? new Date().toISOString() : null });
+  return filaPegatina(p);
+}
 if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res) => {
   const ruta = new URL(req.url, "http://x").pathname;
   let crudo = "";
   for await (const parte of req) crudo += parte;
   const json = crudo ? JSON.parse(crudo) : {};
+  if (ruta.startsWith("/api/qr/") || ruta.startsWith("/api/admin/qr")) {
+    const r = pegatinasQr(req, ruta, json);
+    res.writeHead(r === undefined ? 404 : 200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(r ?? { detail: "No existe" }));
+  }
   if (ruta.startsWith("/api/planes-de-vuelo")) {
     const r = planesDeVuelo(req, ruta, json);
     res.writeHead(r === undefined ? 404 : 200, { "Content-Type": "application/json" });
