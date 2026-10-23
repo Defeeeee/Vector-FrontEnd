@@ -38,6 +38,14 @@ export default async function PegatinaAdmin({ params }: { params: Promise<{ codi
 
       <AsignarPegatina codigo={p.codigo} etiqueta={p.etiqueta} />
 
+      <a
+        href={`/api/admin/pegatinas/archivos?codigo=${p.codigo}`}
+        download={`Vector-${p.codigo}.png`}
+        className="inline-block text-sm font-semibold text-aviation-blue hover:underline"
+      >
+        Bajar el PNG de esta pegatina
+      </a>
+
       <section className={`${tarjeta} grid grid-cols-3 gap-4`}>
         {[
           ["Escaneos", numero(p.escaneos), `${numero(p.escaneos_sin_sesion)} sin sesión`],

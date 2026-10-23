@@ -733,6 +733,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.29.2",
+    fecha: "2026-10-23",
+    motivo: "Las pegatinas con QR se bajan como un PNG por código (en ZIP) para mandarlas a hacer. Es del panel de administración.",
+  },
+  {
     version: "2.29.1",
     fecha: "2026-10-23",
     motivo: "Las pegatinas con QR: cada una con su código, asignadas escaneándolas, y su panel de administración. Es para el admin, así que no va en Novedades.",

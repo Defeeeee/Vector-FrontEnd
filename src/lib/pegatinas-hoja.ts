@@ -13,8 +13,11 @@ import QRCode from "qrcode";
 
 const escapar = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
+/** Los rumbos del indicador, cada 30°, como en el instrumento. */
+export const NUMEROS_DE_LA_ROSA = ["N", "3", "6", "E", "12", "15", "S", "21", "24", "W", "30", "33"];
+
 /** El indicador de rumbo del fondo: el anillo con sus marcas cada 10° y los números cada 30°. */
-function rosa(): string {
+export function rosa({ numeros: conNumeros = true } = {}): string {
   const marcas: string[] = [];
   for (let g = 0; g < 360; g += 5) {
     const largo = g % 30 === 0 ? 9 : g % 10 === 0 ? 6 : 3;
@@ -23,14 +26,18 @@ function rosa(): string {
     const [x2, y2] = [100 + (92 - largo) * Math.sin(r), 100 - (92 - largo) * Math.cos(r)];
     marcas.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`);
   }
-  const numeros = ["N", "3", "6", "E", "12", "15", "S", "21", "24", "W", "30", "33"]
+  const numeros = NUMEROS_DE_LA_ROSA
     .map((t, i) => {
       const r = (i * 30 * Math.PI) / 180;
       const [x, y] = [100 + 72 * Math.sin(r), 100 - 72 * Math.cos(r)];
       return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" transform="rotate(${i * 30} ${x.toFixed(1)} ${y.toFixed(1)})">${t}</text>`;
     })
     .join("");
-  return `<svg class="rosa" viewBox="0 0 200 200" aria-hidden="true"><g stroke="#fff" stroke-width="1.6" stroke-linecap="round">${marcas.join("")}</g><g fill="#fff" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="13" text-anchor="middle" dominant-baseline="central">${numeros}</g></svg>`;
+  // Sin números para el PNG: ahí el SVG va como imagen y no ve las fuentes; los pone el PNG.
+  const textos = conNumeros
+    ? `<g fill="#fff" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="13" text-anchor="middle" dominant-baseline="central">${numeros}</g>`
+    : "";
+  return `<svg class="rosa" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-hidden="true"><g stroke="#fff" stroke-width="1.6" stroke-linecap="round">${marcas.join("")}</g>${textos}</svg>`;
 }
 
 const LOGO = `<svg viewBox="0 0 24 24" fill="none" stroke="#18181b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg>`;
@@ -57,13 +64,13 @@ const ESTILO = `
   .codigo { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 2.3mm; font-weight: 600; color: #a1a1aa; letter-spacing: .08em; }
 `;
 
+/** El QR de una pegatina, en SVG: lleva a `<base>/q/<código>`. */
+export function qrSvg(codigo: string, base: string): Promise<string> {
+  return QRCode.toString(`${base}/q/${codigo}`, { type: "svg", errorCorrectionLevel: "Q", margin: 0, color: { dark: "#18181b", light: "#0000" } });
+}
+
 async function pegatina(codigo: string, base: string): Promise<string> {
-  const qr = await QRCode.toString(`${base}/q/${codigo}`, {
-    type: "svg",
-    errorCorrectionLevel: "Q",
-    margin: 0,
-    color: { dark: "#18181b", light: "#0000" },
-  });
+  const qr = await qrSvg(codigo, base);
   return `<section class="pegatina">
   ${rosa()}
   <div class="izq">
