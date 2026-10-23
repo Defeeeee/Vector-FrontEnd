@@ -78,6 +78,32 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.29.0",
+    fecha: "2026-10-23",
+    titulo: "Buscar, practicar y planear sin señal",
+    novedades: [
+      {
+        icono: "lupa",
+        titulo: "Buscá en toda la app",
+        texto: "Con la lupa de arriba (o ⌘K en la compu) encontrás un vuelo por ruta o matrícula, un aeródromo o una pantalla, sin saber en qué sección está.",
+      },
+      {
+        icono: "nube",
+        titulo: "El plan de vuelo, sin señal",
+        texto: "Si en el aeródromo no hay señal, seguí armando el plan y bajá el PDF: lo que escribas queda en el teléfono y se sube solo cuando vuelve la red.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Ver mis planes",
+      },
+      {
+        icono: "libro",
+        titulo: "Practicá el examen de PPA",
+        texto: "Las 379 preguntas del banco de ANAC con su respuesta y sus figuras, por materia, con las que fallaste guardadas para repasar.",
+        href: "/guias/examen-ppa",
+        cta: "Practicar",
+      },
+    ],
+  },
+  {
     version: "2.28.0",
     fecha: "2026-10-21",
     titulo: "Tu libro, más fácil de cargar y de pedir",

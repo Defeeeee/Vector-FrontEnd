@@ -85,6 +85,10 @@ Actividad.
   - "¿Ya volaste?" (`PlanesParaRegistrar`, 2026-10-20), también por `Suspense`: un plan
     de vuelo presentado cuya llegada estimada ya pasó, con "Registrar el vuelo" y "No lo
     volé".
+- **El buscador** (⌘K, `BuscadorGlobal` en los dos encabezados, 2.29.0): pantallas y guías
+  en el cliente (`lib/buscador.ts`; una pantalla nueva que no sea pestaña se agrega en
+  `OTRAS`), vuelos y aeródromos en el server (`actions/buscador.ts`). Abre un vuelo con
+  `/dashboard/history?ver=<id>` y un aeródromo con `/dashboard/airports?icao=`.
 - **Registrar vuelo es una sola página** (`/dashboard/log-flight`). Hubo un modal
   interceptado (`@modal/(.)log-flight`) que se llevó cinco commits de arreglos en un
   mes; se sacó en la 2.18.0. No volver a interceptar esa ruta.
@@ -219,7 +223,7 @@ antes y no sirve nada, así que tocarlo no cambia nada. Traefik no limita el tam
 cuerpo: un POST de 13 MB llega entero a Next (medido el 2026-09-23). El tope que
 importa es el del backend (`request_max_body_size`, 30 MB).
 
-## Estado y pendientes (al 2026-10-20)
+## Estado y pendientes (al 2026-10-23)
 
 - **Alumno piloto** (Federico, 2026-09-24; `lib/licencias.ts`):
   - no lleva libro de vuelo, así que no ve el PDF, el importador, "cerrar hoja", los
@@ -299,7 +303,10 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     entiende va como "revisá el horario"; los de otro horario, plegados, nunca escondidos.
   - **Las lecturas del plan van sin cache** (`plan-de-vuelo-servidor.ts`): con los 20 s de
     `apiFetch`, reabrir un plan traía una versión vieja y el guardado la escribía encima.
-  - **Falta:** CHG, y que el editor ande sin señal (el planificador sí anda).
+  - **Sin señal** (2.29.0, `lib/borrador-plan.ts`): el editor deja lo escrito en el teléfono y
+    lo sube al volver la red; un borrador sólo le gana al servidor si es más nuevo. Se arma y se
+    baja el PDF sin señal; mandarlo la necesita.
+  - **Falta:** CHG.
 - **Pasar al CAD de ANAC y Traer a Vector** (2026-10-21, anunciado en la 2.27.0; Bitácora → Vuelos → "Pasar al CAD"):
   - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
     "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la

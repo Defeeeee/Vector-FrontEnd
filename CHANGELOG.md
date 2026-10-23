@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.29.0 — Buscar, practicar y planear sin señal
+
+_23 de octubre de 2026_
+
+- **Buscá en toda la app** — Con la lupa de arriba (o ⌘K en la compu) encontrás un vuelo por ruta o matrícula, un aeródromo o una pantalla, sin saber en qué sección está.
+- **El plan de vuelo, sin señal** — Si en el aeródromo no hay señal, seguí armando el plan y bajá el PDF: lo que escribas queda en el teléfono y se sube solo cuando vuelve la red.
+- **Practicá el examen de PPA** — Las 379 preguntas del banco de ANAC con su respuesta y sus figuras, por materia, con las que fallaste guardadas para repasar.
+
 ## v2.28.0 — Tu libro, más fácil de cargar y de pedir
 
 _21 de octubre de 2026_

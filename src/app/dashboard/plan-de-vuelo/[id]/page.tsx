@@ -36,6 +36,7 @@ export default async function EditarPlanPage({ params }: { params: Promise<{ id:
       enviosIniciales={plan.envios ?? []}
       canceladoInicial={plan.cancelado_at ?? null}
       envioAroActivo={process.env.PLAN_DE_VUELO_ENVIO_ARO === "1"}
+      actualizadoInicial={plan.updated_at ?? null}
     />
   );
 }

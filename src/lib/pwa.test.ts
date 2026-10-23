@@ -80,9 +80,16 @@ describe("paginaCacheable", () => {
       "/dashboard/history",
       "/dashboard/planificador",
       "/dashboard/tools",
+      "/dashboard/plan-de-vuelo",
+      "/dashboard/plan-de-vuelo/3f2c1a9e-8b7d-4c6e-9a1b-2d3e4f5a6b7c",
     ]) {
       expect(paginaCacheable(p)).toBe(true);
     }
+  });
+
+  it("del plan de vuelo, sólo la lista y el editor de un plan con id", () => {
+    expect(paginaCacheable("/dashboard/plan-de-vuelo/nuevo")).toBe(false);
+    expect(paginaCacheable("/dashboard/plan-de-vuelo/3f2c1a9e-8b7d-4c6e-9a1b-2d3e4f5a6b7c/otra")).toBe(false);
   });
 
   it("**las de escritura y las de sesión no**", () => {

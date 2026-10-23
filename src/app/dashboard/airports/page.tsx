@@ -87,13 +87,17 @@ function buildHistory(flights: Flight[]): Record<string, AirportHistory> {
   return out;
 }
 
-export default async function AirportsPage() {
-  const { flights, jeppesenAccess } = await getDashboardData();
+export default async function AirportsPage({ searchParams }: { searchParams: Promise<{ icao?: string }> }) {
+  const [{ flights, jeppesenAccess }, { icao }] = await Promise.all([getDashboardData(), searchParams]);
   const history = buildHistory(flights);
 
-  // Opens on the aerodrome the pilot uses most — usually their home field.
+  // Abre en el que pidió el buscador (`?icao=`) y, si no, en el que el piloto más usa:
+  // casi siempre su aeródromo de base.
+  const pedido = icao?.trim().toUpperCase();
   const initialIcao =
-    Object.entries(history).sort((a, b) => b[1].visits - a[1].visits)[0]?.[0] ?? null;
+    (pedido && /^[A-Z0-9]{3,4}$/.test(pedido) ? pedido : null) ??
+    Object.entries(history).sort((a, b) => b[1].visits - a[1].visits)[0]?.[0] ??
+    null;
 
   return (
     <div className="space-y-8 md:space-y-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-700">

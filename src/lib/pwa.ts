@@ -107,12 +107,19 @@ const PAGINAS_CACHEABLES = [
   "/dashboard/airports",
   "/dashboard/tools",
   "/dashboard/novedades",
+  // El plan de vuelo, para armarlo en la plataforma sin señal (2026-10-23). El editor
+  // guarda lo escrito en el teléfono y lo sube al volver la señal (`borrador-plan.ts`).
+  "/dashboard/plan-de-vuelo",
 ];
+
+/** El editor de un plan guardado: `/dashboard/plan-de-vuelo/<uuid>`. */
+const EDITOR_DE_PLAN = /^\/dashboard\/plan-de-vuelo\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function paginaCacheable(pathname: string): boolean {
   // La raíz se normaliza a cadena vacía, que tampoco está en la lista: no hace falta
   // tratarla aparte, y una condición de más sin test es una condición que miente.
-  return PAGINAS_CACHEABLES.includes(pathname.replace(/\/+$/, ""));
+  const p = pathname.replace(/\/+$/, "");
+  return PAGINAS_CACHEABLES.includes(p) || EDITOR_DE_PLAN.test(p);
 }
 
 /**

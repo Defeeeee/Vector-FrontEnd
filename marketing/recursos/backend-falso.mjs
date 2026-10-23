@@ -128,9 +128,15 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     return res.end(JSON.stringify(f ?? {}));
   }
   if (req.method === "GET" && ruta === "/api/flights/history") {
-    const items = [...(SIN_VUELOS ? [] : vuelos)].sort((x, y) => String(y.takeoff).localeCompare(String(x.takeoff)));
+    // Como el backend: `q` busca en la ruta y las observaciones, `aeronaveId` filtra por avión.
+    const p = new URL(req.url, "http://x").searchParams;
+    const q = (p.get("q") || "").toLowerCase();
+    const items = [...(SIN_VUELOS ? [] : vuelos)]
+      .filter((f) => !q || `${f.route} ${f.remarks ?? ""}`.toLowerCase().includes(q))
+      .filter((f) => !p.get("aeronaveId") || f.aircraft_id === p.get("aeronaveId"))
+      .sort((x, y) => String(y.takeoff).localeCompare(String(x.takeoff)));
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ items: items.slice(0, 100), total: items.length }));
+    return res.end(JSON.stringify({ items: items.slice(0, Number(p.get("limit")) || 100), total: items.length }));
   }
   if (req.method === "GET" && ruta === "/api/flights") {
     res.writeHead(200, { "Content-Type": "application/json" });

@@ -56,15 +56,21 @@ interface FlightCardProps {
   fechaPpa?: string | null;
   /** Abrir ya en edición y traerlo a la vista: viene de "Corregir" en Pasar al CAD (`?editar=`). */
   editarAlAbrir?: boolean;
+  /** Abrirlo y traerlo a la vista: viene del buscador (`?ver=`). */
+  verAlAbrir?: boolean;
 }
 
-export default function FlightCard({ flight, aircraft, allAircraft, costo = null, alumno = false, fechaPpa = null, editarAlAbrir = false }: FlightCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function FlightCard({ flight, aircraft, allAircraft, costo = null, alumno = false, fechaPpa = null, editarAlAbrir = false, verAlAbrir = false }: FlightCardProps) {
+  const [isOpen, setIsOpen] = useState(verAlAbrir);
   const [isEditing, setIsEditing] = useState(editarAlAbrir);
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (editarAlAbrir) raiz.current?.scrollIntoView({ block: "start" });
-  }, [editarAlAbrir]);
+    if (!editarAlAbrir && !verAlAbrir) return;
+    // Después de que la lista termina de entrar (sus grupos se animan al montar): antes,
+    // el scroll se perdía y el vuelo quedaba abierto pero fuera de la vista.
+    const t = setTimeout(() => raiz.current?.scrollIntoView({ block: "start" }), 400);
+    return () => clearTimeout(t);
+  }, [editarAlAbrir, verAlAbrir]);
   const [isPending, startTransition] = useTransition();
   const [origin, dest] = splitRoute(flight.route, "???");
   // Un simulador no tiene dos extremos —su ruta es una palabra, `LOCAL`— y su tiempo
@@ -210,7 +216,7 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
   }
 
   return (
-    <div className="group">
+    <div ref={raiz} className="group scroll-mt-24">
       {/* Ledger row */}
       <div
         onClick={() => setIsOpen(!isOpen)}

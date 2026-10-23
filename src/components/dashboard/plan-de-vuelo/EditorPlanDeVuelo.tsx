@@ -22,6 +22,7 @@ import fondoDla from "@/lib/plan-de-vuelo-dla.png";
 import fondoCnl from "@/lib/plan-de-vuelo-cnl.png";
 import { cancelarPlan, duplicarPlan, enviarDemora, enviarPlan, guardarDemoras, marcarCancelado, guardarPerfilAvion, guardarPlan, marcarDescargado } from "@/actions/plan-de-vuelo";
 import type { EnvioPlan } from "@/lib/plan-de-vuelo-servidor";
+import { borradorParaRecuperar, claveBorrador, leerBorrador } from "@/lib/borrador-plan";
 import {
   aplicarAvion,
   horaDeTexto,
@@ -84,6 +85,8 @@ interface Props {
   canceladoInicial: string | null;
   /** Si el envío a la oficina está prendido (`PLAN_DE_VUELO_ENVIO_ARO`). Hasta entonces, sólo la prueba. */
   envioAroActivo: boolean;
+  /** Cuándo lo guardó el servidor por última vez: un borrador del teléfono más nuevo le gana. */
+  actualizadoInicial: string | null;
 }
 
 /** "19/10 23:52Z": sin `toLocaleString`, igual en el server y en el navegador (invariante 1). */
@@ -249,9 +252,13 @@ export default function EditorPlanDeVuelo({
   enviosIniciales,
   canceladoInicial,
   envioAroActivo,
+  actualizadoInicial,
 }: Props) {
   const [f, setF] = useState<FormularioPlan>(() => leerFormulario(formularioInicial));
   const [guardado, setGuardado] = useState<"guardado" | "guardando" | "error">("guardado");
+  // Sin señal (2026-10-23): lo escrito queda en el teléfono y se sube al volver la red.
+  const [sinSenal, setSinSenal] = useState(false);
+  const [recuperado, setRecuperado] = useState(false);
   const [ahoraIso, setAhoraIso] = useState(ahoraServer);
   const [firma, setFirma] = useState<string | null>(firmaInicial);
   const [demoras, setDemoras] = useState<Demora[]>(demorasIniciales);
@@ -294,7 +301,8 @@ export default function EditorPlanDeVuelo({
   const guardar = useCallback(async () => {
     temporizador.current = null;
     setGuardado("guardando");
-    const promesa = guardarPlan(id, ultimo.current);
+    const enviado = ultimo.current;
+    const promesa = guardarPlan(id, enviado);
     // Lo que esté en vuelo, para que mandar el plan por mail espere a que llegue.
     enCurso.current = promesa.then(() => undefined);
     const r = await promesa;
@@ -306,6 +314,14 @@ export default function EditorPlanDeVuelo({
       return;
     }
     setGuardado("guardado");
+    // Ya está en el servidor: el borrador del teléfono sobra, salvo que se haya seguido escribiendo.
+    if (ultimo.current === enviado) {
+      try {
+        localStorage.removeItem(claveBorrador(id));
+      } catch {
+        /* sin almacenamiento, no había borrador */
+      }
+    }
   }, [id]);
   const enCurso = useRef<Promise<void> | null>(null);
   const guardarRef = useRef(guardar);
@@ -316,14 +332,60 @@ export default function EditorPlanDeVuelo({
       setF((prev) => {
         const nuevo = normalizar(typeof cambio === "function" ? cambio(prev) : { ...prev, ...cambio });
         ultimo.current = nuevo;
+        // En el teléfono también, por si no hay señal o se cierra la app (`borrador-plan.ts`).
+        try {
+          localStorage.setItem(claveBorrador(id), JSON.stringify({ formulario: nuevo, at: new Date().toISOString() }));
+        } catch {
+          /* sin almacenamiento: queda el guardado en el servidor */
+        }
         return nuevo;
       });
       setGuardado("guardando");
       if (temporizador.current) clearTimeout(temporizador.current);
       temporizador.current = setTimeout(guardar, 1500);
     },
-    [guardar]
+    [guardar, id]
   );
+
+  /*
+    Al abrir: si el teléfono tiene un borrador más nuevo que lo del servidor (se escribió sin
+    señal y no llegó a subir), se recupera y se sube. Y al volver la señal, se sube lo pendiente
+    sin esperar el reintento.
+  */
+  useEffect(() => {
+    let texto: string | null = null;
+    try {
+      texto = localStorage.getItem(claveBorrador(id));
+    } catch {
+      /* sin almacenamiento, no hay borrador */
+    }
+    const recuperar = borradorParaRecuperar(leerBorrador<FormularioPlan>(texto), actualizadoInicial);
+    if (recuperar) {
+      const f2 = normalizar(leerFormulario(recuperar));
+      ultimo.current = f2;
+      setF(f2);
+      setRecuperado(true);
+      setGuardado("guardando");
+      void guardarRef.current();
+    }
+    const enLinea = () => {
+      setSinSenal(false);
+      void guardarRef.current();
+    };
+    const sinLinea = () => setSinSenal(true);
+    setSinSenal(!navigator.onLine);
+    window.addEventListener("online", enLinea);
+    window.addEventListener("offline", sinLinea);
+    // El código del PDF y los formularios de la demora y la cancelación, ya: así se puede armar sin señal.
+    void import("@/lib/plan-de-vuelo-pdf").catch(() => {});
+    for (const fondo of [fondoDla.src, fondoCnl.src]) fetch(fondo).catch(() => {});
+    return () => {
+      window.removeEventListener("online", enLinea);
+      window.removeEventListener("offline", sinLinea);
+    };
+    // Sólo al abrir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Que no se pierda lo último si se cierra la pestaña con el guardado pendiente.
   useEffect(() => {
@@ -568,9 +630,22 @@ export default function EditorPlanDeVuelo({
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
           {guardado === "guardando" && (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando…</>)}
           {guardado === "guardado" && (<><Check className="w-3.5 h-3.5 text-emerald-500" /> Guardado</>)}
-          {guardado === "error" && (<><CloudOff className="w-3.5 h-3.5 text-amber-500" /> Sin guardar: reintentando…</>)}
+          {guardado === "error" &&
+            (sinSenal ? (
+              <><CloudOff className="w-3.5 h-3.5 text-amber-500" /> Sin señal: guardado en este teléfono</>
+            ) : (
+              <><CloudOff className="w-3.5 h-3.5 text-amber-500" /> Sin guardar: reintentando…</>
+            ))}
         </span>
       </div>
+
+      {(sinSenal || recuperado) && (
+        <p className="rounded-2xl bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+          {sinSenal
+            ? "Sin señal. Podés seguir armando el plan y bajar el PDF: lo que escribas queda en este teléfono y se sube solo cuando vuelva la señal. Para mandarlo a la oficina hace falta señal."
+            : "Recuperamos lo que escribiste sin señal y ya lo estamos subiendo."}
+        </p>
+      )}
 
       <div className="rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-5 md:p-6 space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -995,7 +1070,7 @@ export default function EditorPlanDeVuelo({
                 </p>
                 <button
                   type="button"
-                  disabled={!listo || !oficina || !!cancelado || envio.estado === "mandando"}
+                  disabled={!listo || !oficina || !!cancelado || envio.estado === "mandando" || sinSenal}
                   onClick={mandar}
                   className="inline-flex max-w-full items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold disabled:opacity-40"
                 >

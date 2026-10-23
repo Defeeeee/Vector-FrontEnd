@@ -4,6 +4,7 @@ import DashboardNav, { type AlertasDeSeccion } from "@/components/dashboard/Dash
 import SeccionTabs from "@/components/dashboard/SeccionTabs";
 import OnboardingOverlay from "@/components/dashboard/OnboardingOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import BuscadorGlobal from "@/components/dashboard/BuscadorGlobal";
 import { RailThemeToggle } from "@/components/dashboard/RailThemeToggle";
 import { LogoutButton } from "@/components/dashboard/LogoutButton";
 import { apiFetch } from "@/lib/api";
@@ -176,6 +177,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <span className="text-lg font-bold font-display tracking-tight dark:text-white">Vector</span>
         </Link>
         <div className="flex items-center space-x-3">
+            <BuscadorGlobal variante="icono" />
             <ThemeToggle />
             {/* En el teléfono no hay rail, así que el avatar vive acá. Sin esto,
                 sacar Hangar del nav lo dejaba sin ninguna entrada en móvil: caía
@@ -196,6 +198,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Desktop Top Bar */}
         <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-black/40 backdrop-blur-xl z-20 shrink-0">
           <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wide">{todayCapitalized}</p>
+          <BuscadorGlobal variante="barra" />
           <Link
             href="/dashboard/settings"
             title="Hangar"
