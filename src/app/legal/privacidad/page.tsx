@@ -298,6 +298,34 @@ export default function PrivacidadPage() {
         <CambiarConsentimientoMeta />
       </section>
 
+      <section id="adsb">
+        <h2>El recorrido de tus vuelos (ADS-B)</h2>
+        <p>
+          Muchos aviones transmiten su posición por ADS-B, una señal pública que reciben antenas de
+          aficionados en todo el mundo. Vector la usa para mostrarte el recorrido real de tus vuelos y
+          reconocerlos cuando los cargás.
+        </p>
+        <ul>
+          <li>
+            <strong>Qué graba:</strong> la posición, la altura y la velocidad de los aviones que están en
+            el Hangar de algún piloto de Vector, sólo mientras transmiten y dentro de la zona que se
+            graba. Es la misma información que muestra cualquier sitio público de seguimiento de
+            aviones. Los datos vienen de{" "}
+            <a href="https://adsb.fi" target="_blank" rel="noreferrer">adsb.fi</a>.
+          </li>
+          <li>
+            <strong>Qué ves:</strong> el recorrido de un vuelo tuyo, entre el despegue y el aterrizaje que
+            cargaste, y los horarios de los vuelos que hizo tu avión el día que estás cargando. Un
+            avión de escuela lo vuelan varios pilotos: nunca te mostramos el recorrido de un vuelo que
+            no cargaste vos.
+          </li>
+          <li>
+            <strong>Cuánto se guarda:</strong> las posiciones sueltas se borran a los 30 días. El
+            recorrido de un vuelo tuyo queda guardado con ese vuelo, y se borra si borrás el vuelo.
+          </li>
+        </ul>
+      </section>
+
       <section id="pegatinas">
         <h2>Pegatinas con QR</h2>
         <p>

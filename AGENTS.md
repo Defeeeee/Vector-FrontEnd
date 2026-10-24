@@ -335,12 +335,19 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     La lista es `AUTORIDADES_CAD` (la del CAD del 2026-10-21); el panel la compara con la viva.
   - **La ventanita la abre un toque:** Chrome bloquea la que abre el script del marcador, y
     entonces el panel arranca con "Conectar con Vector".
-- **Los recorridos ADS-B** (2026-10-23, etapa 1, migración 034 del backend): el proceso
-  `grabador-adsb` del VPS graba en vivo, de adsb.lol (ODbL), las posiciones de los aviones que
-  están en algún Hangar. Los reconoce por el indicativo, que en los livianos es la matrícula
-  (`LVS114`). **Todavía no se muestra nada.** Hacia el 2026-10-30 hay que medir si los vuelos
-  de Federico quedaron enteros. Si sirven, viene la etapa 2: la sugerencia de horarios en
-  Registrar vuelo, el mapa del vuelo y la sección en la política de privacidad.
+- **Los recorridos ADS-B** (2.30.0; migraciones 034 y 035 del backend):
+  - el proceso `grabador-adsb` del VPS graba en vivo, de adsb.fi, las posiciones de los aviones
+    que están en algún Hangar, y las borra a los 30 días;
+  - al abrir un vuelo (`RecorridoDelVuelo`), el backend busca el tramo de su avión entre su
+    despegue y su aterrizaje cargados, y lo copia a `vuelo_recorridos`;
+  - en Registrar vuelo, `SugerenciaAdsb` muestra lo que voló ese avión ese día. **Carga sólo
+    los aterrizajes**: en el libro se anotan horas de tacómetro y ADS-B sólo ve el avión en el
+    aire (Federico);
+  - **nunca se muestra un recorrido que no se superponga con un vuelo cargado** (aviones de
+    escuela);
+  - adsb.fi es "para uso no comercial" y pide cita: si Vector cobra, hay que escribirles o
+    tener un receptor propio;
+  - falta la imagen para compartir y el mapa en la publicación de la red.
 - **El libro en PDF no es "oficial" y no se lo llama así.** Desde el 1/11/2025 cada vuelo
   se declara en el CAD de ANAC (Res. 470/2025); el PDF es el libro en papel que convive
   con eso, y lo anotado tiene que coincidir. Si ANAC aclara que los tiempos van en horas

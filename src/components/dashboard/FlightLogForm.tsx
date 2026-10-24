@@ -8,6 +8,7 @@ import { logFlight } from "@/actions/flight";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
 import { useAvisos } from "./Avisos";
 import { aLocal, aUtc } from "@/lib/horarios";
+import SugerenciaAdsb from "@/components/dashboard/SugerenciaAdsb";
 import { ArrowRight, Loader2, Compass, User, MonitorPlay, AlertCircle, Percent, Minus, Plus, SlidersHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 import {
   calculateBlockMinutes,
@@ -580,6 +581,21 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   />
                 </LedgerField>
               </div>
+
+              {/* Lo que vio ADS-B ese día con ese avión (2.30.0): los aterrizajes con un toque, y las
+                  horas en el aire como referencia (se anotan las de tacómetro). */}
+              {!esSimulador && (
+                <SugerenciaAdsb
+                  aircraftId={aircraftId}
+                  matricula={aircraft.find((a) => a.id === aircraftId)?.registration}
+                  fecha={date}
+                  onAplicar={(v) => setLandings(String(v.aterrizajes))}
+                  onUsarHoras={(v) => {
+                    setTakeoff(v.takeoffUtc);
+                    setLanding(v.landingUtc);
+                  }}
+                />
+              )}
 
               {/* Block time vs. ANAC time — the distinction the old single
                   "Tiempo (h)" field hid. En un simulador la columna del total va

@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.30.0 — El recorrido real de tu vuelo
+
+_24 de octubre de 2026_
+
+- **El mapa de lo que volaste** — Si tu avión transmite ADS-B, abrí el vuelo en la bitácora y vas a ver el recorrido real sobre el mapa, con la altura, la velocidad y las millas. Por ahora, en la zona de Buenos Aires.
+- **Tu vuelo, reconocido al cargarlo** — Al registrar un vuelo, Vector te muestra lo que voló ese avión ese día, con sus horas en el aire. Elegís el tuyo y se cargan los aterrizajes.
+
 ## v2.29.0 — Buscar, practicar y planear sin señal
 
 _23 de octubre de 2026_

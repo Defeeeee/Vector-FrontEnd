@@ -1,5 +1,7 @@
 "use client";
 
+import RecorridoDelVuelo from "@/components/dashboard/RecorridoDelVuelo";
+import { DESDE_RECORRIDOS } from "@/lib/recorrido";
 import { esVueloDeAlumno } from "@/lib/licencias";
 import { Flight, Aircraft } from "@/types";
 import { updateFlight, deleteFlight, marcarCierreDeHoja } from "@/actions/flight";
@@ -310,6 +312,9 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
                   />
                 )}
               </div>
+
+              {/* El recorrido real, de ADS-B (2.30.0): sólo de vuelos desde que se graba. */}
+              {!enSimulador && flight.date >= DESDE_RECORRIDOS && <RecorridoDelVuelo flightId={flight.id} />}
 
               {/* Para el libro en PDF: cerrar la hoja en este vuelo, como a veces se hace en
                   el de papel antes de llenarla. */}

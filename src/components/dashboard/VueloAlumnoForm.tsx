@@ -7,7 +7,8 @@ import type { Aircraft } from "@/types";
 import type { FlightPrefill } from "@/lib/prefill";
 import { addAircraft, logFlight } from "@/actions/flight";
 import { calculateFlightDuration } from "@/lib/utils";
-import { aUtc } from "@/lib/horarios";
+import { aLocal, aUtc } from "@/lib/horarios";
+import SugerenciaAdsb from "@/components/dashboard/SugerenciaAdsb";
 import { useAvisos } from "@/components/dashboard/Avisos";
 
 /**
@@ -182,6 +183,18 @@ export default function VueloAlumnoForm({
           <input type="time" value={llegada} onChange={(e) => setLlegada(e.target.value)} className={`${campo} [color-scheme:light] dark:[color-scheme:dark]`} />
         </label>
       </div>
+
+      {/* Lo que vio ADS-B ese día con ese avión (2.30.0). Este formulario va en hora local. */}
+      <SugerenciaAdsb
+        aircraftId={avionId}
+        matricula={aviones.find((a) => a.id === avionId)?.registration}
+        fecha={fecha}
+        onAplicar={(v) => setAterrizajes(String(v.aterrizajes))}
+        onUsarHoras={(v) => {
+          setSalida(aLocal(v.takeoffUtc));
+          setLlegada(aLocal(v.landingUtc));
+        }}
+      />
 
       <div className="rounded-2xl bg-zinc-50 dark:bg-white/[0.03] px-5 py-4 flex items-baseline justify-between">
         <span className="text-sm text-zinc-500 dark:text-zinc-400">Tiempo de vuelo</span>

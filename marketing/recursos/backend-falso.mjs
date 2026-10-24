@@ -97,6 +97,31 @@ function planesDeVuelo(req, ruta, json) {
   }
   return p;
 }
+// Los recorridos ADS-B (2.30.0): con `ADSB_DEMO=<puntos.json>` (fuera del repo: es un vuelo
+// real), un vuelo del 24/10 con ese recorrido y los vuelos detectados de ese día.
+const ADSB_DEMO = process.env.ADSB_DEMO && existsSync(process.env.ADSB_DEMO) ? JSON.parse(readFileSync(process.env.ADSB_DEMO, "utf8")) : null;
+const VUELO_ADSB = "00000000-0000-4000-8000-0000000a0b50";
+if (ADSB_DEMO) {
+  const [t0] = ADSB_DEMO[0], [t1] = ADSB_DEMO.at(-1);
+  vuelos.push({ id: VUELO_ADSB, user_id: "u1", aircraft_id: "a1", date: "2026-10-24", route: "SADF SADF", landings: 1, duration: 0.8,
+    takeoff: new Date(t0 * 1000).toISOString(), landing: new Date(t1 * 1000).toISOString(), purpose: "VP", pic_day_loc: 0.8 });
+}
+const resumenAdsb = () => {
+  const P = ADSB_DEMO, iso = (t) => new Date(t * 1000).toISOString().replace(".000Z", "+00:00");
+  return { despegue: iso(P[0][0]), aterrizaje: iso(P.at(-1)[0]), minutos: Math.round((P.at(-1)[0] - P[0][0]) / 60), aterrizajes: 1,
+    altitud_max: Math.max(...P.map((p) => p[3])), velocidad_max: Math.max(...P.map((p) => p[4])), millas: 64.8, posiciones: P.length,
+    inicio: [P[0][1], P[0][2]], fin: [P.at(-1)[1], P.at(-1)[2]] };
+};
+function adsb(ruta, url) {
+  if (!ADSB_DEMO) return ruta.startsWith("/api/adsb/vuelos/") ? { recorrido: null } : { vuelos: [] };
+  if (ruta.startsWith("/api/adsb/vuelos/")) {
+    if (!ruta.endsWith(VUELO_ADSB)) return { recorrido: null };
+    const t0 = ADSB_DEMO[0][0];
+    return { recorrido: { t0, fuente: "adsb.fi", p: ADSB_DEMO.map(([t, la, lo, a, v]) => [t - t0, la, lo, a, v]) }, resumen: resumenAdsb() };
+  }
+  return { vuelos: new URL(url, "http://x").searchParams.get("fecha") === "2026-10-24" ? [resumenAdsb()] : [] };
+}
+
 // Las pegatinas con QR (migración 033), en memoria. `ADMIN=0` hace que el falso no sea admin.
 const pegatinas = new Map([["K7P2", { codigo: "K7P2", etiqueta: null, lote: "Prueba", creado_at: new Date().toISOString(), asignado_at: null }]]);
 const escaneosQr = [];
@@ -133,6 +158,10 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
   let crudo = "";
   for await (const parte of req) crudo += parte;
   const json = crudo ? JSON.parse(crudo) : {};
+  if (ruta.startsWith("/api/adsb/")) {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(adsb(ruta, req.url)));
+  }
   if (ruta.startsWith("/api/qr/") || ruta.startsWith("/api/admin/qr")) {
     const r = pegatinasQr(req, ruta, json);
     res.writeHead(r === undefined ? 404 : 200, { "Content-Type": "application/json" });

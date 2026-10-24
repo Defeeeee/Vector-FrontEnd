@@ -78,6 +78,27 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.30.0",
+    fecha: "2026-10-24",
+    titulo: "El recorrido real de tu vuelo",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "El mapa de lo que volaste",
+        texto: "Si tu avión transmite ADS-B, abrí el vuelo en la bitácora y vas a ver el recorrido real sobre el mapa, con la altura, la velocidad y las millas. Por ahora, en la zona de Buenos Aires.",
+        href: "/dashboard/history",
+        cta: "Ver mis vuelos",
+      },
+      {
+        icono: "reloj",
+        titulo: "Tu vuelo, reconocido al cargarlo",
+        texto: "Al registrar un vuelo, Vector te muestra lo que voló ese avión ese día, con sus horas en el aire. Elegís el tuyo y se cargan los aterrizajes.",
+        href: "/dashboard/log-flight",
+        cta: "Registrar un vuelo",
+      },
+    ],
+  },
+  {
     version: "2.29.0",
     fecha: "2026-10-23",
     titulo: "Buscar, practicar y planear sin señal",
