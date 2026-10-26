@@ -67,6 +67,11 @@ export default function RecorridoDelVuelo({ flightId }: { flightId: string }) {
           </div>
         ))}
       </dl>
+      {!!r.minutos_sin_senal && r.minutos_sin_senal > 0 && (
+        <p className="text-xs text-amber-700 dark:text-amber-300">
+          {r.minutos_sin_senal} min sin señal, en punteado: lejos de las antenas que reciben ADS-B, o volando bajo, el avión no se escucha.
+        </p>
+      )}
       <p className="text-[11px] text-zinc-400 leading-relaxed">
         Grabado por Vector con ADS-B mientras el avión transmitía. Las horas son de la primera y la última posición en el aire, segundos después de despegar y antes de aterrizar: la carrera en tierra no llega a los receptores.
       </p>

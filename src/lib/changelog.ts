@@ -754,6 +754,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.30.1",
+    fecha: "2026-10-26",
+    motivo: "El recorrido ADS-B de una navegación ya no se corta lejos de Buenos Aires, y dice cuántos minutos quedaron sin señal. Arregla la 2.30.0, sin anuncio aparte.",
+  },
+  {
     version: "2.29.2",
     fecha: "2026-10-23",
     motivo: "Las pegatinas con QR se bajan como un PNG por código (en ZIP) para mandarlas a hacer. Es del panel de administración.",

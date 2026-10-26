@@ -23,6 +23,8 @@ export interface ResumenRecorrido {
   altitud_max: number | null;
   velocidad_max: number | null;
   millas: number;
+  /** Los cortes de señal de más de 2 minutos, sumados (lejos de las antenas no hay recepción). */
+  minutos_sin_senal?: number;
   posiciones: number;
   inicio: [number, number];
   fin: [number, number];
