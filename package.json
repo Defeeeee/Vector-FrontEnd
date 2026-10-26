@@ -1,6 +1,6 @@
 {
   "name": "FlightLog-FrontEnd",
-  "version": "2.30.1",
+  "version": "2.31.0",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -26,7 +26,8 @@
     "build:catalogo": "node scripts/build-catalogo.mjs",
     "build:correo": "node scripts/build-mail-assets.mjs",
     "build:mails-auth": "node scripts/build-mails-auth.mjs",
-    "subir:mails-auth": "node scripts/subir-mails-auth.mjs"
+    "subir:mails-auth": "node scripts/subir-mails-auth.mjs",
+    "build:raac": "node scripts/build-raac.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",

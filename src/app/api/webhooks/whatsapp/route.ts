@@ -1,3 +1,4 @@
+import { DECLARACION_RAAC, REGLAS_RAAC, respuestaRaac } from "@/lib/raac-copiloto";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type, type GenerateContentConfig } from "@google/genai";
 import { chatConRespaldo } from "@/lib/gemini";
@@ -802,6 +803,8 @@ La fecha actual de hoy es: ${currentLocalDate} (formato YYYY-MM-DD). Usa esta fe
 ## LÍMITE OPERATIVO (no negociable):
 Los datos de aeródromo, pistas, frecuencias y teléfonos que devuelven tus herramientas son de referencia y pueden estar desactualizados. Cuando informes pistas, frecuencias, combustible o cualquier dato para una operación, cerrá SIEMPRE recordando que hay que verificarlo contra el AIP y los NOTAM vigentes antes de volar. Nunca presentes esta información como apta para tomar una decisión operativa por sí sola.
 
+${REGLAS_RAAC}
+
 ## REGLAS PARA METAR, TAF, NOTAM Y DATOS DE AERÓDROMO:
 1. Si el usuario te pregunta por el clima, reporte meteorológico, METAR o TAF de un aeropuerto (ej: "clima en SADF" o "METAR SAEZ"), debes obtenerlo usando la herramienta 'get_airport_weather'.
 2. Al recibir la respuesta de la herramienta, debes decodificar/explicar el reporte METAR y TAF en español claro y conciso para el piloto, e incluir el reporte en texto crudo (raw) al final.
@@ -944,6 +947,7 @@ ${flightContext}`;
                 required: ["icao_code"]
               }
             },
+            DECLARACION_RAAC,
             {
               name: "get_airport_info",
               description: "Obtiene la ficha técnica completa de un aeródromo desde el registro oficial MADHEL de la ANAC Argentina: pistas y sus características, frecuencias de radio, ubicación respecto a la ciudad, combustible disponible, teléfonos de contacto, normas particulares y NOTAMs activos. Úsala cuando el usuario pregunte por datos técnicos de un aeródromo, NOTAMs, pistas, frecuencias, información del aeropuerto o si está CERRADO.",
@@ -1330,6 +1334,9 @@ ${flightContext}`;
                 ? { result: `Se le mandó el PDF (${libro.archivo}, ${libro.vuelos} vuelos).` }
                 : { error: "No se pudo mandar el archivo por WhatsApp. Que lo baje desde la web: Bitácora, botón de descarga." },
             });
+          } else if (call.name === "consultar_raac") {
+            // "Preguntale a la RAAC", igual que en la web (`lib/raac-copiloto.ts`).
+            toolResults.push({ name: call.name, response: respuestaRaac(args.consulta) });
           } else if (call.name === "get_airport_info") {
             const icao = args.icao_code?.trim().toUpperCase();
             if (!icao) {

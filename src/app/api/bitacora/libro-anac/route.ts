@@ -18,13 +18,19 @@ export const runtime = "nodejs";
  *   `/profiles`): el PDF no inventa nada que Vector no tenga, y lo que falta —la potencia
  *   de un avión, el legajo— queda en blanco para completar a mano.
  *
+ * - `?firma=1` estampa la firma que el piloto guardó al firmar un plan de vuelo en cada hoja.
+ *
  * El armado está en `lib/libro-anac-armar.ts`, compartido con el copiloto de WhatsApp.
  */
 export async function GET(req: NextRequest) {
   if (!(await getSessionToken())) {
     return NextResponse.json({ error: "Tu sesión venció. Volvé a entrar." }, { status: 401 });
   }
-  const r = await armarPdfDelLibro((ruta) => apiFetch(ruta, { cache: "no-store" }), { libroId: req.nextUrl.searchParams.get("libro") });
+  const r = await armarPdfDelLibro((ruta) => apiFetch(ruta, { cache: "no-store" }), {
+    libroId: req.nextUrl.searchParams.get("libro"),
+    // `?firma=1`: con la firma guardada en cada hoja ("PDF firmado").
+    conFirma: req.nextUrl.searchParams.get("firma") === "1",
+  });
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
   return new NextResponse(Buffer.from(r.bytes), {
     headers: {

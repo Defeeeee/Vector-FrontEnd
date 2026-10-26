@@ -27,6 +27,9 @@ const SUGGESTED_QUESTIONS = [
   "¿En qué aeronave volé más?",
   "¿Cuántos vuelos hice este mes?",
   "¿Cuál es mi ruta más frecuente?",
+  // Reglamento: contesta con el texto de la RAAC 61 y la sección (`consultar_raac`).
+  "¿Cuántos aterrizajes necesito para volar?",
+  "¿Cuánto dura el CMA?",
 ];
 
 function MarkdownText({ text }: { text: string }) {

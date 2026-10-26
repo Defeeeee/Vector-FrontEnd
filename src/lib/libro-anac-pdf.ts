@@ -371,7 +371,17 @@ export async function pdfDelLibro(
     generado,
     apertura,
     renglonesPorHoja = RENGLONES_POR_HOJA,
-  }: { generado: string; apertura: ValoresLibro; renglonesPorHoja?: number }
+    firmaPng,
+  }: {
+    generado: string;
+    apertura: ValoresLibro;
+    renglonesPorHoja?: number;
+    /**
+     * La firma que el piloto guardó (la del plan de vuelo), como PNG: va en cada hoja, sobre
+     * la línea de la firma del titular. Sólo si la pidió ("PDF firmado"): firmar es suyo.
+     */
+    firmaPng?: Uint8Array;
+  }
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(seguro(`Libro de vuelo — ${titular.apellidoYNombre}`));
@@ -380,6 +390,7 @@ export async function pdfDelLibro(
   doc.setProducer("Vector");
   doc.setSubject("Libro de vuelo en formato digital impreso (Res. ANAC 470/2025, Anexo I, 9(b))");
 
+  const firma = firmaPng ? await doc.embedPng(firmaPng) : null;
   const normal = await doc.embedFont(StandardFonts.Helvetica);
   const negrita = await doc.embedFont(StandardFonts.HelveticaBold);
   const cols = columnas();
@@ -453,9 +464,19 @@ export async function pdfDelLibro(
       yPie + 7,
       { tamano: 5.4 }
     );
+    // La línea de la firma va 22 pt debajo del pie (antes 12): deja lugar para firmar, a mano
+    // o con la firma guardada, sin pisar la tabla.
     const xFirma = ANCHO_HOJA - MARGEN - 170;
-    d.linea(xFirma, yPie + 12, ANCHO_HOJA - MARGEN, yPie + 12, 0.6, NEGRO);
-    d.texto("FIRMA DEL TITULAR", xFirma + 50, yPie + 19, { tamano: 6.5, negrita: true });
+    const yLineaFirma = yPie + 22;
+    if (firma) {
+      const caja = { w: 160, h: yLineaFirma - fondo - 4 };
+      const escala = Math.min(caja.w / firma.width, caja.h / firma.height);
+      const w = firma.width * escala;
+      const h = firma.height * escala;
+      page.drawImage(firma, { x: xFirma + (170 - w) / 2, y: ALTO_HOJA - yLineaFirma + 1, width: w, height: h });
+    }
+    d.linea(xFirma, yLineaFirma, ANCHO_HOJA - MARGEN, yLineaFirma, 0.6, NEGRO);
+    d.texto("FIRMA DEL TITULAR", xFirma + 50, yLineaFirma + 7, { tamano: 6.5, negrita: true });
     d.texto(
       `Hoja ${i + 1} de ${paginas.length} · Libro de vuelo en formato digital impreso (Res. ANAC 470/2025, Anexo I, 9(b)): lo anotado tiene que coincidir con lo declarado en el CAD · Generado con Vector el ${generado}.`,
       MARGEN,

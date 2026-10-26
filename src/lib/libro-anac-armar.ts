@@ -11,13 +11,22 @@ import type { Aircraft, Flight, Logbook, Profile } from "@/types";
  * `leer` pide una ruta del backend ya autenticada. Ver la ruta de la web para las reglas:
  * un libro por PDF, el principal si no se elige, y nada inventado.
  */
+/** Los bytes de un `data:image/png;base64,…`, o `undefined` si no es un PNG. */
+export function pngDeDataUrl(dataUrl: string | null | undefined): Uint8Array | undefined {
+  const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl ?? "");
+  if (!m) return undefined;
+  const bytes = Uint8Array.from(Buffer.from(m[1], "base64"));
+  // La firma PNG empieza con su firma de archivo: 89 50 4E 47.
+  return bytes.length > 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 ? bytes : undefined;
+}
+
 export type ResultadoLibro =
   | { ok: true; bytes: Uint8Array; archivo: string; libro: string | null; vuelos: number }
   | { ok: false; status: 401 | 404 | 502; error: string };
 
 export async function armarPdfDelLibro(
   leer: (ruta: string) => Promise<Response>,
-  opciones: { libroId?: string | null; libroNombre?: string | null; ahora?: Date } = {}
+  opciones: { libroId?: string | null; libroNombre?: string | null; ahora?: Date; conFirma?: boolean } = {}
 ): Promise<ResultadoLibro> {
   const [perfilesRes, vuelosRes, avionesRes, librosRes] = await Promise.all([leer("/profiles"), leer("/flights"), leer("/aircraft"), leer("/logbooks")]);
   if ([perfilesRes, vuelosRes, avionesRes, librosRes].some((r) => r.status === 401)) {
@@ -51,6 +60,18 @@ export async function armarPdfDelLibro(
   const renglonesPorHoja = renglonesDeLaHoja(libro);
   const hojas = armarLibro({ vuelos: delLibro, aeronaves, apertura, renglonesPorHoja });
   const ahora = opciones.ahora ?? new Date();
+
+  // "PDF firmado": la firma que el piloto guardó al firmar un plan de vuelo.
+  let firmaPng: Uint8Array | undefined;
+  if (opciones.conFirma) {
+    const r = await leer("/planes-de-vuelo/firma");
+    const png = r.ok ? ((await r.json().catch(() => null)) as { png?: string } | null)?.png : undefined;
+    firmaPng = pngDeDataUrl(png);
+    if (!firmaPng) {
+      return { ok: false, status: 404, error: "Todavía no guardaste tu firma. Se guarda la primera vez que firmás un plan de vuelo." };
+    }
+  }
+
   const bytes = await pdfDelLibro(
     hojas,
     {
@@ -60,7 +81,7 @@ export async function armarPdfDelLibro(
       legajo: perfil?.legajo ?? "",
       libro: libros.length > 1 ? libro?.name : undefined,
     },
-    { generado: fechaDeGeneracion(ahora), apertura, renglonesPorHoja }
+    { generado: fechaDeGeneracion(ahora), apertura, renglonesPorHoja, firmaPng }
   );
 
   const apellido = (perfil?.last_name ?? "piloto")
@@ -72,7 +93,7 @@ export async function armarPdfDelLibro(
   return {
     ok: true,
     bytes,
-    archivo: `libro-de-vuelo-${apellido || "piloto"}-${ahora.toISOString().slice(0, 10)}.pdf`,
+    archivo: `libro-de-vuelo-${apellido || "piloto"}-${ahora.toISOString().slice(0, 10)}${firmaPng ? "-firmado" : ""}.pdf`,
     libro: libros.length > 1 ? (libro?.name ?? null) : null,
     vuelos: delLibro.length,
   };

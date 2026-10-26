@@ -9,6 +9,7 @@ import { canonicalRoute } from "@/lib/madhel-reference";
 import { calculateFlightDuration, documentStatus } from "@/lib/utils";
 import { anacIndicator } from "@/lib/madhel-reference";
 import { componerFicha, datosAip } from "@/lib/aip";
+import { DECLARACION_RAAC, REGLAS_RAAC, respuestaRaac } from "@/lib/raac-copiloto";
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
@@ -398,6 +399,8 @@ Informa al usuario usando siempre esta tabla para ser consistente con la web.
 2. Si el usuario te pregunta por NOTAMs, pistas, frecuencias, datos técnicos del aeródromo, combustible, teléfonos, normas operativas, o si un aeródromo está ABIERTO o CERRADO (ej: "NOTAMs de SAAK", "frecuencias de SADF", "pistas de Ezeiza"), debes usar la herramienta 'get_airport_info' que consulta el registro oficial MADHEL de la ANAC en tiempo real.
 3. Al recibir los datos de 'get_airport_info', preséntale al piloto la ficha técnica en formato claro y organizado, incluyendo los NOTAMs activos si los hay.
 
+${REGLAS_RAAC}
+
 ## Datos de la bitácora del piloto:
 ${flightContext}`;
 
@@ -485,6 +488,7 @@ ${flightContext}`;
                 required: ["flight_id"]
               }
             },
+            DECLARACION_RAAC,
             {
               name: "get_airport_info",
               description: "Obtiene la ficha técnica completa de un aeródromo desde el registro oficial MADHEL de la ANAC Argentina: pistas y sus características, frecuencias de radio, ubicación respecto a la ciudad, combustible disponible, teléfonos de contacto, normas particulares y NOTAMs activos. Úsala cuando el usuario pregunte por datos técnicos, NOTAMs, pistas, frecuencias, información del aeropuerto o si está CERRADO.",
@@ -679,6 +683,9 @@ ${flightContext}`;
                 response: { result: `Vuelo actualizado exitosamente (duración calculada: ${duration}h)`, flight: resData }
               });
             }
+          } else if (call.name === "consultar_raac") {
+            // Sólo el texto de la norma que tiene Vector (`lib/raac-copiloto.ts`).
+            toolResults.push({ name: call.name, response: respuestaRaac(args.consulta) });
           } else if (call.name === "get_airport_info") {
             const icao = args.icao_code?.trim().toUpperCase();
             if (!icao) {

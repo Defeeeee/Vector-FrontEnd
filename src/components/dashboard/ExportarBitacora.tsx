@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Download, FileSpreadsheet, Loader2 } from "lucide-react";
+import { BookOpen, Download, FileSpreadsheet, Loader2, PenLine } from "lucide-react";
 import MenuAcciones, { type AccionDeMenu } from "@/components/MenuAcciones";
 import { useAvisos } from "@/components/dashboard/Avisos";
 import { horaUtc } from "@/lib/libro-anac";
@@ -34,11 +34,12 @@ export default function ExportarBitacora({
   const [armando, setArmando] = useState(false);
   const { notificar } = useAvisos();
 
-  const descargarLibro = async (libro?: Logbook) => {
+  const descargarLibro = async (libro?: Logbook, conFirma = false) => {
     if (armando) return;
     setArmando(true);
     try {
-      const res = await fetch(`/api/bitacora/libro-anac${libro ? `?libro=${encodeURIComponent(libro.id)}` : ""}`);
+      const q = new URLSearchParams({ ...(libro ? { libro: libro.id } : {}), ...(conFirma ? { firma: "1" } : {}) }).toString();
+      const res = await fetch(`/api/bitacora/libro-anac${q ? `?${q}` : ""}`);
       if (!res.ok) {
         const cuerpo = (await res.json().catch(() => null)) as { error?: string } | null;
         notificar({ tipo: "error", titulo: cuerpo?.error ?? "No se pudo armar el libro." });
@@ -47,7 +48,7 @@ export default function ExportarBitacora({
       const nombre =
         /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "libro-de-vuelo.pdf";
       bajar(await res.blob(), nombre);
-      notificar({ tipo: "exito", titulo: "Libro descargado", detalle: "Listo para imprimir y firmar." });
+      notificar({ tipo: "exito", titulo: "Libro descargado", detalle: conFirma ? "Con tu firma en cada hoja, listo para imprimir." : "Listo para imprimir y firmar." });
     } catch {
       notificar({ tipo: "error", titulo: "Sin conexión: no se pudo armar el libro." });
     } finally {
@@ -85,15 +86,17 @@ export default function ExportarBitacora({
   };
 
   const detalleLibro = "La hoja del libro de vuelo, para imprimir y firmar";
+  const detalleFirmado = "Con la firma que guardaste en el plan de vuelo, en cada hoja";
   const acciones: AccionDeMenu[] = [
     ...(alumno ? [] : libros.length > 1
-      ? libros.map((l) => ({
-          etiqueta: `Libro «${l.name}» · PDF`,
-          detalle: detalleLibro,
-          icono: BookOpen,
-          alElegir: () => void descargarLibro(l),
-        }))
-      : [{ etiqueta: "Libro de vuelo · PDF", detalle: detalleLibro, icono: BookOpen, alElegir: () => void descargarLibro() }]),
+      ? libros.flatMap((l) => [
+          { etiqueta: `Libro «${l.name}» · PDF`, detalle: detalleLibro, icono: BookOpen, alElegir: () => void descargarLibro(l) },
+          { etiqueta: `Libro «${l.name}» · PDF firmado`, detalle: detalleFirmado, icono: PenLine, alElegir: () => void descargarLibro(l, true) },
+        ])
+      : [
+          { etiqueta: "Libro de vuelo · PDF", detalle: detalleLibro, icono: BookOpen, alElegir: () => void descargarLibro() },
+          { etiqueta: "Libro de vuelo · PDF firmado", detalle: detalleFirmado, icono: PenLine, alElegir: () => void descargarLibro(undefined, true) },
+        ]),
     ...(flights.length > 0
       ? [{ etiqueta: "Planilla · CSV", detalle: "Todos los vuelos, para Excel o Sheets", icono: FileSpreadsheet, alElegir: descargarCsv }]
       : []),

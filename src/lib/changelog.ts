@@ -78,6 +78,25 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.31.0",
+    fecha: "2026-10-26",
+    titulo: "Tu firma en el libro y la RAAC en el copiloto",
+    novedades: [
+      {
+        icono: "libro",
+        titulo: "El libro en PDF, firmado",
+        texto: "Exportá el libro con la firma que guardaste en el plan de vuelo, ya puesta en cada hoja. También sigue estando sin firma, para firmarlo a mano.",
+        href: "/dashboard/history",
+        cta: "Exportar mi libro",
+      },
+      {
+        icono: "conversacion",
+        titulo: "Preguntale a la RAAC",
+        texto: "Preguntale al copiloto por licencias, CMA, experiencia reciente o requisitos de horas: contesta con el texto de la RAAC 61 vigente y te cita la sección. Si no está ahí, te lo dice.",
+      },
+    ],
+  },
+  {
     version: "2.30.0",
     fecha: "2026-10-24",
     titulo: "El recorrido real de tu vuelo",

@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.31.0 — Tu firma en el libro y la RAAC en el copiloto
+
+_26 de octubre de 2026_
+
+- **El libro en PDF, firmado** — Exportá el libro con la firma que guardaste en el plan de vuelo, ya puesta en cada hoja. También sigue estando sin firma, para firmarlo a mano.
+- **Preguntale a la RAAC** — Preguntale al copiloto por licencias, CMA, experiencia reciente o requisitos de horas: contesta con el texto de la RAAC 61 vigente y te cita la sección. Si no está ahí, te lo dice.
+
 ## v2.30.0 — El recorrido real de tu vuelo
 
 _24 de octubre de 2026_
