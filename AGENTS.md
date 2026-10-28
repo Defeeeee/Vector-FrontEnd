@@ -324,8 +324,9 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     la DDJJ: el backend tiene una lista blanca de lecturas más "Crear". Con la cuenta conectada,
     Registrar vuelo ofrece "Cargarlo también en tu CAD" (`pasarVueloAlCad`). Está en la política de
     privacidad (`#cad`). Probado con la cuenta real de Federico (2026-10-28). **ANAC no acepta
-    conexiones del VPS**: el backend sale por un proxy en defeserver-amenaba (`CAD_PROXY`, ver el
-    AGENTS del backend); si amenaba se apaga, este modo no anda y queda el marcador. **ANAC bloquea por horas la IP que
+    conexiones del VPS**: el backend sale por un proxy en DefeServer (`CAD_PROXY`, ver el AGENTS del
+    backend; hasta el 2026-10-28 22:50 UTC fue amenaba, que ANAC también bloqueó); si DefeServer se
+    apaga, este modo no anda y queda el marcador. **ANAC bloquea por horas la IP que
     entra varias veces** (el 2026-10-28 cayeron el VPS y después la casa de Federico, con 3 logins en
     media hora): el backend pide como un Chrome en el CAD, reusa la sesión hasta 8 h (en disco, cifrada:
     sobrevive a los deploys), guarda las listas 7 días y los vuelos 30 min, no hace más de 4 logins
