@@ -29,14 +29,37 @@
 /* Los IDs del CAD (fijos en su código)                                        */
 /* -------------------------------------------------------------------------- */
 
-export const TIPO_VUELO_CAD = { local: 1, travesia: 2 } as const;
-export const CARGO_CAD = { piloto: 1, copiloto: 2 } as const;
+export const TIPO_VUELO_CAD = { local: 1, travesia: 2, simulador: 3 } as const;
+/** En un simulador el CAD sólo ofrece INSTRUCTOR y PILOTO EN INSTRUCCION (`filerCargosSimu`). */
+export const CARGO_CAD = { piloto: 1, copiloto: 2, instructor: 3, enInstruccion: 6 } as const;
 export const DISCRIMINACION_CAD = {
   instructor: 1,
   multimotor: 2,
   instrumentoReal: 6,
   capota: 7,
+  simInstructor: 8,
+  simEnInstruccion: 9,
 } as const;
+
+/**
+ * Las clases que el CAD ofrece para un simulador (`filerClasesSimu`, leído el 2026-10-28):
+ * los niveles de dispositivo, no las de avión. Primero las de los simuladores de escuela.
+ */
+export const CLASES_SIMULADOR = ["ATD", "BATD", "PCATD", "A", "B", "C", "D", "1", "2", "3", "4", "5", "6", "7"] as const;
+
+/**
+ * El simulador del CAD que corresponde a un "avión" simulador del Hangar
+ * (`aircraft.cad_simulador`, migración 036 del backend): de `GetSimuladoresListItem`, con la
+ * clase del dispositivo y el modelo que el CAD le asocia (`GetModelosPorSimuladorListItem`).
+ * Se pide una vez por equipo y se recuerda.
+ */
+export interface SimuladorCad {
+  id: number;
+  nombre: string;
+  clase: string;
+  modeloId: number | null;
+  modelo: string | null;
+}
 
 /** Un ítem de las listas del CAD (`Get…ListItem`). */
 export interface ItemCad {
@@ -93,6 +116,11 @@ export interface BorradorCad {
   problema: string | null;
   /** La autoridad que el piloto cargó en el vuelo, si la cargó: el panel la usa en vez de la memoria. */
   autoridad?: { id: string; nombre: string } | null;
+  /**
+   * Si es una sesión de simulador: el equipo del Hangar y su simulador del CAD, si ya se
+   * eligió. Sin elegir, el panel lo pide antes de cargar.
+   */
+  simulador?: { avionId: string; equipo: string; cad: SimuladorCad | null } | null;
 }
 
 /** Lo que Vector sabe del vuelo (`Flight`) que hace falta acá. */
@@ -116,16 +144,21 @@ export interface VueloVector {
   imc_pil?: number | null;
   imc_cop?: number | null;
   capota?: number | null;
+  /** Las dos columnas de una sesión de simulador. */
+  sim_instructor?: number | null;
+  sim_pil_en_inst?: number | null;
   /** La autoridad certificante, si el piloto la cargó en el vuelo (migración 032). */
   cad_autoridad_id?: number | null;
   cad_autoridad_nombre?: string | null;
 }
 
 export interface AvionVector {
+  id?: string;
   registration: string;
   type_acft?: string | null;
   potencia_hp?: number | null;
   is_simulator?: boolean | null;
+  cad_simulador?: SimuladorCad | null;
 }
 
 /**
@@ -251,8 +284,7 @@ export function borradorCad(
   if (n(f.capota) > 0) discriminaciones.push({ tipoDiscriminacionID: DISCRIMINACION_CAD.capota, horas: unDecimal(n(f.capota)).toFixed(1) });
 
   let problema: string | null = null;
-  if (avion?.is_simulator) problema = "Es una sesión de simulador: en el CAD va con los datos del simulador, cargala a mano.";
-  else if (pic > 0 && sic > 0) problema = "Tiene horas de piloto y de copiloto: el CAD las pide por separado.";
+  if (pic > 0 && sic > 0) problema = "Tiene horas de piloto y de copiloto: el CAD las pide por separado.";
   else if (!salida || !llegada) problema = "Le falta la hora de salida o de llegada.";
   else if (horas === null) problema = "La llegada no es posterior a la salida.";
   else if (unDecimal(horasDia + horasNoche) !== horas)
@@ -263,9 +295,11 @@ export function borradorCad(
   else if (!origen.codigo) problema = "No tiene ruta.";
 
   const [y, m, d] = (f.date ?? "").slice(0, 10).split("-");
+  const fecha = d && m && y ? `${d}/${m}/${y}` : f.date;
+  if (avion?.is_simulator) return borradorSimulador(f, avion, { fecha, salida, llegada, horas, proposito });
   return {
     vectorId: f.id,
-    fecha: d && m && y ? `${d}/${m}/${y}` : f.date,
+    fecha,
     ruta: origen.codigo === destino.codigo ? `${origen.codigo} (local)` : `${origen.codigo} → ${destino.codigo}`,
     matricula: avion?.registration ? matriculaCad(avion.registration) : "",
     horas: horas ?? n(f.duration),
@@ -286,6 +320,95 @@ export function borradorCad(
     autoridad:
       f.cad_autoridad_id && f.cad_autoridad_nombre?.trim() ? { id: String(f.cad_autoridad_id), nombre: f.cad_autoridad_nombre.trim().toUpperCase() } : null,
   };
+}
+
+/**
+ * Una sesión de simulador, como la carga el CAD (leído de una sesión real de Federico, el
+ * 2026-10-28): tipo 3, sin matrícula, lugares ni aterrizajes, día y noche en cero, y el
+ * tiempo sólo en la discriminación: "SIM - PILOTO EN INSTRUCCION" (cargo 6) o "SIM - PILOTO
+ * INSTRUCTOR" (cargo 3), según la columna del libro que tenga horas.
+ */
+function borradorSimulador(
+  f: VueloVector,
+  avion: AvionVector,
+  { fecha, salida, llegada, horas, proposito }: { fecha: string; salida: string | null; llegada: string | null; horas: number | null; proposito: string }
+): BorradorCad {
+  const instructor = n(f.sim_instructor);
+  const enInstruccion = n(f.sim_pil_en_inst);
+  const esInstructor = instructor > 0 && enInstruccion === 0;
+  const columna = unDecimal(esInstructor ? instructor : enInstruccion);
+  const finalidad = FINALIDAD_CAD[proposito] ?? (esInstructor ? FINALIDAD_CAD.I : FINALIDAD_CAD.INST);
+  const total = (horas ?? 0).toFixed(1);
+
+  let problema: string | null = null;
+  if (instructor > 0 && enInstruccion > 0) problema = "Tiene horas de instructor y de piloto en instrucción: el CAD pide una sola.";
+  else if (!salida || !llegada) problema = "Le falta la hora de salida o de llegada.";
+  else if (horas === null) problema = "La llegada no es posterior a la salida.";
+  else if (columna > 0 && columna !== horas)
+    problema = `Las horas de simulador (${columna.toFixed(1)}) no dan lo que va de la salida a la llegada (${horas.toFixed(1)}).`;
+
+  return {
+    vectorId: f.id,
+    fecha,
+    ruta: `Simulador ${avion.registration}`.trim(),
+    // En el CAD un simulador no lleva matrícula: así también se lo encuentra si ya está.
+    matricula: "",
+    horas: horas ?? n(f.duration),
+    tipoVueloID: TIPO_VUELO_CAD.simulador,
+    cargoID: esInstructor ? CARGO_CAD.instructor : CARGO_CAD.enInstruccion,
+    fechaHoraSalida: salida ?? "",
+    fechaHoraLlegada: llegada ?? "",
+    aterrizajes: 0,
+    clase: avion.cad_simulador?.clase ?? "",
+    potencia: null,
+    horasDia: 0,
+    horasNoche: 0,
+    origen: { codigo: "", candidatos: [], nombre: null },
+    destino: { codigo: "", candidatos: [], nombre: null },
+    finalidad,
+    discriminaciones: [{ tipoDiscriminacionID: esInstructor ? DISCRIMINACION_CAD.simInstructor : DISCRIMINACION_CAD.simEnInstruccion, horas: total }],
+    problema,
+    autoridad:
+      f.cad_autoridad_id && f.cad_autoridad_nombre?.trim() ? { id: String(f.cad_autoridad_id), nombre: f.cad_autoridad_nombre.trim().toUpperCase() } : null,
+    simulador: { avionId: avion.id ?? "", equipo: [avion.registration, avion.type_acft].filter(Boolean).join(" "), cad: avion.cad_simulador ?? null },
+  };
+}
+
+/**
+ * El simulador del CAD que más se parece al equipo del Hangar, para proponerlo: cuenta qué
+ * palabras de la matrícula y del tipo ("LV-ASG", "C172" → ASG, 172) aparecen en el nombre del
+ * CAD ("SANTIAGO I C-172 -- ASG TRAINING CENTER"). Sólo se propone si gana uno solo: elegir
+ * mal sería declarar otro simulador.
+ */
+export function simuladorSugerido(equipo: string, lista: ItemCad[]): ItemCad | null {
+  // Cada palabra con sus formas: "C172" también es "172" (el CAD escribe "C-172").
+  const formas = (p: string) => {
+    const numero = /^[A-Z]{1,3}(\d{3,4})[A-Z]?$/.exec(p)?.[1];
+    return numero ? [p, numero] : [p];
+  };
+  const palabras = (texto: string) => normalizarCad(texto).split(/[^A-Z0-9]+/).filter((p) => p.length >= 3 && p !== "LV");
+  const grupos = palabras(equipo).map(formas);
+  if (!grupos.length) return null;
+  const puntos = lista.map((item) => {
+    const tiene = new Set(palabras(item.value).flatMap(formas));
+    return { item, p: grupos.filter((g) => g.some((w) => tiene.has(w))).length };
+  });
+  const max = Math.max(0, ...puntos.map((x) => x.p));
+  const ganadores = puntos.filter((x) => x.p === max);
+  return max > 0 && ganadores.length === 1 ? ganadores[0].item : null;
+}
+
+/** Lo que el piloto eligió para un simulador, revisado: un id de la lista, su nombre y una clase válida. */
+export function simuladorValido(x: unknown): SimuladorCad | null {
+  if (!x || typeof x !== "object") return null;
+  const v = x as Record<string, unknown>;
+  const id = Number(v.id);
+  const nombre = typeof v.nombre === "string" ? v.nombre.trim().slice(0, 200) : "";
+  const clase = typeof v.clase === "string" ? v.clase.trim().toUpperCase() : "";
+  if (!Number.isInteger(id) || id <= 0 || !nombre || !(CLASES_SIMULADOR as readonly string[]).includes(clase)) return null;
+  const modeloId = Number(v.modeloId);
+  const modelo = typeof v.modelo === "string" && v.modelo.trim() ? v.modelo.trim().slice(0, 80) : null;
+  return { id, nombre, clase, modeloId: Number.isInteger(modeloId) && modeloId > 0 && modelo ? modeloId : null, modelo: Number.isInteger(modeloId) && modeloId > 0 ? modelo : null };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -356,8 +479,34 @@ export function yaEstaEnElCad(b: Pick<BorradorCad, "fechaHoraSalida" | "matricul
 /** Lo que manda "Crear" del CAD, con los IDs ya resueltos. */
 export function payloadCad(
   b: BorradorCad,
-  ids: { finalidadID: string; origenID: string; destinoID: string; autoridadID: string; autoridadNombre: string }
+  ids: { finalidadID: string; origenID: string; destinoID: string; autoridadID: string; autoridadNombre: string },
+  simulador?: SimuladorCad | null
 ) {
+  if (b.tipoVueloID === TIPO_VUELO_CAD.simulador) {
+    const s = simulador ?? b.simulador?.cad ?? null;
+    return {
+      Discriminaciones: b.discriminaciones,
+      discriminaciones: [],
+      tipoVueloID: String(b.tipoVueloID),
+      fechaHoraSalida: b.fechaHoraSalida,
+      fechaHoraLlegada: b.fechaHoraLlegada,
+      aterrizajes: 0,
+      autoridadCertificanteID: ids.autoridadID,
+      observaciones: ids.autoridadNombre,
+      finalidadID: ids.finalidadID,
+      potencia: "",
+      clase: s?.clase ?? b.clase,
+      horasDia: 0,
+      horasNoche: 0,
+      cargoID: String(b.cargoID),
+      simulador: {
+        simuladorID: s ? String(s.id) : "",
+        nombre: s?.nombre ?? "",
+        modeloID: s?.modeloId ? String(s.modeloId) : "",
+        modelo: s?.modelo ?? "",
+      },
+    };
+  }
   return {
     Discriminaciones: b.discriminaciones,
     discriminaciones: [],
@@ -379,6 +528,85 @@ export function payloadCad(
     destinoPersonalizado: "",
     matriculaAvion: b.matricula,
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cada vuelo en el panel                                                      */
+/* -------------------------------------------------------------------------- */
+
+/** Un vuelo de Vector en el panel: si ya está, si se puede cargar o por qué no, y lo elegido. */
+export interface FilaCad {
+  b: BorradorCad;
+  /** Sacado de la lista por el piloto: ya foliado antes del CAD, o ignorado (se guarda en Vector). */
+  omitido: MotivoOmitido | null;
+  enElCad: number | null;
+  problema: string | null;
+  ids: { finalidadID: string; origenID: string; destinoID: string } | null;
+  elegido: boolean;
+  /** Anterior al primer vuelo que ya está en el CAD: probablemente se folió en papel. */
+  anterior: boolean;
+  autoridad: AutoridadCad;
+}
+
+/** La salida más vieja de lo que ya está en el CAD: lo anterior probablemente se folió en papel. */
+export function corteCad(enElCad: VueloEnElCad[]): string | null {
+  return enElCad.reduce<string | null>((min, v) => (!min || v.fechaSalida < min ? v.fechaSalida : min), null);
+}
+
+/**
+ * Un vuelo de Vector contra lo que tiene el CAD: ya está, el mismo con otra fecha, o qué IDs
+ * lleva. La usan el panel del marcador (`src/cad/puente.ts`) y la pantalla "Desde Vector".
+ */
+export function filaCad(
+  b: BorradorCad,
+  ctx: {
+    enElCad: VueloEnElCad[];
+    finalidades: ItemCad[];
+    lugares: ItemCad[];
+    autoridades: ItemCad[];
+    corte: string | null;
+    memoria: MemoriaAutoridades | null;
+  }
+): FilaCad {
+  const anterior = !!ctx.corte && b.fechaHoraSalida.slice(0, 19) < ctx.corte.slice(0, 19);
+  // La que el piloto cargó en el vuelo (migración 032), si sigue en la lista del CAD; si no, la memoria.
+  let autoridad =
+    b.autoridad && ctx.autoridades.some((a) => String(a.key) === b.autoridad!.id) ? { ...b.autoridad } : autoridadSugerida(ctx.memoria, claveDeAutoridad(b));
+  if (!autoridad.id && b.tipoVueloID === TIPO_VUELO_CAD.simulador && ctx.autoridades.some((a) => String(a.key) === AUTORIDAD_SIMULADOR))
+    autoridad = { ...autoridad, id: AUTORIDAD_SIMULADOR };
+  const base = { b, omitido: null, enElCad: null, ids: null, elegido: false, anterior, autoridad };
+  if (b.problema) return { ...base, problema: b.problema };
+  const id = yaEstaEnElCad(b, ctx.enElCad);
+  if (id) return { ...base, enElCad: id, problema: null };
+  // El mismo vuelo con un día de diferencia: mandarlo lo duplicaría en el CAD.
+  const otro = mismoVueloOtroDia(b.fechaHoraSalida, b.matricula, ctx.enElCad.map((v) => ({ salida: v.fechaSalida, matricula: v.matricula ?? "" })));
+  if (otro)
+    return {
+      ...base,
+      problema: `En el CAD figura el ${fechaCortaCad(otro)}, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta? Corregí la que esté mal para no duplicarlo.`,
+    };
+  const finalidadID = resolverFinalidad(b.finalidad, ctx.finalidades);
+  const simulador = b.tipoVueloID === TIPO_VUELO_CAD.simulador;
+  // Un simulador no tiene lugares. Un LAD está en la misma lista que los aeródromos, por su número.
+  const origenID = simulador ? "" : resolverLugar(b.origen, ctx.lugares);
+  const destinoID = simulador ? "" : b.tipoVueloID === TIPO_VUELO_CAD.local ? origenID : resolverLugar(b.destino, ctx.lugares);
+  let problema: string | null = null;
+  if (!finalidadID) problema = `El CAD no tiene la finalidad "${b.finalidad}".`;
+  else if (origenID === null) problema = `${b.origen.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
+  else if (destinoID === null) problema = `${b.destino.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
+  return {
+    ...base,
+    problema,
+    ids: problema ? null : { finalidadID: finalidadID!, origenID: origenID!, destinoID: destinoID! },
+    elegido: !problema && !anterior,
+  };
+}
+
+/** A una sesión de simulador le falta elegir cuál es en el CAD (o su clase). */
+export function faltaSimulador(b: BorradorCad, elegido?: SimuladorCad | null): boolean {
+  if (b.tipoVueloID !== TIPO_VUELO_CAD.simulador) return false;
+  const s = elegido ?? b.simulador?.cad ?? null;
+  return !s || !s.id || !s.nombre || !(CLASES_SIMULADOR as readonly string[]).includes(s.clase);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -414,6 +642,17 @@ export function recordarAutoridades(memoria: MemoriaAutoridades | null | undefin
   }
   return { porFinalidad };
 }
+
+/**
+ * Con qué se recuerda la autoridad de un vuelo: su finalidad, y aparte la de los simuladores
+ * (una sesión de instrucción la firma el instructor de simulador, no el de vuelo).
+ */
+export function claveDeAutoridad(b: Pick<BorradorCad, "finalidad" | "tipoVueloID">): string {
+  return b.tipoVueloID === TIPO_VUELO_CAD.simulador ? `SIMULADOR ${b.finalidad}` : b.finalidad;
+}
+
+/** "INSTRUCTOR DE SIMULADOR" en la lista del CAD: lo que se propone en un simulador sin memoria. */
+const AUTORIDAD_SIMULADOR = "19";
 
 /** Si a un vuelo le falta la autoridad o el nombre: el CAD pide los dos en cada vuelo. */
 export function faltaAutoridad(a: AutoridadCad | null | undefined): boolean {
@@ -502,7 +741,9 @@ function salidaUtc(v: unknown): string | null {
 
 /** El código de un lugar del CAD: el OACI si lo tiene ("SADF -  FDO -  FDO (SAN FERNANDO)" → "SADF"), o el que tenga (" LJN (LUJAN)" → "LJN"). */
 export function codigoDeLugarCad(texto: unknown): string {
-  return partesDeLugarCad(texto)[0] ?? "";
+  const codigo = partesDeLugarCad(texto)[0] ?? "";
+  // Un LAD viene por su número (" 2013 (VILLA JOSEFINA)"): en Vector es "LAD2013".
+  return /^\d{1,6}$/.test(codigo) ? `LAD${Number(codigo)}` : codigo;
 }
 
 /** La sigla de Vector para una finalidad del CAD, por nombre. `null` si no tiene par. */
@@ -587,7 +828,7 @@ export function vueloDesdeCad(
   else if (!salida || !llegada) problema = "No se pudo leer la salida o la llegada.";
   else if (horas === null || duration !== horas) problema = "Las horas de día y de noche no dan lo que va de la salida a la llegada.";
   else if (!matricula) problema = "No se pudo leer la matrícula.";
-  else if (!enVector.has(matricula)) problema = `${matricula} no está en tu Hangar: agregalo en Vector y volvé a tocar el marcador.`;
+  else if (!enVector.has(matricula)) problema = `${matricula} no está en tu Hangar: agregalo en Vector y volvé a leer el CAD.`;
   else if (!proposito) problema = finalidad ? `La finalidad "${finalidad}" no tiene par en Vector.` : "No se pudo leer la finalidad.";
   else if (!origen) problema = "No se pudo leer el aeródromo de salida.";
   if (problema) return { ...base, vuelo: null, problema };
@@ -702,24 +943,17 @@ export const INICIO_CAD = "2025-11-01";
 
 /**
  * Cuántos vuelos de Vector faltan pasar al CAD: desde `INICIO_CAD` (y hasta `hasta`, si se
- * da), sin el id del CAD, no omitidos ("ya foliado" o "ignorado") y sin simuladores, que
- * van a mano. Es la cuenta de la Bitácora y del resumen del mes.
+ * da), sin el id del CAD y no omitidos ("ya foliado" o "ignorado"). Los simuladores cuentan
+ * desde la 2.33.0, que los pasa. Es la cuenta de la Bitácora y del resumen del mes.
  */
 export function pendientesDelCad(
   vuelos: { date?: string | null; aircraft_id?: string | null; cad_vuelo_id?: number | null; cad_omitido?: string | null }[],
-  aviones: { id: string; is_simulator?: boolean | null }[],
+  _aviones: { id: string; is_simulator?: boolean | null }[],
   hasta?: string
 ): number {
-  const simuladores = new Set(aviones.filter((a) => a.is_simulator).map((a) => a.id));
   return vuelos.filter((f) => {
     const fecha = (f.date ?? "").slice(0, 10);
-    return (
-      fecha >= INICIO_CAD &&
-      (!hasta || fecha <= hasta) &&
-      !f.cad_vuelo_id &&
-      !f.cad_omitido &&
-      !(f.aircraft_id && simuladores.has(f.aircraft_id))
-    );
+    return fecha >= INICIO_CAD && (!hasta || fecha <= hasta) && !f.cad_vuelo_id && !f.cad_omitido;
   }).length;
 }
 

@@ -22,40 +22,36 @@
  * Lo compila `scripts/build-puente.mjs` a `public/cad/puente.js`.
  */
 import {
+  CLASES_SIMULADOR,
   TRAER_DEL_CAD,
-  autoridadSugerida,
+  claveDeAutoridad,
+  corteCad,
   estaEnVector,
   faltaAutoridad,
+  faltaSimulador,
   fechaCortaCad,
+  filaCad,
   mismoVueloOtroDia,
   payloadCad,
   recordarAutoridades,
-  resolverFinalidad,
-  resolverLugar,
+  simuladorSugerido,
   vueloDesdeCad,
   yaEstaEnElCad,
   type AutoridadCad,
   type BorradorCad,
+  type FilaCad,
   type FilaTraida,
   type ItemCad,
   type MemoriaAutoridades,
   type MotivoOmitido,
+  type SimuladorCad,
   type VueloConocido,
   type VueloEnElCad,
 } from "../lib/cad";
 
 declare const __CAD_ORIGEN__: string;
 
-interface Fila {
-  b: BorradorCad;
-  /** Sacado de la lista por el piloto: ya foliado antes del CAD, o ignorado (se guarda en Vector). */
-  omitido: MotivoOmitido | null;
-  enElCad: number | null;
-  problema: string | null;
-  ids: { finalidadID: string; origenID: string; destinoID: string } | null;
-  elegido: boolean;
-  anterior: boolean;
-  autoridad: AutoridadCad;
+interface Fila extends FilaCad {
   resultado?: { ok: boolean; texto: string };
 }
 
@@ -121,6 +117,11 @@ const ESTILOS = `
   .aut select, .aut input { width: 100%; padding: 7px 9px; border: 1px solid #d4d4d8; border-radius: 9px; font: inherit; font-size: 12px; background: #fff; color: #18181b; }
   .aut select:focus, .aut input:focus { outline: 2px solid #2563eb; outline-offset: 0; border-color: transparent; }
   .aut .enl { grid-column: 1 / -1; justify-self: start; } .aut .enl[hidden] { display: none; }
+  .sim { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+  .sim b { font-size: 13px; } .sim p { margin: 2px 0 8px; font-size: 12px; color: #52525b; }
+  .sim .g { display: grid; grid-template-columns: 1fr 96px auto; gap: 6px; }
+  .sim select { width: 100%; padding: 7px 9px; border: 1px solid #d4d4d8; border-radius: 9px; font: inherit; font-size: 12px; background: #fff; color: #18181b; }
+  .sim .listo { color: #047857; font-size: 12px; margin: 0; }
   .estado { font-size: 12px; margin: 6px 0 0 26px; }
   .estado.ok { color: #047857; } .estado.err { color: #b91c1c; }
   details { margin-top: 16px; } summary { cursor: pointer; font-size: 13px; font-weight: 700; }
@@ -223,6 +224,12 @@ const ESTILOS = `
     return getCad<ItemCad[]>("GetLugarAterrizajeListItem?tipoLugar=AER&tipoVuelo=2").catch(() => [] as ItemCad[]);
   }
 
+  /** El modelo que el CAD le asocia a un simulador: el formulario ofrece sólo ése. */
+  async function modeloDe(simId: number): Promise<{ modeloId: number | null; modelo: string | null }> {
+    const m = await getCad<ItemCad[]>(`GetModelosPorSimuladorListItem?simId=${simId}`).catch(() => [] as ItemCad[]);
+    return m[0] ? { modeloId: Number(m[0].key) || null, modelo: m[0].value || null } : { modeloId: null, modelo: null };
+  }
+
 
   /* ------------------------------------------------------- la ventanita ----- */
 
@@ -315,6 +322,15 @@ const ESTILOS = `
     return d ? Number(d.cambiados) || 0 : null;
   }
 
+  /** Guarda en el Hangar qué simulador del CAD es ese equipo (migración 036). */
+  async function simuladorEnVector(avionId: string, simulador: SimuladorCad): Promise<boolean> {
+    if (!ventana || ventana.closed) return false;
+    const vuelve = esperar("vector-cad:simulador-guardado", 30_000);
+    ventana.postMessage({ tipo: "vector-cad:simulador", avionId, simulador }, VECTOR);
+    const d = await vuelve;
+    return !!d?.ok;
+  }
+
   async function marcarEnVector(items: { vectorId: string; cadId: number; autoridad?: AutoridadCad }[]): Promise<number | null> {
     if (items.length === 0) return 0;
     if (!ventana || ventana.closed) return null;
@@ -345,6 +361,7 @@ const ESTILOS = `
 
   let filas: Fila[] = [];
   let autoridades: ItemCad[] = [];
+  let simuladores: ItemCad[] = [];
   let paso: Paso = "elegir";
   let aviso = "";
   let vistaPrevia = "";
@@ -378,12 +395,13 @@ const ESTILOS = `
     try {
       // Una sola lista de aeródromos: la AER es igual para local y travesía, y trae adentro a
       // la LAD (leído del CAD real el 2026-10-21). Pesa 1,2 MB.
-      const [vector, finalidades, auts, enElCad, lugaresCad] = await Promise.all([
+      const [vector, finalidades, auts, enElCad, lugaresCad, sims] = await Promise.all([
         pedirVuelos(),
         getCad<ItemCad[]>("GetFinalidadListItem?tcp=false"),
         getCad<ItemCad[]>("GetAutoridadesListItem"),
         vuelosDelCad(),
         lugares(),
+        getCad<ItemCad[]>("GetSimuladoresListItem").catch(() => [] as ItemCad[]),
       ]);
       if (!vector) {
         const bloqueada = !ventana || ventana.closed;
@@ -400,17 +418,16 @@ const ESTILOS = `
         return;
       }
       autoridades = auts;
+      simuladores = [...sims].sort((a, b) => a.value.localeCompare(b.value));
       cadLista = enElCad;
       listasCad = { finalidades, lugares: lugaresCad };
       conocidos = vector.conocidos;
       matriculas = vector.matriculas;
       ($("tabs") as HTMLDivElement).hidden = !TRAER_DEL_CAD;
-      const memoria = leerMemoria();
-      // Lo anterior al primer vuelo que ya está en el CAD probablemente se folió en papel.
-      const corte = enElCad.reduce<string | null>((min, v) => (!min || v.fechaSalida < min ? v.fechaSalida : min), null);
+      const ctx = { enElCad, finalidades, lugares: lugaresCad, autoridades: auts, corte: corteCad(enElCad), memoria: leerMemoria() };
       filas = [
-        ...vector.borradores.map((b) => armarFila(b, enElCad, finalidades, lugaresCad, corte, memoria)),
-        ...vector.omitidos.map(({ motivo, ...b }) => ({ ...armarFila(b, enElCad, finalidades, lugaresCad, corte, memoria), omitido: motivo, elegido: false })),
+        ...vector.borradores.map((b) => filaCad(b, ctx)),
+        ...vector.omitidos.map(({ motivo, ...b }) => ({ ...filaCad(b, ctx), omitido: motivo, elegido: false })),
       ];
       paso = "elegir";
       dibujar();
@@ -420,48 +437,6 @@ const ESTILOS = `
         <p class="nota">Entrá al CAD, abrí "Registro horas vuelo" y volvé a tocar el marcador.</p></div>`;
       pie.innerHTML = "";
     }
-  }
-
-  function armarFila(
-    b: BorradorCad,
-    enElCad: VueloEnElCad[],
-    finalidades: ItemCad[],
-    lista: ItemCad[],
-    corte: string | null,
-    memoria: MemoriaAutoridades | null
-  ): Fila {
-    const anterior = !!corte && b.fechaHoraSalida.slice(0, 19) < corte.slice(0, 19);
-    // La que el piloto cargó en el vuelo (migración 032), si sigue en la lista del CAD; si no, la memoria.
-    const autoridad =
-      b.autoridad && autoridades.some((a) => String(a.key) === b.autoridad!.id) ? { ...b.autoridad } : autoridadSugerida(memoria, b.finalidad);
-    const base = { b, omitido: null, enElCad: null, ids: null, elegido: false, anterior, autoridad };
-    if (b.problema) return { ...base, problema: b.problema };
-    const id = yaEstaEnElCad(b, enElCad);
-    if (id) return { ...base, enElCad: id, problema: null };
-    // El mismo vuelo con un día de diferencia: mandarlo lo duplicaría en el CAD.
-    const otro = mismoVueloOtroDia(b.fechaHoraSalida, b.matricula, enElCad.map((v) => ({ salida: v.fechaSalida, matricula: v.matricula ?? "" })));
-    if (otro)
-      return {
-        ...base,
-        problema: `En el CAD figura el ${fechaCortaCad(otro)}, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta? Corregí la que esté mal para no duplicarlo.`,
-      };
-    const finalidadID = resolverFinalidad(b.finalidad, finalidades);
-    const origenID = resolverLugar(b.origen, lista);
-    const destinoID = b.tipoVueloID === 1 ? origenID : resolverLugar(b.destino, lista);
-    let problema: string | null = null;
-    if (!finalidadID) problema = `El CAD no tiene la finalidad "${b.finalidad}".`;
-    else if (!origenID) problema = `${b.origen.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
-    else if (!destinoID) problema = `${b.destino.codigo} no está en la lista de aeródromos del CAD. Cargalo a mano.`;
-    return {
-      b,
-      omitido: null,
-      enElCad: null,
-      problema,
-      ids: problema ? null : { finalidadID: finalidadID!, origenID: origenID!, destinoID: destinoID! },
-      elegido: !problema && !anterior,
-      anterior,
-      autoridad,
-    };
   }
 
   /* ------------------------------------------------------------ el dibujo --- */
@@ -479,7 +454,7 @@ const ESTILOS = `
     const marcarFalta = paso === "elegir" && aviso && f.elegido && faltaAutoridad(f.autoridad);
     if (marcarFalta) clases.push("falta");
     const caja = conCaja ? `<input type="checkbox" data-i="${i}" ${f.elegido ? "checked" : ""} aria-label="Cargar el vuelo del ${esc(f.b.fecha)}">` : "";
-    const meta = `${esc(f.b.matricula)} · ${horas(f.b.horas)} h · ${esc(f.b.finalidad.toLowerCase())}`;
+    const meta = [f.b.matricula, `${horas(f.b.horas)} h`, f.b.finalidad.toLowerCase()].filter(Boolean).map(esc).join(" · ");
     // Sacarlo de la lista: "Ignorar" lo que no se puede mandar, "Ya foliado" lo que se podría.
     let acc = "";
     if (paso === "elegir" && !f.resultado) {
@@ -511,6 +486,53 @@ const ESTILOS = `
     );
   }
 
+  /** Los simuladores del Hangar con vuelos por cargar: cuál es en el CAD y su clase, una vez por equipo. */
+  function equiposSimulador() {
+    const porAvion = new Map<string, { equipo: string; cad: SimuladorCad | null; n: number }>();
+    for (const f of porCargar()) {
+      const s = f.b.simulador;
+      if (!s?.avionId) continue;
+      const e = porAvion.get(s.avionId) ?? { equipo: s.equipo, cad: s.cad, n: 0 };
+      e.n++;
+      porAvion.set(s.avionId, e);
+    }
+    return [...porAvion.entries()];
+  }
+
+  function simuladoresHtml() {
+    return equiposSimulador()
+      .map(([avionId, e]) => {
+        const sugerido = e.cad ? String(e.cad.id) : simuladorSugerido(e.equipo, simuladores)?.key ?? "";
+        const clase = e.cad?.clase ?? "";
+        const listo = !faltaSimulador({ tipoVueloID: 3 } as BorradorCad, e.cad);
+        return `<div class="sim"><b>${esc(e.equipo)}</b> <span class="nota">· ${e.n === 1 ? "1 sesión" : `${e.n} sesiones`}</span>
+          <p>${listo ? "Así va al CAD. Podés cambiarlo:" : "¿Cuál es en el CAD? Se elige una vez y Vector lo recuerda."}</p>
+          <div class="g"><select data-sim="${esc(avionId)}" aria-label="Simulador en el CAD"><option value="">Elegí el simulador…</option>${simuladores
+            .map((s) => `<option value="${esc(s.key)}" ${s.key === sugerido ? "selected" : ""}>${esc(s.value)}</option>`)
+            .join("")}</select>
+          <select data-clase="${esc(avionId)}" aria-label="Clase del simulador"><option value="">Clase…</option>${CLASES_SIMULADOR.map(
+            (c) => `<option ${c === clase ? "selected" : ""}>${c}</option>`
+          ).join("")}</select>
+          <button class="b neg" data-guardarsim="${esc(avionId)}" style="padding:7px 12px">Guardar</button></div></div>`;
+      })
+      .join("");
+  }
+
+  async function guardarSimulador(avionId: string) {
+    const sel = raiz.querySelector<HTMLSelectElement>(`select[data-sim="${CSS.escape(avionId)}"]`);
+    const cls = raiz.querySelector<HTMLSelectElement>(`select[data-clase="${CSS.escape(avionId)}"]`);
+    const item = simuladores.find((s) => s.key === sel?.value);
+    if (!item || !cls?.value) {
+      aviso = "Elegí el simulador y su clase (la que figura en el CAD: ATD, BATD, PCATD…).";
+      return dibujar();
+    }
+    const simulador: SimuladorCad = { id: Number(item.key), nombre: item.value, clase: cls.value, ...(await modeloDe(Number(item.key))) };
+    const ok = await simuladorEnVector(avionId, simulador);
+    for (const f of filas) if (f.b.simulador?.avionId === avionId) f.b = { ...f.b, clase: simulador.clase, simulador: { ...f.b.simulador, cad: simulador } };
+    aviso = ok ? "" : "Quedó elegido para esta vez, pero no pudimos guardarlo en Vector: fijate que la ventanita siga abierta.";
+    dibujar();
+  }
+
   function dibujar() {
     pestañas();
     if (modo === "traer") return dibujarTraer();
@@ -536,6 +558,7 @@ const ESTILOS = `
       </div>
       <p class="resumen"><b>${cargar.length}</b> por cargar, <b>${estan.length + cargados.length}</b> ya están y <b>${revisar.length}</b> para revisar.</p>
       <p class="nota">Cada vuelo lleva su autoridad certificante. Quedan "Pendiente de DDJJ": la declaración la hacés vos.</p>
+      ${paso === "elegir" ? simuladoresHtml() : ""}
       ${
         revisar.length
           ? `<div class="sec"><h3>Para revisar <span>No se mandan hasta corregirlos</span></h3>${revisar.map((f) => filaHtml(f, filas.indexOf(f), false)).join("")}</div>`
@@ -636,6 +659,9 @@ const ESTILOS = `
       dibujar();
     });
     $("anotar")?.addEventListener("click", () => void anotarLosQueEstan());
+    raiz.querySelectorAll<HTMLButtonElement>("button[data-guardarsim]").forEach((btn) => {
+      btn.onclick = () => void guardarSimulador(btn.dataset.guardarsim!);
+    });
     raiz.querySelectorAll<HTMLButtonElement>("button[data-omit]").forEach((btn) => {
       btn.onclick = () => void omitir([filas[Number(btn.dataset.omit)]], (btn.dataset.motivo || null) as MotivoOmitido | null);
     });
@@ -676,9 +702,14 @@ const ESTILOS = `
   }
 
   function validar(): boolean {
+    const sinSimulador = elegidas().filter((f) => faltaSimulador(f.b)).length;
     const faltan = elegidas().filter((f) => faltaAutoridad(f.autoridad)).length;
-    aviso = faltan ? `A ${faltan === 1 ? "1 vuelo le falta" : `${faltan} vuelos les falta`} la autoridad o el nombre: el CAD los pide en cada vuelo.` : "";
-    return !faltan;
+    aviso = sinSimulador
+      ? "Elegí arriba cuál es tu simulador en el CAD y su clase, y tocá Guardar."
+      : faltan
+        ? `A ${faltan === 1 ? "1 vuelo le falta" : `${faltan} vuelos les falta`} la autoridad o el nombre: el CAD los pide en cada vuelo.`
+        : "";
+    return !faltan && !sinSimulador;
   }
 
   function payloads(sel: Fila[]) {
@@ -727,7 +758,7 @@ const ESTILOS = `
       dibujarPie();
     }
 
-    guardarMemoria(recordarAutoridades(leerMemoria(), sel.filter((f) => f.resultado?.ok).map((f) => ({ finalidad: f.b.finalidad, autoridad: f.autoridad }))));
+    guardarMemoria(recordarAutoridades(leerMemoria(), sel.filter((f) => f.resultado?.ok).map((f) => ({ finalidad: claveDeAutoridad(f.b), autoridad: f.autoridad }))));
     // Los ids salen de la lista del CAD: el mismo criterio que para los que ya estaban.
     const enElCad = await vuelosDelCad().catch(() => [] as VueloEnElCad[]);
     // Con la autoridad que se usó, para que el vuelo en Vector diga lo mismo que el CAD.

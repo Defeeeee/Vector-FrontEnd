@@ -765,13 +765,13 @@ export default function EditorPlanDeVuelo({
               <Campo casilla="13" etiqueta="Aeródromo de salida" estado={e.salida} sinLabel>
                 <CampoAerodromo valor={f.salida} onCambio={(a) => cambiar({ salida: a, oficina: "" })} placeholder="SADF o nombre" claseInput={INPUT} />
               </Campo>
-              <Campo casilla="13" etiqueta="Fecha (DOF, UTC)" estado={e.fechaHora}>
+              <Campo casilla="13" etiqueta="Fecha (DOF, UTC)" estado={e.fecha}>
                 <input type="date" value={f.dofUtc} onChange={(ev) => cambiar({ dofUtc: ev.target.value })} className={INPUT} />
               </Campo>
               <Campo
                 casilla="13"
                 etiqueta="EOBT (UTC)"
-                estado={e.fechaHora}
+                estado={e.hora}
                 debajo={
                   local ? (
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">

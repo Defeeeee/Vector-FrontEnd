@@ -78,6 +78,34 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.33.0",
+    fecha: "2026-10-28",
+    titulo: "Tu CAD desde Vector",
+    novedades: [
+      {
+        icono: "llave",
+        titulo: "Pasá tus vuelos al CAD desde Vector",
+        texto: "Conectá tu cuenta de ANAC una vez y cargá tus vuelos en el CAD desde acá, también desde el teléfono. Si preferís que tu contraseña no pase por Vector, sigue estando el marcador.",
+        href: "/dashboard/history/cad",
+        cta: "Conectar mi CAD",
+      },
+      {
+        icono: "avion",
+        titulo: "Cargalo y ya queda en el CAD",
+        texto: "Con tu cuenta conectada, al registrar un vuelo tildás \"Cargarlo también en tu CAD\" y queda Pendiente de DDJJ. La declaración la seguís haciendo vos.",
+        href: "/dashboard/log-flight",
+        cta: "Registrar un vuelo",
+      },
+      {
+        icono: "brujula",
+        titulo: "Simuladores y LAD, también al CAD",
+        texto: "Las sesiones de simulador pasan al CAD: elegís una vez cuál es tu simulador y su clase. Y los vuelos desde un LAD se registran buscándolo por número o nombre, y pasan con su número.",
+        href: "/dashboard/history/cad",
+        cta: "Ver Pasar al CAD",
+      },
+    ],
+  },
+  {
     version: "2.32.0",
     fecha: "2026-10-28",
     titulo: "Los LAD en el plan de vuelo",

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { apiFetch } from "@/lib/api";
 import { getAirport } from "@/lib/airports";
-import { TRAER_DEL_CAD, autoridadDelFormulario, matriculaCad, mismoVueloOtroDia, validarTraido } from "@/lib/cad";
+import { TRAER_DEL_CAD, autoridadDelFormulario, matriculaCad, mismoVueloOtroDia, simuladorValido, validarTraido } from "@/lib/cad";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
 import type { Aircraft, Flight } from "@/types";
 
@@ -126,6 +126,26 @@ export async function traerDelCad(items: unknown[]) {
     if (resultado.creados > 0) revalidarVuelosNuevos();
   }
   return resultado;
+}
+
+/**
+ * Guarda qué simulador del CAD es un "avión" simulador del Hangar, con su clase y su modelo
+ * (`aircraft.cad_simulador`, migración 036). Se elige una vez en el panel y sirve para todas
+ * sus sesiones. Lo que llega se revisa (`simuladorValido`): viene de otra pestaña.
+ */
+export async function guardarSimuladorCad(avionId: string, simulador: unknown) {
+  const s = simuladorValido(simulador);
+  if (!/^[\w-]{1,64}$/.test(String(avionId)) || !s) return { ok: false };
+  try {
+    const r = await apiFetch(`/aircraft/${avionId}`, { method: "PATCH", body: JSON.stringify({ cad_simulador: s }) });
+    if (!r.ok) return { ok: false };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { ok: false };
+  }
+  revalidatePath("/dashboard/history/cad");
+  revalidatePath("/dashboard/settings");
+  return { ok: true };
 }
 
 /**

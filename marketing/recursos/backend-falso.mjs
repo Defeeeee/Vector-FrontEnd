@@ -13,6 +13,7 @@ const aviones = [
     cruise_tas_kt: 95, fuel_burn_lph: 24, fuel_capacity_l: 92,
     plan_vuelo: { estela: "L", equipo: "SDGZ", vigilancia: "C", nav: "ABAS", opr: "AEROCLUB ARGENTINO", per: "A", colorMarcas: "BLANCO Y ROJO", elt: true } },
   { id: "a2", user_id: "u1", registration: "LV-XYZ", icao: "PA11", type: "Piper PA-11", type_acft: "MONT-T", is_simulator: false },
+  { id: "a3", user_id: "u1", registration: "LV-ASG", icao: "C172", type: "Simulador C172", type_acft: "C172", is_simulator: true, cad_simulador: null },
 ];
 const rutas = ["SADF SADF", "SADF SADM", "SADF SADL", "SADF SAAK", "SADF SAZS", "SADF SADP", "SADF SADF"];
 let n = 0;
@@ -54,6 +55,56 @@ const rutasFijas = {
   "/api/audit/summary": { critical: 0, warning: 0, suppressed: 0, open_total: 0 },
   "/api/social/resumen": { handle: "lucia.vuela", solicitudes: 0, actividad_nueva: 0, avatar_url: null },
 };
+// Una sesión de simulador y un vuelo desde un LAD, para "Pasar al CAD" (2.33.0).
+vuelos.push(
+  { id: "00000000-0000-4000-8000-0000000005a1", user_id: "u1", aircraft_id: "a3", date: dia(3), route: "LOCAL", landings: 0, duration: 0,
+    takeoff: `${dia(3)}T14:00:00Z`, landing: `${dia(3)}T15:00:00Z`, purpose: "INST", sim_pil_en_inst: 1.0 },
+  { id: "00000000-0000-4000-8000-0000000005a2", user_id: "u1", aircraft_id: "a1", date: dia(4), route: "LAD2013 SADF", landings: 1, duration: 1.4,
+    takeoff: `${dia(4)}T13:00:00Z`, landing: `${dia(4)}T14:24:00Z`, purpose: "VP", pic_day_tra: 1.4 },
+);
+// El CAD falso (`/api/cad/*`): la cuenta, las listas y los vuelos que ya tiene.
+const cad = { usuario: process.env.CAD_CONECTADO ? "lferrari" : null, estado: "ok", vuelos: [] };
+const matriculaDe = (id) => aviones.find((a) => a.id === id)?.registration ?? null;
+for (const f of vuelos) if (f.date < dia(60)) cad.vuelos.push({ vueloTripulanteID: 900000 + cad.vuelos.length, fechaSalida: f.takeoff.slice(0, 19), matricula: matriculaDe(f.aircraft_id), origenDesc: f.route.split(" ")[0], estadoDesc: "PENDIENTE DE DDJJ" });
+cad.vuelos.push(
+  { vueloTripulanteID: 990001, fechaSalida: `${dia(20)}T15:00:00`, matricula: "LV-ABC", tipoVueloID: 2, cargoID: 1, horasDia: 1.2, horasNoche: 0, fechaHoraSalida: `${dia(20)}T15:00:00`, fechaHoraLlegada: `${dia(20)}T16:12:00`, finalidadID: 63, origenID: "FDO", destinoID: "MOR", aterrizajes: 2 },
+  { vueloTripulanteID: 990002, fechaSalida: `${dia(21)}T12:00:00`, matricula: "LV-QQQ", tipoVueloID: 1, cargoID: 1, horasDia: 0.8, horasNoche: 0, fechaHoraSalida: `${dia(21)}T12:00:00`, fechaHoraLlegada: `${dia(21)}T12:48:00`, finalidadID: 63, origenID: "FDO", destinoID: "FDO", aterrizajes: 4 },
+);
+const listasCad = {
+  finalidades: [["63", "ENTRENAMIENTO"], ["67", "INSTRUCTOR"], ["68", "INSTRUCCIÓN"], ["70", "VUELO PRIVADO"]].map(([key, value]) => ({ key, value })),
+  autoridades: [["5", "INSTRUCTOR DE VUELO"], ["6", "JEFE DE INSTRUCTORES"], ["2", "JEFE DE AERODROMO"], ["19", "INSTRUCTOR DE SIMULADOR"], ["1", "OTROS"]].map(([key, value]) => ({ key, value })),
+  lugares: [["FDO", "SADF -  FDO -  FDO (SAN FERNANDO)"], ["MOR", "SADM -  MOR -  MOR (MORON)"], ["LPG", "SADL -  LPG -  LPG (LA PLATA)"], ["PAL", "SADP -  PAL -  PAL (EL PALOMAR)"], ["SAAK", " SAAK (MARTIN GARCIA)"], ["SAZS", " SAZS (BARILOCHE)"], ["2013", " 2013 (VILLA JOSEFINA)"]].map(([key, value]) => ({ key, value })),
+  simuladores: [["34", "SANTIAGO I C-172 -- ASG TRAINING CENTER"], ["39", "C172  -- CIAC CICA"], ["53", "SIMAR II -- CIAC FLIGHT CENTER"], ["217", "FRASCA -- FLIGHT CENTER"]].map(([key, value]) => ({ key, value })),
+};
+function rutaCad(req, res, ruta, json) {
+  const responder = (codigo, cuerpo) => {
+    res.writeHead(codigo, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(cuerpo));
+  };
+  if (ruta === "/api/cad/conexion" && req.method === "GET")
+    return responder(200, { disponible: true, conectado: !!cad.usuario, usuario: cad.usuario, estado: cad.usuario ? cad.estado : null, error: null });
+  if (ruta === "/api/cad/conexion" && req.method === "POST") {
+    if (json.clave !== "buena") return responder(400, { detail: "Usuario o contraseña inválidos." });
+    cad.usuario = json.usuario;
+    cad.estado = "ok";
+    return responder(200, { conectado: true, usuario: json.usuario, estado: "ok" });
+  }
+  if (ruta === "/api/cad/conexion" && req.method === "DELETE") {
+    cad.usuario = null;
+    return responder(200, { conectado: false });
+  }
+  if (!cad.usuario) return responder(409, { detail: "No conectaste tu cuenta de ANAC." });
+  if (ruta === "/api/cad/listas") return responder(200, listasCad);
+  if (ruta === "/api/cad/vuelos" && req.method === "GET") return responder(200, { datos: cad.vuelos });
+  if (ruta === "/api/cad/modelos") return responder(200, { datos: [{ key: "40", value: "A320" }] });
+  if (/^\/api\/cad\/vuelos\/\d+$/.test(ruta)) return responder(200, cad.vuelos.find((v) => String(v.vueloTripulanteID) === ruta.split("/").pop()) ?? {});
+  if (ruta === "/api/cad/vuelos" && req.method === "POST") {
+    console.log("CAD falso · Crear:", JSON.stringify(json));
+    cad.vuelos.push({ vueloTripulanteID: 995000 + cad.vuelos.length, fechaSalida: String(json.fechaHoraSalida).slice(0, 19), matricula: json.matriculaAvion || null, estadoDesc: "PENDIENTE DE DDJJ" });
+    return responder(200, { ok: true, mensaje: "Cargado en el CAD" });
+  }
+  return responder(404, { detail: "no" });
+}
 export const DATOS = { perfil, aviones, vuelos };
 // Planes de vuelo (migración 024), en memoria: se pierden al reiniciar.
 const planes = new Map();
@@ -220,6 +271,7 @@ if (process.argv[1]?.endsWith("backend-falso.mjs")) createServer(async (req, res
     res.writeHead(a ? 200 : 404, { "Content-Type": "application/json" });
     return res.end(JSON.stringify(a ?? {}));
   }
+  if (ruta.startsWith("/api/cad/")) return rutaCad(req, res, ruta, json);
   let cuerpo = typeof rutasFijas[ruta] === "function" ? rutasFijas[ruta]() : rutasFijas[ruta];
   if (ruta === "/api/admin/estadisticas" && existsSync(DIR + "admin-estadisticas.json")) cuerpo = JSON.parse(readFileSync(DIR + "admin-estadisticas.json", "utf8"));
   if (cuerpo === undefined) cuerpo = ruta.endsWith("s") ? [] : {};

@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { ChevronDown, ExternalLink } from "lucide-react";
+import { Bookmark, ChevronDown, ExternalLink, ShieldCheck, Smartphone } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
 import PasoMarcador from "@/components/dashboard/MarcadorCad";
+import ConexionCad, { DesconectarCad } from "@/components/dashboard/cad/ConexionCad";
+import PanelCad from "@/components/dashboard/cad/PanelCad";
+import { estadoConexionCad } from "@/actions/cad-vector";
 import { vuelosParaElCad } from "@/lib/cad-servidor";
 import { TRAER_DEL_CAD, type BorradorCad } from "@/lib/cad";
 
@@ -47,6 +50,53 @@ function Fila({ b, corregir }: { b: BorradorCad; corregir?: boolean }) {
   );
 }
 
+/** El modo de siempre: el marcador en la pestaña del CAD, con la sesión del piloto. */
+function PasosMarcador() {
+  return (
+    <>
+    <ol className="space-y-8">
+      <Paso n={1} titulo="Poné el marcador en tu barra de favoritos">
+        <PasoMarcador />
+      </Paso>
+      <Paso n={2} titulo='Entrá al CAD y abrí "Registro horas vuelo"'>
+        <a
+          href="https://cad.anac.gob.ar/portalApp/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
+        >
+          Abrir el CAD <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+        </a>
+      </Paso>
+      <Paso n={3} titulo="Tocá el marcador y elegí qué cargar">
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+          Se abre un panel de Vector adentro del CAD, con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
+          ponés su autoridad certificante y su nombre; Vector te propone la última que usaste para esa finalidad. Antes de cargar podés ver
+          exactamente lo que se manda.
+        </p>
+        {TRAER_DEL_CAD && (
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+          ¿Ya declaraste vuelos en el CAD que no están en Vector? En la pestaña <b className="font-semibold text-zinc-900 dark:text-white">Traer a Vector</b>{" "}
+          los pasás a tu bitácora, con el desglose del libro. No se descuentan de tu saldo. Si cargaste los totales de tu libro, traé sólo los
+          posteriores a esa hoja, para no contar dos veces las mismas horas.
+        </p>
+        )}
+      </Paso>
+      <Paso n={4} titulo="Hacé la declaración jurada en el CAD">
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+          Los vuelos quedan &quot;Pendiente de DDJJ&quot;. La declaración la hacés vos, en &quot;DDJJ de Horas de vuelo&quot;: revisalos antes,
+          porque lo que se declara ahí es una declaración jurada.
+        </p>
+      </Paso>
+    </ol>
+
+    <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-prose">
+      Vector no ve tu contraseña de ANAC: carga desde tu sesión del CAD, en tu navegador.
+    </p>
+    </>
+  );
+}
+
 const LISTA = "divide-y divide-zinc-100 dark:divide-white/5 rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] overflow-hidden";
 
 /**
@@ -58,7 +108,7 @@ const LISTA = "divide-y divide-zinc-100 dark:divide-white/5 rounded-3xl border b
  * únicos que piden algo.
  */
 export default async function PasarAlCadPage() {
-  const datos = await vuelosParaElCad();
+  const [datos, conexion] = await Promise.all([vuelosParaElCad(), estadoConexionCad()]);
 
   if (datos === null || datos.alumno) {
     return (
@@ -73,6 +123,7 @@ export default async function PasarAlCadPage() {
     );
   }
 
+  const conectado = !!conexion?.disponible && conexion.conectado && conexion.estado === "ok";
   const listos = datos.borradores.filter((b) => !b.problema);
   const revisar = datos.borradores.filter((b) => b.problema);
   const total = datos.pasados + datos.borradores.length;
@@ -91,6 +142,7 @@ export default async function PasarAlCadPage() {
     <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 max-w-3xl">
       <PageHeader eyebrow="Bitácora" title="Pasar al CAD" />
 
+      {!conectado && (
       <section className="space-y-3">
         <p className="text-lg md:text-xl font-bold text-zinc-900 dark:text-white leading-snug max-w-prose">{frase}</p>
         {total > 0 && (
@@ -126,48 +178,77 @@ export default async function PasarAlCadPage() {
           </>
         )}
       </section>
+      )}
 
-      <ol className="space-y-8">
-        <Paso n={1} titulo="Poné el marcador en tu barra de favoritos">
-          <PasoMarcador />
-        </Paso>
-        <Paso n={2} titulo='Entrá al CAD y abrí "Registro horas vuelo"'>
-          <a
-            href="https://cad.anac.gob.ar/portalApp/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5"
-          >
-            Abrir el CAD <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-          </a>
-        </Paso>
-        <Paso n={3} titulo="Tocá el marcador y elegí qué cargar">
-          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-            Se abre un panel de Vector adentro del CAD, con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
-            ponés su autoridad certificante y su nombre; Vector te propone la última que usaste para esa finalidad. Antes de cargar podés ver
-            exactamente lo que se manda.
-          </p>
-          {TRAER_DEL_CAD && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-            ¿Ya declaraste vuelos en el CAD que no están en Vector? En la pestaña <b className="font-semibold text-zinc-900 dark:text-white">Traer a Vector</b>{" "}
-            los pasás a tu bitácora, con el desglose del libro. No se descuentan de tu saldo. Si cargaste los totales de tu libro, traé sólo los
-            posteriores a esa hoja, para no contar dos veces las mismas horas.
-          </p>
-          )}
-        </Paso>
-        <Paso n={4} titulo="Hacé la declaración jurada en el CAD">
-          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-            Los vuelos quedan &quot;Pendiente de DDJJ&quot;. La declaración la hacés vos, en &quot;DDJJ de Horas de vuelo&quot;: revisalos antes,
-            porque lo que se declara ahí es una declaración jurada.
-          </p>
-        </Paso>
-      </ol>
+      {conectado ? (
+        <>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] px-5 py-4">
+            <span className="relative grid place-items-center w-10 h-10 rounded-2xl bg-zinc-900 dark:bg-white shrink-0">
+              <ShieldCheck className="w-5 h-5 text-white dark:text-zinc-900" aria-hidden="true" />
+              <span className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-zinc-950 bg-emerald-500" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-zinc-900 dark:text-white">Conectado a tu CAD</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Como <span className="data font-semibold text-zinc-700 dark:text-zinc-300">{conexion!.usuario}</span>. Vector carga los vuelos; la declaración
+                jurada la hacés vos.
+              </p>
+            </div>
+            <DesconectarCad />
+          </div>
+          <PanelCad />
+          <details className="group space-y-8">
+            <summary className="flex items-center gap-2 cursor-pointer list-none text-sm font-semibold text-zinc-500 dark:text-zinc-400 [&::-webkit-details-marker]:hidden">
+              <ChevronDown className="w-4 h-4 transition-transform -rotate-90 group-open:rotate-0" aria-hidden="true" />
+              Prefiero el marcador, desde la compu
+            </summary>
+            <PasosMarcador />
+          </details>
+        </>
+      ) : conexion?.disponible ? (
+        <section className="space-y-4">
+          <h2 className="text-[15px] font-bold text-zinc-900 dark:text-white">¿Cómo querés pasarlos?</h2>
+          <div className="rounded-3xl border-2 border-zinc-900 dark:border-white/80 bg-white dark:bg-white/[0.02] p-5 md:p-6 space-y-5">
+            <div className="flex items-start gap-3">
+              <span className="grid place-items-center w-10 h-10 rounded-2xl bg-zinc-900 dark:bg-white shrink-0">
+                <Smartphone className="w-5 h-5 text-white dark:text-zinc-900" aria-hidden="true" />
+              </span>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-zinc-900 dark:text-white">Desde Vector</h3>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+                  Conectás tu cuenta de ANAC una vez y pasás los vuelos desde acá, también desde el teléfono. Vector guarda tu usuario y tu contraseña cifrados y
+                  entra al CAD por vos sólo cuando lo pedís.
+                </p>
+              </div>
+            </div>
+            <ConexionCad rechazada={conexion.estado === "rechazada" ? conexion.error : null} usuarioAnterior={conexion.usuario} />
+          </div>
+          <details className="group rounded-3xl border border-zinc-200 dark:border-white/10 p-5 md:p-6 open:space-y-8">
+            <summary className="flex items-start gap-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <span className="grid place-items-center w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-white/10 shrink-0">
+                <Bookmark className="w-5 h-5 text-zinc-700 dark:text-zinc-300" aria-hidden="true" />
+              </span>
+              <span className="space-y-1 flex-1">
+                <span className="flex flex-wrap items-center gap-2 text-base font-bold text-zinc-900 dark:text-white">
+                  Con el marcador
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                    Más privado
+                  </span>
+                </span>
+                <span className="block text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+                  Tu contraseña nunca pasa por Vector: cargás desde tu sesión del CAD, en la compu, con un marcador en la barra de favoritos.
+                </span>
+              </span>
+              <ChevronDown className="w-4 h-4 mt-1 text-zinc-400 transition-transform -rotate-90 group-open:rotate-0" aria-hidden="true" />
+            </summary>
+            <PasosMarcador />
+          </details>
+        </section>
+      ) : (
+        <PasosMarcador />
+      )}
 
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-prose">
-        Vector no ve tu contraseña de ANAC: carga desde tu sesión del CAD, en tu navegador.
-      </p>
-
-      {revisar.length > 0 && (
+      {!conectado && revisar.length > 0 && (
         <section className="space-y-3">
           <div className="space-y-1">
             <h3 className="text-[15px] font-bold text-zinc-900 dark:text-white">Para corregir antes de pasar</h3>
@@ -181,7 +262,7 @@ export default async function PasarAlCadPage() {
         </section>
       )}
 
-      {listos.length > 0 && (
+      {!conectado && listos.length > 0 && (
         <details className="group space-y-3">
           <summary className="flex items-center gap-2 cursor-pointer list-none text-[15px] font-bold text-zinc-900 dark:text-white [&::-webkit-details-marker]:hidden">
             <ChevronDown className="w-4 h-4 text-zinc-400 transition-transform -rotate-90 group-open:rotate-0" aria-hidden="true" />

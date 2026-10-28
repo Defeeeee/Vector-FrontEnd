@@ -120,6 +120,8 @@ export interface Aircraft {
    * vuelo, y una sesión de simulador no lo es.
    */
   is_simulator?: boolean;
+  /** Si es un simulador: cuál es en el CAD de ANAC, su clase y su modelo (migración 036). */
+  cad_simulador?: import("@/lib/cad").SimuladorCad | null;
 }
 
 export interface Profile {

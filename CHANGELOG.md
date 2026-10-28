@@ -6,6 +6,14 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.33.0 — Tu CAD desde Vector
+
+_28 de octubre de 2026_
+
+- **Pasá tus vuelos al CAD desde Vector** — Conectá tu cuenta de ANAC una vez y cargá tus vuelos en el CAD desde acá, también desde el teléfono. Si preferís que tu contraseña no pase por Vector, sigue estando el marcador.
+- **Cargalo y ya queda en el CAD** — Con tu cuenta conectada, al registrar un vuelo tildás "Cargarlo también en tu CAD" y queda Pendiente de DDJJ. La declaración la seguís haciendo vos.
+- **Simuladores y LAD, también al CAD** — Las sesiones de simulador pasan al CAD: elegís una vez cuál es tu simulador y su clase. Y los vuelos desde un LAD se registran buscándolo por número o nombre, y pasan con su número.
+
 ## v2.32.0 — Los LAD en el plan de vuelo
 
 _28 de octubre de 2026_

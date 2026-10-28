@@ -39,6 +39,7 @@ export default function AirportResolver({
   placeholder = "SADM",
   autoFocus = false,
   name,
+  lad = false,
 }: {
   value: string;
   onChange: (icao: string) => void;
@@ -49,6 +50,11 @@ export default function AirportResolver({
   autoFocus?: boolean;
   /** Optional hidden-input name, so the chip can participate in a plain form. */
   name?: string;
+  /**
+   * También busca los LAD de ANAC, por número o por nombre ("2013" → LAD2013). Sólo en
+   * Registrar vuelo: un vuelo desde un LAD se declara en el CAD con su número.
+   */
+  lad?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<AirportRef[]>([]);
   const [resolved, setResolved] = useState<AirportRef | null>(null);
@@ -78,7 +84,8 @@ export default function AirportResolver({
       return;
     }
 
-    const cached = cache.get(query);
+    const clave = lad ? `lad:${query}` : query;
+    const cached = cache.get(clave);
     if (cached) {
       setSuggestions(cached);
       notify(exactMatch(cached, query));
@@ -89,13 +96,13 @@ export default function AirportResolver({
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/airports/search?q=${encodeURIComponent(query)}`, {
+        const res = await fetch(`/api/airports/search?q=${encodeURIComponent(query)}${lad ? "&lad=1" : ""}`, {
           signal: controller.signal,
         });
         if (!res.ok) return;
         const data = await res.json();
         const results: AirportRef[] = data.results ?? [];
-        cache.set(query, results);
+        cache.set(clave, results);
         setSuggestions(results);
         notify(exactMatch(results, query));
       } catch {
@@ -110,7 +117,7 @@ export default function AirportResolver({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [value, notify]);
+  }, [value, notify, lad]);
 
   // Close the suggestion list on an outside click.
   useEffect(() => {
@@ -149,7 +156,8 @@ export default function AirportResolver({
     }
   };
 
-  const isComplete = value.trim().length === 4;
+  // "2013" a medio camino de elegir el LAD2013 no es un código desconocido.
+  const isComplete = value.trim().length === 4 && !(lad && /^\d+$/.test(value.trim()));
   const unknown = isComplete && !resolved && !loading;
 
   return (
@@ -165,12 +173,12 @@ export default function AirportResolver({
         autoComplete="off"
         autoCapitalize="characters"
         spellCheck={false}
-        maxLength={4}
+        maxLength={lad ? 12 : 4}
         autoFocus={autoFocus}
         placeholder={placeholder}
         value={value}
         onChange={(e) => {
-          onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""));
+          onChange(e.target.value.toUpperCase().replace(lad ? /[^A-Z0-9 ]/g : /[^A-Z0-9]/g, ""));
           setHighlight(0);
           setOpen(true);
         }}

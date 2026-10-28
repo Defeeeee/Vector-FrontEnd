@@ -172,8 +172,13 @@ describe("duplicar y releer", () => {
   it("la EOBT se escribe en UTC y queda con cuatro cifras", () => {
     expect(normalizar({ ...ACEPTADO, eobtUtc: "18:30" }).eobtUtc).toBe("1830");
     expect(normalizar({ ...ACEPTADO, eobtUtc: "18" }).eobtUtc).toBe("18");
-    expect(revisar({ ...ACEPTADO, eobtUtc: "18" }).estados.fechaHora).toBe("error");
-    expect(revisar({ ...ACEPTADO, dofUtc: "2026-02-31" }).estados.fechaHora).toBe("error");
+    expect(revisar({ ...ACEPTADO, eobtUtc: "18" }).estados.hora).toBe("error");
+    expect(revisar({ ...ACEPTADO, dofUtc: "2026-02-31" }).estados.fecha).toBe("error");
+    // Con la fecha cargada y la hora todavía vacía, la fecha está bien: falta sólo la hora.
+    const sinHora = revisar({ ...ACEPTADO, eobtUtc: "" });
+    expect(sinHora.estados.fecha).toBe("ok");
+    expect(sinHora.estados.hora).toBe("falta");
+    expect(sinHora.errores.map((e) => e.mensaje)).toContain("Casilla 13: falta la hora de salida (EOBT, en UTC).");
   });
 
   it("un plan de antes, con la salida en hora argentina, se pasa a UTC al leerlo", () => {

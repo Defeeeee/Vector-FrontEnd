@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
@@ -44,7 +44,24 @@ export default function MenuAcciones({
   const contenedor = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
   const items = useRef<(HTMLElement | null)[]>([]);
+  const menu = useRef<HTMLDivElement>(null);
+  const [corrimiento, setCorrimiento] = useState(0);
   const id = useId();
+
+  // En el teléfono el botón puede estar cerca de un borde: el menú, anclado a él, se salía de
+  // la pantalla (Federico, 2026-10-28, con Exportar). Se corre lo justo para quedar adentro,
+  // con 16 px de margen. `translate` (no `transform`) para no pisar la animación.
+  useLayoutEffect(() => {
+    if (!abierto) {
+      setCorrimiento(0);
+      return;
+    }
+    const r = menu.current?.getBoundingClientRect();
+    if (!r) return;
+    const margen = 16;
+    if (r.left < margen) setCorrimiento(margen - r.left);
+    else if (r.right > window.innerWidth - margen) setCorrimiento(window.innerWidth - margen - r.right);
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -130,8 +147,10 @@ export default function MenuAcciones({
       <AnimatePresence>
         {abierto && (
           <motion.div
+            ref={menu}
             id={id}
             role="menu"
+            style={{ translate: `${corrimiento}px 0` }}
             aria-label={etiqueta}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}

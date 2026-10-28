@@ -36,7 +36,7 @@ export const metadata: Metadata = {
  */
 export default function PrivacidadPage() {
   return (
-    <LegalShell title="Política de Privacidad" updated="6 de octubre de 2026">
+    <LegalShell title="Política de Privacidad" updated="28 de octubre de 2026">
       <section>
         <h2>Qué es esto</h2>
         <p>
@@ -220,6 +220,10 @@ export default function PrivacidadPage() {
             <strong>Meta</strong> (Facebook e Instagram) — sólo si aceptás el píxel en la
             portada o las guías. Ver <a href="#meta">Medición de anuncios</a>.
           </li>
+          <li>
+            <strong>ANAC</strong> — sólo si pasás tus vuelos al CAD. Ver{" "}
+            <a href="#cad">Tus vuelos en el CAD de ANAC</a>.
+          </li>
         </ul>
         <p>
           <strong>Transferencia internacional:</strong> estos proveedores procesan la
@@ -342,6 +346,30 @@ export default function PrivacidadPage() {
             código de la pegatina y la hora del escaneo, que dura 30 días. Si en ese tiempo creás
             una cuenta, anotamos en ella de qué pegatina viniste, y la cookie se borra. No se
             comparte con nadie.
+          </li>
+        </ul>
+      </section>
+
+      <section id="cad">
+        <h2>Tus vuelos en el CAD de ANAC</h2>
+        <p>
+          Podés pasar tus vuelos al CAD de ANAC de dos maneras, y elegís vos:
+        </p>
+        <ul>
+          <li>
+            <strong>Con el marcador:</strong> cargás desde tu propia sesión del CAD, en tu
+            navegador. Tu contraseña de ANAC nunca pasa por Vector.
+          </li>
+          <li>
+            <strong>Desde Vector:</strong> si conectás tu cuenta de ANAC, guardamos tu usuario y
+            tu contraseña <strong>cifrados</strong>, con una clave que sólo tiene nuestro servidor.
+            La contraseña no vuelve nunca a tu pantalla ni a ninguna otra. La usamos sólo para
+            entrar al CAD cuando vos pedís leer o cargar vuelos, y lo que mandamos son los datos
+            del vuelo que elegiste: fecha, horarios, aeródromos, avión o simulador, horas,
+            finalidad y la autoridad certificante. Nunca hacemos la declaración jurada: ésa la
+            hacés vos en el CAD. Si ANAC rechaza la contraseña, no la volvemos a probar hasta que
+            la escribas de nuevo, para no bloquearte la cuenta. Con <em>Desconectar</em> se borra
+            al instante, y también se borra si eliminás tu cuenta de Vector.
           </li>
         </ul>
       </section>

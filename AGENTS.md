@@ -313,9 +313,21 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     como `LAD2013`. Van con ZZZZ y `DEP/LAD2013 NOMBRE <coordenadas>`; la lista del CAD no trae
     coordenadas, así que se piden en el selector y la revisión avisa si faltan. **ZZZZ libre no se
     ofrece** (Federico, 2026-10-28: sólo AD y LAD). La lista se actualiza con el workflow del AIP.
-  - **Falta:** CHG, y que un vuelo desde un LAD se pueda registrar y pasar al CAD (el CAD tiene el
-    tipo "Lugar apto denunciado"; falta saber qué campos manda "Crear").
+  - **Falta:** CHG. Un vuelo desde un LAD se registra (Registrar vuelo busca LAD con `lad`) y pasa
+    al CAD por su número: los LAD están en la lista AER del CAD con la misma clave (2.33.0).
 - **Pasar al CAD de ANAC y Traer a Vector** (2026-10-21, anunciado en la 2.27.0; Bitácora → Vuelos → "Pasar al CAD"):
+  - **Dos modos, desde la 2.33.0** (Federico, 2026-10-28): el marcador (más privado) o **desde Vector**:
+    el piloto conecta su cuenta de ANAC y el backend entra al CAD por él (`/cad/*`,
+    `services/cad_anac.py`, migración 036; `actions/cad-vector.ts`, `components/dashboard/cad/`).
+    La contraseña va cifrada con `CAD_CLAVE_CIFRADO` (sólo en el `.env` del backend), nunca vuelve
+    al frontend y **una rechazada no se reintenta** (bloquearía la cuenta de ANAC). Nunca se toca
+    la DDJJ: el backend tiene una lista blanca de lecturas más "Crear". Con la cuenta conectada,
+    Registrar vuelo ofrece "Cargarlo también en tu CAD" (`pasarVueloAlCad`). Está en la política de
+    privacidad (`#cad`). **La primera conexión real la hizo / la hace Federico.**
+  - **Simuladores** (2.33.0): tipo 3, cargo 6 (en instrucción) o 3 (instructor), discriminación 9 u
+    8, día y noche en 0, y `simulador` con el de `GetSimuladoresListItem`, que se elige una vez por
+    equipo y queda en `aircraft.cad_simulador` (con su clase FSTD). "Traer a Vector" todavía no trae
+    simuladores.
   - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
     "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la
     contraseña de ANAC en Vector.

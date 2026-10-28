@@ -317,10 +317,19 @@ let lads: Lad[] | null = null;
 
 /**
  * Los LAD (Lugares Aptos Denunciados) de ANAC que coinciden, por número o por nombre
- * (`lib/lad.ts`). Sólo los pide el selector del plan de vuelo: no tienen coordenadas, así que
- * no sirven para el resto de la app, que ubica cada aeródromo en el mapa.
+ * (`lib/lad.ts`). Los piden el selector del plan de vuelo y el de Registrar vuelo
+ * (`?lad=1`): no tienen coordenadas, así que no sirven para lo que ubica un aeródromo en el mapa.
  */
-export function searchLads(query: string, limit = 6): { icao: string; name: string; label: string; country: string }[] {
+function cargarLads(): Lad[] {
   lads ??= leerLadsTsv(fs.readFileSync(path.join(process.cwd(), "src", "data", "lad.tsv"), "utf8"));
-  return buscarLads(query, lads, limit).map((l) => ({ icao: codigoLad(l.numero), name: l.nombre, label: l.nombre, country: "AR" }));
+  return lads;
+}
+
+export function searchLads(query: string, limit = 6): { icao: string; name: string; label: string; country: string }[] {
+  return buscarLads(query, cargarLads(), limit).map((l) => ({ icao: codigoLad(l.numero), name: l.nombre, label: l.nombre, country: "AR" }));
+}
+
+/** Un LAD por su número ("2013"), o `null`. */
+export function getLad(numero: string): Lad | null {
+  return cargarLads().find((l) => l.numero === String(Number(numero))) ?? null;
 }

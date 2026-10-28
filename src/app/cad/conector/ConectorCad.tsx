@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Compass } from "lucide-react";
-import { marcarEnElCad, omitirEnElCad, traerDelCad } from "@/actions/cad";
+import { guardarSimuladorCad, marcarEnElCad, omitirEnElCad, traerDelCad } from "@/actions/cad";
 import { CLAVE_MARCADOR_USADO } from "@/components/dashboard/MarcadorCad";
 import type { BorradorCad, MotivoOmitido, VueloConocido } from "@/lib/cad";
 
@@ -48,6 +48,8 @@ export default function ConectorCad({
         items?: { vectorId: string; cadId: number; autoridad?: { id: string; nombre: string } }[];
         omitir?: { vectorId: string; motivo: MotivoOmitido | null }[];
         vuelos?: unknown[];
+        avionId?: string;
+        simulador?: unknown;
       };
       if (d?.tipo === "vector-cad:listo") {
         enviar();
@@ -63,6 +65,9 @@ export default function ConectorCad({
         const r = await marcarEnElCad(d.items ?? []);
         setMarcados((m) => m + r.marcados);
         cad.postMessage({ tipo: "vector-cad:marcados", marcados: r.marcados }, origenCad);
+      } else if (d?.tipo === "vector-cad:simulador") {
+        const r = await guardarSimuladorCad(String(d.avionId ?? ""), d.simulador);
+        cad.postMessage({ tipo: "vector-cad:simulador-guardado", ok: r.ok }, origenCad);
       } else if (d?.tipo === "vector-cad:omitir") {
         const r = await omitirEnElCad(d.omitir ?? []);
         cad.postMessage({ tipo: "vector-cad:omitidos", cambiados: r.cambiados }, origenCad);

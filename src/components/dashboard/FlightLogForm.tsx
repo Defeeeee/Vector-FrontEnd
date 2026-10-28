@@ -5,6 +5,7 @@ import { AUTORIDADES_CAD } from "@/lib/cad";
 import { useRouter } from "next/navigation";
 import { Aircraft, AirportRef, Logbook } from "@/types";
 import { logFlight } from "@/actions/flight";
+import { pasarVueloAlCad } from "@/actions/cad-vector";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
 import { useAvisos } from "./Avisos";
 import { aLocal, aUtc } from "@/lib/horarios";
@@ -140,7 +141,15 @@ interface FlightLogFormProps {
    * la que el formulario propone para el CAD. Vacío, los campos arrancan vacíos.
    */
   autoridades?: Record<string, { id: number; nombre: string }>;
+  /**
+   * El piloto conectó su cuenta de ANAC ("Pasar al CAD desde Vector", 2.33.0): se ofrece
+   * cargarlo también en el CAD al guardar. Sin cuenta conectada no se muestra nada.
+   */
+  cadConectado?: boolean;
 }
+
+/** Lo último que eligió el piloto en "Cargarlo también en tu CAD", en este navegador. */
+const CLAVE_AL_CAD = "vector-cad-al-registrar";
 
 /** "INSTRUCTOR DE VUELO" → "Instructor de vuelo": la lista del CAD viene en mayúsculas. */
 const comoOracion = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
@@ -173,7 +182,7 @@ function isValidCode(code: string, airport: AirportRef | null): boolean {
   return cleaned.length === 4 && /^[A-Z0-9]+$/.test(cleaned);
 }
 
-export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, plannedId, planVueloId, autoridades = {} }: FlightLogFormProps) {
+export default function FlightLogForm({ aircraft, logbooks = [], initialData, onSuccess, redirectTo, inModal = false, plannedId, planVueloId, autoridades = {}, cadConectado = false }: FlightLogFormProps) {
   const router = useRouter();
   const { notificar } = useAvisos();
   const [isPending, setIsPending] = useState(false);
@@ -220,6 +229,23 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
   const [autoridadId, setAutoridadId] = useState(() => (sugerida(initialData?.purpose || "VP") ? String(sugerida(initialData?.purpose || "VP")!.id) : ""));
   const [autoridadNombre, setAutoridadNombre] = useState(() => sugerida(initialData?.purpose || "VP")?.nombre ?? "");
   const autoridadTocada = useRef(false);
+  const [alCad, setAlCad] = useState(false);
+  const [cargandoCad, setCargandoCad] = useState(false);
+  useEffect(() => {
+    try {
+      setAlCad(localStorage.getItem(CLAVE_AL_CAD) === "1");
+    } catch {
+      /* sin almacenamiento, arranca apagado */
+    }
+  }, []);
+  const elegirAlCad = (v: boolean) => {
+    setAlCad(v);
+    try {
+      localStorage.setItem(CLAVE_AL_CAD, v ? "1" : "0");
+    } catch {
+      /* sin almacenamiento, no se recuerda */
+    }
+  };
   const [cierraHoja, setCierraHoja] = useState(false);
 
   /**
@@ -354,6 +380,13 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
       }
     }
 
+    // El CAD pide la autoridad y su nombre en cada vuelo: sin ellos no se puede cargar.
+    const vaAlCad = cadConectado && alCad;
+    if (vaAlCad && (!autoridadId || !autoridadNombre.trim())) {
+      setError("Para cargarlo en tu CAD, completá la autoridad certificante y su nombre (o destildá Cargarlo también en tu CAD).");
+      return;
+    }
+
     setIsPending(true);
     // The allocator can't produce an over-assigned breakdown, so there is no
     // sum check here any more — the backend still validates as a backstop.
@@ -385,6 +418,16 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
           .filter(Boolean)
           .join(" · "),
       });
+      if (vaAlCad && resultado.id) {
+        setCargandoCad(true);
+        const cad = await pasarVueloAlCad(resultado.id);
+        setCargandoCad(false);
+        notificar(
+          cad.ok
+            ? { tipo: "exito", titulo: "En tu CAD", detalle: `${cad.mensaje}. Queda "Pendiente de DDJJ".` }
+            : { tipo: "error", titulo: "No se cargó en el CAD", detalle: `${cad.mensaje} Podés pasarlo desde Pasar al CAD.` }
+        );
+      }
       if (onSuccess) onSuccess();
       else if (redirectTo) {
         // Con el id, la Bitácora ofrece compartir el vuelo recién cargado
@@ -489,6 +532,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   <div className="flex-1 min-w-0">
                     <AirportResolver
                       label="Salida"
+                      lad
                       value={origin}
                       onChange={setOrigin}
                       onResolve={setOriginAirport}
@@ -499,6 +543,7 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   <div className="flex-1 min-w-0">
                     <AirportResolver
                       label="Llegada"
+                      lad
                       value={destination}
                       onChange={setDestination}
                       onResolve={setDestinationAirport}
@@ -705,8 +750,8 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
               </LedgerField>
 
               {/* La autoridad certificante para el CAD de ANAC: opcional. Si se carga acá, el
-                  panel de "Pasar al CAD" ya la tiene. Un simulador va al CAD a mano. */}
-              {!esSimulador && (
+                  panel de "Pasar al CAD" ya la tiene. Desde la 2.33.0 también va en un simulador. */}
+              {(
                 <div className="space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
                     <LedgerField label="Autoridad para el CAD">
@@ -739,6 +784,22 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
                   <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
                     El CAD de ANAC la pide en cada vuelo. Si la cargás acá, la tenés lista para pasarlo.
                   </p>
+                  {cadConectado && (
+                    <label className="flex items-start gap-3 cursor-pointer rounded-2xl border border-aviation-blue/20 dark:border-aviation-cyan/20 bg-aviation-blue/[0.04] dark:bg-aviation-cyan/[0.05] px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={alCad}
+                        onChange={(e) => elegirAlCad(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 shrink-0 accent-zinc-900 dark:accent-white"
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold text-zinc-900 dark:text-white">Cargarlo también en tu CAD</span>
+                        <span className="block text-[12px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          Con tu cuenta de ANAC conectada. Queda &quot;Pendiente de DDJJ&quot;: la declaración la hacés vos.
+                        </span>
+                      </span>
+                    </label>
+                  )}
                 </div>
               )}
 
@@ -1005,7 +1066,10 @@ export default function FlightLogForm({ aircraft, logbooks = [], initialData, on
             className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm py-5 md:py-6 rounded-xl md:rounded-[1.5rem] shadow-cal-highlight dark:shadow-none flex items-center justify-center space-x-3 transition-all disabled:opacity-50"
           >
             {isPending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                {cargandoCad && <span>Cargando en tu CAD…</span>}
+              </>
             ) : (
               <>
                 <span>{esSimulador ? "Registrar sesión" : "Registrar vuelo"}</span>

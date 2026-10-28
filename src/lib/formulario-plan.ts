@@ -377,11 +377,15 @@ export function revisar(f: FormularioPlan, ahoraIso?: string): Revision {
   const salida = aerodromo(f.salida);
   obligatorio("salida", !!salida, !salida, "Casilla 13: falta el aeródromo de salida.");
   const utc = salidaDelPlan(f);
+  // La fecha y la hora por separado: con la fecha cargada y la hora todavía vacía, la fecha
+  // no tiene nada mal (Federico, 2026-10-28: la marcaba como faltante o incorrecta).
+  const fechaValida = !!salidaDelPlan({ dofUtc: f.dofUtc, eobtUtc: "0000" });
+  obligatorio("fecha", fechaValida, !f.dofUtc, !f.dofUtc ? "Casilla 13: falta la fecha de salida (UTC)." : "Casilla 13: la fecha de salida no existe.");
   obligatorio(
-    "fechaHora",
-    !!utc,
-    !f.dofUtc || !f.eobtUtc,
-    !f.dofUtc || !f.eobtUtc ? "Casilla 13: falta la fecha y la hora de salida (UTC)." : "Casilla 13: la EOBT va en UTC con cuatro cifras, como 1830."
+    "hora",
+    /^([01]\d|2[0-3])([0-5]\d)$/.test(f.eobtUtc ?? ""),
+    !f.eobtUtc,
+    !f.eobtUtc ? "Casilla 13: falta la hora de salida (EOBT, en UTC)." : "Casilla 13: la EOBT va en UTC con cuatro cifras, como 1830."
   );
   if (utc && ahoraIso) {
     const salidaMs = Date.parse(

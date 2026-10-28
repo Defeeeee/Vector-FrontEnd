@@ -56,6 +56,8 @@ createServer(async (req, res) => {
   if (api === "GetFinalidadListItem") return json(200, finalidades);
   if (api === "GetAutoridadesListItem") return json(200, autoridades);
   if (api === "GetLugarAterrizajeListItem") return json(200, url.searchParams.get("tipoLugar") === "AER" ? lugares : []);
+  if (api === "GetSimuladoresListItem") return json(200, [{ key: "34", value: "SANTIAGO I C-172 -- ASG TRAINING CENTER" }, { key: "39", value: "C172  -- CIAC CICA" }]);
+  if (api === "GetModelosPorSimuladorListItem") return json(200, [{ key: "40", value: "A320" }]);
   if (api === "GetPagedList") return json(200, { totalRows: vuelos.length, dataSource: [...vuelos].sort((a, b) => b.fechaSalida.localeCompare(a.fechaSalida)) });
   // El detalle: se supone con los campos de "Crear" (la forma real no se pudo leer todavía).
   if (api === "Get") {

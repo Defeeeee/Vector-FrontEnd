@@ -9,6 +9,7 @@ import SinAeronaves from "@/components/dashboard/SinAeronaves";
 import { parsePrefill } from "@/lib/prefill";
 import { ChevronLeft } from "lucide-react";
 import { autoridadesPorFinalidad } from "@/lib/cad";
+import { estadoConexionCad } from "@/actions/cad-vector";
 
 import { redirect } from "next/navigation";
 
@@ -51,7 +52,9 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
   // de iOS. Ver `src/lib/prefill.ts`.
   const { initialData: prefillData, plannedId, planVueloId } = parsePrefill(resolvedParams);
 
-  const { aircraft, session, logbooks, alumno, autoridades } = await getData();
+  const [{ aircraft, session, logbooks, alumno, autoridades }, conexionCad] = await Promise.all([getData(), estadoConexionCad()]);
+  // "Cargarlo también en tu CAD" sólo con la cuenta de ANAC conectada y andando.
+  const cadConectado = !!conexionCad?.disponible && conexionCad.conectado && conexionCad.estado === "ok";
 
   return (
     <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 w-full pb-20">
@@ -106,6 +109,7 @@ export default async function LogFlightPage({ searchParams }: PageProps) {
             plannedId={plannedId}
             planVueloId={planVueloId}
             autoridades={autoridades}
+            cadConectado={cadConectado}
             /*
               Antes de esto, `logFlight` redirigía sola con `push`, así que volver
               atrás desde `/dashboard/history` reabría este mismo formulario vacío.

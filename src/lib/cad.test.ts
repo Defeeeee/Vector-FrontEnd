@@ -23,6 +23,12 @@ import {
   AUTORIDADES_CAD,
   autoridadDelFormulario,
   autoridadesPorFinalidad,
+  claveDeAutoridad,
+  faltaSimulador,
+  filaCad,
+  simuladorSugerido,
+  simuladorValido,
+  type ItemCad,
   type LugarParaCad,
   type VueloVector,
 } from "./cad";
@@ -126,7 +132,8 @@ describe("el vuelo de Vector, armado para el CAD", () => {
     expect(borradorCad(LUJAN_MORON, { ...ECHO, type_acft: null }, lugar).problema).toMatch(/clase/);
     expect(borradorCad({ ...LUJAN_MORON, purpose: "XYZ" }, ECHO, lugar).problema).toMatch(/finalidad/);
     expect(borradorCad({ ...LUJAN_MORON, sic_day_tra: 1 }, ECHO, lugar).problema).toMatch(/piloto y de copiloto/);
-    expect(borradorCad(LUJAN_MORON, { ...ECHO, is_simulator: true }, lugar).problema).toMatch(/simulador/);
+    // Un simulador ya no se marca: va como sesión de simulador (2.33.0, ver abajo).
+    expect(borradorCad(LUJAN_MORON, { ...ECHO, is_simulator: true }, lugar).tipoVueloID).toBe(3);
   });
 });
 
@@ -471,15 +478,15 @@ describe("lo que falta pasar al CAD", () => {
     { date: "2026-03-01", aircraft_id: "a1", cad_vuelo_id: 5 }, // ya está
     { date: "2026-03-02", aircraft_id: "a1", cad_omitido: "foliado" },
     { date: "2026-03-03", aircraft_id: "a1", cad_omitido: "ignorado" },
-    { date: "2026-03-04", aircraft_id: "sim" }, // simulador: a mano
+    { date: "2026-03-04", aircraft_id: "sim" }, // simulador: desde la 2.33.0 también se pasa
     { date: "2026-09-30", aircraft_id: "a1" },
     { date: "2026-10-05", aircraft_id: null },
   ];
-  it("cuenta desde el 1/11/2025, sin lo pasado, lo omitido ni los simuladores", () => {
-    expect(pendientesDelCad(vuelos, aviones)).toBe(3);
+  it("cuenta desde el 1/11/2025, sin lo pasado ni lo omitido (con los simuladores)", () => {
+    expect(pendientesDelCad(vuelos, aviones)).toBe(4);
   });
   it("hasta un día, para el resumen del mes", () => {
-    expect(pendientesDelCad(vuelos, aviones, "2026-09-30")).toBe(2);
+    expect(pendientesDelCad(vuelos, aviones, "2026-09-30")).toBe(3);
   });
 });
 
@@ -508,5 +515,128 @@ describe("la autoridad guardada en el vuelo", () => {
     const lugar0 = (c: string) => ({ codigo: c, candidatos: [c], nombre: null });
     expect(borradorCad(v, { registration: "LVABC", type_acft: "MONT-T" }, lugar0).autoridad).toEqual({ id: "5", nombre: "ANA GÓMEZ" });
     expect(borradorCad({ ...v, cad_autoridad_id: null }, { registration: "LVABC", type_acft: "MONT-T" }, lugar0).autoridad).toBeNull();
+  });
+});
+
+// La sesión de simulador real de Federico en el CAD (leída el 2026-10-28), como la tiene Vector.
+const SIM_ASG = { id: "sim1", registration: "LV-ASG", type_acft: "C172", is_simulator: true, cad_simulador: null };
+const SESION: VueloVector = {
+  id: "v-sim",
+  date: "2026-08-22",
+  route: "LOCAL",
+  landings: 0,
+  duration: 0,
+  takeoff: "2026-08-22T11:00:00Z",
+  landing: "2026-08-22T12:00:00Z",
+  purpose: "INST",
+  sim_pil_en_inst: 1.0,
+};
+const SIMULADORES: ItemCad[] = [
+  { key: "34", value: "SANTIAGO I C-172 -- ASG TRAINING CENTER" },
+  { key: "39", value: "C172  -- CIAC CICA" },
+  { key: "53", value: "SIMAR II -- CIAC FLIGHT CENTER" },
+];
+const ELEGIDO = { id: 34, nombre: "SANTIAGO I C-172 -- ASG TRAINING CENTER", clase: "ATD", modeloId: 40, modelo: "A320" };
+
+describe("una sesión de simulador", () => {
+  it("va como el CAD guarda la real: tipo 3, en instrucción, sin lugares ni matrícula, y el tiempo en la discriminación 9", () => {
+    const b = borradorCad(SESION, SIM_ASG, lugar);
+    expect(b.problema).toBeNull();
+    expect(b).toMatchObject({ tipoVueloID: 3, cargoID: 6, matricula: "", aterrizajes: 0, horasDia: 0, horasNoche: 0, horas: 1, finalidad: "INSTRUCCIÓN" });
+    expect(b.discriminaciones).toEqual([{ tipoDiscriminacionID: 9, horas: "1.0" }]);
+    expect(b.simulador).toEqual({ avionId: "sim1", equipo: "LV-ASG C172", cad: null });
+  });
+
+  it("el instructor de simulador va con cargo 3 y la discriminación 8", () => {
+    const b = borradorCad({ ...SESION, purpose: "I", sim_pil_en_inst: 0, sim_instructor: 1.0 }, SIM_ASG, lugar);
+    expect(b).toMatchObject({ cargoID: 3, finalidad: "INSTRUCTOR" });
+    expect(b.discriminaciones[0].tipoDiscriminacionID).toBe(8);
+  });
+
+  it("se revisa si tiene las dos columnas, si le faltan horarios o si las horas no cierran", () => {
+    expect(borradorCad({ ...SESION, sim_instructor: 1.0 }, SIM_ASG, lugar).problema).toMatch(/una sola/);
+    expect(borradorCad({ ...SESION, takeoff: null }, SIM_ASG, lugar).problema).toMatch(/hora de salida/);
+    expect(borradorCad({ ...SESION, sim_pil_en_inst: 1.5 }, SIM_ASG, lugar).problema).toMatch(/1\.5.*1\.0/);
+  });
+
+  it("el payload es el de la sesión real, con el simulador elegido", () => {
+    const b = borradorCad(SESION, { ...SIM_ASG, cad_simulador: ELEGIDO }, lugar);
+    const p = payloadCad(b, { finalidadID: "68", origenID: "", destinoID: "", autoridadID: "19", autoridadNombre: "DANIEL MISA" });
+    expect(p).toMatchObject({
+      tipoVueloID: "3",
+      cargoID: "6",
+      clase: "ATD",
+      aterrizajes: 0,
+      horasDia: 0,
+      horasNoche: 0,
+      finalidadID: "68",
+      autoridadCertificanteID: "19",
+      simulador: { simuladorID: "34", nombre: ELEGIDO.nombre, modeloID: "40", modelo: "A320" },
+    });
+    expect(p).not.toHaveProperty("origenID");
+    expect(p).not.toHaveProperty("matriculaAvion");
+  });
+
+  it("propone el simulador del CAD por la matrícula y el tipo, sólo si gana uno", () => {
+    expect(simuladorSugerido("LV-ASG C172", SIMULADORES)?.key).toBe("34");
+    expect(simuladorSugerido("LV-ZZZ", SIMULADORES)).toBeNull();
+    // "C172" sola empata entre ASG y CICA: no se adivina.
+    expect(simuladorSugerido("C172", SIMULADORES)).toBeNull();
+  });
+
+  it("falta elegirlo mientras no tenga simulador y una clase válida", () => {
+    const b = borradorCad(SESION, SIM_ASG, lugar);
+    expect(faltaSimulador(b)).toBe(true);
+    expect(faltaSimulador(b, ELEGIDO)).toBe(false);
+    expect(faltaSimulador(b, { ...ELEGIDO, clase: "MONT-T" })).toBe(true);
+    expect(faltaSimulador(borradorCad(LUJAN_MORON, ECHO, lugar))).toBe(false);
+  });
+
+  it("lo elegido se revisa antes de guardarlo", () => {
+    expect(simuladorValido({ ...ELEGIDO, clase: "atd" })).toEqual(ELEGIDO);
+    expect(simuladorValido({ ...ELEGIDO, id: "x" })).toBeNull();
+    expect(simuladorValido({ ...ELEGIDO, clase: "MONT-T" })).toBeNull();
+  });
+
+  it("propone la autoridad de simulador, y la recuerda aparte de la del vuelo", () => {
+    const b = borradorCad(SESION, SIM_ASG, lugar);
+    const ctx = {
+      enElCad: [],
+      finalidades: [{ key: "68", value: "INSTRUCCIÓN" }],
+      lugares: [],
+      autoridades: [{ key: "5", value: "INSTRUCTOR DE VUELO" }, { key: "19", value: "INSTRUCTOR DE SIMULADOR" }],
+      corte: null,
+      memoria: { porFinalidad: { "INSTRUCCIÓN": { id: "5", nombre: "OTRA PERSONA" } } },
+    };
+    const f = filaCad(b, ctx);
+    expect(f.autoridad).toEqual({ id: "19", nombre: "" });
+    expect(f.ids).toEqual({ finalidadID: "68", origenID: "", destinoID: "" });
+    expect(claveDeAutoridad(b)).toBe("SIMULADOR INSTRUCCIÓN");
+  });
+
+  it("si ya está en el CAD (sin matrícula, a la misma hora), no se manda de nuevo", () => {
+    const b = borradorCad(SESION, SIM_ASG, lugar);
+    expect(yaEstaEnElCad(b, [{ vueloTripulanteID: 661363, fechaSalida: "2026-08-22T11:00:00", matricula: null }])).toBe(661363);
+  });
+});
+
+describe("un vuelo desde un LAD", () => {
+  const LUGARES: ItemCad[] = [
+    { key: "FDO", value: "SADF -  FDO -  FDO (SAN FERNANDO)" },
+    { key: "2013", value: " 2013 (VILLA JOSEFINA)" },
+  ];
+  const ladLugar = (codigo: string): LugarParaCad =>
+    codigo === "LAD2013" ? { codigo, candidatos: ["LAD2013", "2013"], nombre: "VILLA JOSEFINA" } : { codigo, candidatos: [codigo, "FDO"], nombre: null };
+
+  it("va al CAD por su número, que es su clave en la lista de aeródromos", () => {
+    const b = borradorCad({ ...LUJAN_MORON, route: "LAD2013 SADF" }, ECHO, ladLugar);
+    const f = filaCad(b, { enElCad: [], finalidades: [{ key: "63", value: "ENTRENAMIENTO" }], lugares: LUGARES, autoridades: [], corte: null, memoria: null });
+    expect(f.problema).toBeNull();
+    expect(f.ids).toEqual({ finalidadID: "63", origenID: "2013", destinoID: "FDO" });
+  });
+
+  it("y vuelve del CAD como LAD2013", () => {
+    expect(codigoDeLugarCad(" 2013 (VILLA JOSEFINA)")).toBe("LAD2013");
+    expect(codigoDeLugarCad("SADF -  FDO -  FDO (SAN FERNANDO)")).toBe("SADF");
   });
 });

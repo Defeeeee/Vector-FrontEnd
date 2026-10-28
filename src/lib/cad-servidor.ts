@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
-import { getAirport } from "@/lib/airports";
+import { getAirport, getLad } from "@/lib/airports";
 import { borradorCad, matriculaCad, type BorradorCad, type LugarParaCad, type MotivoOmitido, type VueloConocido } from "@/lib/cad";
+import { numeroDeCodigoLad } from "@/lib/lad";
 import { esAlumno } from "@/lib/licencias";
 import type { Aircraft, Flight, Profile } from "@/types";
 
@@ -12,9 +13,14 @@ import type { Aircraft, Flight, Profile } from "@/types";
  */
 const FRESCO: RequestInit = { next: { revalidate: 0 } };
 
-/** Un código de la ruta, con los que puede tener en el CAD: el OACI y el designador ANAC. */
-function lugarParaCad(codigo: string): LugarParaCad {
+/**
+ * Un código de la ruta, con los que puede tener en el CAD: el OACI y el designador ANAC. Un
+ * LAD ("LAD2013") va por su número, que es su clave en la lista del CAD.
+ */
+export function lugarParaCad(codigo: string): LugarParaCad {
   const c = codigo.trim().toUpperCase();
+  const numero = numeroDeCodigoLad(c);
+  if (numero) return { codigo: c, candidatos: [c, numero], nombre: getLad(numero)?.nombre ?? null };
   const a = c ? getAirport(c) : null;
   const candidatos = [c, a?.icao, a?.local].filter((x): x is string => !!x).map((x) => x.toUpperCase());
   return { codigo: c, candidatos: [...new Set(candidatos)], nombre: a?.name ?? null };
