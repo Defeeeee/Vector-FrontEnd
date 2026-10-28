@@ -4,7 +4,8 @@ name: AIP
 #
 # Una vez por semana vuelve a bajar del sitio de ANAC lo que Vector toma del AIP —las fichas
 # AD 2 de los aeródromos controlados, sus cartas, los puntos de ENR 4.4, las aerovías de ENR
-# 3.1 y 3.2 y el horario de las oficinas ARO— con los mismos scripts de siempre. El AIP se
+# 3.1 y 3.2 y el horario de las oficinas ARO— con los mismos scripts de siempre. También la
+# lista de LAD del CAD de ANAC (`build:lad`), para el plan de vuelo. El AIP se
 # enmienda cada 28 días y antes esto se corría a mano, cuando alguien se acordaba: un dato de
 # pista viejo en un plan de vuelo es lo peor que le puede pasar a Vector.
 #
@@ -56,6 +57,9 @@ jobs:
           npm run build:horarios-aro
           npm run build:fixes
           npm run build:aerovias
+          # Los LAD de ANAC, de la lista pública del CAD (`scripts/build-lad.mjs`): desde la red
+          # de Federico no se llega a ANAC, desde GitHub sí.
+          npm run build:lad
 
       - name: ¿Cambió algo?
         id: cambios
@@ -98,7 +102,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data "docs/bitacora/$mes.md"
-          git commit -q -m "AIP: edición $EDICION (actualización automática)"
+          git commit -q -m "AIP: edición $EDICION, y la lista de LAD (actualización automática)"
           git push -q origin HEAD:main
           # Un push con este token no dispara el CI: se lo pide a mano. El deploy sale del CI.
           gh workflow run ci.yml --ref main

@@ -151,7 +151,10 @@ export function indicadorDeLugar(ad: AerodromoPlan): { casilla: string; otrosDat
   const codigo = (ad.codigo ?? "").trim().toUpperCase();
   if (/^[A-Z]{4}$/.test(codigo)) return { casilla: codigo };
   const lugar = ad.lat !== undefined && ad.lon !== undefined ? ` ${coordenadaOaci(ad.lat, ad.lon)}` : "";
-  return { casilla: "ZZZZ", otrosDatos: `${textoAts(ad.nombre || codigo)}${lugar}` };
+  // Un LAD (Lugar Apto Denunciado, `lib/lad.ts`) va con su número adelante del nombre:
+  // "LAD2013 VILLA JOSEFINA", para que la oficina lo identifique en el registro de ANAC.
+  const nombre = /^LAD\d+$/.test(codigo) ? `${codigo} ${ad.nombre ?? ""}` : ad.nombre || codigo;
+  return { casilla: "ZZZZ", otrosDatos: `${textoAts(nombre)}${lugar}` };
 }
 
 /* -------------------------------------------------------------------------- */

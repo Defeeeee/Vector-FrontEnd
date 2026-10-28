@@ -390,6 +390,14 @@ export function revisar(f: FormularioPlan, ahoraIso?: string): Revision {
     if (salidaMs < Date.parse(ahoraIso)) avisos.push({ campo: "fechaHora", mensaje: "La salida ya pasó: revisá la fecha y la hora." });
   }
 
+  // Un LAD sin coordenadas: la AIP pide "el lugar en coordenadas" para lo que no está publicado,
+  // y la lista de LAD de ANAC no las trae (`lib/lad.ts`). Avisa, no frena: el piloto las sabe.
+  for (const [campo, ad, casilla] of [["salida", f.salida, 13], ["destino", f.destino, 16]] as const) {
+    if (ad && /^LAD\d+$/i.test(ad.codigo.trim()) && (ad.lat === undefined || ad.lon === undefined)) {
+      avisos.push({ campo, mensaje: `Casilla ${casilla}: cargá las coordenadas del ${ad.codigo.trim().toUpperCase()}, que van en la 18 (la lista de ANAC no las trae).` });
+    }
+  }
+
   // 15
   const velocidad = may(f.velocidad);
   obligatorio("velocidad", RE_VELOCIDAD.test(velocidad), !velocidad, "Casilla 15: la velocidad va como N y 4 cifras en nudos (N0090).");

@@ -78,6 +78,20 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.32.0",
+    fecha: "2026-10-28",
+    titulo: "Los LAD en el plan de vuelo",
+    novedades: [
+      {
+        icono: "brujula",
+        titulo: "Salí o llegá a un LAD",
+        texto: "En el plan de vuelo, buscá un LAD por su número o por su nombre y aparece como LAD2013. Cargás sus coordenadas y Vector arma la casilla 18 como pide EANA.",
+        href: "/dashboard/plan-de-vuelo",
+        cta: "Armar un plan",
+      },
+    ],
+  },
+  {
     version: "2.31.0",
     fecha: "2026-10-26",
     titulo: "Tu firma en el libro y la RAAC en el copiloto",

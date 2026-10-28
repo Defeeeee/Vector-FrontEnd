@@ -6,6 +6,12 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.32.0 — Los LAD en el plan de vuelo
+
+_28 de octubre de 2026_
+
+- **Salí o llegá a un LAD** — En el plan de vuelo, buscá un LAD por su número o por su nombre y aparece como LAD2013. Cargás sus coordenadas y Vector arma la casilla 18 como pide EANA.
+
 ## v2.31.0 — Tu firma en el libro y la RAAC en el copiloto
 
 _26 de octubre de 2026_

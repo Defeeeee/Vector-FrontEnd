@@ -308,7 +308,13 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Sin señal** (2.29.0, `lib/borrador-plan.ts`): el editor deja lo escrito en el teléfono y
     lo sube al volver la red; un borrador sólo le gana al servidor si es más nuevo. Se arma y se
     baja el PDF sin señal; mandarlo la necesita.
-  - **Falta:** CHG.
+  - **LAD** (2.32.0, `lib/lad.ts`, `src/data/lad.tsv`): el selector busca los LAD de ANAC por
+    número o nombre (`/api/airports/search?lad=1`; el resto de la app no los pide) y los muestra
+    como `LAD2013`. Van con ZZZZ y `DEP/LAD2013 NOMBRE <coordenadas>`; la lista del CAD no trae
+    coordenadas, así que se piden en el selector y la revisión avisa si faltan. **ZZZZ libre no se
+    ofrece** (Federico, 2026-10-28: sólo AD y LAD). La lista se actualiza con el workflow del AIP.
+  - **Falta:** CHG, y que un vuelo desde un LAD se pueda registrar y pasar al CAD (el CAD tiene el
+    tipo "Lugar apto denunciado"; falta saber qué campos manda "Crear").
 - **Pasar al CAD de ANAC y Traer a Vector** (2026-10-21, anunciado en la 2.27.0; Bitácora → Vuelos → "Pasar al CAD"):
   - **Cómo:** un marcador en la pestaña del CAD, con la sesión del piloto. Los vuelos quedan
     "Pendiente de DDJJ" y la declaración jurada la hace el piloto. Se descartó guardar la
