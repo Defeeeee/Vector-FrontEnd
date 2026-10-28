@@ -36,6 +36,12 @@ import { esErrorDeRedirect } from "@/lib/redirect-error";
  */
 
 const FRESCO: RequestInit = { next: { revalidate: 0 } };
+/**
+ * Lo que pasa por ANAC tarda más que los 15 s de siempre: entrar son cinco pedidos a dos
+ * servidores del Estado. Con el timeout corto, el piloto veía un error genérico mientras el
+ * backend seguía esperando a ANAC (2026-10-28). El backend corta antes (10 s por conexión).
+ */
+const ESPERA_ANAC = { timeoutMs: 75_000 };
 
 async function detalleDeError(r: Response, porDefecto: string): Promise<string> {
   const d = (await r.json().catch(() => ({}))) as { detail?: unknown };
@@ -67,14 +73,14 @@ export async function conectarCad(usuario: string, clave: string): Promise<{ ok:
   const c = String(clave ?? "");
   if (!u || !c) return { ok: false, error: "Escribí tu usuario y tu contraseña de ANAC." };
   try {
-    const r = await apiFetch("/cad/conexion", { method: "POST", body: JSON.stringify({ usuario: u.slice(0, 120), clave: c.slice(0, 200) }) });
+    const r = await apiFetch("/cad/conexion", { method: "POST", body: JSON.stringify({ usuario: u.slice(0, 120), clave: c.slice(0, 200) }) }, ESPERA_ANAC);
     if (!r.ok) {
       const porDefecto = r.status === 503 ? "ANAC no contesta. Probá en un rato." : "No pudimos conectar tu cuenta de ANAC.";
       return { ok: false, error: await detalleDeError(r, porDefecto) };
     }
   } catch (e) {
     if (esErrorDeRedirect(e)) throw e;
-    return { ok: false, error: "No pudimos hablar con Vector. Probá de nuevo." };
+    return { ok: false, error: "ANAC tardó demasiado en contestar. Probá de nuevo en un rato: no se guardó nada." };
   }
   revalidatePath("/dashboard/history/cad");
   return { ok: true };
@@ -97,7 +103,7 @@ export async function desconectarCad(): Promise<{ ok: boolean }> {
 type Resultado<T> = { ok: true; datos: T } | { ok: false; error: string; reconectar?: boolean };
 
 async function delCad<T>(ruta: string): Promise<Resultado<T>> {
-  const r = await apiFetch(`/cad/${ruta}`, FRESCO);
+  const r = await apiFetch(`/cad/${ruta}`, FRESCO, ESPERA_ANAC);
   if (r.ok) return { ok: true, datos: (await r.json()) as T };
   return { ok: false, error: await detalleDeError(r, "El CAD no contestó. Probá en un rato."), reconectar: r.status === 409 };
 }
@@ -200,7 +206,7 @@ export async function cargarEnCad(item: {
     if (faltaSimulador(b, simulador)) return { ok: false, mensaje: "Elegí cuál es tu simulador en el CAD y su clase." };
 
     const payload = payloadCad(b, { ...ids, autoridadID: autoridad.id, autoridadNombre: autoridad.nombre }, simulador);
-    const r = await apiFetch("/cad/vuelos", { method: "POST", body: JSON.stringify(payload) });
+    const r = await apiFetch("/cad/vuelos", { method: "POST", body: JSON.stringify(payload) }, ESPERA_ANAC);
     if (!r.ok) return { ok: false, mensaje: await detalleDeError(r, "El CAD no contestó: fijate en el CAD si quedó antes de mandarlo de nuevo.") };
     const res = (await r.json()) as { ok: boolean; mensaje: string };
     if (!res.ok) return res;
