@@ -326,6 +326,11 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     privacidad (`#cad`). Probado con la cuenta real de Federico (2026-10-28). **ANAC no acepta
     conexiones del VPS**: el backend sale por un proxy en defeserver-amenaba (`CAD_PROXY`, ver el
     AGENTS del backend); si amenaba se apaga, este modo no anda y queda el marcador.
+  - **Se sincroniza solo** (2.34.0, migración 037): con la cuenta conectada, al abrir el dashboard y
+    como mucho cada 12 h (`SincronizarCad`, `POST /cad/sincronizar`), Vector anota el estado de cada
+    vuelo (`flights.cad_estado`), desmarca lo borrado del CAD y marca lo cargado a mano (misma salida
+    y matrícula, coincidencia única). **Nunca crea vuelos.** El inicio recuerda los pendientes de
+    DDJJ (`PendientesDdjj`, excepción a las tres preguntas: aprobada por Federico).
   - **Simuladores** (2.33.0): tipo 3, cargo 6 (en instrucción) o 3 (instructor), discriminación 9 u
     8, día y noche en 0, y `simulador` con el de `GetSimuladoresListItem`, que se elige una vez por
     equipo y queda en `aircraft.cad_simulador` (con su clase FSTD). "Traer a Vector" todavía no trae

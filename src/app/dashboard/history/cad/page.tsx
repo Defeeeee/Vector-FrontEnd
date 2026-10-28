@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bookmark, ChevronDown, ExternalLink, ShieldCheck, Smartphone } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
 import PasoMarcador from "@/components/dashboard/MarcadorCad";
-import ConexionCad, { DesconectarCad } from "@/components/dashboard/cad/ConexionCad";
+import ConexionCad, { ActualizarCad, DesconectarCad } from "@/components/dashboard/cad/ConexionCad";
 import PanelCad from "@/components/dashboard/cad/PanelCad";
 import { estadoConexionCad } from "@/actions/cad-vector";
 import { vuelosParaElCad } from "@/lib/cad-servidor";
@@ -194,7 +194,10 @@ export default async function PasarAlCadPage() {
                 jurada la hacés vos.
               </p>
             </div>
-            <DesconectarCad />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <ActualizarCad />
+              <DesconectarCad />
+            </div>
           </div>
           <PanelCad />
           <details className="group space-y-8">

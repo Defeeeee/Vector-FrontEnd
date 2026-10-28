@@ -25,6 +25,8 @@ import {
   autoridadesPorFinalidad,
   claveDeAutoridad,
   borradosDelCad,
+  cuantosPendientesDeDdjj,
+  pendienteDeDdjj,
   faltaSimulador,
   filaCad,
   simuladorSugerido,
@@ -654,5 +656,22 @@ describe("un vuelo que se borró del CAD", () => {
   it("con una lista vacía (pudo fallar la lectura) o llena hasta el tope (puede estar cortada), no se toca nada", () => {
     expect(borradosDelCad(marcados, [])).toEqual([]);
     expect(borradosDelCad(marcados, lista(...Array.from({ length: 1000 }, (_, i) => i + 1)))).toEqual([]);
+  });
+});
+
+describe("la declaración jurada pendiente", () => {
+  it("lee el estado como lo escribe el CAD", () => {
+    expect(pendienteDeDdjj("PENDIENTE DE DDJJ")).toBe(true);
+    expect(pendienteDeDdjj("DECLARADO")).toBe(false);
+    expect(pendienteDeDdjj(null)).toBe(false);
+  });
+  it("cuenta sólo los que están en el CAD", () => {
+    expect(
+      cuantosPendientesDeDdjj([
+        { cad_vuelo_id: 1, cad_estado: "PENDIENTE DE DDJJ" },
+        { cad_vuelo_id: 2, cad_estado: "DECLARADO" },
+        { cad_vuelo_id: null, cad_estado: "PENDIENTE DE DDJJ" },
+      ])
+    ).toBe(1);
   });
 });

@@ -38,6 +38,8 @@ export interface Flight {
   /** Quién certifica el vuelo en el CAD (migración 032): id de la lista del CAD y nombre. */
   cad_autoridad_id?: number | null;
   cad_autoridad_nombre?: string | null;
+  /** El estado en el CAD ("PENDIENTE DE DDJJ", …), de la última sincronización (migración 037). */
+  cad_estado?: string | null;
   cad_cargado_at?: string | null;
 
   discount_type?: 'value' | 'percent';

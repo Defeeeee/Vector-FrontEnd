@@ -6,6 +6,12 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.34.0 — Tu CAD, al día solo
+
+_28 de octubre de 2026_
+
+- **Vector y tu CAD dicen lo mismo** — Con tu cuenta de ANAC conectada, Vector revisa tu CAD solo cada 12 horas: anota lo que cargaste a mano, devuelve a la lista lo que borraste y te avisa qué vuelos esperan tu declaración jurada.
+
 ## v2.33.0 — Tu CAD desde Vector
 
 _28 de octubre de 2026_

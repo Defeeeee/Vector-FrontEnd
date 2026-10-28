@@ -14,6 +14,7 @@ import { splitRoute } from "@/lib/route";
 import { horasDeLaFila } from "@/lib/simulador";
 import { pesos } from "@/lib/costos";
 import { AUTORIDADES_CAD } from "@/lib/cad";
+import { pendienteDeDdjj } from "@/lib/cad";
 
 const PURPOSE_OPTIONS = [
   { value: "ACR", label: "ACR – Acrobacia" },
@@ -256,15 +257,24 @@ export default function FlightCard({ flight, aircraft, allAircraft, costo = null
                 Cierra hoja
               </span>
             )}
-            {!!flight.cad_vuelo_id && (
-              <span
-                title="Ya está cargado en el CAD de ANAC"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex-shrink-0"
-              >
-                <Landmark className="w-3 h-3" aria-hidden="true" />
-                En el CAD
-              </span>
-            )}
+            {!!flight.cad_vuelo_id &&
+              (pendienteDeDdjj(flight.cad_estado) ? (
+                <span
+                  title="Está en el CAD de ANAC y le falta la declaración jurada"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded flex-shrink-0"
+                >
+                  <Landmark className="w-3 h-3" aria-hidden="true" />
+                  Falta la DDJJ
+                </span>
+              ) : (
+                <span
+                  title="Ya está cargado en el CAD de ANAC"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex-shrink-0"
+                >
+                  <Landmark className="w-3 h-3" aria-hidden="true" />
+                  En el CAD
+                </span>
+              ))}
           </div>
         </div>
 

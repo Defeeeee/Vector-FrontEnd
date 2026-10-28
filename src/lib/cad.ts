@@ -1028,3 +1028,17 @@ export function autoridadesPorFinalidad(
   }
   return salida;
 }
+
+/* -------------------------------------------------------------------------- */
+/* La sincronización con el CAD (migración 037)                                */
+/* -------------------------------------------------------------------------- */
+
+/** Si el CAD dice que al vuelo le falta la declaración jurada ("PENDIENTE DE DDJJ"). */
+export function pendienteDeDdjj(estado: string | null | undefined): boolean {
+  return /PENDIENTE/i.test(estado ?? "") && /DDJJ|DECLARA/i.test(estado ?? "");
+}
+
+/** Cuántos vuelos esperan la declaración jurada en el CAD, para el recordatorio del inicio. */
+export function cuantosPendientesDeDdjj(vuelos: { cad_vuelo_id?: number | null; cad_estado?: string | null }[]): number {
+  return vuelos.filter((f) => f.cad_vuelo_id && pendienteDeDdjj(f.cad_estado)).length;
+}

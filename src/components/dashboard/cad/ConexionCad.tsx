@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, KeyRound, Loader2, LockKeyhole, LogOut } from "lucide-react";
-import { conectarCad, desconectarCad } from "@/actions/cad-vector";
+import { Eye, EyeOff, KeyRound, Loader2, LockKeyhole, LogOut, RefreshCw } from "lucide-react";
+import { conectarCad, desconectarCad, sincronizarCad } from "@/actions/cad-vector";
 
 const campo =
   "w-full bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-2xl py-3 px-4 outline-none focus:border-zinc-900 dark:focus:border-white/50 text-zinc-900 dark:text-white font-semibold placeholder:text-zinc-400 dark:placeholder:text-zinc-600 placeholder:font-medium";
@@ -131,6 +131,37 @@ export function DesconectarCad() {
       </button>
       <button onClick={() => setSeguro(false)} className="font-semibold text-zinc-500">
         No
+      </button>
+    </span>
+  );
+}
+
+/**
+ * "Actualizar con el CAD": la sincronización a pedido (sola corre cada 12 h). Si cambió algo,
+ * recarga la pantalla para que el panel lea de nuevo.
+ */
+export function ActualizarCad() {
+  const [enviando, startTransition] = useTransition();
+  const [texto, setTexto] = useState("");
+  return (
+    <span className="inline-flex items-center gap-3 text-xs">
+      {texto && <span className="text-zinc-500 dark:text-zinc-400">{texto}</span>}
+      <button
+        disabled={enviando}
+        onClick={() =>
+          startTransition(async () => {
+            setTexto("");
+            const r = await sincronizarCad(true);
+            if (!r.sincronizado) return setTexto(r.error ?? "No se pudo actualizar.");
+            const cambios = (r.marcados ?? 0) + (r.desmarcados ?? 0) + (r.estados ?? 0);
+            if (cambios) window.location.reload();
+            else setTexto("Ya estaba al día.");
+          })
+        }
+        className="inline-flex items-center gap-1.5 font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-50"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${enviando ? "animate-spin" : ""}`} aria-hidden="true" />
+        {enviando ? "Actualizando…" : "Actualizar con el CAD"}
       </button>
     </span>
   );

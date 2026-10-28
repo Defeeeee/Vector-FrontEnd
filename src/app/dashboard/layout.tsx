@@ -21,6 +21,7 @@ import { cookies } from "next/headers";
 import { COOKIE_ALTA, type EstadoAlta } from "@/lib/onboarding";
 import { COOKIE_QR } from "@/lib/pegatinas";
 import AnotarOrigenQr from "@/components/dashboard/AnotarOrigenQr";
+import SincronizarCad from "@/components/dashboard/cad/SincronizarCad";
 
 /**
  * El perfil, y si se pudo preguntar por él.
@@ -252,6 +253,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* AI Chat Widget */}
       <ChatWidget />
       {vinoPorQr && <AnotarOrigenQr />}
+      {/* El CAD al día, en segundo plano: sólo con la cuenta de ANAC conectada y cada 12 h. */}
+      <SincronizarCad />
     </div>
     </AvisosProvider>
   );

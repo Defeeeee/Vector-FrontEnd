@@ -78,6 +78,20 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.34.0",
+    fecha: "2026-10-28",
+    titulo: "Tu CAD, al día solo",
+    novedades: [
+      {
+        icono: "reloj",
+        titulo: "Vector y tu CAD dicen lo mismo",
+        texto: "Con tu cuenta de ANAC conectada, Vector revisa tu CAD solo cada 12 horas: anota lo que cargaste a mano, devuelve a la lista lo que borraste y te avisa qué vuelos esperan tu declaración jurada.",
+        href: "/dashboard/history/cad",
+        cta: "Ver Pasar al CAD",
+      },
+    ],
+  },
+  {
     version: "2.33.0",
     fecha: "2026-10-28",
     titulo: "Tu CAD desde Vector",

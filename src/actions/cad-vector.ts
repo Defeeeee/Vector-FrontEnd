@@ -299,3 +299,33 @@ export async function pasarVueloAlCad(vectorId: string): Promise<{ ok: boolean; 
     return { ok: false, mensaje: "No pudimos hablar con el CAD. Pasalo desde Pasar al CAD." };
   }
 }
+
+export interface ResultadoSincronizacion {
+  sincronizado: boolean;
+  motivo?: "sin_conexion" | "reciente" | "error";
+  desmarcados?: number;
+  marcados?: number;
+  estados?: number;
+  pendientes_ddjj?: number;
+  error?: string;
+}
+
+/**
+ * Pone a Vector de acuerdo con el CAD (`POST /cad/sincronizar`, migración 037): los estados,
+ * lo que se borró allá y lo que se cargó a mano. Sola, al abrir la app, como mucho cada 12 horas
+ * (lo controla el backend); `forzar` es el botón de "Pasar al CAD". Nunca crea vuelos.
+ */
+export async function sincronizarCad(forzar = false): Promise<ResultadoSincronizacion> {
+  try {
+    const r = await apiFetch(`/cad/sincronizar${forzar ? "?forzar=true" : ""}`, { method: "POST" }, ESPERA_ANAC);
+    if (!r.ok) return { sincronizado: false, motivo: "error", error: await detalleDeError(r, "No pudimos leer tu CAD.") };
+    const res = (await r.json()) as ResultadoSincronizacion;
+    if (res.sincronizado && (res.desmarcados || res.marcados || res.estados)) {
+      for (const p of ["/dashboard", "/dashboard/history", "/dashboard/history/cad"]) revalidatePath(p);
+    }
+    return res;
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { sincronizado: false, motivo: "error", error: "ANAC tardó demasiado en contestar." };
+  }
+}
