@@ -323,7 +323,9 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     al frontend y **una rechazada no se reintenta** (bloquearía la cuenta de ANAC). Nunca se toca
     la DDJJ: el backend tiene una lista blanca de lecturas más "Crear". Con la cuenta conectada,
     Registrar vuelo ofrece "Cargarlo también en tu CAD" (`pasarVueloAlCad`). Está en la política de
-    privacidad (`#cad`). **La primera conexión real la hizo / la hace Federico.**
+    privacidad (`#cad`). Probado con la cuenta real de Federico (2026-10-28). **ANAC no acepta
+    conexiones del VPS**: el backend sale por un proxy en defeserver-amenaba (`CAD_PROXY`, ver el
+    AGENTS del backend); si amenaba se apaga, este modo no anda y queda el marcador.
   - **Simuladores** (2.33.0): tipo 3, cargo 6 (en instrucción) o 3 (instructor), discriminación 9 u
     8, día y noche en 0, y `simulador` con el de `GetSimuladoresListItem`, que se elige una vez por
     equipo y queda en `aircraft.cad_simulador` (con su clase FSTD). "Traer a Vector" todavía no trae

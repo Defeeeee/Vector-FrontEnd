@@ -146,13 +146,15 @@ export default function PanelCad() {
     }
     guardarMemoria(recordarAutoridades(leerMemoria(), hechas));
     setPaso("listo");
-    router.refresh();
+    void recontar();
   }
 
   async function anotarLosQueEstan() {
     const r = await marcarEnElCad(yaEstan.map((f) => ({ vectorId: f.b.vectorId, cadId: f.enElCad! })));
-    if (r.marcados) setFilas((fs) => fs.filter((f) => !f.enElCad));
-    else setAviso("No pudimos anotarlos en Vector. Probá de nuevo.");
+    if (r.marcados) {
+      setFilas((fs) => fs.filter((f) => !f.enElCad));
+      void recontar();
+    } else setAviso("No pudimos anotarlos en Vector. Probá de nuevo.");
   }
 
   if (error)
@@ -205,7 +207,7 @@ export default function PanelCad() {
       </div>
 
       {modo === "traer" ? (
-        <Traer alTraer={() => void recontar()} />
+        <Traer alTraer={() => void recontar()} alLeer={(n) => setDatos((d) => (d ? { ...d, sinTraer: n } : d))} />
       ) : filas.length === 0 ? (
         <Aviso tono="ok">
           <p className="font-semibold">Todos tus vuelos de Vector ya están en el CAD.</p>
@@ -674,7 +676,12 @@ function Pie({ children }: { children: React.ReactNode }) {
 
 /* --------------------------------------------------------- traer a Vector --- */
 
-function Traer({ alTraer }: { alTraer: () => void }) {
+/**
+ * `alLeer` le pasa al panel cuántos quedaron para traer o revisar: la cuenta de la pestaña se
+ * calculó al abrir el panel, y si después se anotó un vuelo quedaba vieja (Federico, 2026-10-28:
+ * decía 1 y adentro no había nada).
+ */
+function Traer({ alTraer, alLeer }: { alTraer: () => void; alLeer: (n: number) => void }) {
   const [filas, setFilas] = useState<{ t: FilaTraida; elegido: boolean }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [paso, setPaso] = useState<Paso>("elegir");
@@ -684,8 +691,13 @@ function Traer({ alTraer }: { alTraer: () => void }) {
     void (async () => {
       const r = await leerParaTraer();
       if (!r.ok) setError(r.error);
-      else setFilas(r.datos.map((t) => ({ t, elegido: !t.problema })));
+      else {
+        setFilas(r.datos.map((t) => ({ t, elegido: !t.problema })));
+        alLeer(r.datos.length);
+      }
     })();
+    // Se lee una vez, al entrar a la pestaña.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (error)
