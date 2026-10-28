@@ -229,6 +229,12 @@ export default function PanelCad() {
               )}
               . Quedan &quot;Pendiente de DDJJ&quot;: la declaración la hacés vos en el CAD.
             </p>
+            {datos.devueltos > 0 && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                {datos.devueltos === 1 ? "1 vuelo que ya no está en tu CAD volvió" : `${datos.devueltos} vuelos que ya no están en tu CAD volvieron`} a la lista para
+                pasarlo de nuevo.
+              </p>
+            )}
           </section>
 
           {paso === "elegir" && <Simuladores filas={porCargar} simuladores={datos.simuladores} alElegir={(avionId, s) => setFilas((fs) => fs.map((f) => (f.b.simulador?.avionId === avionId ? { ...f, b: { ...f.b, clase: s.clase, simulador: { ...f.b.simulador, cad: s } } } : f)))} />}

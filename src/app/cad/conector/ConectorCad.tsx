@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Compass } from "lucide-react";
-import { guardarSimuladorCad, marcarEnElCad, omitirEnElCad, traerDelCad } from "@/actions/cad";
+import { desmarcarDelCad, guardarSimuladorCad, marcarEnElCad, omitirEnElCad, traerDelCad } from "@/actions/cad";
 import { CLAVE_MARCADOR_USADO } from "@/components/dashboard/MarcadorCad";
 import type { BorradorCad, MotivoOmitido, VueloConocido } from "@/lib/cad";
 
@@ -19,6 +19,7 @@ export default function ConectorCad({
   omitidos,
   conocidos,
   matriculas,
+  enElCadSegunVector,
   origenCad,
 }: {
   borradores: BorradorCad[];
@@ -26,6 +27,7 @@ export default function ConectorCad({
   omitidos: (BorradorCad & { motivo: MotivoOmitido })[];
   conocidos: VueloConocido[];
   matriculas: string[];
+  enElCadSegunVector: (BorradorCad & { cadId: number })[];
   origenCad: string;
 }) {
   const [estado, setEstado] = useState<"esperando" | "conectado" | "sin-cad">("esperando");
@@ -40,7 +42,7 @@ export default function ConectorCad({
       setEstado("sin-cad");
       return;
     }
-    const enviar = () => cad.postMessage({ tipo: "vector-cad:vuelos", version: 3, borradores, pasados, omitidos, conocidos, matriculas }, origenCad);
+    const enviar = () => cad.postMessage({ tipo: "vector-cad:vuelos", version: 4, borradores, pasados, omitidos, conocidos, matriculas, marcados: enElCadSegunVector }, origenCad);
     const alRecibir = async (e: MessageEvent) => {
       if (e.origin !== origenCad || e.source !== cad) return;
       const d = e.data as {
@@ -50,6 +52,7 @@ export default function ConectorCad({
         vuelos?: unknown[];
         avionId?: string;
         simulador?: unknown;
+        vectorIds?: string[];
       };
       if (d?.tipo === "vector-cad:listo") {
         enviar();
@@ -65,6 +68,9 @@ export default function ConectorCad({
         const r = await marcarEnElCad(d.items ?? []);
         setMarcados((m) => m + r.marcados);
         cad.postMessage({ tipo: "vector-cad:marcados", marcados: r.marcados }, origenCad);
+      } else if (d?.tipo === "vector-cad:desmarcar") {
+        const r = await desmarcarDelCad(Array.isArray(d.vectorIds) ? d.vectorIds : []);
+        cad.postMessage({ tipo: "vector-cad:desmarcados", desmarcados: r.desmarcados }, origenCad);
       } else if (d?.tipo === "vector-cad:simulador") {
         const r = await guardarSimuladorCad(String(d.avionId ?? ""), d.simulador);
         cad.postMessage({ tipo: "vector-cad:simulador-guardado", ok: r.ok }, origenCad);
@@ -84,7 +90,7 @@ export default function ConectorCad({
       // Si la ventana que la abrió no es el CAD, el navegador no deja mandar: se espera.
     }
     return () => window.removeEventListener("message", alRecibir);
-  }, [borradores, pasados, omitidos, conocidos, matriculas, origenCad]);
+  }, [borradores, pasados, omitidos, conocidos, matriculas, enElCadSegunVector, origenCad]);
 
   const listos = borradores.filter((b) => !b.problema).length;
 

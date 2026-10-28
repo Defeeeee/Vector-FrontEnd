@@ -602,6 +602,22 @@ export function filaCad(
   };
 }
 
+/** Lo que `GetPagedList` trae por pedido: con la lista llena, puede haber más. */
+export const TOPE_LISTA_CAD = 1000;
+
+/**
+ * Los vuelos que Vector tiene marcados como pasados y que ya no están en el CAD: el piloto
+ * los borró allá (Federico, 2026-10-28). Vuelven a "Pasar al CAD".
+ *
+ * Sólo con una lista que se pueda creer entera: vacía puede ser una lectura que falló, y llena
+ * hasta el tope puede estar cortada. En esos casos no se desmarca nada.
+ */
+export function borradosDelCad<T extends { cadId: number }>(marcados: T[], enElCad: Pick<VueloEnElCad, "vueloTripulanteID">[]): T[] {
+  if (enElCad.length === 0 || enElCad.length >= TOPE_LISTA_CAD) return [];
+  const ids = new Set(enElCad.map((v) => Number(v.vueloTripulanteID)));
+  return marcados.filter((m) => !ids.has(m.cadId));
+}
+
 /** A una sesión de simulador le falta elegir cuál es en el CAD (o su clase). */
 export function faltaSimulador(b: BorradorCad, elegido?: SimuladorCad | null): boolean {
   if (b.tipoVueloID !== TIPO_VUELO_CAD.simulador) return false;

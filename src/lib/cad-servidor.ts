@@ -38,6 +38,8 @@ export interface VuelosParaElCad {
   conocidos: VueloConocido[];
   /** Las matrículas del Hangar (sin simuladores): un vuelo del CAD sólo se trae si su avión está. */
   matriculas: string[];
+  /** Los marcados como pasados, con su id del CAD: si se borraron allá, vuelven (`borradosDelCad`). */
+  marcados: (BorradorCad & { cadId: number })[];
 }
 
 /** `null` si no se pudo leer (invariante 2: no es lo mismo que "no hay"). */
@@ -65,6 +67,7 @@ export async function vuelosParaElCad(): Promise<VuelosParaElCad | null> {
         matricula: matriculaCad((f.aircraft_id && porId.get(f.aircraft_id)?.registration) || ""),
       })),
       matriculas: aviones.filter((a) => !a.is_simulator).map((a) => matriculaCad(a.registration)),
+      marcados: vuelos.filter((f) => f.cad_vuelo_id && !f.cad_omitido).map((f) => ({ ...armar(f), cadId: Number(f.cad_vuelo_id) })),
     };
   } catch {
     return null;

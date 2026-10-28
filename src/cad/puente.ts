@@ -23,6 +23,7 @@
  */
 import {
   CLASES_SIMULADOR,
+  borradosDelCad,
   TRAER_DEL_CAD,
   claveDeAutoridad,
   corteCad,
@@ -285,6 +286,7 @@ const ESTILOS = `
     omitidos: (BorradorCad & { motivo: MotivoOmitido })[];
     conocidos: VueloConocido[];
     matriculas: string[];
+    marcados: (BorradorCad & { cadId: number })[];
   } | null> {
     if (!ventana || ventana.closed) abrirVentana();
     if (!ventana) return null;
@@ -300,6 +302,7 @@ const ESTILOS = `
           omitidos: Array.isArray(d.omitidos) ? (d.omitidos as (BorradorCad & { motivo: MotivoOmitido })[]) : [],
           conocidos: Array.isArray(d.conocidos) ? (d.conocidos as VueloConocido[]) : [],
           matriculas: Array.isArray(d.matriculas) ? (d.matriculas as string[]) : [],
+          marcados: Array.isArray(d.marcados) ? (d.marcados as (BorradorCad & { cadId: number })[]) : [],
         }
       : null;
   }
@@ -320,6 +323,15 @@ const ESTILOS = `
     ventana.postMessage({ tipo: "vector-cad:omitir", omitir: items }, VECTOR);
     const d = await vuelve;
     return d ? Number(d.cambiados) || 0 : null;
+  }
+
+  /** Les saca la marca "en el CAD" a vuelos que el piloto borró allá. */
+  async function desmarcarEnVector(vectorIds: string[]): Promise<number> {
+    if (!vectorIds.length || !ventana || ventana.closed) return 0;
+    const vuelve = esperar("vector-cad:desmarcados", 30_000);
+    ventana.postMessage({ tipo: "vector-cad:desmarcar", vectorIds }, VECTOR);
+    const d = await vuelve;
+    return d ? Number(d.desmarcados) || 0 : 0;
   }
 
   /** Guarda en el Hangar qué simulador del CAD es ese equipo (migración 036). */
@@ -425,7 +437,11 @@ const ESTILOS = `
       matriculas = vector.matriculas;
       ($("tabs") as HTMLDivElement).hidden = !TRAER_DEL_CAD;
       const ctx = { enElCad, finalidades, lugares: lugaresCad, autoridades: auts, corte: corteCad(enElCad), memoria: leerMemoria() };
+      // Los que se borraron del CAD vuelven a la lista, sin la marca en Vector.
+      const borrados = borradosDelCad(vector.marcados, enElCad);
+      const devueltos = await desmarcarEnVector(borrados.map((b) => b.vectorId));
       filas = [
+        ...borrados.slice(0, devueltos).map(({ cadId: _, ...b }) => filaCad(b, ctx)),
         ...vector.borradores.map((b) => filaCad(b, ctx)),
         ...vector.omitidos.map(({ motivo, ...b }) => ({ ...filaCad(b, ctx), omitido: motivo, elegido: false })),
       ];

@@ -129,6 +129,29 @@ export async function traerDelCad(items: unknown[]) {
 }
 
 /**
+ * Saca la marca "en el CAD" de vuelos que el piloto borró allá (`borradosDelCad`), para que
+ * vuelvan a "Pasar al CAD". La llaman el panel de Vector y la ventanita del marcador, sólo
+ * después de leer la lista entera del CAD. Es una marca del libro: no toca el cobro.
+ */
+export async function desmarcarDelCad(vectorIds: string[]) {
+  const validos = (Array.isArray(vectorIds) ? vectorIds : []).filter((id) => /^[\w-]{1,64}$/.test(String(id))).slice(0, 300);
+  let desmarcados = 0;
+  try {
+    for (const id of validos) {
+      const r = await apiFetch(`/flights/${id}`, { method: "PATCH", body: JSON.stringify({ cad_vuelo_id: null }) });
+      if (r.ok) desmarcados++;
+    }
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+  }
+  if (desmarcados > 0) {
+    revalidatePath("/dashboard/history");
+    revalidatePath("/dashboard/history/cad");
+  }
+  return { desmarcados };
+}
+
+/**
  * Guarda qué simulador del CAD es un "avión" simulador del Hangar, con su clase y su modelo
  * (`aircraft.cad_simulador`, migración 036). Se elige una vez en el panel y sirve para todas
  * sus sesiones. Lo que llega se revisa (`simuladorValido`): viene de otra pestaña.

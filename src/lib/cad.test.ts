@@ -24,6 +24,7 @@ import {
   autoridadDelFormulario,
   autoridadesPorFinalidad,
   claveDeAutoridad,
+  borradosDelCad,
   faltaSimulador,
   filaCad,
   simuladorSugerido,
@@ -638,5 +639,20 @@ describe("un vuelo desde un LAD", () => {
   it("y vuelve del CAD como LAD2013", () => {
     expect(codigoDeLugarCad(" 2013 (VILLA JOSEFINA)")).toBe("LAD2013");
     expect(codigoDeLugarCad("SADF -  FDO -  FDO (SAN FERNANDO)")).toBe("SADF");
+  });
+});
+
+describe("un vuelo que se borró del CAD", () => {
+  const marcados = [{ vectorId: "a", cadId: 843265 }, { vectorId: "b", cadId: 831534 }];
+  const lista = (...ids: number[]) => ids.map((vueloTripulanteID) => ({ vueloTripulanteID }));
+
+  it("vuelve a la lista si ya no está en el CAD", () => {
+    expect(borradosDelCad(marcados, lista(843265, 1))).toEqual([{ vectorId: "b", cadId: 831534 }]);
+    expect(borradosDelCad(marcados, lista(843265, 831534))).toEqual([]);
+  });
+
+  it("con una lista vacía (pudo fallar la lectura) o llena hasta el tope (puede estar cortada), no se toca nada", () => {
+    expect(borradosDelCad(marcados, [])).toEqual([]);
+    expect(borradosDelCad(marcados, lista(...Array.from({ length: 1000 }, (_, i) => i + 1)))).toEqual([]);
   });
 });

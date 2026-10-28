@@ -51,6 +51,7 @@ export default async function ConectorPage() {
             omitidos={datos.omitidos}
             conocidos={datos.conocidos}
             matriculas={datos.matriculas}
+            enElCadSegunVector={datos.marcados}
             origenCad={process.env.NEXT_PUBLIC_CAD_ORIGEN || "https://cad.anac.gob.ar"} />
         )}
       </div>

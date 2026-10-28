@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { marcarEnElCad } from "@/actions/cad";
+import { desmarcarDelCad, marcarEnElCad } from "@/actions/cad";
 import { apiFetch } from "@/lib/api";
 import { vuelosParaElCad } from "@/lib/cad-servidor";
 import {
+  borradosDelCad,
   corteCad,
   estaEnVector,
   faltaAutoridad,
@@ -121,6 +122,8 @@ export interface PanelCad {
   simuladores: ItemCad[];
   /** Cuántos vuelos del CAD no están en Vector (para la pestaña "Traer a Vector"). */
   sinTraer: number;
+  /** Cuántos marcados como pasados ya no estaban en el CAD y volvieron a la lista. */
+  devueltos: number;
 }
 
 /**
@@ -136,7 +139,11 @@ export async function prepararPanelCad(memoria: MemoriaAutoridades | null): Prom
     const enElCad = vuelos.datos.datos;
     const l = listas.datos;
     const ctx = { enElCad, finalidades: l.finalidades, lugares: l.lugares, autoridades: l.autoridades, corte: corteCad(enElCad), memoria };
+    // Los que se borraron del CAD: se les saca la marca y vuelven a la lista.
+    const borrados = borradosDelCad(vector.marcados, enElCad);
+    const devueltos = borrados.length ? (await desmarcarDelCad(borrados.map((b) => b.vectorId))).desmarcados : 0;
     const filas: FilaCad[] = [
+      ...borrados.slice(0, devueltos).map(({ cadId: _, ...b }) => filaCad(b, ctx)),
       ...vector.borradores.map((b) => filaCad(b, ctx)),
       ...vector.omitidos.map(({ motivo, ...b }) => ({ ...filaCad(b, ctx), omitido: motivo as MotivoOmitido, elegido: false })),
     ];
@@ -147,6 +154,7 @@ export async function prepararPanelCad(memoria: MemoriaAutoridades | null): Prom
         autoridades: l.autoridades,
         simuladores: [...l.simuladores].sort((a, b) => a.value.localeCompare(b.value)),
         sinTraer: enElCad.filter((v) => !estaEnVector(v, vector.conocidos)).length,
+        devueltos,
       },
     };
   } catch (e) {
