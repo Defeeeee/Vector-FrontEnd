@@ -137,7 +137,7 @@ export function DesconectarCad() {
 }
 
 /**
- * "Actualizar con el CAD": la sincronización a pedido (sola corre cada 12 h). Si cambió algo,
+ * "Actualizar con el CAD": la sincronización a pedido (sola corre una vez por día). Si cambió algo,
  * recarga la pantalla para que el panel lea de nuevo.
  */
 export function ActualizarCad() {

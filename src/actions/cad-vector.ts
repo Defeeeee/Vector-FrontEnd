@@ -312,7 +312,7 @@ export interface ResultadoSincronizacion {
 
 /**
  * Pone a Vector de acuerdo con el CAD (`POST /cad/sincronizar`, migración 037): los estados,
- * lo que se borró allá y lo que se cargó a mano. Sola, al abrir la app, como mucho cada 12 horas
+ * lo que se borró allá y lo que se cargó a mano. Sola, al abrir la app, como mucho una vez por día
  * (lo controla el backend); `forzar` es el botón de "Pasar al CAD". Nunca crea vuelos.
  */
 export async function sincronizarCad(forzar = false): Promise<ResultadoSincronizacion> {

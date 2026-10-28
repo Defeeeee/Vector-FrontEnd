@@ -10,7 +10,7 @@ la bitácora de `docs/bitacora/`.
 
 _28 de octubre de 2026_
 
-- **Vector y tu CAD dicen lo mismo** — Con tu cuenta de ANAC conectada, Vector revisa tu CAD solo cada 12 horas: anota lo que cargaste a mano, devuelve a la lista lo que borraste y te avisa qué vuelos esperan tu declaración jurada.
+- **Vector y tu CAD dicen lo mismo** — Con tu cuenta de ANAC conectada, Vector revisa tu CAD solo una vez por día: anota lo que cargaste a mano, devuelve a la lista lo que borraste y te avisa qué vuelos esperan tu declaración jurada.
 
 ## v2.33.0 — Tu CAD desde Vector
 

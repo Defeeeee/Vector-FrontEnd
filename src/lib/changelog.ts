@@ -85,7 +85,7 @@ export const CHANGELOG: VersionPublicada[] = [
       {
         icono: "reloj",
         titulo: "Vector y tu CAD dicen lo mismo",
-        texto: "Con tu cuenta de ANAC conectada, Vector revisa tu CAD solo cada 12 horas: anota lo que cargaste a mano, devuelve a la lista lo que borraste y te avisa qué vuelos esperan tu declaración jurada.",
+        texto: "Con tu cuenta de ANAC conectada, Vector revisa tu CAD solo una vez por día: anota lo que cargaste a mano, devuelve a la lista lo que borraste y te avisa qué vuelos esperan tu declaración jurada.",
         href: "/dashboard/history/cad",
         cta: "Ver Pasar al CAD",
       },
@@ -828,6 +828,11 @@ export const CHANGELOG: VersionPublicada[] = [
  * Datos puros, como `CHANGELOG`: los lee `scripts/build-changelog.mjs` sin compilar.
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
+  {
+    version: "2.34.1",
+    fecha: "2026-10-28",
+    motivo: "Vector entra menos a ANAC: la sincronización con el CAD pasa a una vez por día, y si ANAC no contesta se espera antes de volver a probar. Ajusta la 2.34.0, sin anuncio aparte.",
+  },
   {
     version: "2.30.1",
     fecha: "2026-10-26",

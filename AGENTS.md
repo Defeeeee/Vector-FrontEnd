@@ -325,9 +325,13 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     Registrar vuelo ofrece "Cargarlo también en tu CAD" (`pasarVueloAlCad`). Está en la política de
     privacidad (`#cad`). Probado con la cuenta real de Federico (2026-10-28). **ANAC no acepta
     conexiones del VPS**: el backend sale por un proxy en defeserver-amenaba (`CAD_PROXY`, ver el
-    AGENTS del backend); si amenaba se apaga, este modo no anda y queda el marcador.
+    AGENTS del backend); si amenaba se apaga, este modo no anda y queda el marcador. **ANAC bloquea por horas la IP que
+    entra varias veces** (el 2026-10-28 cayeron el VPS y después la casa de Federico, con 3 logins en
+    media hora): el backend reusa la sesión hasta 8 h, guarda la lista de vuelos 10 min, no hace más
+    de 4 logins por hora entre todos y, si ANAC no conecta, no le pide nada por 45 min. Rotar IPs
+    para esquivar el bloqueo se descartó.
   - **Se sincroniza solo** (2.34.0, migración 037): con la cuenta conectada, al abrir el dashboard y
-    como mucho cada 12 h (`SincronizarCad`, `POST /cad/sincronizar`), Vector anota el estado de cada
+    como mucho una vez por día (`SincronizarCad`, `POST /cad/sincronizar`), Vector anota el estado de cada
     vuelo (`flights.cad_estado`), desmarca lo borrado del CAD y marca lo cargado a mano (misma salida
     y matrícula, coincidencia única). **Nunca crea vuelos.** El inicio recuerda los pendientes de
     DDJJ (`PendientesDdjj`, excepción a las tres preguntas: aprobada por Federico).
