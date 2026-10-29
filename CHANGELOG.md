@@ -6,6 +6,12 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.35.0 — Pasar al CAD con la extensión de Vector
+
+_29 de octubre de 2026_
+
+- **Un botón de Vector adentro del CAD** — Instalá la extensión de Vector en Chrome y vas a tener un botón "Pasar con Vector" en el CAD: cargás tus vuelos desde tu propia sesión, sin marcador y sin que Vector vea tu contraseña. Conectar tu cuenta de ANAC queda en pausa por ahora.
+
 ## v2.34.0 — Tu CAD, al día solo
 
 _28 de octubre de 2026_

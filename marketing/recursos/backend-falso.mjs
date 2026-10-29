@@ -82,7 +82,8 @@ function rutaCad(req, res, ruta, json) {
     res.end(JSON.stringify(cuerpo));
   };
   if (ruta === "/api/cad/conexion" && req.method === "GET")
-    return responder(200, { disponible: true, conectado: !!cad.usuario, usuario: cad.usuario, estado: cad.usuario ? cad.estado : null, error: null });
+    // Como en producción: "desde Vector" apagado salvo CAD_DESDE_VECTOR=1 (2026-10-29).
+    return responder(200, { disponible: process.env.CAD_DESDE_VECTOR === "1", conectado: !!cad.usuario, usuario: cad.usuario, estado: cad.usuario ? cad.estado : null, error: null });
   if (ruta === "/api/cad/conexion" && req.method === "POST") {
     if (json.clave !== "buena") return responder(400, { detail: "Usuario o contraseña inválidos." });
     cad.usuario = json.usuario;

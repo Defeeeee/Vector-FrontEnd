@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bookmark, ChevronDown, ExternalLink, ShieldCheck, Smartphone } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
-import PasoMarcador from "@/components/dashboard/MarcadorCad";
+import PasoExtension from "@/components/dashboard/cad/ExtensionCad";
 import ConexionCad, { ActualizarCad, DesconectarCad } from "@/components/dashboard/cad/ConexionCad";
 import PanelCad from "@/components/dashboard/cad/PanelCad";
 import { estadoConexionCad } from "@/actions/cad-vector";
@@ -55,8 +55,8 @@ function PasosMarcador() {
   return (
     <>
     <ol className="space-y-8">
-      <Paso n={1} titulo="Poné el marcador en tu barra de favoritos">
-        <PasoMarcador />
+      <Paso n={1} titulo="Instalá la extensión de Vector">
+        <PasoExtension />
       </Paso>
       <Paso n={2} titulo='Entrá al CAD y abrí "Registro horas vuelo"'>
         <a
@@ -68,9 +68,9 @@ function PasosMarcador() {
           Abrir el CAD <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
         </a>
       </Paso>
-      <Paso n={3} titulo="Tocá el marcador y elegí qué cargar">
+      <Paso n={3} titulo="Tocá Pasar con Vector y elegí qué cargar">
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-          Se abre un panel de Vector adentro del CAD, con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
+          Es el botón que pone la extensión abajo a la derecha (o el marcador, si elegiste ése). Se abre un panel de Vector adentro del CAD, con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
           ponés su autoridad certificante y su nombre; Vector te propone la última que usaste para esa finalidad. Antes de cargar podés ver
           exactamente lo que se manda.
         </p>

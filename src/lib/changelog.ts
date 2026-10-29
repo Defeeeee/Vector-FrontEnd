@@ -78,6 +78,20 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.35.0",
+    fecha: "2026-10-29",
+    titulo: "Pasar al CAD con la extensión de Vector",
+    novedades: [
+      {
+        icono: "llave",
+        titulo: "Un botón de Vector adentro del CAD",
+        texto: "Instalá la extensión de Vector en Chrome y vas a tener un botón \"Pasar con Vector\" en el CAD: cargás tus vuelos desde tu propia sesión, sin marcador y sin que Vector vea tu contraseña. Conectar tu cuenta de ANAC queda en pausa por ahora.",
+        href: "/dashboard/history/cad",
+        cta: "Ver Pasar al CAD",
+      },
+    ],
+  },
+  {
     version: "2.34.0",
     fecha: "2026-10-28",
     titulo: "Tu CAD, al día solo",

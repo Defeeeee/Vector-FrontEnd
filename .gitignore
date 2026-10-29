@@ -45,3 +45,4 @@ next-env.d.ts
 # que quede viejo. Lo produce `npm run build`; ver `scripts/build-sw.mjs`.
 /public/sw.js
 /public/cad/puente.js
+/public/cad/vector-cad.zip
