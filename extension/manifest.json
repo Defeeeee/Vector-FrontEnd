@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Vector → CAD",
   "short_name": "Vector CAD",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pasá los vuelos de tu bitácora de Vector al CAD de ANAC desde tu propia sesión del CAD. No guarda ni ve tu contraseña.",
   "homepage_url": "https://vector.fdiaznem.com.ar/dashboard/history/cad",
   "icons": {
@@ -15,7 +15,8 @@
     {
       "matches": ["https://cad.anac.gob.ar/foliadoweb/*"],
       "js": ["cad.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "world": "MAIN"
     },
     {
       "matches": ["https://vector.fdiaznem.com.ar/*"],

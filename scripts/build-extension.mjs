@@ -35,7 +35,11 @@ function archivos(dir, prefijo = "") {
   });
 }
 
-const lista = archivos(ORIGEN);
+// `cad.js` corre en el mundo de la página, sin `chrome.runtime.getURL`: el ícono va adentro.
+const icono = `data:image/png;base64,${fs.readFileSync(path.join(ORIGEN, "iconos", "vector-32.png")).toString("base64")}`;
+const lista = archivos(ORIGEN).map((a) =>
+  a.nombre === "vector-cad/cad.js" ? { ...a, datos: new TextEncoder().encode(new TextDecoder().decode(a.datos).replace("__ICONO__", icono)) } : a,
+);
 fs.mkdirSync(path.dirname(SALIDA), { recursive: true });
 fs.writeFileSync(SALIDA, armarZip(lista));
 const version = JSON.parse(fs.readFileSync(path.join(ORIGEN, "manifest.json"), "utf8")).version;

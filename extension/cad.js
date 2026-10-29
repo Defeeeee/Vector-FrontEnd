@@ -6,6 +6,12 @@
  * Por eso la extensión no pide permisos ni hace pedidos propios: los pedidos al CAD los hace el
  * panel desde esta pestaña, con la sesión que el piloto abrió, igual que si cargara a mano. Y el
  * panel se actualiza con cada deploy de Vector sin publicar otra versión de la extensión.
+ *
+ * Corre en el mundo de la página (`"world": "MAIN"`), no en el aislado de la extensión: un
+ * `<script>` agregado desde el mundo aislado queda bajo la CSP de la extensión, que bloquea
+ * cualquier script de otro origen (1.0.0, 2026-10-29). El CAD no manda CSP, así que desde la
+ * página carga igual que el marcador. Por eso no usa `chrome.*` (no existe acá): el ícono va
+ * adentro, como data URL (lo pone `scripts/build-extension.mjs` en `__ICONO__`).
  */
 (() => {
   const VECTOR = "https://vector.fdiaznem.com.ar";
@@ -17,7 +23,7 @@
   boton.title = "Pasar tus vuelos de Vector a este CAD";
   boton.innerHTML =
     '<img alt="" width="20" height="20" style="border-radius:6px;display:block"> <span>Pasar con Vector</span>';
-  boton.querySelector("img").src = chrome.runtime.getURL("iconos/vector-32.png");
+  boton.querySelector("img").src = "__ICONO__";
   Object.assign(boton.style, {
     position: "fixed",
     right: "20px",
@@ -36,10 +42,23 @@
     cursor: "pointer",
   });
 
+  let cargando = false;
   boton.addEventListener("click", () => {
+    if (cargando) return;
+    cargando = true;
+    boton.style.opacity = "0.6";
     // Lo mismo que el marcador: el script del panel desde Vector, a la página del CAD.
     const s = document.createElement("script");
     s.src = `${VECTOR}/cad/puente.js?t=${Date.now()}`;
+    const listo = () => {
+      cargando = false;
+      boton.style.opacity = "1";
+    };
+    s.onload = listo;
+    s.onerror = () => {
+      listo();
+      alert("No se pudo cargar el panel de Vector. Revisá tu conexión y probá de nuevo.");
+    };
     document.body.appendChild(s);
   });
 
