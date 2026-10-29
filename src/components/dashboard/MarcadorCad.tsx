@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Compass, Star } from "lucide-react";
 
-/** Lo deja la ventanita del CAD (`ConectorCad`) cuando el marcador ya se usó una vez. */
+/** Lo deja "Pasar al CAD" (`ConElCad`) cuando el marcador ya conectó una vez. */
 export const CLAVE_MARCADOR_USADO = "vector-cad-marcador";
 
 /**
  * El marcador "Vector → CAD" para arrastrar a la barra de favoritos: un `javascript:` que,
- * tocado en la pestaña del CAD, carga `/cad/puente.js` de Vector (`src/cad/puente.ts`).
+ * tocado en la pestaña del CAD, carga `/cad/puente.js` de Vector (`src/cad/enlace.ts`), que abre "Pasar al CAD" y le hace de
+ * puente.
  *
  * El `href` se pone después de montar: React bloquea los `javascript:` en las props, y así
  * además sale con el origen real (el de producción, o el local cuando se prueba).
@@ -39,7 +40,7 @@ function Marcador() {
 
 /**
  * El paso 1 de "Pasar al CAD": una barra de favoritos dibujada, con el lugar donde soltar el
- * marcador. Una vez que se usó (lo anota la ventanita), se achica a una línea.
+ * marcador. Una vez que se usó (lo anota `ConElCad`), se achica a una línea.
  */
 export default function PasoMarcador() {
   const [usado, setUsado] = useState(false);

@@ -9,7 +9,7 @@
  *
  * Lo compila `scripts/build-puente.mjs` a `public/cad/puente.js`: el mismo archivo que cargan los
  * marcadores que ya están guardados, que así pasan solos a funcionar de esta manera. El panel
- * viejo adentro del CAD (`puente.ts`) ya no se compila.
+ * viejo adentro del CAD (`puente.ts`) se borró en la 2.36.2.
  */
 import { atender, esPedido, mostrarAviso } from "./enlace-comun";
 

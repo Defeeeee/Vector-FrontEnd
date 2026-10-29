@@ -864,6 +864,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.36.2",
+    fecha: "2026-10-29",
+    motivo: "Se borra el panel viejo adentro del CAD y su ventanita (`/cad/conector`): desde la 2.36.0 la extensión y el marcador son sólo un puente. El piloto no ve nada nuevo.",
+  },
+  {
     version: "2.36.1",
     fecha: "2026-10-29",
     motivo: "\"Pasar al CAD\" avisa cuando la extensión instalada es vieja y ofrece bajar la nueva. Completa la 2.36.0, sin anuncio aparte.",

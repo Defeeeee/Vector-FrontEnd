@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Empaqueta `src/cad/puente.ts` en `public/cad/puente.js`: el script que el marcador
+ * Empaqueta `src/cad/enlace.ts` en `public/cad/puente.js`: el script que el marcador
  * "Vector → CAD" carga en la pestaña del CAD de ANAC (ver `lib/cad.ts`).
  *
  *   npm run build:puente      (lo corre `npm run build` solo)
@@ -19,7 +19,7 @@ import * as esbuild from "esbuild";
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Desde la 2.36.0 el marcador es un puente (`enlace.ts`): el panel está en Vector. Sale con el
-// mismo nombre para que los marcadores ya guardados lo carguen. `puente.ts` (el panel adentro
+// mismo nombre para que los marcadores ya guardados lo carguen. `puente.ts` (el panel adentro, borrado en la 2.36.2
 // del CAD) queda sin compilar hasta que el puente se pruebe contra el CAD real.
 const ENTRADA = path.join(RAIZ, "src", "cad", "enlace.ts");
 const SALIDA = path.join(RAIZ, "public", "cad", "puente.js");

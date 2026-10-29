@@ -5,6 +5,7 @@ import { ExternalLink, Link2, Loader2 } from "lucide-react";
 import PanelCad from "@/components/dashboard/cad/PanelCad";
 import { fuenteEnlace } from "@/components/dashboard/cad/fuente-cad";
 import { ExtensionVieja } from "@/components/dashboard/cad/ExtensionCad";
+import { CLAVE_MARCADOR_USADO } from "@/components/dashboard/MarcadorCad";
 import { estadoExtension } from "@/lib/extension-cad";
 import { hayCad, transporteCad, type TransporteCad } from "@/lib/enlace-cad";
 
@@ -33,6 +34,12 @@ export default function ConElCad({ activo, children }: { activo: boolean; childr
       if (!vivo) return;
       setCad(ok);
       if (!ok) reloj = setTimeout(probar, 2000);
+      else if (t === "marcador")
+        try {
+          localStorage.setItem(CLAVE_MARCADOR_USADO, "1");
+        } catch {
+          /* sin almacenamiento, el paso del marcador se sigue viendo entero */
+        }
     };
     void probar();
     return () => {

@@ -7,7 +7,7 @@ import type { Aircraft, Flight, Profile } from "@/types";
 
 /**
  * Los vuelos que faltan pasar al CAD, armados en el server (`lib/cad.ts`). Los lee la
- * ventanita que habla con el CAD (`/cad/conector`) y la pantalla "Pasar al CAD".
+ * pantalla "Pasar al CAD".
  *
  * Sin cache: con los 20 s de `apiFetch`, un vuelo recién marcado volvería a aparecer.
  */

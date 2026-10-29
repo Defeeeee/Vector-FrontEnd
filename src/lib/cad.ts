@@ -5,10 +5,10 @@
  * ## Cómo llegan al CAD
  *
  * No hay API pública: el CAD sólo acepta vuelos dentro de la sesión del piloto en su
- * navegador. Vector los pasa con un marcador que el piloto toca en la pestaña del CAD
- * (`src/cad/puente.ts`). Ese script le pide los vuelos a una ventanita de Vector
- * (`/cad/conector`) y los crea con la misma API que usa la página. La contraseña de ANAC
- * nunca pasa por Vector. Ver la bitácora del 2026-10-21.
+ * navegador. Desde la 2.36.0, la extensión "Vector → CAD" o el marcador
+ * hacen de puente: "Pasar al CAD" les pide lecturas y "Crear" (`lib/enlace-cad.ts`), y ellos
+ * los hacen en la pestaña del CAD con la misma API que usa la página (`src/cad/enlace-comun.ts`).
+ * La contraseña de ANAC nunca pasa por Vector. Ver la bitácora del 2026-10-21 y del 2026-10-29.
  *
  * ## Qué hay acá
  *
@@ -555,7 +555,7 @@ export function corteCad(enElCad: VueloEnElCad[]): string | null {
 
 /**
  * Un vuelo de Vector contra lo que tiene el CAD: ya está, el mismo con otra fecha, o qué IDs
- * lleva. La usan el panel del marcador (`src/cad/puente.ts`) y la pantalla "Desde Vector".
+ * lleva. La usa "Pasar al CAD" (`armarPanelCad`).
  */
 export function filaCad(
   b: BorradorCad,

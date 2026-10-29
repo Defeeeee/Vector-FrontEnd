@@ -102,7 +102,7 @@ const LISTA = "divide-y divide-zinc-100 dark:divide-white/5 rounded-3xl border b
 
 /**
  * "Pasar al CAD": los pasos para cargar los vuelos de Vector en el CAD de ANAC desde el
- * navegador del piloto (`lib/cad.ts`, `src/cad/puente.ts`). Cuelga de Bitácora → Vuelos.
+ * navegador del piloto (`lib/cad.ts`, `lib/enlace-cad.ts`). Cuelga de Bitácora → Vuelos.
  *
  * Arriba, en una frase y una barra, cuánto falta. Después los pasos, con el marcador como
  * lo único destacado, y abajo los vuelos: primero los que hay que corregir, que son los

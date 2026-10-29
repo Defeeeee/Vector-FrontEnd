@@ -9,8 +9,8 @@ import type { Aircraft, Flight } from "@/types";
 
 /**
  * Anota en Vector los vuelos que quedaron en el CAD de ANAC, con su id de allá (migración
- * 029). La llama la ventanita `/cad/conector` cuando el script del CAD le avisa qué creó o
- * qué ya estaba. Es una marca del libro: no toca el cobro.
+ * 029). La llama "Pasar al CAD" (`PanelCad`, `fuente-cad.ts`) con lo que creó o lo que ya
+ * estaba. Es una marca del libro: no toca el cobro.
  *
  * Sólo se aceptan ids con la forma de un vuelo de Vector y de un vuelo del CAD, y un tope
  * por pedido: lo que llega viene de otra pestaña.
@@ -48,9 +48,8 @@ function revalidarVuelosNuevos() {
 }
 
 /**
- * Trae a Vector vuelos que el piloto ya tiene en el CAD (el camino inverso, desde el mismo
- * marcador). La llama la ventanita `/cad/conector` con lo que armó el panel del CAD
- * (`vueloDesdeCad`).
+ * Trae a Vector vuelos que el piloto ya tiene en el CAD (el camino inverso). La llama "Pasar
+ * al CAD" (`PanelCad`) con lo que armó de cada vuelo del CAD (`filaParaTraer`).
  *
  * Lo que llega viene de otra pestaña, así que se revisa todo de nuevo (`validarTraido`):
  * - el avión tiene que estar en el Hangar (no se crea uno a ciegas);

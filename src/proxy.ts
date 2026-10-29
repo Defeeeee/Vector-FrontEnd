@@ -185,11 +185,9 @@ export const config = {
     renueva la sesión de quien la tenga: sin eso, con el token vencido, el perfil lo
     vería como anónimo y el botón le diría "Creá tu cuenta" a un piloto logueado.
 
-    `/cad/conector` es la ventanita que habla con el CAD de ANAC (`lib/cad.ts`): tampoco se
-    protege (avisa ella si falta la sesión), pero se renueva, por la misma razón.
   */
   // `/q/…` y la hoja de pegatinas, para que la sesión llegue renovada: el QR se escanea con
   // el teléfono, quizás horas después de la última entrada, y sin renovar el admin no se
   // reconoce y no puede asignar la pegatina.
-  matcher: ["/", "/dashboard/:path*", "/u/:path*", "/cad/conector", "/q/:path*", "/api/admin/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/u/:path*", "/q/:path*", "/api/admin/:path*"],
 };

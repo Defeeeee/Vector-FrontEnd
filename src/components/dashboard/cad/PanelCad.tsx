@@ -57,7 +57,7 @@ const botonGris =
 
 /**
  * El panel de "Pasar al CAD desde Vector": el mismo recorrido que el panel del marcador
- * (`src/cad/puente.ts`), en la estética de Vector y con el CAD del otro lado del backend.
+ * (el viejo `src/cad/puente.ts`, borrado en la 2.36.2), en la estética de Vector y con el CAD del otro lado del backend.
  */
 /**
  * `fuente`: de dónde sale el CAD (`fuente-cad.ts`). Por defecto el backend; con la extensión o

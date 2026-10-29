@@ -27,8 +27,8 @@ import {
 import { esErrorDeRedirect } from "@/lib/redirect-error";
 
 /**
- * "Pasar al CAD desde Vector" (2.33.0): lo mismo que hace el panel del marcador
- * (`src/cad/puente.ts`), pero el CAD lo lee y lo escribe el backend con la cuenta de ANAC que
+ * "Pasar al CAD desde Vector" (2.33.0): lo mismo que hace "Pasar al CAD" por la
+ * extensión o el marcador (`fuente-cad.ts`), pero el CAD lo lee y lo escribe el backend con la cuenta de ANAC que
  * guardó el piloto (`/cad/*`, `services/cad_anac.py`, migración 036). La contraseña va del
  * formulario al backend y no vuelve nunca: estas acciones sólo ven si hay conexión.
  *
