@@ -6,6 +6,7 @@
  * Sólo corre en el navegador.
  */
 import type { PedidoCad, RespuestaCad } from "@/cad/enlace-comun";
+import { estadoExtension } from "@/lib/extension-cad";
 
 export type TransporteCad = "extension" | "marcador";
 
@@ -18,7 +19,9 @@ const CAD_ORIGEN = process.env.NEXT_PUBLIC_CAD_ORIGEN || "https://cad.anac.gob.a
 export function transporteCad(): TransporteCad | null {
   if (typeof window === "undefined") return null;
   if (window.opener && new URLSearchParams(location.search).has("enlace")) return "marcador";
-  if (document.documentElement.dataset.vectorCadExtension) return "extension";
+  // Las anteriores a la 1.1.0 no son un puente: la pantalla pide bajar la nueva (`ExtensionCad`).
+  const e = estadoExtension(document.documentElement.dataset.vectorCadExtension);
+  if (e === "vieja" || e === "al-dia") return "extension";
   return null;
 }
 

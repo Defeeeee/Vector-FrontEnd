@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bookmark, Check, Download } from "lucide-react";
+import { AlertTriangle, Bookmark, Check, Download } from "lucide-react";
 import PasoMarcador from "@/components/dashboard/MarcadorCad";
+import { estadoExtension, VERSION_EXTENSION } from "@/lib/extension-cad";
 
 /**
  * El paso 1 de "Pasar al CAD": la extensión "Vector → CAD" (`extension/`, 2026-10-29), o el
@@ -20,6 +21,9 @@ export default function PasoExtension() {
   useEffect(() => {
     setInstalada(document.documentElement.dataset.vectorCadExtension ?? null);
   }, []);
+
+  const estado = estadoExtension(instalada);
+  if (estado === "sin-puente" || estado === "vieja") return <ExtensionVieja instalada={instalada!} />;
 
   if (instalada) {
     return (
@@ -68,6 +72,33 @@ export default function PasoExtension() {
       >
         <Bookmark className="w-4 h-4" aria-hidden="true" /> Prefiero el marcador
       </button>
+    </div>
+  );
+}
+
+/**
+ * Hay una versión nueva de la extensión: una cargada descomprimida no se actualiza sola. Se
+ * baja y se reemplaza la carpeta; "Recargar" en `chrome://extensions` la toma.
+ */
+export function ExtensionVieja({ instalada }: { instalada: string }) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/[0.07] px-4 py-3">
+      <p className="flex items-start gap-2 text-sm font-semibold text-zinc-900 dark:text-white">
+        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        Tenés la extensión {instalada} y hay una nueva, la {VERSION_EXTENSION}.
+      </p>
+      <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+        Bajala y descomprimila en la misma carpeta de antes, reemplazando los archivos. Después, en{" "}
+        <span className="font-mono text-[13px]">chrome://extensions</span>, tocá <b className="font-semibold text-zinc-900 dark:text-white">Recargar</b>{" "}
+        en &quot;Vector → CAD&quot; y recargá esta página.
+      </p>
+      <a
+        href="/cad/vector-cad.zip"
+        download
+        className="inline-flex items-center gap-2 pl-3 pr-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold"
+      >
+        <Download className="w-4 h-4" aria-hidden="true" /> Bajar la {VERSION_EXTENSION}
+      </a>
     </div>
   );
 }

@@ -864,6 +864,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.36.1",
+    fecha: "2026-10-29",
+    motivo: "\"Pasar al CAD\" avisa cuando la extensión instalada es vieja y ofrece bajar la nueva. Completa la 2.36.0, sin anuncio aparte.",
+  },
+  {
     version: "2.34.1",
     fecha: "2026-10-28",
     motivo: "Vector entra menos a ANAC: la sincronización con el CAD pasa a una vez por día, y si ANAC no contesta se espera antes de volver a probar. Ajusta la 2.34.0, sin anuncio aparte.",
