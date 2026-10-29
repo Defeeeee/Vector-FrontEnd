@@ -18,7 +18,10 @@ import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const ENTRADA = path.join(RAIZ, "src", "cad", "puente.ts");
+// Desde la 2.36.0 el marcador es un puente (`enlace.ts`): el panel está en Vector. Sale con el
+// mismo nombre para que los marcadores ya guardados lo carguen. `puente.ts` (el panel adentro
+// del CAD) queda sin compilar hasta que el puente se pruebe contra el CAD real.
+const ENTRADA = path.join(RAIZ, "src", "cad", "enlace.ts");
 const SALIDA = path.join(RAIZ, "public", "cad", "puente.js");
 const CAD_ORIGEN = process.env.NEXT_PUBLIC_CAD_ORIGEN || "https://cad.anac.gob.ar";
 

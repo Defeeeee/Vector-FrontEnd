@@ -1042,3 +1042,98 @@ export function pendienteDeDdjj(estado: string | null | undefined): boolean {
 export function cuantosPendientesDeDdjj(vuelos: { cad_vuelo_id?: number | null; cad_estado?: string | null }[]): number {
   return vuelos.filter((f) => f.cad_vuelo_id && pendienteDeDdjj(f.cad_estado)).length;
 }
+
+/* ------------------------------------------ el panel, con el CAD de donde venga --- */
+
+/** Las listas del CAD que usa el panel. */
+export interface ListasCad {
+  finalidades: ItemCad[];
+  autoridades: ItemCad[];
+  lugares: ItemCad[];
+  simuladores: ItemCad[];
+}
+
+/** Lo que muestra el panel de "Pasar al CAD" en Vector (`PanelCad.tsx`). */
+export interface DatosPanelCad {
+  filas: FilaCad[];
+  autoridades: ItemCad[];
+  simuladores: ItemCad[];
+  /** Cuántos vuelos del CAD no están en Vector (para la pestaña "Traer a Vector"). */
+  sinTraer: number;
+  /** Cuántos marcados como pasados ya no estaban en el CAD y volvieron a la lista. */
+  devueltos: number;
+}
+
+/**
+ * Cada vuelo de Vector contra lo que tiene el CAD, con las listas y los vuelos del CAD leídos
+ * por el backend (modo "desde Vector", apagado) o por la extensión (2.36.0). `devueltos`: los
+ * que se borraron del CAD y ya se desmarcaron en Vector (`borradosDelCad`).
+ */
+export function armarPanelCad(
+  vector: { borradores: BorradorCad[]; omitidos: (BorradorCad & { motivo: MotivoOmitido })[]; conocidos: VueloConocido[] },
+  devueltos: BorradorCad[],
+  l: ListasCad,
+  enElCad: VueloEnElCad[],
+  memoria: MemoriaAutoridades | null
+): DatosPanelCad {
+  const ctx = { enElCad, finalidades: l.finalidades, lugares: l.lugares, autoridades: l.autoridades, corte: corteCad(enElCad), memoria };
+  return {
+    filas: [
+      ...devueltos.map((b) => filaCad(b, ctx)),
+      ...vector.borradores.map((b) => filaCad(b, ctx)),
+      ...vector.omitidos.map(({ motivo, ...b }) => ({ ...filaCad(b, ctx), omitido: motivo, elegido: false })),
+    ],
+    autoridades: l.autoridades,
+    simuladores: [...l.simuladores].sort((a, b) => a.value.localeCompare(b.value)),
+    sinTraer: enElCad.filter((v) => !estaEnVector(v, vector.conocidos)).length,
+    devueltos: devueltos.length,
+  };
+}
+
+/**
+ * Un vuelo del CAD para "Traer a Vector": la fila de la lista más su detalle (`Get?id=`),
+ * traducidos al libro. El mismo vuelo con un día de diferencia queda para revisar.
+ */
+export function filaParaTraer(
+  v: VueloEnElCad,
+  detalle: Record<string, unknown> | null,
+  listas: { finalidades: ItemCad[]; lugares: ItemCad[] },
+  vector: { matriculas: string[]; conocidos: VueloConocido[] }
+): FilaTraida {
+  const t = vueloDesdeCad({ ...(v as unknown as Record<string, unknown>), ...(detalle ?? {}) }, listas, vector.matriculas);
+  const otro = t.vuelo ? mismoVueloOtroDia(t.vuelo.takeoff, t.vuelo.matricula, vector.conocidos) : null;
+  return otro
+    ? {
+        ...t,
+        vuelo: null,
+        problema: `En Vector figura el ${fechaCortaCad(otro)}, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta? Corregí la que esté mal para no duplicarlo.`,
+      }
+    : t;
+}
+
+/* ------------------------------------------------ de cuándo es lo que sabemos --- */
+
+/** Pasados estos días sin leer el CAD, Vector recomienda actualizarlo (Federico, 2026-10-29). */
+export const DIAS_PARA_ACTUALIZAR_CAD = 3;
+
+/**
+ * De cuándo es el estado del CAD que muestra Vector (`profiles.cad_leido_at`, migración 038):
+ * "hoy a las 15:30", "ayer a las 9:05" o "el 26/10 a las 18:00", en hora argentina, y si ya
+ * conviene actualizarlo. `null` si nunca se leyó. Se llama en el server (invariante 1).
+ */
+export function leidoDelCad(leidoIso: string | null | undefined, ahora: Date): { cuando: string; viejo: boolean } | null {
+  if (!leidoIso) return null;
+  const leido = new Date(leidoIso);
+  if (Number.isNaN(leido.getTime())) return null;
+  const zona = "America/Argentina/Buenos_Aires";
+  const dia = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: zona, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  const hora = new Intl.DateTimeFormat("es-AR", { timeZone: zona, hour: "numeric", minute: "2-digit", hour12: false }).format(leido);
+  const ayer = new Date(ahora.getTime() - 864e5);
+  const cuando =
+    dia(leido) === dia(ahora)
+      ? `hoy a las ${hora}`
+      : dia(leido) === dia(ayer)
+        ? `ayer a las ${hora}`
+        : `el ${new Intl.DateTimeFormat("es-AR", { timeZone: zona, day: "2-digit", month: "2-digit" }).format(leido)} a las ${hora}`;
+  return { cuando, viejo: ahora.getTime() - leido.getTime() > DIAS_PARA_ACTUALIZAR_CAD * 864e5 };
+}

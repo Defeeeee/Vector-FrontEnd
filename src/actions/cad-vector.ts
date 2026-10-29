@@ -3,26 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { desmarcarDelCad, marcarEnElCad } from "@/actions/cad";
 import { apiFetch } from "@/lib/api";
-import { vuelosParaElCad } from "@/lib/cad-servidor";
+import { vuelosParaElCad, type VuelosParaElCad } from "@/lib/cad-servidor";
 import {
+  armarPanelCad,
   borradosDelCad,
-  corteCad,
   estaEnVector,
   faltaAutoridad,
   faltaSimulador,
-  fechaCortaCad,
   filaCad,
-  mismoVueloOtroDia,
+  filaParaTraer,
   payloadCad,
   simuladorValido,
-  vueloDesdeCad,
   yaEstaEnElCad,
   type AutoridadCad,
-  type FilaCad,
+  type BorradorCad,
+  type DatosPanelCad,
   type FilaTraida,
   type ItemCad,
+  type ListasCad,
   type MemoriaAutoridades,
-  type MotivoOmitido,
   type VueloEnElCad,
 } from "@/lib/cad";
 import { esErrorDeRedirect } from "@/lib/redirect-error";
@@ -109,22 +108,8 @@ async function delCad<T>(ruta: string): Promise<Resultado<T>> {
   return { ok: false, error: await detalleDeError(r, "El CAD no contestó. Probá en un rato."), reconectar: r.status === 409 };
 }
 
-interface Listas {
-  finalidades: ItemCad[];
-  autoridades: ItemCad[];
-  lugares: ItemCad[];
-  simuladores: ItemCad[];
-}
-
-export interface PanelCad {
-  filas: FilaCad[];
-  autoridades: ItemCad[];
-  simuladores: ItemCad[];
-  /** Cuántos vuelos del CAD no están en Vector (para la pestaña "Traer a Vector"). */
-  sinTraer: number;
-  /** Cuántos marcados como pasados ya no estaban en el CAD y volvieron a la lista. */
-  devueltos: number;
-}
+type Listas = ListasCad;
+export type PanelCad = DatosPanelCad;
 
 /**
  * Lo que muestra el panel: cada vuelo de Vector contra lo que tiene el CAD. Se arma en el
@@ -137,26 +122,11 @@ export async function prepararPanelCad(memoria: MemoriaAutoridades | null): Prom
     if (!listas.ok) return listas;
     if (!vuelos.ok) return vuelos;
     const enElCad = vuelos.datos.datos;
-    const l = listas.datos;
-    const ctx = { enElCad, finalidades: l.finalidades, lugares: l.lugares, autoridades: l.autoridades, corte: corteCad(enElCad), memoria };
     // Los que se borraron del CAD: se les saca la marca y vuelven a la lista.
     const borrados = borradosDelCad(vector.marcados, enElCad);
     const devueltos = borrados.length ? (await desmarcarDelCad(borrados.map((b) => b.vectorId))).desmarcados : 0;
-    const filas: FilaCad[] = [
-      ...borrados.slice(0, devueltos).map(({ cadId: _, ...b }) => filaCad(b, ctx)),
-      ...vector.borradores.map((b) => filaCad(b, ctx)),
-      ...vector.omitidos.map(({ motivo, ...b }) => ({ ...filaCad(b, ctx), omitido: motivo as MotivoOmitido, elegido: false })),
-    ];
-    return {
-      ok: true,
-      datos: {
-        filas,
-        autoridades: l.autoridades,
-        simuladores: [...l.simuladores].sort((a, b) => a.value.localeCompare(b.value)),
-        sinTraer: enElCad.filter((v) => !estaEnVector(v, vector.conocidos)).length,
-        devueltos,
-      },
-    };
+    const vuelven = borrados.slice(0, devueltos).map(({ cadId: _, ...b }) => b);
+    return { ok: true, datos: armarPanelCad(vector, vuelven, listas.datos, enElCad, memoria) };
   } catch (e) {
     if (esErrorDeRedirect(e)) throw e;
     return { ok: false, error: "No pudimos leer el CAD. Probá en un rato." };
@@ -187,12 +157,21 @@ const ID_CAD = /^[A-Z0-9]{0,10}$/;
  *
  * Si el CAD lo acepta, se anota en Vector con su id y la autoridad que se usó.
  */
-export async function cargarEnCad(item: {
+interface ItemParaCargar {
   vectorId: string;
   ids: { finalidadID: string; origenID: string; destinoID: string };
   autoridad: AutoridadCad;
   simulador?: unknown;
-}): Promise<{ ok: boolean; mensaje: string; cadId?: number }> {
+}
+
+/**
+ * Lo que se le manda a "Crear" del CAD para un vuelo, armado de nuevo con lo que hay en Vector.
+ * De lo que llega del navegador sólo se usan los IDs del CAD ya resueltos, la autoridad y el
+ * simulador, revisados. Lo usan `cargarEnCad` y la extensión (que lo manda ella).
+ */
+export async function armarVueloParaElCad(
+  item: ItemParaCargar
+): Promise<{ ok: true; payload: Record<string, unknown>; borrador: BorradorCad; autoridad: AutoridadCad } | { ok: false; mensaje: string }> {
   try {
     const ids = item?.ids;
     if (
@@ -213,7 +192,24 @@ export async function cargarEnCad(item: {
     const simulador = item.simulador === undefined ? null : simuladorValido(item.simulador);
     if (faltaSimulador(b, simulador)) return { ok: false, mensaje: "Elegí cuál es tu simulador en el CAD y su clase." };
 
-    const payload = payloadCad(b, { ...ids, autoridadID: autoridad.id, autoridadNombre: autoridad.nombre }, simulador);
+    const payload = payloadCad(b, { ...ids, autoridadID: autoridad.id, autoridadNombre: autoridad.nombre }, simulador) as unknown as Record<string, unknown>;
+    return { ok: true, payload, borrador: b, autoridad };
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { ok: false, mensaje: "No pudimos armar el vuelo. Recargá la pantalla." };
+  }
+}
+
+/**
+ * Carga **un** vuelo en el CAD desde el backend (modo "desde Vector"; el panel los manda de a
+ * uno, para mostrar el avance). Si el CAD lo acepta, se anota en Vector con su id y la
+ * autoridad que se usó.
+ */
+export async function cargarEnCad(item: ItemParaCargar): Promise<{ ok: boolean; mensaje: string; cadId?: number }> {
+  try {
+    const armado = await armarVueloParaElCad(item);
+    if (!armado.ok) return armado;
+    const { payload, borrador: b, autoridad } = armado;
     const r = await apiFetch("/cad/vuelos", { method: "POST", body: JSON.stringify(payload) }, ESPERA_ANAC);
     if (!r.ok) return { ok: false, mensaje: await detalleDeError(r, "El CAD no contestó: fijate en el CAD si quedó antes de mandarlo de nuevo.") };
     const res = (await r.json()) as { ok: boolean; mensaje: string };
@@ -252,15 +248,7 @@ export async function leerParaTraer(): Promise<Resultado<FilaTraida[]>> {
           const k = siguiente++;
           const v = faltan[k];
           const d = await delCad<Record<string, unknown>>(`vuelos/${Number(v.vueloTripulanteID)}`);
-          let t = vueloDesdeCad({ ...(v as unknown as Record<string, unknown>), ...(d.ok ? d.datos : {}) }, listas.datos, vector.matriculas);
-          const otro = t.vuelo ? mismoVueloOtroDia(t.vuelo.takeoff, t.vuelo.matricula, vector.conocidos) : null;
-          if (otro)
-            t = {
-              ...t,
-              vuelo: null,
-              problema: `En Vector figura el ${fechaCortaCad(otro)}, a la misma hora y en el mismo avión: ¿cuál es la fecha correcta? Corregí la que esté mal para no duplicarlo.`,
-            };
-          filas[k] = t;
+          filas[k] = filaParaTraer(v, d.ok ? d.datos : null, listas.datos, vector);
         }
       })
     );
@@ -327,5 +315,48 @@ export async function sincronizarCad(forzar = false): Promise<ResultadoSincroniz
   } catch (e) {
     if (esErrorDeRedirect(e)) throw e;
     return { sincronizado: false, motivo: "error", error: "ANAC tardó demasiado en contestar." };
+  }
+}
+
+/* ------------------------------------------------- con la extensión (2.36.0) --- */
+
+/**
+ * Lo que la extensión "Vector → CAD" necesita de Vector para armar el panel: los vuelos, ya
+ * traducidos (`vuelosParaElCad`). El CAD lo lee la extensión desde la pestaña del piloto.
+ */
+export async function datosDeVectorParaElCad(): Promise<VuelosParaElCad | null> {
+  try {
+    return await vuelosParaElCad();
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return null;
+  }
+}
+
+/**
+ * Pone a Vector de acuerdo con la lista del CAD que leyó la extensión (`POST /cad/conciliar`
+ * del backend, la misma `conciliar` de la sincronización): estados, borrados y cargados a mano.
+ */
+export async function conciliarConElCad(lista: VueloEnElCad[]): Promise<ResultadoSincronizacion> {
+  try {
+    if (!Array.isArray(lista)) return { sincronizado: false, motivo: "error" };
+    const vuelos = lista
+      .slice(0, 1000)
+      .filter((v) => Number.isSafeInteger(Number(v?.vueloTripulanteID)))
+      .map((v) => ({
+      vueloTripulanteID: Number(v.vueloTripulanteID),
+      fechaSalida: String(v.fechaSalida ?? "").slice(0, 40),
+      matricula: v.matricula == null ? null : String(v.matricula).slice(0, 20),
+      estadoDesc: String((v as unknown as Record<string, unknown>).estadoDesc ?? "").slice(0, 60),
+    }));
+    const r = await apiFetch("/cad/conciliar", { method: "POST", body: JSON.stringify({ vuelos }) });
+    if (!r.ok) return { sincronizado: false, motivo: "error", error: await detalleDeError(r, "No pudimos anotar el estado del CAD.") };
+    const res = (await r.json()) as ResultadoSincronizacion;
+    // Siempre: aunque no cambie ningún vuelo, cambia "Estado del CAD de …" (migración 038).
+    if (res.sincronizado) for (const p of ["/dashboard", "/dashboard/history"]) revalidatePath(p);
+    return res;
+  } catch (e) {
+    if (esErrorDeRedirect(e)) throw e;
+    return { sincronizado: false, motivo: "error" };
   }
 }

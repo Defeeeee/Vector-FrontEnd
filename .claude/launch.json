@@ -18,6 +18,15 @@
         "API_URL=http://127.0.0.1:7599/api NEXT_PUBLIC_API_URL=http://127.0.0.1:7599/api NEXT_PUBLIC_AUTH_URL=http://127.0.0.1:7599/api npx next dev -p 3001"
       ],
       "port": 3001
+    },
+    {
+      "name": "vector-falso-cad",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "API_URL=http://127.0.0.1:7599/api NEXT_PUBLIC_API_URL=http://127.0.0.1:7599/api NEXT_PUBLIC_AUTH_URL=http://127.0.0.1:7599/api NEXT_PUBLIC_CAD_ORIGEN=http://127.0.0.1:7601 npx next dev -p 3002"
+      ],
+      "port": 3002
     }
   ]
 }

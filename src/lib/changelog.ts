@@ -78,6 +78,27 @@ export interface VersionPublicada {
  */
 export const CHANGELOG: VersionPublicada[] = [
   {
+    version: "2.36.0",
+    fecha: "2026-10-29",
+    titulo: "Tu CAD, desde Vector",
+    novedades: [
+      {
+        icono: "llave",
+        titulo: "Pasá tus vuelos desde Vector",
+        texto: "Con la extensión de Vector, abrí el CAD en otra pestaña y volvé a Vector: \"Pasar al CAD\" se conecta solo y ahí ves qué falta, qué está y qué hay que corregir. Con el marcador, tocalo en el CAD y se abre Vector. Los pedidos salen de tu navegador, con tu sesión del CAD.",
+        href: "/dashboard/history/cad",
+        cta: "Ver Pasar al CAD",
+      },
+      {
+        icono: "reloj",
+        titulo: "De cuándo es lo que ves de tu CAD",
+        texto: "La Bitácora y el inicio dicen cuándo se leyó tu CAD por última vez, y te avisan si pasaron más de tres días para que lo actualices.",
+        href: "/dashboard/history",
+        cta: "Ver la Bitácora",
+      },
+    ],
+  },
+  {
     version: "2.35.0",
     fecha: "2026-10-29",
     titulo: "Pasar al CAD con la extensión de Vector",

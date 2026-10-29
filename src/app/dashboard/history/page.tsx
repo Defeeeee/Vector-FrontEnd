@@ -13,7 +13,8 @@ import PageHeader from "@/components/dashboard/PageHeader";
 import BannerCompartirVuelo from "@/components/social/BannerCompartirVuelo";
 import { leerResumenSocial } from "@/lib/resumen-social";
 import { rutaLegible } from "@/lib/social";
-import { pendientesDelCad } from "@/lib/cad";
+import { leidoDelCad, pendientesDelCad } from "@/lib/cad";
+import LeidoDelCad from "@/components/dashboard/cad/LeidoDelCad";
 
 import { redirect } from "next/navigation";
 
@@ -120,6 +121,8 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
           <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {totalHours.toFixed(1)} hs</span>
           <span className="flex items-center gap-1.5"><LandPlot className="w-3.5 h-3.5" /> {totalLandings} aterrizajes</span>
         </div>
+        {/* Las marcas "En el CAD" y "Falta la DDJJ" son de la última lectura del CAD (2.36.0). */}
+        {!esAlumno(profile?.license_type) && flights.some((f) => f.cad_vuelo_id) && <LeidoDelCad leido={leidoDelCad(profile?.cad_leido_at, new Date())} />}
       </PageHeader>
 
       {(ofrecerCompartir || hito) && recienCargado && (

@@ -4,6 +4,7 @@ import PageHeader from "@/components/dashboard/PageHeader";
 import PasoExtension from "@/components/dashboard/cad/ExtensionCad";
 import ConexionCad, { ActualizarCad, DesconectarCad } from "@/components/dashboard/cad/ConexionCad";
 import PanelCad from "@/components/dashboard/cad/PanelCad";
+import ConElCad from "@/components/dashboard/cad/ConElCad";
 import { estadoConexionCad } from "@/actions/cad-vector";
 import { vuelosParaElCad } from "@/lib/cad-servidor";
 import { TRAER_DEL_CAD, type BorradorCad } from "@/lib/cad";
@@ -68,9 +69,9 @@ function PasosMarcador() {
           Abrir el CAD <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
         </a>
       </Paso>
-      <Paso n={3} titulo="Tocá Pasar con Vector y elegí qué cargar">
+      <Paso n={3} titulo="Volvé a Vector y elegí qué cargar">
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-          Es el botón que pone la extensión abajo a la derecha (o el marcador, si elegiste ése). Se abre un panel de Vector adentro del CAD, con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
+          Con la extensión, esta pantalla se conecta sola con el CAD; con el marcador, tocalo en el CAD y se abre Vector. Ves el panel con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
           ponés su autoridad certificante y su nombre; Vector te propone la última que usaste para esa finalidad. Antes de cargar podés ver
           exactamente lo que se manda.
         </p>
@@ -142,6 +143,8 @@ export default async function PasarAlCadPage() {
     <div className="space-y-10 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 max-w-3xl">
       <PageHeader eyebrow="Bitácora" title="Pasar al CAD" />
 
+      {/* Con la extensión o el marcador conectados, esto se cambia por el panel (2.36.0). */}
+      <ConElCad activo={!conectado}>
       {!conectado && (
       <section className="space-y-3">
         <p className="text-lg md:text-xl font-bold text-zinc-900 dark:text-white leading-snug max-w-prose">{frase}</p>
@@ -278,6 +281,7 @@ export default async function PasarAlCadPage() {
           </ul>
         </details>
       )}
+      </ConElCad>
     </div>
   );
 }

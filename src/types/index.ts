@@ -146,6 +146,8 @@ export interface Profile {
    * formulario de perfil: el PATCH del piloto no declara este campo.
    */
   jeppesen_access?: boolean;
+  /** La última vez que Vector leyó el CAD de ANAC (migración 038 del backend). */
+  cad_leido_at?: string | null;
 }
 
 export interface FlightPack {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  leidoDelCad,
   autoridadSugerida,
   borradorCad,
   faltaAutoridad,
@@ -673,5 +674,23 @@ describe("la declaración jurada pendiente", () => {
         { cad_vuelo_id: null, cad_estado: "PENDIENTE DE DDJJ" },
       ])
     ).toBe(1);
+  });
+});
+
+describe("leidoDelCad", () => {
+  const ahora = new Date("2026-10-29T18:30:00Z"); // 15:30 en Argentina
+  it("nunca leído", () => {
+    expect(leidoDelCad(null, ahora)).toBeNull();
+    expect(leidoDelCad("cualquier cosa", ahora)).toBeNull();
+  });
+  it("hoy, ayer y antes, en hora argentina", () => {
+    expect(leidoDelCad("2026-10-29T15:05:00Z", ahora)).toEqual({ cuando: "hoy a las 12:05", viejo: false });
+    // 01:30 UTC del 29 son las 22:30 del 28 en Argentina: ayer.
+    expect(leidoDelCad("2026-10-29T01:30:00Z", ahora)).toEqual({ cuando: "ayer a las 22:30", viejo: false });
+    expect(leidoDelCad("2026-10-26T21:00:00Z", ahora)).toEqual({ cuando: "el 26/10 a las 18:00", viejo: false });
+  });
+  it("pasados los días, recomienda actualizar", () => {
+    expect(leidoDelCad("2026-10-26T18:00:00Z", ahora)?.viejo).toBe(true);
+    expect(leidoDelCad("2026-10-26T19:00:00Z", ahora)?.viejo).toBe(false);
   });
 });

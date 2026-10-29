@@ -6,6 +6,13 @@ lo que se escriba acá se pierde en la próxima corrida.
 Sólo va lo que el piloto ve. Lo de adentro —tests, refactors, migraciones— está en
 la bitácora de `docs/bitacora/`.
 
+## v2.36.0 — Tu CAD, desde Vector
+
+_29 de octubre de 2026_
+
+- **Pasá tus vuelos desde Vector** — Con la extensión de Vector, abrí el CAD en otra pestaña y volvé a Vector: "Pasar al CAD" se conecta solo y ahí ves qué falta, qué está y qué hay que corregir. Con el marcador, tocalo en el CAD y se abre Vector. Los pedidos salen de tu navegador, con tu sesión del CAD.
+- **De cuándo es lo que ves de tu CAD** — La Bitácora y el inicio dicen cuándo se leyó tu CAD por última vez, y te avisan si pasaron más de tres días para que lo actualices.
+
 ## v2.35.0 — Pasar al CAD con la extensión de Vector
 
 _29 de octubre de 2026_

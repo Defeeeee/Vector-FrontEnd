@@ -7,6 +7,10 @@
  *
  * El ZIP lo arma `src/lib/zip.ts` (el mismo de las pegatinas), compilado al vuelo con esbuild,
  * para no depender de `zip` en el VPS. No se commitea: es un generado del build.
+ *
+ * `cad.js` (la pestaña del CAD) sale de `src/cad/extension-cad.ts`, que comparte con el
+ * marcador lo que se le puede pedir al CAD (`src/cad/enlace-comun.ts`); el resto de
+ * `extension/` va tal cual.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -35,11 +39,15 @@ function archivos(dir, prefijo = "") {
   });
 }
 
-// `cad.js` corre en el mundo de la página, sin `chrome.runtime.getURL`: el ícono va adentro.
-const icono = `data:image/png;base64,${fs.readFileSync(path.join(ORIGEN, "iconos", "vector-32.png")).toString("base64")}`;
-const lista = archivos(ORIGEN).map((a) =>
-  a.nombre === "vector-cad/cad.js" ? { ...a, datos: new TextEncoder().encode(new TextDecoder().decode(a.datos).replace("__ICONO__", icono)) } : a,
-);
+const cad = await esbuild.build({
+  entryPoints: [path.join(RAIZ, "src", "cad", "extension-cad.ts")],
+  bundle: true,
+  format: "iife",
+  target: "es2020",
+  write: false,
+  logLevel: "warning",
+});
+const lista = [...archivos(ORIGEN), { nombre: "vector-cad/cad.js", datos: cad.outputFiles[0].contents }];
 fs.mkdirSync(path.dirname(SALIDA), { recursive: true });
 fs.writeFileSync(SALIDA, armarZip(lista));
 const version = JSON.parse(fs.readFileSync(path.join(ORIGEN, "manifest.json"), "utf8")).version;

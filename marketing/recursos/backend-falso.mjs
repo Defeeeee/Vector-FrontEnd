@@ -94,6 +94,12 @@ function rutaCad(req, res, ruta, json) {
     cad.usuario = null;
     return responder(200, { conectado: false });
   }
+  // La lista que leyó la extensión o el marcador (2.36.0): acá sólo se cuenta. No pide la cuenta conectada, como el backend.
+  if (ruta === "/api/cad/conciliar" && req.method === "POST") {
+    console.log("CAD falso · conciliar:", (json.vuelos ?? []).length, "vuelos");
+    perfil.cad_leido_at = process.env.CAD_LEIDO_AT || new Date().toISOString();
+    return responder(200, { sincronizado: true, desmarcados: 0, marcados: 0, estados: 0, pendientes_ddjj: (json.vuelos ?? []).filter((v) => /PENDIENTE/i.test(v.estadoDesc ?? "")).length });
+  }
   if (!cad.usuario) return responder(409, { detail: "No conectaste tu cuenta de ANAC." });
   if (ruta === "/api/cad/listas") return responder(200, listasCad);
   if (ruta === "/api/cad/vuelos" && req.method === "GET") return responder(200, { datos: cad.vuelos });

@@ -316,12 +316,19 @@ importa es el del backend (`request_max_body_size`, 30 MB).
   - **Falta:** CHG. Un vuelo desde un LAD se registra (Registrar vuelo busca LAD con `lad`) y pasa
     al CAD por su número: los LAD están en la lista AER del CAD con la misma clave (2.33.0).
 - **Pasar al CAD de ANAC y Traer a Vector** (2026-10-21, anunciado en la 2.27.0; Bitácora → Vuelos → "Pasar al CAD"):
-  - **La extensión, desde la 2.35.0** (Federico, 2026-10-29): es el camino principal. Un botón fijo
-    "Pasar con Vector" en `cad.anac.gob.ar/foliadoweb/*` que inyecta `/cad/puente.js` desde Vector (el
-    panel se actualiza con cada deploy, sin publicar otra versión). No pide permisos ni hace pedidos
-    propios; en Vector deja `data-vector-cad-extension` en `<html>` para que la pantalla lo sepa. Se
-    instala descomprimida (modo de desarrollador): **falta publicarla en la Chrome Web Store** (cuenta
-    de desarrollador de US$5, decisión de Federico).
+  - **La extensión y el marcador son un puente, desde la 2.36.0** (Federico, 2026-10-29: "que te diga
+    volvé a Vector"). El panel está en Vector (`PanelCad` con `fuenteEnlace`, `ConElCad`); la pestaña
+    del CAD sólo contesta pedidos de una lista blanca (lecturas y "Crear", nunca la DDJJ:
+    `src/cad/enlace-comun.ts`) y muestra "Volvé a Vector". La extensión pasa los pedidos por su service
+    worker (`extension/background.js`, sin permisos); el marcador abre Vector con `?enlace=1` y habla
+    por `window.opener` (`src/cad/enlace.ts`, compilado a `public/cad/puente.js`, el archivo de los
+    marcadores ya guardados). Del lado de Vector, `lib/enlace-cad.ts`. Al leer, Vector concilia con el
+    backend (`POST /cad/conciliar`, sin ANAC) y anota `profiles.cad_leido_at` (migración 038): la
+    Bitácora y el inicio dicen "Estado del CAD leído …" y piden actualizar pasados 3 días
+    (`leidoDelCad`). El panel viejo adentro del CAD (`src/cad/puente.ts`, `/cad/conector`) quedó sin
+    usar: **borrarlo cuando el puente se pruebe contra el CAD real.** La extensión se instala
+    descomprimida: **falta publicarla en la Chrome Web Store** (US$5, decisión de Federico); Safari
+    necesita convertirla con Xcode.
   - **"Desde Vector" está apagado** (2026-10-29, `CAD_DESDE_VECTOR` del backend, apagado por defecto):
     ANAC bloqueó cada IP desde la que entró el backend, la última con un solo login. Lo que sigue
     describe cómo era.

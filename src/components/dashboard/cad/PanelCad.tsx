@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, ChevronDown, Download, Loader2, MonitorPlay, RefreshCw, Undo2, Upload } from "lucide-react";
 import { marcarEnElCad, omitirEnElCad, guardarSimuladorCad, traerDelCad } from "@/actions/cad";
-import { cargarEnCad, leerParaTraer, modeloDeSimulador, prepararPanelCad, type PanelCad as DatosPanel } from "@/actions/cad-vector";
+import { fuenteServidor, type FuenteCad } from "@/components/dashboard/cad/fuente-cad";
 import {
   CLASES_SIMULADOR,
   claveDeAutoridad,
@@ -19,6 +19,7 @@ import {
   type FilaTraida,
   type ItemCad,
   type MemoriaAutoridades,
+  type DatosPanelCad as DatosPanel,
   type MotivoOmitido,
   type SimuladorCad,
 } from "@/lib/cad";
@@ -58,7 +59,11 @@ const botonGris =
  * El panel de "Pasar al CAD desde Vector": el mismo recorrido que el panel del marcador
  * (`src/cad/puente.ts`), en la estética de Vector y con el CAD del otro lado del backend.
  */
-export default function PanelCad() {
+/**
+ * `fuente`: de dónde sale el CAD (`fuente-cad.ts`). Por defecto el backend; con la extensión o
+ * el marcador, la pestaña del CAD del piloto.
+ */
+export default function PanelCad({ fuente = fuenteServidor }: { fuente?: FuenteCad }) {
   const router = useRouter();
   const [modo, setModo] = useState<"llevar" | "traer">("llevar");
   const [datos, setDatos] = useState<DatosPanel | null>(null);
@@ -71,7 +76,7 @@ export default function PanelCad() {
   const leer = useCallback(async () => {
     setError(null);
     setDatos(null);
-    const r = await prepararPanelCad(leerMemoria());
+    const r = await fuente.preparar(leerMemoria());
     if (!r.ok) {
       setError({ texto: r.error, reconectar: r.reconectar });
       if (r.reconectar) router.refresh();
@@ -81,7 +86,7 @@ export default function PanelCad() {
     setFilas(r.datos.filas);
     setPaso("elegir");
     setAviso("");
-  }, [router]);
+  }, [router, fuente]);
 
   useEffect(() => {
     void leer();
@@ -89,10 +94,10 @@ export default function PanelCad() {
 
   /** Después de traer vuelos: la cuenta de la pestaña, sin volver a dibujar todo. */
   const recontar = useCallback(async () => {
-    const r = await prepararPanelCad(leerMemoria());
+    const r = await fuente.preparar(leerMemoria());
     if (r.ok) setDatos((d) => (d ? { ...d, sinTraer: r.datos.sinTraer } : d));
     router.refresh();
-  }, [router]);
+  }, [router, fuente]);
 
   const porCargar = filas.filter((f) => !f.omitido && f.ids && !f.enElCad && !f.resultado?.ok);
   const elegidas = porCargar.filter((f) => f.elegido);
@@ -137,7 +142,7 @@ export default function PanelCad() {
     const hechas: { finalidad: string; autoridad: AutoridadCad }[] = [];
     for (let k = 0; k < sel.length; k++) {
       const f = sel[k];
-      const r = await cargarEnCad({ vectorId: f.b.vectorId, ids: f.ids!, autoridad: f.autoridad, simulador: f.b.simulador?.cad ?? undefined });
+      const r = await fuente.cargar({ vectorId: f.b.vectorId, ids: f.ids!, autoridad: f.autoridad, simulador: f.b.simulador?.cad ?? undefined });
       if (r.ok) hechas.push({ finalidad: claveDeAutoridad(f.b), autoridad: f.autoridad });
       setFilas((fs) =>
         fs.map((x) => (x.b.vectorId === f.b.vectorId ? { ...x, elegido: r.ok ? x.elegido : false, resultado: { ok: r.ok, texto: r.mensaje } } : x))
@@ -207,7 +212,7 @@ export default function PanelCad() {
       </div>
 
       {modo === "traer" ? (
-        <Traer alTraer={() => void recontar()} alLeer={(n) => setDatos((d) => (d ? { ...d, sinTraer: n } : d))} />
+        <Traer fuente={fuente} alTraer={() => void recontar()} alLeer={(n) => setDatos((d) => (d ? { ...d, sinTraer: n } : d))} />
       ) : filas.length === 0 ? (
         <Aviso tono="ok">
           <p className="font-semibold">Todos tus vuelos de Vector ya están en el CAD.</p>
@@ -237,7 +242,7 @@ export default function PanelCad() {
             )}
           </section>
 
-          {paso === "elegir" && <Simuladores filas={porCargar} simuladores={datos.simuladores} alElegir={(avionId, s) => setFilas((fs) => fs.map((f) => (f.b.simulador?.avionId === avionId ? { ...f, b: { ...f.b, clase: s.clase, simulador: { ...f.b.simulador, cad: s } } } : f)))} />}
+          {paso === "elegir" && <Simuladores fuente={fuente} filas={porCargar} simuladores={datos.simuladores} alElegir={(avionId, s) => setFilas((fs) => fs.map((f) => (f.b.simulador?.avionId === avionId ? { ...f, b: { ...f.b, clase: s.clase, simulador: { ...f.b.simulador, cad: s } } } : f)))} />}
 
           {revisar.length > 0 && (
             <Seccion titulo="Para revisar" detalle="No se mandan hasta corregirlos">
@@ -535,7 +540,17 @@ function Autoridad({
 }
 
 /** Cuál es cada simulador del Hangar en el CAD: se elige una vez y queda en el equipo. */
-function Simuladores({ filas, simuladores, alElegir }: { filas: Fila[]; simuladores: ItemCad[]; alElegir: (avionId: string, s: SimuladorCad) => void }) {
+function Simuladores({
+  fuente,
+  filas,
+  simuladores,
+  alElegir,
+}: {
+  fuente: FuenteCad;
+  filas: Fila[];
+  simuladores: ItemCad[];
+  alElegir: (avionId: string, s: SimuladorCad) => void;
+}) {
   const equipos = useMemo(() => {
     const m = new Map<string, { equipo: string; cad: SimuladorCad | null; n: number }>();
     for (const f of filas) {
@@ -551,13 +566,14 @@ function Simuladores({ filas, simuladores, alElegir }: { filas: Fila[]; simulado
   return (
     <div className="space-y-2.5">
       {equipos.map(([avionId, e]) => (
-        <EquipoSimulador key={avionId} avionId={avionId} {...e} simuladores={simuladores} alElegir={alElegir} />
+        <EquipoSimulador key={avionId} fuente={fuente} avionId={avionId} {...e} simuladores={simuladores} alElegir={alElegir} />
       ))}
     </div>
   );
 }
 
 function EquipoSimulador({
+  fuente,
   avionId,
   equipo,
   cad,
@@ -565,6 +581,7 @@ function EquipoSimulador({
   simuladores,
   alElegir,
 }: {
+  fuente: FuenteCad;
   avionId: string;
   equipo: string;
   cad: SimuladorCad | null;
@@ -583,7 +600,7 @@ function EquipoSimulador({
     const item = simuladores.find((s) => s.key === simId);
     if (!item || !clase) return setNota("Elegí el simulador y su clase.");
     setGuardando(true);
-    const s: SimuladorCad = { id: Number(item.key), nombre: item.value, clase, ...(await modeloDeSimulador(Number(item.key))) };
+    const s: SimuladorCad = { id: Number(item.key), nombre: item.value, clase, ...(await fuente.modelo(Number(item.key))) };
     const r = await guardarSimuladorCad(avionId, s);
     setGuardando(false);
     alElegir(avionId, s);
@@ -687,7 +704,7 @@ function Pie({ children }: { children: React.ReactNode }) {
  * calculó al abrir el panel, y si después se anotó un vuelo quedaba vieja (Federico, 2026-10-28:
  * decía 1 y adentro no había nada).
  */
-function Traer({ alTraer, alLeer }: { alTraer: () => void; alLeer: (n: number) => void }) {
+function Traer({ fuente, alTraer, alLeer }: { fuente: FuenteCad; alTraer: () => void; alLeer: (n: number) => void }) {
   const [filas, setFilas] = useState<{ t: FilaTraida; elegido: boolean }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [paso, setPaso] = useState<Paso>("elegir");
@@ -695,7 +712,7 @@ function Traer({ alTraer, alLeer }: { alTraer: () => void; alLeer: (n: number) =
 
   useEffect(() => {
     void (async () => {
-      const r = await leerParaTraer();
+      const r = await fuente.leerParaTraer();
       if (!r.ok) setError(r.error);
       else {
         setFilas(r.datos.map((t) => ({ t, elegido: !t.problema })));

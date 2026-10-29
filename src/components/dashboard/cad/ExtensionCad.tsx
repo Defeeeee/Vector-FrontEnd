@@ -6,8 +6,8 @@ import PasoMarcador from "@/components/dashboard/MarcadorCad";
 
 /**
  * El paso 1 de "Pasar al CAD": la extensión "Vector → CAD" (`extension/`, 2026-10-29), o el
- * marcador para quien no la quiera. La extensión pone un botón fijo en el CAD que carga el
- * mismo panel que el marcador, así que el resto de los pasos no cambia.
+ * marcador para quien no la quiera. Desde la 2.36.0 las dos son un puente: conectan la pestaña
+ * del CAD con esta pantalla, y el panel está acá (`ConElCad`).
  *
  * Instalada, la extensión deja `data-vector-cad-extension` en `<html>` (`extension/vector.js`).
  * Se lee después de montar: el server no lo sabe.
@@ -43,9 +43,8 @@ export default function PasoExtension() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-        La extensión pone un botón <b className="font-semibold text-zinc-900 dark:text-white">Pasar con Vector</b> adentro del CAD. Los vuelos se cargan
-        desde tu sesión del CAD, en tu navegador: Vector nunca ve tu contraseña y la extensión no pide ningún permiso. Anda en Chrome, Edge y Brave, en la
-        compu.
+        La extensión conecta tu pestaña del CAD con Vector: con el CAD abierto, pasás tus vuelos desde esta pantalla. Se cargan desde tu sesión del CAD,
+        en tu navegador: Vector nunca ve tu contraseña y la extensión no pide ningún permiso. Anda en Chrome, Edge y Brave, en la compu.
       </p>
       <a
         href="/cad/vector-cad.zip"

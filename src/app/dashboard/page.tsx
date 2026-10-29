@@ -26,7 +26,7 @@ import { estadoOnboarding } from "@/lib/onboarding";
 import { soloVolados } from "@/lib/simulador";
 import { costosPorVuelo, gastoDelMes } from "@/lib/costos";
 import PendientesDdjj from "@/components/dashboard/cad/PendientesDdjj";
-import { cuantosPendientesDeDdjj } from "@/lib/cad";
+import { cuantosPendientesDeDdjj, leidoDelCad } from "@/lib/cad";
 
 /**
  * Los endpoints que necesita esta pantalla, en paralelo.
@@ -234,7 +234,7 @@ export default async function Dashboard() {
 
       {/* Vuelos que están en el CAD sin la declaración jurada (lo sabe la sincronización, 037):
           la DDJJ es lo único del CAD que Vector no hace, así que lo recuerda. */}
-      <PendientesDdjj cuantos={cuantosPendientesDeDdjj(bitacora as Flight[])} />
+      <PendientesDdjj cuantos={cuantosPendientesDeDdjj(bitacora as Flight[])} leido={leidoDelCad(profile?.cad_leido_at, new Date())} />
 
       {/* Desaparece solo cuando los cuatro pasos están hechos. Los datos ya vienen
           del Promise.all de arriba: no agrega ni un viaje al backend. */}

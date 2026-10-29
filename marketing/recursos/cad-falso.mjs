@@ -47,6 +47,10 @@ if (!process.env.SIN_SEMILLA) {
 createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   let crudo = ""; for await (const p of req) crudo += p;
+  // CORS abierto sólo para simular la extensión desde la pestaña de Vector (2.36.0): el CAD real no lo tiene.
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
   const json = (code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
   const api = url.pathname.replace("/foliadoweb/api/VueloTripulante/", "");
   if (url.pathname === "/" || url.pathname === "/vuelotripulante") {
