@@ -30,3 +30,23 @@ export function estadoExtension(instalada: string | null | undefined, actual = V
   if (compararVersion(instalada, VERSION_MINIMA_PUENTE) < 0) return "sin-puente";
   return compararVersion(instalada, actual) < 0 ? "vieja" : "al-dia";
 }
+
+/**
+ * Qué se le ofrece a cada navegador en "Pasar al CAD" (Federico, 2026-10-30):
+ *
+ * - `extension`: Chrome, Edge, Brave, Opera (la extensión es de Chrome, MV3).
+ * - `marcador`: Safari y Firefox, que no la cargan; el marcador anda en cualquiera.
+ * - `compu`: un teléfono o una tablet, donde no hay extensiones ni barra de favoritos.
+ *
+ * El iPad se presenta como una Mac: lo delata la pantalla táctil (`toques`, de
+ * `navigator.maxTouchPoints`), que el server no sabe. Sin user agent, lo de siempre.
+ */
+export type NavegadorCad = "extension" | "marcador" | "compu";
+
+export function navegadorParaCad(ua: string, toques = 0): NavegadorCad {
+  if (!ua) return "extension";
+  if (/Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua)) return "compu";
+  if (/Macintosh/.test(ua) && toques > 1) return "compu";
+  if (/Firefox\//.test(ua)) return "marcador";
+  return /Chrome\/|Chromium\/|Edg\//.test(ua) ? "extension" : "marcador";
+}

@@ -864,6 +864,11 @@ export const CHANGELOG: VersionPublicada[] = [
  */
 export const VERSIONES_SIN_NOVEDADES: { version: string; fecha: string; motivo: string }[] = [
   {
+    version: "2.36.3",
+    fecha: "2026-10-30",
+    motivo: "\"Pasar al CAD\" ofrece la extensión sólo en Chrome, Edge y Brave; en Safari y Firefox, el marcador; en el teléfono, hacerlo desde la compu. Ajuste de la 2.36.0, sin anuncio aparte.",
+  },
+  {
     version: "2.36.2",
     fecha: "2026-10-29",
     motivo: "Se borra el panel viejo adentro del CAD y su ventanita (`/cad/conector`): desde la 2.36.0 la extensión y el marcador son sólo un puente. El piloto no ve nada nuevo.",

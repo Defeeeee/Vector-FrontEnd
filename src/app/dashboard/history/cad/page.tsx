@@ -1,13 +1,17 @@
 import Link from "next/link";
-import { Bookmark, ChevronDown, ExternalLink, ShieldCheck, Smartphone } from "lucide-react";
+import { headers } from "next/headers";
+import { Bookmark, ChevronDown, ExternalLink, Laptop, ShieldCheck, Smartphone } from "lucide-react";
 import PageHeader from "@/components/dashboard/PageHeader";
 import PasoExtension from "@/components/dashboard/cad/ExtensionCad";
 import ConexionCad, { ActualizarCad, DesconectarCad } from "@/components/dashboard/cad/ConexionCad";
 import PanelCad from "@/components/dashboard/cad/PanelCad";
 import ConElCad from "@/components/dashboard/cad/ConElCad";
+import SegunNavegador from "@/components/dashboard/cad/SegunNavegador";
+import PasoMarcador from "@/components/dashboard/MarcadorCad";
 import { estadoConexionCad } from "@/actions/cad-vector";
 import { vuelosParaElCad } from "@/lib/cad-servidor";
 import { TRAER_DEL_CAD, type BorradorCad } from "@/lib/cad";
+import { navegadorParaCad, type NavegadorCad } from "@/lib/extension-cad";
 
 export const dynamic = "force-dynamic";
 
@@ -51,14 +55,28 @@ function Fila({ b, corregir }: { b: BorradorCad; corregir?: boolean }) {
   );
 }
 
-/** El modo de siempre: el marcador en la pestaña del CAD, con la sesión del piloto. */
-function PasosMarcador() {
+/**
+ * Los pasos con la pestaña del CAD, con la sesión del piloto. En Chrome se propone la
+ * extensión (con el marcador a un toque); en Safari y Firefox, que no la cargan, sólo el
+ * marcador.
+ */
+function PasosMarcador({ nav }: { nav: "extension" | "marcador" }) {
   return (
     <>
     <ol className="space-y-8">
-      <Paso n={1} titulo="Instalá la extensión de Vector">
-        <PasoExtension />
-      </Paso>
+      {nav === "extension" ? (
+        <Paso n={1} titulo="Instalá la extensión de Vector">
+          <PasoExtension />
+        </Paso>
+      ) : (
+        <Paso n={1} titulo="Agregá el marcador de Vector">
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+            El marcador conecta tu pestaña del CAD con Vector: lo tocás en el CAD y se abre esta pantalla, lista para pasar tus vuelos. En Safari,
+            mostrá la barra de favoritos con <span className="font-mono text-[13px]">⇧⌘B</span> antes de arrastrarlo.
+          </p>
+          <PasoMarcador />
+        </Paso>
+      )}
       <Paso n={2} titulo='Entrá al CAD y abrí "Registro horas vuelo"'>
         <a
           href="https://cad.anac.gob.ar/portalApp/"
@@ -71,7 +89,10 @@ function PasosMarcador() {
       </Paso>
       <Paso n={3} titulo="Volvé a Vector y elegí qué cargar">
         <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
-          Con la extensión, esta pantalla se conecta sola con el CAD; con el marcador, tocalo en el CAD y se abre Vector. Ves el panel con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
+          {nav === "extension"
+            ? "Con la extensión, esta pantalla se conecta sola con el CAD; con el marcador, tocalo en el CAD y se abre Vector."
+            : "Tocá el marcador en el CAD y se abre Vector."}{" "}
+          Ves el panel con tus vuelos: los que faltan, los que ya están y los que hay que corregir. A cada vuelo le
           ponés su autoridad certificante y su nombre; Vector te propone la última que usaste para esa finalidad. Antes de cargar podés ver
           exactamente lo que se manda.
         </p>
@@ -98,6 +119,39 @@ function PasosMarcador() {
   );
 }
 
+/** En el teléfono no hay extensiones ni barra de favoritos: el CAD se pasa desde la compu. */
+function EnLaCompu({ corregir }: { corregir: boolean }) {
+  return (
+    <div className="flex items-start gap-3 rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-5 md:p-6">
+      <span className="grid place-items-center w-10 h-10 rounded-2xl bg-zinc-900 dark:bg-white shrink-0">
+        <Laptop className="w-5 h-5 text-white dark:text-zinc-900" aria-hidden="true" />
+      </span>
+      <div className="space-y-2 min-w-0">
+        <h2 className="text-base font-bold text-zinc-900 dark:text-white">Pasá tus vuelos desde la compu</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">
+          Vector carga los vuelos desde tu pestaña del CAD, con una extensión o un marcador, y en el teléfono no se puede ninguna de las dos. En la
+          compu, entrá a Vector y andá a <b className="font-semibold text-zinc-900 dark:text-white">Bitácora → Vuelos → Pasar al CAD</b>.
+        </p>
+        {corregir && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-prose">Desde acá sí podés corregir los vuelos que lo necesitan, abajo.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Los pasos para este navegador: extensión, marcador o "desde la compu" (`navegadorParaCad`). */
+function PasosCad({ inicial, corregir }: { inicial: NavegadorCad; corregir: boolean }) {
+  return (
+    <SegunNavegador
+      inicial={inicial}
+      extension={<PasosMarcador nav="extension" />}
+      marcador={<PasosMarcador nav="marcador" />}
+      compu={<EnLaCompu corregir={corregir} />}
+    />
+  );
+}
+
 const LISTA = "divide-y divide-zinc-100 dark:divide-white/5 rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.02] overflow-hidden";
 
 /**
@@ -109,7 +163,8 @@ const LISTA = "divide-y divide-zinc-100 dark:divide-white/5 rounded-3xl border b
  * únicos que piden algo.
  */
 export default async function PasarAlCadPage() {
-  const [datos, conexion] = await Promise.all([vuelosParaElCad(), estadoConexionCad()]);
+  const [datos, conexion, h] = await Promise.all([vuelosParaElCad(), estadoConexionCad(), headers()]);
+  const nav = navegadorParaCad(h.get("user-agent") ?? "");
 
   if (datos === null || datos.alumno) {
     return (
@@ -134,7 +189,7 @@ export default async function PasarAlCadPage() {
 
   const frase =
     total === 0
-      ? `Todavía no cargaste vuelos en Vector.${TRAER_DEL_CAD ? " Si ya los declaraste en el CAD, traelos con el marcador." : ""}`
+      ? `Todavía no cargaste vuelos en Vector.${TRAER_DEL_CAD ? " Si ya los declaraste en el CAD, traelos a Vector desde acá." : ""}`
       : datos.borradores.length === 0
         ? `Tus ${vuelos(total)} ya están en el CAD.`
         : `Te faltan pasar ${vuelos(datos.borradores.length)} al CAD.${revisar.length ? ` Hay ${revisar.length} para corregir antes.` : ""}`;
@@ -208,7 +263,7 @@ export default async function PasarAlCadPage() {
               <ChevronDown className="w-4 h-4 transition-transform -rotate-90 group-open:rotate-0" aria-hidden="true" />
               Prefiero el marcador, desde la compu
             </summary>
-            <PasosMarcador />
+            <PasosCad inicial={nav} corregir={revisar.length > 0} />
           </details>
         </>
       ) : conexion?.disponible ? (
@@ -247,11 +302,11 @@ export default async function PasarAlCadPage() {
               </span>
               <ChevronDown className="w-4 h-4 mt-1 text-zinc-400 transition-transform -rotate-90 group-open:rotate-0" aria-hidden="true" />
             </summary>
-            <PasosMarcador />
+            <PasosCad inicial={nav} corregir={revisar.length > 0} />
           </details>
         </section>
       ) : (
-        <PasosMarcador />
+        <PasosCad inicial={nav} corregir={revisar.length > 0} />
       )}
 
       {!conectado && revisar.length > 0 && (

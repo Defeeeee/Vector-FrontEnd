@@ -328,7 +328,8 @@ importa es el del backend (`request_max_body_size`, 30 MB).
     (`leidoDelCad`). El panel viejo adentro del CAD y su ventanita `/cad/conector` se borraron en la
     2.36.2, después de probar el puente contra el CAD real (Federico, 2026-10-29). Vector avisa si la extensión instalada es
     más vieja que `extension/manifest.json` (`lib/extension-cad.ts`; antes de la 1.1.0 no es puente y sólo
-    se ofrece bajar la nueva): **al cambiar algo de `extension/`, subir su versión.** Se instala
+    se ofrece bajar la nueva): **al cambiar algo de `extension/`, subir su versión.** "Pasar al CAD" ofrece la extensión sólo en Chrome, Edge y Brave; en Safari y Firefox, el marcador; en el
+    teléfono, que se haga desde la compu (`navegadorParaCad`, `SegunNavegador`; Federico, 2026-10-30). Se instala
     descomprimida: **falta publicarla en la Chrome Web Store** (US$5, decisión de Federico); Safari
     necesita convertirla con Xcode.
   - **"Desde Vector" está apagado** (2026-10-29, `CAD_DESDE_VECTOR` del backend, apagado por defecto):
